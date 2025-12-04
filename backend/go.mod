@@ -20,6 +20,7 @@ require (
 
 require (
 	github.com/ArtisanCloud/PowerX/api/grpc/gen/go v0.1.0-alpha
+	github.com/jackc/pgconn v1.14.3
 	github.com/stretchr/testify v1.10.0
 	golang.org/x/crypto v0.42.0
 	google.golang.org/protobuf v1.36.9
@@ -42,7 +43,6 @@ require (
 	github.com/go-sql-driver/mysql v1.9.3 // indirect
 	github.com/goccy/go-json v0.10.5 // indirect
 	github.com/jackc/chunkreader/v2 v2.0.1 // indirect
-	github.com/jackc/pgconn v1.14.3 // indirect
 	github.com/jackc/pgio v1.0.0 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.3.3 // indirect

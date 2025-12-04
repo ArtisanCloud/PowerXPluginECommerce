@@ -29,7 +29,7 @@ func SeedLocalAdmin(ctx context.Context, db *gorm.DB, cfg *config.Config) error 
 	}
 
 	const (
-		defaultTenantKey  = "px_local"
+		defaultTenantKey  = "00000000-0000-0000-0000-000000000001"
 		defaultTenantName = "Local Tenant"
 		defaultAdminEmail = "admin@local.test"
 		defaultAdminPwd   = "S3cret!!"
@@ -46,6 +46,8 @@ func SeedLocalAdmin(ctx context.Context, db *gorm.DB, cfg *config.Config) error 
 	if opts.TenantKey == "" {
 		opts.TenantKey = defaultTenantKey
 	}
+	opts.TenantKey = strings.TrimSpace(opts.TenantKey)
+	tenantKey := strings.ToLower(opts.TenantKey)
 	if opts.TenantName == "" {
 		opts.TenantName = defaultTenantName
 	}
@@ -75,10 +77,10 @@ func SeedLocalAdmin(ctx context.Context, db *gorm.DB, cfg *config.Config) error 
 
 	return db.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		var tenant iamm.Tenant
-		if err := tx.Where("key = ?", strings.ToLower(opts.TenantKey)).First(&tenant).Error; err != nil {
+		if err := tx.Where("key = ?", tenantKey).First(&tenant).Error; err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
 				tenant = iamm.Tenant{
-					Key:    strings.ToLower(opts.TenantKey),
+					Key:    tenantKey,
 					Name:   opts.TenantName,
 					Status: iamm.StatusActive,
 					Plan:   "free",

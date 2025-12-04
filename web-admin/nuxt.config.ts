@@ -289,7 +289,7 @@ export default defineNuxtConfig({
   },
   devServer: {
     host: '0.0.0.0',
-    port: 3031
+    port: 3032
   },
   ui: {
     fonts: false
