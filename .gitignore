@@ -11,7 +11,7 @@ Thumbs.db
 
 # CLI & reports
 .px-plugin/
-reports/
+/reports/
 
 # Generic artefacts
 dist/
