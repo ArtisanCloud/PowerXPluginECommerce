@@ -23,6 +23,7 @@
    - 筛选：渠道、会员等级、标签、活跃度、国家、最近订单时间。
    - 视图：表格/卡片切换，支持保存筛选器。
    - 列表操作：批量选择后可执行导出、标签打标、发券、分配负责人。
+   - 导入/导出：页头按钮唤出 `CustomerImportDialog`、`CustomerExportDialog`。导入限制 `customer.manage` 权限，导出需 `customer.export`。
 2. **客户详情抽屉/页**
    - 概览：基本资料、会员状态、成长值、最近登录。
    - 订单与售后：最近 5 单 + 快捷跳转更多、售后状态提示。
@@ -31,16 +32,26 @@
    - 快捷操作：重置密码、禁用账号、发优惠券、创建任务。
 3. **会员视角**（`customer/members.vue`）
    - 以会员等级、成长值段位、权益包使用情况为主轴显示客户。
-   - 提供成长曲线、保级提醒、权益发放记录。
+   - 指标卡（`MembershipCards`）实时展示总数/活跃/即将降级/平均成长值。
+   - `MembershipReminderDrawer` 支持短信/邮件/站内保级提醒，调用 `POST /customers/bulk-remind`，带 KPI 事件（SC-003、SC-004）。
+   - 同步复用导入/导出对话框，导出默认字段为会员视角关键数据。
 4. **批量导入/导出**
-   - 导入：模板下载、字段映射、校验、预览、审批（>1k 条需审批）。
-   - 导出：根据筛选条件导出 CSV，写入审计日志并支持异步下载。
+   - 导入：模板下载、字段映射、校验、预览、审批（>1k 条需审批）。前端将文件上传至 `/customers/import` 并记录任务中心 ID。
+   - 导出：根据筛选条件导出 CSV/Excel，写入审计日志并支持异步下载。任务完成后提供签名链接；页面记录 KPI（导出耗时）。
 5. **标签 & 分群管理**
    - 右侧标签面板：新建、合并、颜色标记。
-   - 支持 Pinia store 同步标签树，便于其他模块复用。 
-6. **权限控制**
+   - 支持 Pinia store 同步标签树，便于其他模块复用。
+6. **权限控制与审计**
    - 与 `/settings/roles.vue` 对接；支持按角色限制批量操作、导出。
-   - 所有写操作调用后端 `admin_console_audit_events` 记录审计。
+   - 所有写操作调用后端 `admin_console_audit_events` 记录审计，前端通过 `AuditContext` 自动注入 `X-Audit-Action/Resource`。
+
+### 3.1 指标与可观测性
+- 统一通过 `useCustomerMetrics` 上报：
+  - `customer_list_fetch` / `customer_membership_fetch`：筛选响应耗时（SC-001）。
+  - `customer_export_task` / `customer_import_task`：导入导出任务创建、完成时长（SC-002）。
+  - `customer_reminder_task` + `recordReminderResult`：保级提醒成功/失败率（SC-003/SC-004）。
+  - 自定义事件：`customer_import_modal_open`、`customer_export_modal_open` 用于统计入口使用频次。
+- 指标推送至宿主任务中心/监控，Quickstart 中提供验证步骤：筛选 ≤ 3 次点击即可命中目标、导出任务 ≤ 10 分钟完成。
 
 ## 4. 流程示意
 1. **客户导入**

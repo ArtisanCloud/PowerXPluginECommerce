@@ -103,9 +103,9 @@ description: "Task list for implementing Customer List & Membership Views"
 
 **Purpose**: 文档、运行指南与收尾工作，确保易用与可运维。
 
-- [ ] T033 [P] 在 `docs/plan/customer/readme.md` 记录新的客户目录/会员视角能力、指标埋点与依赖组件，便于后续团队查阅。
-- [ ] T034 [P] 扩充 `specs/001-customer-ops-customer/quickstart.md`，加入 KPI/错误提示验证步骤（筛选≤3 次点击、导出耗时、提醒成功率、错误率观察）及任务中心检查指引。
-- [ ] T035 [P] 更新 `docs/plan/customer/customer.md`，补充与任务中心、审计、批量操作、错误处理/指标监控的关系及上线注意事项。
+- [X] T033 [P] 在 `docs/plan/customer/readme.md` 记录新的客户目录/会员视角能力、指标埋点与依赖组件，便于后续团队查阅。
+- [X] T034 [P] 扩充 `specs/001-customer-ops-customer/quickstart.md`，加入 KPI/错误提示验证步骤（筛选≤3 次点击、导出耗时、提醒成功率、错误率观察）及任务中心检查指引。
+- [X] T035 [P] 更新 `docs/plan/customer/customer.md`，补充与任务中心、审计、批量操作、错误处理/指标监控的关系及上线注意事项。
 
 ---
 
