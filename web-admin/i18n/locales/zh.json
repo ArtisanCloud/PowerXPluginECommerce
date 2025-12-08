@@ -270,7 +270,9 @@
         "refresh": "刷新",
         "retry": "重试",
         "view": "查看",
-        "pin": "固定"
+        "pin": "固定",
+        "import": "导入客户",
+        "export": "导出客户"
       },
       "savedViews": {
         "save": "保存视图",
@@ -340,6 +342,54 @@
         "title": "客户列表加载失败",
         "toastTitle": "客户视图异常",
         "generic": "请求异常，请稍后重试。"
+      },
+      "import": {
+        "title": "导入客户",
+        "membersTitle": "导入会员变更",
+        "subtitle": "通过模板导入批量新增/更新，自动写入审计与任务中心。",
+        "downloadTemplate": "下载模板",
+        "templateHint": "模板包含字段说明，请先下载并填写。",
+        "uploadLabel": "上传已填写的文件",
+        "emptyUpload": "尚未选择文件",
+        "steps": {
+          "title": "导入步骤",
+          "download": "下载官方模板",
+          "fill": "填写客户数据并校验格式",
+          "upload": "上传文件以创建导入任务"
+        },
+        "submit": "提交导入任务",
+        "failed": "导入任务创建失败",
+        "taskCreated": "任务 {id} 已创建",
+        "taskDesc": "可前往任务中心查看进度与错误报告。",
+        "noFile": "请选择要上传的导入文件"
+      },
+      "export": {
+        "title": "导出客户名单",
+        "membersTitle": "导出会员名单",
+        "subtitle": "基于当前筛选导出数据，完成后可从通知/任务中心下载。",
+        "summaryTitle": "筛选摘要",
+        "noFilters": "当前使用全部客户",
+        "fieldLabel": "选择导出字段",
+        "fieldHint": "建议保留 ID、联系方式、等级等关键字段。",
+        "fields": {
+          "id": "客户 ID",
+          "name": "姓名",
+          "email": "邮箱",
+          "phone": "手机号",
+          "membershipTier": "会员等级",
+          "status": "状态",
+          "source": "来源",
+          "createdAt": "创建时间",
+          "growthValue": "成长值",
+          "points": "积分",
+          "retentionStatus": "保级状态",
+          "lastBenefitUsedAt": "最近权益"
+        },
+        "failed": "导出任务创建失败",
+        "taskCreated": "任务 {id} 已创建",
+        "taskDesc": "任务完成后将推送下载链接。",
+        "submit": "生成导出任务",
+        "noFields": "请至少选择一个导出字段"
       }
     },
     "membership": {
@@ -351,6 +401,7 @@
         "cancel": "取消",
         "refresh": "刷新数据",
         "remind": "批量提醒",
+        "import": "导入会员",
         "export": "导出名单",
         "quickDowngrade": "即将降级",
         "clearSegment": "清除分群"

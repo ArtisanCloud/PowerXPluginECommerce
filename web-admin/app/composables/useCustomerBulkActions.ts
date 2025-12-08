@@ -2,6 +2,7 @@ import { ref } from "vue";
 import { useToast } from "#imports";
 import { useCustomerService } from "./api/services/customerService";
 import type {
+  AuditContext,
   BulkActionPayload,
   BulkReminderPayload,
   CustomerExportPayload,
@@ -9,13 +10,8 @@ import type {
 } from "~/types/customer";
 import { useCustomerMetrics } from "./useCustomerMetrics";
 
-interface AuditMeta {
-  action?: string;
-  resource?: string;
-}
-
 interface BulkActionRequest extends BulkActionPayload {
-  audit?: AuditMeta;
+  audit?: AuditContext;
 }
 
 const sleep = (ms: number) =>
@@ -29,26 +25,15 @@ export const useCustomerBulkActions = () => {
   const toast = useToast();
   const pollingTasks = ref<Record<string, boolean>>({});
 
-  const buildAuditHeaders = (audit?: AuditMeta) => {
-    if (!audit?.action && !audit?.resource) {
-      return undefined;
-    }
-    const headers: Record<string, string> = {};
-    if (audit.action) headers["X-Audit-Action"] = audit.action;
-    if (audit.resource) headers["X-Audit-Resource"] = audit.resource;
-    return headers;
-  };
-
   const submitBulkAction = async (payload: BulkActionRequest) => {
     if (!payload.ids?.length) {
       throw new Error("请至少选择一名客户");
     }
-    const headers = buildAuditHeaders(
+    const audit =
       payload.audit || {
         action: `customer.bulk.${payload.action}`,
         resource: `customers:${payload.ids.length}`,
-      }
-    );
+      };
     const recorder = metrics.trackJob("customer_bulk_action", {
       action: payload.action,
       count: payload.ids.length,
@@ -60,7 +45,7 @@ export const useCustomerBulkActions = () => {
           ids: payload.ids,
           payload: payload.payload,
         },
-        headers ? { headers } : undefined
+        { audit }
       );
       recorder("success", { taskId: response.taskId });
       toast.add({
@@ -76,17 +61,16 @@ export const useCustomerBulkActions = () => {
   };
 
   const submitReminder = async (
-    payload: BulkReminderPayload & { audit?: AuditMeta }
+    payload: BulkReminderPayload & { audit?: AuditContext }
   ) => {
     if (!payload.ids?.length) {
       throw new Error("请至少选择一个目标客户");
     }
-    const headers = buildAuditHeaders(
+    const audit =
       payload.audit || {
         action: "customer.membership.bulk-remind",
         resource: `customers:${payload.ids.length}`,
-      }
-    );
+      };
     const tracker = metrics.trackJob("customer_reminder_task", {
       channel: payload.channel,
       count: payload.ids.length,
@@ -99,7 +83,7 @@ export const useCustomerBulkActions = () => {
           templateId: payload.templateId,
           metadata: payload.metadata,
         },
-        headers ? { headers } : undefined
+        { audit }
       );
       tracker("success", { taskId: response.taskId });
       toast.add({
@@ -115,14 +99,13 @@ export const useCustomerBulkActions = () => {
   };
 
   const submitExport = async (
-    payload: CustomerExportPayload & { audit?: AuditMeta }
+    payload: CustomerExportPayload & { audit?: AuditContext }
   ) => {
-    const headers = buildAuditHeaders(
+    const audit =
       payload.audit || {
         action: "customer.export",
         resource: "customers:list",
-      }
-    );
+      };
     const tracker = metrics.trackJob("customer_export_task");
     try {
       const response = await service.requestExport(
@@ -130,7 +113,7 @@ export const useCustomerBulkActions = () => {
           filters: payload.filters,
           fields: payload.fields,
         },
-        headers ? { headers } : undefined
+        { audit }
       );
       tracker("success", { taskId: response.taskId });
       toast.add({
@@ -147,22 +130,21 @@ export const useCustomerBulkActions = () => {
 
   const submitImport = async (params: {
     file: File;
-    audit?: AuditMeta;
+    audit?: AuditContext;
   }) => {
     if (!params.file) {
       throw new Error("请上传导入文件");
     }
-    const headers = buildAuditHeaders(
+    const audit =
       params.audit || {
         action: "customer.import",
         resource: "customers:list",
-      }
-    );
+      };
     const tracker = metrics.trackJob("customer_import_task");
     try {
       const response = await service.requestImport(
         params.file,
-        headers ? { headers } : undefined
+        { audit }
       );
       tracker("success", { taskId: response.taskId });
       toast.add({

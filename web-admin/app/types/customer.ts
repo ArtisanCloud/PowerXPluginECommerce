@@ -130,6 +130,11 @@ export interface MembershipReminderState {
   success: number;
 }
 
+export interface AuditContext {
+  action?: string;
+  resource?: string;
+}
+
 export interface BulkActionPayload {
   action: BulkActionType;
   ids: string[];
@@ -164,4 +169,5 @@ export interface BulkTask extends JobStatus {
     ids?: string[];
     filters?: CustomerListFilters;
   };
+  context?: "directory" | "members";
 }

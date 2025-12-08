@@ -6,6 +6,9 @@ const listCustomersMock = vi.fn();
 const listMembersMock = vi.fn();
 const fetchInsightsMock = vi.fn();
 const submitReminderMock = vi.fn();
+const submitImportMock = vi.fn();
+const submitExportMock = vi.fn();
+const pollJobMock = vi.fn();
 
 vi.mock("../../app/composables/api/services/customerService", () => ({
   useCustomerService: () => ({
@@ -23,6 +26,9 @@ vi.mock("../../app/composables/useMembershipInsights", () => ({
 vi.mock("../../app/composables/useCustomerBulkActions", () => ({
   useCustomerBulkActions: () => ({
     submitReminder: submitReminderMock,
+    submitImport: submitImportMock,
+    submitExport: submitExportMock,
+    pollJobUntilFinished: pollJobMock,
   }),
 }));
 
@@ -48,6 +54,9 @@ describe("useCustomerStore", () => {
       total: 0,
     });
     submitReminderMock.mockReset();
+    submitImportMock.mockReset();
+    submitExportMock.mockReset();
+    pollJobMock.mockReset();
     (globalThis as any).window = {
       localStorage: {
         getItem: vi.fn().mockReturnValue(null),

@@ -4,6 +4,7 @@ import { useCustomerMetrics } from "~/composables/useCustomerMetrics";
 import { useMembershipInsights } from "~/composables/useMembershipInsights";
 import { useCustomerBulkActions } from "~/composables/useCustomerBulkActions";
 import type {
+  AuditContext,
   BulkReminderPayload,
   BulkTask,
   Customer,
@@ -61,6 +62,18 @@ const createReminderState = (): MembershipReminderState => ({
   success: 0,
 });
 
+const createImportState = () => ({
+  submitting: false,
+  error: null as string | null,
+  lastTaskId: null as string | null,
+});
+
+const createExportState = () => ({
+  submitting: false,
+  error: null as string | null,
+  lastTaskId: null as string | null,
+});
+
 const readSavedViews = (): SavedView[] => {
   if (typeof window === "undefined") return [];
   try {
@@ -113,6 +126,9 @@ export const useCustomerStore = defineStore("customer.directory", {
     membershipError: "" as string | null,
     membershipLastFetchedAt: "" as string | null,
     reminderState: createReminderState(),
+    importState: createImportState(),
+    exportState: createExportState(),
+    taskPolling: {} as Record<string, boolean>,
     visibleColumns: [
       "name",
       "contact",
@@ -159,6 +175,11 @@ export const useCustomerStore = defineStore("customer.directory", {
         task,
         ...this.bulkTasks.filter((item) => item.taskId !== task.taskId),
       ];
+    },
+    updateTask(taskId: string, patch: Partial<BulkTask>) {
+      this.bulkTasks = this.bulkTasks.map((task) =>
+        task.taskId === taskId ? { ...task, ...patch } : task
+      );
     },
     updateMembershipStats(stats: Partial<MembershipStats>) {
       this.membershipStats = { ...this.membershipStats, ...stats };
@@ -279,6 +300,117 @@ export const useCustomerStore = defineStore("customer.directory", {
       this.setMembershipFilters(payload);
       return this.fetchMemberships();
     },
+    async pollTaskStatus(taskId: string) {
+      if (!taskId || this.taskPolling[taskId]) return;
+      const bulkActions = useCustomerBulkActions();
+      this.taskPolling[taskId] = true;
+      try {
+        const status = await bulkActions.pollJobUntilFinished(taskId, {
+          intervalMs: 5_000,
+        });
+        this.updateTask(taskId, {
+          status: status.status,
+          message: status.message,
+          completedAt: status.completedAt || new Date().toISOString(),
+          downloadUrl: status.downloadUrl,
+        });
+      } catch (error: any) {
+        this.updateTask(taskId, {
+          status: "failed",
+          message: error?.message || "任务执行失败",
+        });
+      } finally {
+        delete this.taskPolling[taskId];
+      }
+    },
+    async submitImportTask(params: {
+      file: File;
+      context?: "directory" | "members";
+      audit?: AuditContext;
+    }) {
+      if (!params.file) {
+        throw new Error("请提供导入文件");
+      }
+      const bulkActions = useCustomerBulkActions();
+      this.importState.submitting = true;
+      this.importState.error = null;
+      try {
+        const response = await bulkActions.submitImport({
+          file: params.file,
+          audit:
+            params.audit ||
+            (params.context === "members"
+              ? {
+                  action: "customer.membership.import",
+                  resource: "customers:members",
+                }
+              : undefined),
+        });
+        this.importState.lastTaskId = response.taskId;
+        this.registerTask({
+          taskId: response.taskId,
+          type: "import",
+          status: "queued",
+          createdAt: new Date().toISOString(),
+          context: params.context || "directory",
+        });
+        this.pollTaskStatus(response.taskId);
+        return response;
+      } catch (error: any) {
+        this.importState.error =
+          error?.data?.message || error?.message || "导入任务创建失败";
+        throw error;
+      } finally {
+        this.importState.submitting = false;
+      }
+    },
+    resetImportState() {
+      this.importState = createImportState();
+    },
+    async submitExportTask(params: {
+      fields: string[];
+      filters?: CustomerListFilters;
+      context?: "directory" | "members";
+      audit?: AuditContext;
+    }) {
+      const bulkActions = useCustomerBulkActions();
+      this.exportState.submitting = true;
+      this.exportState.error = null;
+      try {
+        const response = await bulkActions.submitExport({
+          filters: params.filters,
+          fields: params.fields,
+          audit:
+            params.audit ||
+            (params.context === "members"
+              ? {
+                  action: "customer.membership.export",
+                  resource: "customers:members",
+                }
+              : undefined),
+        });
+        this.exportState.lastTaskId = response.taskId;
+        this.registerTask({
+          taskId: response.taskId,
+          type: "export",
+          status: "queued",
+          createdAt: new Date().toISOString(),
+          scope: { filters: params.filters },
+          context: params.context || "directory",
+        });
+        this.pollTaskStatus(response.taskId);
+        return response;
+      } catch (error: any) {
+        this.exportState.error =
+          error?.data?.message || error?.message || "导出任务创建失败";
+        throw error;
+      } finally {
+        this.exportState.submitting = false;
+      }
+    },
+    resetExportState() {
+      this.exportState = createExportState();
+    },
     clearReminderState() {
       this.reminderState = {
         ...createReminderState(),
@@ -308,10 +440,12 @@ export const useCustomerStore = defineStore("customer.directory", {
         this.registerTask({
           taskId: response.taskId,
           status: "queued",
-          type: "bulk-remind",
+          type: "reminder",
           createdAt: new Date().toISOString(),
           scope: { ids: [...payload.ids] },
+          context: "members",
         });
+        this.pollTaskStatus(response.taskId);
         metrics.recordReminderResult({
           channel: payload.channel,
           total: payload.ids.length,

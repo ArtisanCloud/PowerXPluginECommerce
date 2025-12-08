@@ -11,10 +11,18 @@
       </div>
       <div class="flex flex-wrap gap-2">
         <UButton
+          v-if="canManageCustomers"
+          icon="i-heroicons-arrow-up-tray"
+          color="primary"
+          @click="openImportDialog"
+        >
+          {{ t("customer.membership.actions.import") }}
+        </UButton>
+        <UButton
+          v-if="canExportCustomers"
           icon="i-heroicons-arrow-down-tray"
-          variant="ghost"
-          :loading="exporting"
-          @click="handleExport"
+          variant="soft"
+          @click="openExportDialog"
         >
           {{ t("customer.membership.actions.export") }}
         </UButton>
@@ -170,6 +178,19 @@
       :selected-ids="selection"
       @completed="handleReminderComplete"
     />
+    <CustomerImportDialog
+      v-if="canManageCustomers"
+      v-model="importModalOpen"
+      context="members"
+      @submitted="handleImportSubmitted"
+    />
+    <CustomerExportDialog
+      v-if="canExportCustomers"
+      v-model="exportModalOpen"
+      :filters="membershipFilters"
+      context="members"
+      @submitted="handleExportSubmitted"
+    />
   </div>
 </template>
 
@@ -181,10 +202,12 @@ import type { TableColumn } from "@nuxt/ui";
 import MembershipFilterBar from "~/components/customer/MembershipFilterBar.vue";
 import MembershipCards from "~/components/customer/MembershipCards.vue";
 import MembershipReminderDrawer from "~/components/customer/MembershipReminderDrawer.vue";
+import CustomerImportDialog from "~/components/customer/CustomerImportDialog.vue";
+import CustomerExportDialog from "~/components/customer/CustomerExportDialog.vue";
 import { useCustomerStore } from "~/stores/customer";
 import { useCustomerMetrics } from "~/composables/useCustomerMetrics";
-import { useCustomerBulkActions } from "~/composables/useCustomerBulkActions";
-import type { MembershipInsight, CustomerListFilters } from "~/types/customer";
+import { usePermissions } from "~/composables/usePermissions";
+import type { MembershipInsight } from "~/types/customer";
 
 type MembershipRow = {
   id: string;
@@ -207,10 +230,11 @@ const {
 const { t } = useI18n();
 const toast = useToast();
 const metrics = useCustomerMetrics();
-const bulkActions = useCustomerBulkActions();
+const { hasPermission } = usePermissions();
 
 const reminderDrawerOpen = ref(false);
-const exporting = ref(false);
+const importModalOpen = ref(false);
+const exportModalOpen = ref(false);
 const page = ref(membershipFilters.value.page || 1);
 const pageSize = ref(membershipFilters.value.pageSize || 20);
 const selectedSegment = ref<string | null>(membershipFilters.value.retentionStatus || null);
@@ -335,38 +359,6 @@ const handleReminderComplete = () => {
   store.clearSelection();
 };
 
-const handleExport = async () => {
-  exporting.value = true;
-  const filters: CustomerListFilters = {
-    tier: membershipFilters.value.tier,
-    retentionStatus: membershipFilters.value.retentionStatus,
-    growthRange: membershipFilters.value.growthRange,
-    pointsRange: membershipFilters.value.pointsRange,
-    benefitStatus: membershipFilters.value.benefitStatus,
-  };
-  metrics.recordEvent({
-    name: "membership_export",
-    metadata: { count: membershipStats.value.total },
-  });
-  try {
-    await bulkActions.submitExport({
-      filters,
-      audit: {
-        action: "customer.membership.export",
-        resource: `customers:members:${membershipStats.value.total}`,
-      },
-    });
-  } catch (error: any) {
-    toast.add({
-      title: t("customer.membership.messages.exportFailed"),
-      description: error?.message,
-      color: "error",
-    });
-  } finally {
-    exporting.value = false;
-  }
-};
-
 watch(
   () => membershipError.value,
   (message) => {
@@ -420,4 +412,37 @@ onMounted(async () => {
     await store.fetchMemberships();
   }
 });
+
+const canManageCustomers = computed(() => hasPermission("customer.manage"));
+const canExportCustomers = computed(() => hasPermission("customer.export"));
+
+const openImportDialog = () => {
+  metrics.recordEvent({
+    name: "customer_import_modal_open",
+    metadata: { source: "members" },
+  });
+  importModalOpen.value = true;
+};
+
+const openExportDialog = () => {
+  metrics.recordEvent({
+    name: "customer_export_modal_open",
+    metadata: { source: "members" },
+  });
+  exportModalOpen.value = true;
+};
+
+const handleImportSubmitted = () => {
+  metrics.recordEvent({
+    name: "customer_import_submitted",
+    metadata: { source: "members" },
+  });
+};
+
+const handleExportSubmitted = () => {
+  metrics.recordEvent({
+    name: "customer_export_submitted",
+    metadata: { source: "members" },
+  });
+};
 </script>

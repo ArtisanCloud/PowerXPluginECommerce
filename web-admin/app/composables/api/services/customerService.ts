@@ -1,5 +1,6 @@
 import { useApiClient } from "../index";
 import type {
+  AuditContext,
   BulkActionPayload,
   BulkReminderPayload,
   Customer,
@@ -13,6 +14,7 @@ import type {
 
 type RequestOptions = {
   headers?: HeadersInit;
+  audit?: AuditContext;
 };
 
 const withOptions = (options?: RequestOptions) => (options ? { ...options } : {});

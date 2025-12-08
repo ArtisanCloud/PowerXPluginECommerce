@@ -88,14 +88,14 @@ description: "Task list for implementing Customer List & Membership Views"
 
 ### Implementation for User Story 3
 
-- [ ] T025 [US3] 扩展 `web-admin/app/stores/customer/index.ts`，实现导入/导出/任务轮询 actions，并复用 `BulkTask` 状态在页面展示。
-- [ ] T026 [P] [US3] 新建 `web-admin/app/components/customer/CustomerImportDialog.vue`，提供模板下载、文件上传、校验反馈与任务链接。
-- [ ] T027 [P] [US3] 新建 `web-admin/app/components/customer/CustomerExportDialog.vue`，支持字段选择、筛选摘要展示及任务完成后的下载提示。
-- [ ] T028 [US3] 在 `web-admin/app/pages/customer/index.vue` 接入导入/导出入口、权限判断（`customer.manage`/`customer.export`）、任务中心提醒，并向 `useCustomerMetrics` 上报导入/导出任务耗时。
-- [ ] T029 [US3] 在 `web-admin/app/pages/customer/members.vue` 复用导入/导出入口，区分会员视角默认字段与筛选摘要，并上报 KPI。
-- [ ] T030 [US3] 在导入/导出流程与任务轮询中实现 FR-009 错误提示/重试（含文件校验错误报告、签名链接失效后的提示与再触发），并计入错误率统计。
-- [ ] T031 [US3] 更新 `web-admin/app/composables/api/_client.ts`，为导入/导出/批量操作请求统一注入 `X-Audit-Action`、`X-Audit-Resource` 头、捕获错误信息并暴露给 UI。
-- [ ] T032 [P] [US3] 编写 `web-admin/tests/unit/customer-import-export.spec.ts` 与 `web-admin/tests/e2e/customer-import-export.cy.ts`，模拟权限缺失/成功/错误重试场景、下载链接签名校验与 KPI 统计。
+- [X] T025 [US3] 扩展 `web-admin/app/stores/customer/index.ts`，实现导入/导出/任务轮询 actions，并复用 `BulkTask` 状态在页面展示。
+- [X] T026 [P] [US3] 新建 `web-admin/app/components/customer/CustomerImportDialog.vue`，提供模板下载、文件上传、校验反馈与任务链接。
+- [X] T027 [P] [US3] 新建 `web-admin/app/components/customer/CustomerExportDialog.vue`，支持字段选择、筛选摘要展示及任务完成后的下载提示。
+- [X] T028 [US3] 在 `web-admin/app/pages/customer/index.vue` 接入导入/导出入口、权限判断（`customer.manage`/`customer.export`）、任务中心提醒，并向 `useCustomerMetrics` 上报导入/导出任务耗时。
+- [X] T029 [US3] 在 `web-admin/app/pages/customer/members.vue` 复用导入/导出入口，区分会员视角默认字段与筛选摘要，并上报 KPI。
+- [X] T030 [US3] 在导入/导出流程与任务轮询中实现 FR-009 错误提示/重试（含文件校验错误报告、签名链接失效后的提示与再触发），并计入错误率统计。
+- [X] T031 [US3] 更新 `web-admin/app/composables/api/_client.ts`，为导入/导出/批量操作请求统一注入 `X-Audit-Action`、`X-Audit-Resource` 头、捕获错误信息并暴露给 UI。
+- [X] T032 [P] [US3] 编写 `web-admin/tests/unit/customer-import-export.spec.ts` 与 `web-admin/tests/e2e/customer-import-export.cy.ts`，模拟权限缺失/成功/错误重试场景、下载链接签名校验与 KPI 统计。
 
 ---
 

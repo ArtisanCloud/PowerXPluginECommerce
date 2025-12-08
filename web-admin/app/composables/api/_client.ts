@@ -8,6 +8,11 @@ import { PLUGIN_ID } from "~/utils/powerx-bridge";
 
 type Json = Record<string, any>;
 
+type AuditContext = {
+  action?: string;
+  resource?: string;
+};
+
 let _client: typeof $fetch | null = null;
 let _baseURL: string | null = null;
 let _clientEnv: "client" | "server" | null = null;
@@ -112,6 +117,17 @@ export function useApiClient() {
       }
     }
 
+    const audit: AuditContext | undefined = (next as any).audit;
+    if (audit) {
+      if (audit.action && !headers.has("X-Audit-Action")) {
+        headers.set("X-Audit-Action", audit.action);
+      }
+      if (audit.resource && !headers.has("X-Audit-Resource")) {
+        headers.set("X-Audit-Resource", audit.resource);
+      }
+      delete (next as any).audit;
+    }
+
     return next;
   };
 
@@ -151,6 +167,11 @@ export function useApiClient() {
         : baseClient(request, prepared));
     } catch (error: any) {
       handleAuthError(error?.response);
+      const responseMessage =
+        error?.response?._data?.message || error?.data?.message;
+      if (responseMessage && !error.message) {
+        error.message = responseMessage;
+      }
       throw error;
     }
   };

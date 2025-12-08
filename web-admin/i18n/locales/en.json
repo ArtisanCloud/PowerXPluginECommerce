@@ -268,7 +268,9 @@
         "refresh": "Refresh",
         "retry": "Retry",
         "view": "View",
-        "pin": "Pin"
+        "pin": "Pin",
+        "import": "Import customers",
+        "export": "Export customers"
       },
       "savedViews": {
         "save": "Save view",
@@ -338,6 +340,54 @@
         "title": "Failed to load customers",
         "toastTitle": "Customer directory error",
         "generic": "Something went wrong."
+      },
+      "import": {
+        "title": "Import customers",
+        "membersTitle": "Import member updates",
+        "subtitle": "Use the official template to bulk insert/update and log audit records.",
+        "downloadTemplate": "Download template",
+        "templateHint": "Template contains column description and validation tips.",
+        "uploadLabel": "Upload completed file",
+        "emptyUpload": "No file selected",
+        "steps": {
+          "title": "How it works",
+          "download": "Download the latest template",
+          "fill": "Fill in customer data and validate locally",
+          "upload": "Upload file to create an async task"
+        },
+        "submit": "Submit import task",
+        "failed": "Failed to create import task",
+        "taskCreated": "Task {id} created",
+        "taskDesc": "Follow progress and failure report in the task center.",
+        "noFile": "Please select a file to upload"
+      },
+      "export": {
+        "title": "Export customers",
+        "membersTitle": "Export member list",
+        "subtitle": "Export data based on current filters. A download link will be sent via notifications.",
+        "summaryTitle": "Filter summary",
+        "noFilters": "Using full customer base",
+        "fieldLabel": "Choose fields to export",
+        "fieldHint": "Keep ID, contact and tier for traceability.",
+        "fields": {
+          "id": "Customer ID",
+          "name": "Name",
+          "email": "Email",
+          "phone": "Phone",
+          "membershipTier": "Membership tier",
+          "status": "Status",
+          "source": "Source",
+          "createdAt": "Created at",
+          "growthValue": "Growth value",
+          "points": "Points",
+          "retentionStatus": "Retention status",
+          "lastBenefitUsedAt": "Last benefit"
+        },
+        "failed": "Failed to create export task",
+        "taskCreated": "Task {id} created",
+        "taskDesc": "A notification will include the download link once ready.",
+        "submit": "Create export task",
+        "noFields": "Select at least one field"
       }
     },
     "membership": {
@@ -349,6 +399,7 @@
         "cancel": "Cancel",
         "refresh": "Refresh data",
         "remind": "Bulk reminder",
+        "import": "Import members",
         "export": "Export list",
         "quickDowngrade": "At risk",
         "clearSegment": "Clear segment"
