@@ -225,5 +225,122 @@
     "noData": "暂无数据",
     "networkError": "网络异常，请检查连接",
     "templateCreated": "模板创建成功"
+  },
+  "customer": {
+    "directory": {
+      "title": "客户运营",
+      "subtitle": "全量客户的筛选、分群与批量动作",
+      "filters": {
+        "keyword": "关键词",
+        "keywordPlaceholder": "姓名/邮箱/手机号",
+        "tier": "会员等级",
+        "type": "客户类型",
+        "risk": "风险等级",
+        "source": "来源渠道",
+        "region": "地区",
+        "tags": "标签",
+        "tagsPlaceholder": "回车添加标签",
+        "tierOptions": {
+          "gold": "金卡",
+          "silver": "银卡",
+          "platinum": "白金"
+        },
+        "typeOptions": {
+          "individual": "个人",
+          "enterprise": "企业"
+        },
+        "riskOptions": {
+          "low": "低",
+          "medium": "中",
+          "high": "高"
+        },
+        "sourceOptions": {
+          "website": "官网",
+          "offline": "线下",
+          "referral": "推荐",
+          "miniapp": "小程序"
+        }
+      },
+      "actions": {
+        "apply": "应用筛选",
+        "reset": "清除",
+        "save": "保存",
+        "cancel": "取消",
+        "confirm": "确认",
+        "refresh": "刷新",
+        "retry": "重试",
+        "view": "查看",
+        "pin": "固定"
+      },
+      "savedViews": {
+        "save": "保存视图",
+        "title": "保存当前筛选",
+        "name": "视图名称",
+        "delete": "删除视图"
+      },
+      "status": {
+        "total": "共 {total} 人",
+        "selected": "已选择 {count} 人",
+        "lastSynced": "最后同步",
+        "never": "暂无记录"
+      },
+      "bulk": {
+        "selected": "已勾选 {count} 位客户",
+        "assignOwner": "指派负责人",
+        "ownerInput": "负责人账号",
+        "addTags": "批量打标",
+        "removeTags": "移除标签",
+        "tagsInput": "输入标签，回车确认",
+        "disable": "批量禁用",
+        "failed": "批处理失败",
+        "unknownError": "发生未知错误",
+        "ownerRequired": "请输入负责人账号",
+        "tagsRequired": "请至少添加一个标签"
+      },
+      "table": {
+        "name": "客户",
+        "contact": "联系方式",
+        "tier": "会员等级",
+        "source": "来源",
+        "tags": "标签",
+        "lastOrder": "最近订单",
+        "status": "状态",
+        "actions": "操作",
+        "masked": "已隐藏",
+        "statusActive": "活跃",
+        "statusInactive": "停用",
+        "statusBlocked": "风控"
+      },
+      "drawer": {
+        "title": "客户 360",
+        "unknown": "未知",
+        "unknownSource": "暂无来源信息",
+        "accountManager": "当前负责人",
+        "unassigned": "未指派",
+        "tabs": {
+          "overview": "概览",
+          "orders": "订单",
+          "afterSales": "售后",
+          "points": "积分/成长值",
+          "notes": "备注",
+          "audit": "审计"
+        },
+        "empty": "请选择客户查看详情",
+        "lastOrder": "最近订单时间",
+        "lastOrderAmount": "最近订单金额：¥{amount}",
+        "growthValue": "成长值：{value}",
+        "points": "积分：{value}",
+        "retentionStatus": "保级状态",
+        "createdAt": "创建时间",
+        "notesPlaceholder": "暂无备注",
+        "afterSalesPlaceholder": "售后/纠纷时间线将在接入后呈现。",
+        "auditPlaceholder": "{id} 的审计日志将接入后展示。"
+      },
+      "errors": {
+        "title": "客户列表加载失败",
+        "toastTitle": "客户视图异常",
+        "generic": "请求异常，请稍后重试。"
+      }
+    }
   }
 }

@@ -223,5 +223,122 @@
     "noData": "No data available",
     "networkError": "Network error, please check your connection",
     "templateCreated": "Template created successfully"
+  },
+  "customer": {
+    "directory": {
+      "title": "Customer Directory",
+      "subtitle": "Search, segment and act on customers",
+      "filters": {
+        "keyword": "Keyword",
+        "keywordPlaceholder": "Name, phone, email",
+        "tier": "Tier",
+        "type": "Type",
+        "risk": "Risk",
+        "source": "Source",
+        "region": "Region",
+        "tags": "Tags",
+        "tagsPlaceholder": "Press Enter to add tag",
+        "tierOptions": {
+          "gold": "Gold",
+          "silver": "Silver",
+          "platinum": "Platinum"
+        },
+        "typeOptions": {
+          "individual": "Individual",
+          "enterprise": "Enterprise"
+        },
+        "riskOptions": {
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        },
+        "sourceOptions": {
+          "website": "Website",
+          "offline": "Offline",
+          "referral": "Referral",
+          "miniapp": "Mini App"
+        }
+      },
+      "actions": {
+        "apply": "Apply",
+        "reset": "Reset",
+        "save": "Save",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "refresh": "Refresh",
+        "retry": "Retry",
+        "view": "View",
+        "pin": "Pin"
+      },
+      "savedViews": {
+        "save": "Save view",
+        "title": "Save current filters",
+        "name": "View name",
+        "delete": "Delete view"
+      },
+      "status": {
+        "total": "Total: {total}",
+        "selected": "{count} selected",
+        "lastSynced": "Last synced",
+        "never": "Never"
+      },
+      "bulk": {
+        "selected": "{count} customers selected",
+        "assignOwner": "Assign owner",
+        "ownerInput": "Owner account",
+        "addTags": "Add tags",
+        "removeTags": "Remove tags",
+        "tagsInput": "Tag (press Enter)",
+        "disable": "Disable",
+        "failed": "Bulk action failed",
+        "unknownError": "Unexpected error",
+        "ownerRequired": "Please provide owner account",
+        "tagsRequired": "Please add at least one tag"
+      },
+      "table": {
+        "name": "Customer",
+        "contact": "Contact",
+        "tier": "Tier",
+        "source": "Source",
+        "tags": "Tags",
+        "lastOrder": "Last Order",
+        "status": "Status",
+        "actions": "Actions",
+        "masked": "Hidden",
+        "statusActive": "Active",
+        "statusInactive": "Inactive",
+        "statusBlocked": "Blocked"
+      },
+      "drawer": {
+        "title": "Customer 360",
+        "unknown": "Unknown",
+        "unknownSource": "Unknown source",
+        "accountManager": "Account Owner",
+        "unassigned": "Unassigned",
+        "tabs": {
+          "overview": "Overview",
+          "orders": "Orders",
+          "afterSales": "After-sales",
+          "points": "Points & Growth",
+          "notes": "Notes",
+          "audit": "Audit"
+        },
+        "empty": "Select a customer to view details",
+        "lastOrder": "Last order time",
+        "lastOrderAmount": "Last order amount: ¥{amount}",
+        "growthValue": "Growth value: {value}",
+        "points": "Points: {value}",
+        "retentionStatus": "Retention status",
+        "createdAt": "Created at",
+        "notesPlaceholder": "No notes yet",
+        "afterSalesPlaceholder": "After-sales timeline will appear here.",
+        "auditPlaceholder": "Audit trail for {id} will surface here once connected."
+      },
+      "errors": {
+        "title": "Failed to load customers",
+        "toastTitle": "Customer directory error",
+        "generic": "Something went wrong."
+      }
+    }
   }
 }

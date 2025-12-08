@@ -50,15 +50,15 @@ description: "Task list for implementing Customer List & Membership Views"
 
 ### Implementation for User Story 1
 
-- [ ] T009 [US1] 在 `web-admin/app/stores/customer/index.ts` 补齐列表查询、分页、行选择、保存/切换视图与敏感字段遮罩的 actions。
-- [ ] T010 [P] [US1] 新建 `web-admin/app/components/customer/CustomerFilterBar.vue`，实现关键词+高级筛选（地区、风险、等级、标签等）与保存/加载视图操作。
-- [ ] T011 [P] [US1] 新建 `web-admin/app/components/customer/CustomerTable.vue`，使用 Nuxt UI `UTable` 呈现可配置列、复选框、空状态、权限遮罩。
-- [ ] T012 [US1] 新建 `web-admin/app/components/customer/CustomerDetailDrawer.vue`，含概览、订单、售后、权益、审计等 Tab，并支持快捷动作（发券、备注）。
-- [ ] T013 [P] [US1] 创建 `web-admin/app/components/customer/CustomerBulkActions.vue`，调用 `useCustomerBulkActions` 触发批量标签/负责人/禁用，并在 UI 中展示任务状态。
-- [ ] T014 [US1] 在 `web-admin/app/pages/customer/index.vue` 组合 FilterBar、Table、BulkActions、DetailDrawer，处理路由 Query 同步、空态提示、通知反馈，并接入 `useCustomerMetrics` 统计筛选点击与响应耗时。
-- [ ] T015 [US1] 在 `web-admin/app/pages/customer/index.vue` 与相关组件中实现 FR-009 错误提示/重试链路（含批量操作/列表失败的 toast、retry CTA、权限不足提示）。
-- [ ] T016 [P] [US1] 更新 `web-admin/i18n/en/menus.json` 与 `web-admin/i18n/zh-CN/menus.json`，补充筛选项、批量操作、抽屉 Tab、错误提示相关文案。
-- [ ] T017 [US1] 编写 `web-admin/tests/unit/customer-list.spec.ts` 与 `web-admin/tests/e2e/customer-directory.cy.ts`，覆盖筛选保存、批量负责人、详情抽屉遮罩，以及错误/重试场景与 KPI 事件触发。
+- [X] T009 [US1] 在 `web-admin/app/stores/customer/index.ts` 补齐列表查询、分页、行选择、保存/切换视图与敏感字段遮罩的 actions。
+- [X] T010 [P] [US1] 新建 `web-admin/app/components/customer/CustomerFilterBar.vue`，实现关键词+高级筛选（地区、风险、等级、标签等）与保存/加载视图操作。
+- [X] T011 [P] [US1] 新建 `web-admin/app/components/customer/CustomerTable.vue`，使用 Nuxt UI `UTable` 呈现可配置列、复选框、空状态、权限遮罩。
+- [X] T012 [US1] 新建 `web-admin/app/components/customer/CustomerDetailDrawer.vue`，含概览、订单、售后、权益、审计等 Tab，并支持快捷动作（发券、备注）。
+- [X] T013 [P] [US1] 创建 `web-admin/app/components/customer/CustomerBulkActions.vue`，调用 `useCustomerBulkActions` 触发批量标签/负责人/禁用，并在 UI 中展示任务状态。
+- [X] T014 [US1] 在 `web-admin/app/pages/customer/index.vue` 组合 FilterBar、Table、BulkActions、DetailDrawer，处理路由 Query 同步、空态提示、通知反馈，并接入 `useCustomerMetrics` 统计筛选点击与响应耗时。
+- [X] T015 [US1] 在 `web-admin/app/pages/customer/index.vue` 与相关组件中实现 FR-009 错误提示/重试链路（含批量操作/列表失败的 toast、retry CTA、权限不足提示）。
+- [X] T016 [P] [US1] 更新 `web-admin/i18n/en/menus.json` 与 `web-admin/i18n/zh-CN/menus.json`，补充筛选项、批量操作、抽屉 Tab、错误提示相关文案。
+- [X] T017 [US1] 编写 `web-admin/tests/unit/customer-list.spec.ts` 与 `web-admin/tests/e2e/customer-directory.cy.ts`，覆盖筛选保存、批量负责人、详情抽屉遮罩，以及错误/重试场景与 KPI 事件触发。
 
 ---
 
