@@ -85,6 +85,12 @@ export interface MembershipStats {
   averageGrowthValue: number;
 }
 
+export interface MembershipSegments {
+  safe: number;
+  warning: number;
+  downgrade: number;
+}
+
 export interface CustomerListFilters {
   keyword?: string;
   tier?: string;
@@ -95,6 +101,10 @@ export interface CustomerListFilters {
   riskLevel?: string;
   createdFrom?: string;
   createdTo?: string;
+  growthRange?: [number, number];
+  pointsRange?: [number, number];
+  benefitStatus?: string;
+  retentionStatus?: string;
   page?: number;
   pageSize?: number;
   sort?: string;
@@ -108,6 +118,16 @@ export interface MembershipFilters {
   retentionStatus?: string;
   page?: number;
   pageSize?: number;
+}
+
+export interface MembershipReminderState {
+  submitting: boolean;
+  error: string | null;
+  lastTaskId: string | null;
+  channel: string;
+  templateId: string;
+  total: number;
+  success: number;
 }
 
 export interface BulkActionPayload {

@@ -341,6 +341,95 @@
         "toastTitle": "客户视图异常",
         "generic": "请求异常，请稍后重试。"
       }
+    },
+    "membership": {
+      "title": "会员运营视角",
+      "subtitle": "通过等级、成长值与权益使用洞察保级风险人群",
+      "actions": {
+        "apply": "应用筛选",
+        "reset": "重置筛选",
+        "cancel": "取消",
+        "refresh": "刷新数据",
+        "remind": "批量提醒",
+        "export": "导出名单",
+        "quickDowngrade": "即将降级",
+        "clearSegment": "清除分群"
+      },
+      "cards": {
+        "title": "会员指标卡",
+        "subtitle": "实时统计会员规模与保级状态",
+        "lastUpdated": "上次同步",
+        "never": "暂无",
+        "refresh": "刷新",
+        "total": "会员总数",
+        "totalDesc": "当前筛选覆盖人数",
+        "active": "稳定保级",
+        "activeDesc": "安全区客户数",
+        "warning": "预警",
+        "warningDesc": "成长值接近阈值",
+        "downgrade": "即将降级",
+        "downgradeDesc": "需立即提醒的客户",
+        "averageGrowth": "平均成长值",
+        "averageGrowthDesc": "纳入统计的平均值"
+      },
+      "filters": {
+        "tier": "会员等级",
+        "retentionStatus": "保级状态",
+        "benefitStatus": "权益使用",
+        "growthRange": "成长值区间",
+        "pointsRange": "积分区间",
+        "benefitAny": "全部权益状态",
+        "benefitUnused": "权益未使用",
+        "benefitUsed": "权益已使用",
+        "tierOptions": {
+          "gold": "金卡",
+          "silver": "银卡",
+          "platinum": "白金",
+          "diamond": "黑金"
+        }
+      },
+      "segments": {
+        "safe": "安全",
+        "warning": "预警",
+        "downgrade": "即将降级"
+      },
+      "table": {
+        "name": "客户",
+        "tier": "等级",
+        "growth": "成长值",
+        "points": "积分",
+        "retention": "保级状态",
+        "lastBenefit": "最近权益",
+        "actions": "操作",
+        "remind": "提醒",
+        "empty": "暂无符合条件的会员"
+      },
+      "messages": {
+        "invalidGrowthRange": "请检查成长值区间，结束值必须大于开始值",
+        "exportSuccess": "导出任务已创建，可在任务中心查看",
+        "exportFailed": "导出失败，请稍后重试",
+        "errorTitle": "会员数据加载失败"
+      },
+      "reminder": {
+        "title": "批量保级提醒",
+        "selection": "已选择 {count} 位会员",
+        "channel": "提醒渠道",
+        "channelSms": "短信",
+        "channelEmail": "邮件",
+        "channelInapp": "站内信",
+        "template": "提醒模板",
+        "templatePlaceholder": "请输入模板 ID，例如 retain-tier-1",
+        "templateRequired": "请选择提醒模板",
+        "note": "备注/上下文",
+        "notePlaceholder": "可选：例如添加发券信息或活动说明",
+        "metricsTitle": "提醒指标",
+        "successRate": "成功率",
+        "failureRate": "失败率",
+        "lastTask": "最近任务：{id}",
+        "submit": "提交任务",
+        "emptySelection": "请先勾选目标会员",
+        "failed": "提醒提交失败"
+      }
     }
   }
 }

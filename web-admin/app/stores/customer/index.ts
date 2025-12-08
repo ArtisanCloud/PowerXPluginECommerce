@@ -1,12 +1,18 @@
 import { defineStore } from "pinia";
 import { useCustomerService } from "~/composables/api/services/customerService";
 import { useCustomerMetrics } from "~/composables/useCustomerMetrics";
+import { useMembershipInsights } from "~/composables/useMembershipInsights";
+import { useCustomerBulkActions } from "~/composables/useCustomerBulkActions";
 import type {
+  BulkReminderPayload,
   BulkTask,
   Customer,
   CustomerListFilters,
   MembershipFilters,
+  MembershipInsight,
+  MembershipReminderState,
   MembershipSnapshot,
+  MembershipSegments,
   MembershipStats,
   SavedView,
 } from "~/types/customer";
@@ -37,6 +43,22 @@ const createDefaultStats = (): MembershipStats => ({
   warning: 0,
   downgrade: 0,
   averageGrowthValue: 0,
+});
+
+const createDefaultSegments = (): MembershipSegments => ({
+  safe: 0,
+  warning: 0,
+  downgrade: 0,
+});
+
+const createReminderState = (): MembershipReminderState => ({
+  submitting: false,
+  error: null,
+  lastTaskId: null,
+  channel: "sms",
+  templateId: "",
+  total: 0,
+  success: 0,
 });
 
 const readSavedViews = (): SavedView[] => {
@@ -82,11 +104,15 @@ export const useCustomerStore = defineStore("customer.directory", {
     selection: [] as string[],
     bulkTasks: [] as BulkTask[],
     lastFetchedAt: "" as string | null,
+    membershipInsights: [] as MembershipInsight[],
     membershipSnapshots: [] as MembershipSnapshot[],
     membershipFilters: createDefaultMemberFilters(),
     membershipStats: createDefaultStats(),
+    membershipSegments: createDefaultSegments(),
     membershipLoading: false,
     membershipError: "" as string | null,
+    membershipLastFetchedAt: "" as string | null,
+    reminderState: createReminderState(),
     visibleColumns: [
       "name",
       "contact",
@@ -137,11 +163,17 @@ export const useCustomerStore = defineStore("customer.directory", {
     updateMembershipStats(stats: Partial<MembershipStats>) {
       this.membershipStats = { ...this.membershipStats, ...stats };
     },
+    updateMembershipSegments(segments: Partial<MembershipSegments>) {
+      this.membershipSegments = { ...this.membershipSegments, ...segments };
+    },
     setMembershipFilters(payload: Partial<MembershipFilters>) {
       this.membershipFilters = { ...this.membershipFilters, ...payload };
     },
     resetMembershipFilters() {
       this.membershipFilters = createDefaultMemberFilters();
+    },
+    clearMembershipError() {
+      this.membershipError = null;
     },
     loadSavedViews() {
       this.savedViews = readSavedViews();
@@ -221,25 +253,83 @@ export const useCustomerStore = defineStore("customer.directory", {
         stopTimer();
       }
     },
-    async fetchMemberships() {
-      const service = useCustomerService();
+    async fetchMemberships(extra?: Partial<MembershipFilters>) {
+      const membershipApi = useMembershipInsights();
       this.membershipLoading = true;
       this.membershipError = null;
       try {
-        const response = await service.listMembers(this.membershipFilters);
-        this.membershipSnapshots =
-          response.data?.map((entry) => entry.snapshot) || [];
-        if (response.stats) {
-          this.membershipStats = response.stats;
-        } else {
-          this.membershipStats.total = response.meta?.total ?? 0;
+        if (extra) {
+          this.setMembershipFilters(extra);
         }
+        const data = await membershipApi.fetchInsights(this.membershipFilters);
+        this.membershipInsights = data.insights;
+        this.membershipSnapshots = data.snapshots;
+        this.membershipStats = data.stats;
+        this.membershipSegments = data.segments;
+        this.membershipLastFetchedAt = new Date().toISOString();
       } catch (err: any) {
         this.membershipError =
           err?.data?.message || err?.message || "加载会员数据失败";
         throw err;
       } finally {
         this.membershipLoading = false;
+      }
+    },
+    setMembershipFilterAndFetch(payload: Partial<MembershipFilters>) {
+      this.setMembershipFilters(payload);
+      return this.fetchMemberships();
+    },
+    clearReminderState() {
+      this.reminderState = {
+        ...createReminderState(),
+        channel: this.reminderState.channel,
+      };
+    },
+    async triggerMembershipReminder(payload: BulkReminderPayload) {
+      if (!payload.ids?.length) {
+        throw new Error("请至少选择一个目标客户");
+      }
+      const bulkActions = useCustomerBulkActions();
+      const metrics = useCustomerMetrics();
+      this.reminderState.submitting = true;
+      this.reminderState.error = null;
+      this.reminderState.channel = payload.channel;
+      this.reminderState.templateId = payload.templateId;
+      this.reminderState.total = payload.ids.length;
+      try {
+        const response = await bulkActions.submitReminder({
+          ids: payload.ids,
+          channel: payload.channel,
+          templateId: payload.templateId,
+          metadata: payload.metadata,
+        });
+        this.reminderState.lastTaskId = response.taskId;
+        this.reminderState.success = payload.ids.length;
+        this.registerTask({
+          taskId: response.taskId,
+          status: "queued",
+          type: "bulk-remind",
+          createdAt: new Date().toISOString(),
+          scope: { ids: [...payload.ids] },
+        });
+        metrics.recordReminderResult({
+          channel: payload.channel,
+          total: payload.ids.length,
+          success: payload.ids.length,
+        });
+        return response;
+      } catch (error: any) {
+        this.reminderState.error =
+          error?.data?.message || error?.message || "批量提醒失败";
+        this.reminderState.success = 0;
+        metrics.recordReminderResult({
+          channel: payload.channel,
+          total: payload.ids.length,
+          success: 0,
+        });
+        throw error;
+      } finally {
+        this.reminderState.submitting = false;
       }
     },
   },

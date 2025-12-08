@@ -70,13 +70,13 @@ description: "Task list for implementing Customer List & Membership Views"
 
 ### Implementation for User Story 2
 
-- [ ] T018 [US2] 新建 `web-admin/app/composables/useMembershipInsights.ts`，封装 `/customers/members` 查询、指标聚合与保级状态计算逻辑。
-- [ ] T019 [US2] 扩展 `web-admin/app/stores/customer/index.ts`，加入 `membershipSnapshots`、指标卡统计与 `bulkReminder` 相关 actions。
-- [ ] T020 [P] [US2] 新建 `web-admin/app/components/customer/MembershipCards.vue` 展示总人数、活跃、即将降级、平均成长值等 KPI。
-- [ ] T021 [P] [US2] 新建 `web-admin/app/components/customer/MembershipFilterBar.vue`，支持等级、成长值区间、积分、权益状态、保级状态筛选。
-- [ ] T022 [US2] 在 `web-admin/app/pages/customer/members.vue` 整合过滤器、指标卡、表格与分群 Tag，接入 `useCustomerMetrics` 统计保级分群、筛选耗时，并提供“即将降级”快捷筛选与导出入口。
-- [ ] T023 [US2] 新建 `web-admin/app/components/customer/MembershipReminderDrawer.vue`，配置渠道/模板、记录提醒成功率/失败率（SC-003/SC-004），并调用 `useCustomerBulkActions` 的 `bulk-remind` 能力。
-- [ ] T024 [P] [US2] 创建 `web-admin/tests/e2e/membership-view.cy.ts`（含 KPI 事件）与必要的 `web-admin/tests/unit/membership-store.spec.ts`，验证筛选刷新、提醒任务触达、结果统计与审计记录。
+- [X] T018 [US2] 新建 `web-admin/app/composables/useMembershipInsights.ts`，封装 `/customers/members` 查询、指标聚合与保级状态计算逻辑。
+- [X] T019 [US2] 扩展 `web-admin/app/stores/customer/index.ts`，加入 `membershipSnapshots`、指标卡统计与 `bulkReminder` 相关 actions。
+- [X] T020 [P] [US2] 新建 `web-admin/app/components/customer/MembershipCards.vue` 展示总人数、活跃、即将降级、平均成长值等 KPI。
+- [X] T021 [P] [US2] 新建 `web-admin/app/components/customer/MembershipFilterBar.vue`，支持等级、成长值区间、积分、权益状态、保级状态筛选。
+- [X] T022 [US2] 在 `web-admin/app/pages/customer/members.vue` 整合过滤器、指标卡、表格与分群 Tag，接入 `useCustomerMetrics` 统计保级分群、筛选耗时，并提供“即将降级”快捷筛选与导出入口。
+- [X] T023 [US2] 新建 `web-admin/app/components/customer/MembershipReminderDrawer.vue`，配置渠道/模板、记录提醒成功率/失败率（SC-003/SC-004），并调用 `useCustomerBulkActions` 的 `bulk-remind` 能力。
+- [X] T024 [P] [US2] 创建 `web-admin/tests/e2e/membership-view.cy.ts`（含 KPI 事件）与必要的 `web-admin/tests/unit/membership-store.spec.ts`，验证筛选刷新、提醒任务触达、结果统计与审计记录。
 
 ---
 

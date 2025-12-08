@@ -339,6 +339,95 @@
         "toastTitle": "Customer directory error",
         "generic": "Something went wrong."
       }
+    },
+    "membership": {
+      "title": "Membership Insights",
+      "subtitle": "Monitor tier, growth value and retention risk to keep members engaged",
+      "actions": {
+        "apply": "Apply filters",
+        "reset": "Reset",
+        "cancel": "Cancel",
+        "refresh": "Refresh data",
+        "remind": "Bulk reminder",
+        "export": "Export list",
+        "quickDowngrade": "At risk",
+        "clearSegment": "Clear segment"
+      },
+      "cards": {
+        "title": "Membership KPIs",
+        "subtitle": "Realtime view of member volume and retention status",
+        "lastUpdated": "Last synced",
+        "never": "Never",
+        "refresh": "Refresh",
+        "total": "Total members",
+        "totalDesc": "Covered by current filters",
+        "active": "Healthy",
+        "activeDesc": "Safe retention status",
+        "warning": "Warning",
+        "warningDesc": "Close to downgrade threshold",
+        "downgrade": "At risk",
+        "downgradeDesc": "Need reminder now",
+        "averageGrowth": "Avg. growth value",
+        "averageGrowthDesc": "Average across valid samples"
+      },
+      "filters": {
+        "tier": "Membership tier",
+        "retentionStatus": "Retention status",
+        "benefitStatus": "Benefit usage",
+        "growthRange": "Growth range",
+        "pointsRange": "Points range",
+        "benefitAny": "All benefit states",
+        "benefitUnused": "Benefits unused",
+        "benefitUsed": "Benefits used",
+        "tierOptions": {
+          "gold": "Gold",
+          "silver": "Silver",
+          "platinum": "Platinum",
+          "diamond": "Diamond"
+        }
+      },
+      "segments": {
+        "safe": "Safe",
+        "warning": "Warning",
+        "downgrade": "At risk"
+      },
+      "table": {
+        "name": "Member",
+        "tier": "Tier",
+        "growth": "Growth value",
+        "points": "Points",
+        "retention": "Retention",
+        "lastBenefit": "Last benefit",
+        "actions": "Actions",
+        "remind": "Remind",
+        "empty": "No members match the filters"
+      },
+      "messages": {
+        "invalidGrowthRange": "Please ensure growth range end is greater than start.",
+        "exportSuccess": "Export task created. Track status in the task center.",
+        "exportFailed": "Failed to create export task. Try again later.",
+        "errorTitle": "Failed to load membership data"
+      },
+      "reminder": {
+        "title": "Bulk retention reminder",
+        "selection": "{count} members selected",
+        "channel": "Channel",
+        "channelSms": "SMS",
+        "channelEmail": "Email",
+        "channelInapp": "In-app",
+        "template": "Template",
+        "templatePlaceholder": "Enter template ID e.g. retain-tier-1",
+        "templateRequired": "Please choose a reminder template",
+        "note": "Note/context",
+        "notePlaceholder": "Optional: add campaign or benefit details",
+        "metricsTitle": "Reminder metrics",
+        "successRate": "Success rate",
+        "failureRate": "Failure rate",
+        "lastTask": "Last task: {id}",
+        "submit": "Submit task",
+        "emptySelection": "Please select at least one member",
+        "failed": "Failed to submit reminder"
+      }
     }
   }
 }

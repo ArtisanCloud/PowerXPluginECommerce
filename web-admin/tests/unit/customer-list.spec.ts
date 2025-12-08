@@ -4,11 +4,25 @@ import { useCustomerStore } from "../../app/stores/customer";
 
 const listCustomersMock = vi.fn();
 const listMembersMock = vi.fn();
+const fetchInsightsMock = vi.fn();
+const submitReminderMock = vi.fn();
 
 vi.mock("../../app/composables/api/services/customerService", () => ({
   useCustomerService: () => ({
     listCustomers: listCustomersMock,
     listMembers: listMembersMock,
+  }),
+}));
+
+vi.mock("../../app/composables/useMembershipInsights", () => ({
+  useMembershipInsights: () => ({
+    fetchInsights: fetchInsightsMock,
+  }),
+}));
+
+vi.mock("../../app/composables/useCustomerBulkActions", () => ({
+  useCustomerBulkActions: () => ({
+    submitReminder: submitReminderMock,
   }),
 }));
 
@@ -26,6 +40,14 @@ describe("useCustomerStore", () => {
     setActivePinia(createPinia());
     listCustomersMock.mockReset();
     listMembersMock.mockReset();
+    fetchInsightsMock.mockResolvedValue({
+      insights: [],
+      snapshots: [],
+      stats: { total: 0, active: 0, warning: 0, downgrade: 0, averageGrowthValue: 0 },
+      segments: { safe: 0, warning: 0, downgrade: 0 },
+      total: 0,
+    });
+    submitReminderMock.mockReset();
     (globalThis as any).window = {
       localStorage: {
         getItem: vi.fn().mockReturnValue(null),
