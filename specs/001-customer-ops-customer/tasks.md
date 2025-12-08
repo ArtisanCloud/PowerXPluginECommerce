@@ -33,12 +33,12 @@ description: "Task list for implementing Customer List & Membership Views"
 
 **Purpose**: 搭好跨用户故事复用的类型、API Service、Store 与批量动作通用逻辑。
 
-- [ ] T003 [P] 在 `web-admin/app/types/customer.ts` 定义 `Customer`、`SavedView`、`BulkTask`、`MembershipSnapshot` 等接口与遮罩字段标识。
-- [ ] T004 [P] 新增 `web-admin/app/composables/api/services/customerService.ts`，封装 `/api/customers`、`/customers/members`、`/customers/bulk-actions`、`/customers/import`、`/customers/export`、`/customers/bulk-remind`、`/jobs/{id}` 请求方法。
-- [ ] T005 在 `web-admin/app/stores/customer/index.ts` 建立 Pinia store 初始结构（filters、savedViews、selection、bulkTasks、membershipStats）与空 actions。
-- [ ] T006 [P] 创建 `web-admin/app/composables/useCustomerBulkActions.ts`，集中处理批量动作参数校验、任务中心轮询、审计上下文拼装。
-- [ ] T007 [P] 新建 `web-admin/app/composables/useCustomerMetrics.ts`，记录筛选交互耗时、导出任务耗时、保级提醒成功率与错误率指标，对应 SC-001~SC-004。
-- [ ] T008 [P] 扩展 `web-admin/app/plugins/metrics.client.ts` 及相关配置，注入 `useCustomerMetrics` 事件上报（含过滤点击计数、任务完成时间、提醒结果统计）。
+- [X] T003 [P] 在 `web-admin/app/types/customer.ts` 定义 `Customer`、`SavedView`、`BulkTask`、`MembershipSnapshot` 等接口与遮罩字段标识。
+- [X] T004 [P] 新增 `web-admin/app/composables/api/services/customerService.ts`，封装 `/api/customers`、`/customers/members`、`/customers/bulk-actions`、`/customers/import`、`/customers/export`、`/customers/bulk-remind`、`/jobs/{id}` 请求方法。
+- [X] T005 在 `web-admin/app/stores/customer/index.ts` 建立 Pinia store 初始结构（filters、savedViews、selection、bulkTasks、membershipStats）与空 actions。
+- [X] T006 [P] 创建 `web-admin/app/composables/useCustomerBulkActions.ts`，集中处理批量动作参数校验、任务中心轮询、审计上下文拼装。
+- [X] T007 [P] 新建 `web-admin/app/composables/useCustomerMetrics.ts`，记录筛选交互耗时、导出任务耗时、保级提醒成功率与错误率指标，对应 SC-001~SC-004。
+- [X] T008 [P] 扩展 `web-admin/app/plugins/metrics.client.ts` 及相关配置，注入 `useCustomerMetrics` 事件上报（含过滤点击计数、任务完成时间、提醒结果统计）。
 
 ---
 
