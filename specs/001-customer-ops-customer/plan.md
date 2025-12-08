@@ -21,6 +21,12 @@
 **Constraints**: 需遵循多租户/零信任约束，所有请求携带 tenant_uuid；敏感字段遮罩并需权限；批量任务/导出必须写入 `admin_console_audit_events` 并展示在任务中心  
 **Scale/Scope**: 目标支撑 ≥50k 客户分页浏览、单次批量操作≤5k 记录、会员视角覆盖全部等级/渠道
 
+## Runtime Config & Tenant Context
+
+- **API Base**：`web-admin/nuxt.config.ts` 已将 `runtimeConfig.public.apiBaseUrl` 指向宿主代理（`/_p/<plugin-id>/api/v1`）或 standalone `http://localhost:8078/api/v1`。页面/composable 统一通过 `const apiBase = useRuntimeConfig().public.apiBaseUrl;` 获取，不再手动拼接。
+- **Tenant UUID**：宿主脚手架在登录后写入 `tenant_uuid` Cookie 并将 tid/tenant_uuid 编码进 access token，`useAuth`/`getTenantUuid()` 已封装读取逻辑。后续客户域 API 只需依赖 API 客户端自动注入 `X-Tenant-UUID` 头或显式读取 cookie 即可。
+- **审计头**：PowerX REST API 默认识别 `X-Audit-Action` / `X-Audit-Resource`（参考 `contracts/customers-api.md`），本特性在批量操作/导入导出时沿用该约定，仅在调用侧描述动作名称/资源范围，无需改动脚手架。
+
 ## Constitution Check
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*

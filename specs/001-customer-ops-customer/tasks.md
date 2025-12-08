@@ -24,8 +24,8 @@ description: "Task list for implementing Customer List & Membership Views"
 
 **Purpose**: 确认宿主运行配置与文档入口，避免后续实现受阻。
 
-- [ ] T001 校正 `web-admin/nuxt.config.ts` 中的 `runtimeConfig.public.apiBaseUrl`、`tenantId`、`audit` 相关默认值与注释，保证 Customer 模块统一取值。
-- [ ] T002 [P] 在 `web-admin/README.md` 增补本特性所需的开发前提（API Base、STS、任务中心入口）与运行命令。
+- [X] T001 在 `specs/001-customer-ops-customer/plan.md`（或 quickstart）记录如何使用脚手架已提供的 `runtimeConfig.public.apiBaseUrl/tenantUuid/audit` 配置，仅做复核和文档说明，不改动 `web-admin/nuxt.config.ts`。
+- [X] T002 [P] 在 `web-admin/README.md` 增补本特性所需的开发前提（API Base、STS、任务中心入口）与运行命令。
 
 ---
 
