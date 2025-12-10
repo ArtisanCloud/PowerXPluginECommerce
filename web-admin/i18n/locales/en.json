@@ -223,5 +223,332 @@
     "noData": "No data available",
     "networkError": "Network error, please check your connection",
     "templateCreated": "Template created successfully"
+  },
+  "customer": {
+    "directory": {
+      "title": "Customer Directory",
+      "subtitle": "Search, segment and act on customers",
+      "filters": {
+        "keyword": "Keyword",
+        "keywordPlaceholder": "Name, phone, email",
+        "tier": "Tier",
+        "type": "Type",
+        "risk": "Risk",
+        "source": "Source",
+        "region": "Region",
+        "tags": "Tags",
+        "tagsPlaceholder": "Press Enter to add tag",
+        "any": "All",
+        "tierOptions": {
+          "gold": "Gold",
+          "silver": "Silver",
+          "platinum": "Platinum"
+        },
+        "typeOptions": {
+          "individual": "Individual",
+          "enterprise": "Enterprise"
+        },
+        "riskOptions": {
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        },
+        "sourceOptions": {
+          "website": "Website",
+          "offline": "Offline",
+          "referral": "Referral",
+          "miniapp": "Mini App"
+        }
+      },
+      "actions": {
+        "apply": "Apply",
+        "reset": "Reset",
+        "save": "Save",
+        "cancel": "Cancel",
+        "confirm": "Confirm",
+        "refresh": "Refresh",
+        "retry": "Retry",
+        "view": "View",
+        "pin": "Pin",
+        "import": "Import customers",
+        "export": "Export customers",
+        "create": "Add customer",
+        "editRecord": "Edit",
+        "deleteRecord": "Delete"
+      },
+      "write": {
+        "disabledTitle": "Customer write access disabled",
+        "disabledDesc": "The host CRM has not enabled create/update/delete yet. Actions remain read-only.",
+        "retry": "Check again"
+      },
+      "savedViews": {
+        "save": "Save view",
+        "title": "Save current filters",
+        "name": "View name",
+        "delete": "Delete view"
+      },
+      "status": {
+        "total": "Total: {total}",
+        "selected": "{count} selected",
+        "lastSynced": "Last synced",
+        "never": "Never"
+      },
+      "bulk": {
+        "selected": "{count} customers selected",
+        "assignOwner": "Assign owner",
+        "ownerInput": "Owner account",
+        "addTags": "Add tags",
+        "removeTags": "Remove tags",
+        "tagsInput": "Tag (press Enter)",
+        "disable": "Disable",
+        "failed": "Bulk action failed",
+        "unknownError": "Unexpected error",
+        "ownerRequired": "Please provide owner account",
+        "tagsRequired": "Please add at least one tag"
+      },
+      "table": {
+        "name": "Customer",
+        "contact": "Contact",
+        "tier": "Tier",
+        "source": "Source",
+        "tags": "Tags",
+        "lastOrder": "Last Order",
+        "status": "Status",
+        "actions": "Actions",
+        "masked": "Hidden",
+        "statusActive": "Active",
+        "statusInactive": "Inactive",
+        "statusBlocked": "Blocked"
+      },
+      "drawer": {
+        "title": "Customer 360",
+        "unknown": "Unknown",
+        "unknownSource": "Unknown source",
+        "accountManager": "Account Owner",
+        "unassigned": "Unassigned",
+        "tabs": {
+          "overview": "Overview",
+          "orders": "Orders",
+          "afterSales": "After-sales",
+          "points": "Points & Growth",
+          "notes": "Notes",
+          "audit": "Audit"
+        },
+        "empty": "Select a customer to view details",
+        "lastOrder": "Last order time",
+        "lastOrderAmount": "Last order amount: ¥{amount}",
+        "growthValue": "Growth value: {value}",
+        "points": "Points: {value}",
+        "retentionStatus": "Retention status",
+        "createdAt": "Created at",
+        "notesPlaceholder": "No notes yet",
+        "afterSalesPlaceholder": "After-sales timeline will appear here.",
+        "auditPlaceholder": "Audit trail for {id} will surface here once connected."
+      },
+      "errors": {
+        "title": "Failed to load customers",
+        "toastTitle": "Customer directory error",
+        "generic": "Something went wrong."
+      },
+      "modals": {
+        "create": {
+          "title": "Add customer",
+          "description": "Create a new customer record",
+          "success": "Customer created",
+          "failed": "Failed to create customer",
+          "missing": "Please complete required fields"
+        },
+        "edit": {
+          "title": "Edit customer",
+          "description": "Update customer basics and membership info",
+          "success": "Customer updated",
+          "failed": "Failed to update customer",
+          "missing": "Please review required fields",
+          "submit": "Save changes"
+        },
+        "delete": {
+          "title": "Delete customer",
+          "desc": "This action deletes the customer permanently and logs an audit entry.",
+          "target": "Deleting: {name}",
+          "reason": "Reason",
+          "placeholder": "Provide a reason for deletion...",
+          "hint": "Deletion will be recorded for auditing.",
+          "confirm": "Delete",
+          "success": "Customer deleted",
+          "failed": "Failed to delete customer"
+        }
+      },
+      "import": {
+        "title": "Import customers",
+        "membersTitle": "Import member updates",
+        "subtitle": "Use the official template to bulk insert/update and log audit records.",
+        "downloadTemplate": "Download template",
+        "templateHint": "Template contains column description and validation tips.",
+        "uploadLabel": "Upload completed file",
+        "emptyUpload": "No file selected",
+        "steps": {
+          "title": "How it works",
+          "download": "Download the latest template",
+          "fill": "Fill in customer data and validate locally",
+          "upload": "Upload file to create an async task"
+        },
+        "submit": "Submit import task",
+        "failed": "Failed to create import task",
+        "taskCreated": "Task {id} created",
+        "taskDesc": "Follow progress and failure report in the task center.",
+        "noFile": "Please select a file to upload"
+      },
+      "export": {
+        "title": "Export customers",
+        "membersTitle": "Export member list",
+        "subtitle": "Export data based on current filters. A download link will be sent via notifications.",
+        "summaryTitle": "Filter summary",
+        "noFilters": "Using full customer base",
+        "fieldLabel": "Choose fields to export",
+        "fieldPlaceholder": "Select fields to export",
+        "fieldHint": "Keep ID, contact and tier for traceability.",
+        "fields": {
+          "id": "Customer ID",
+          "name": "Name",
+          "email": "Email",
+          "phone": "Phone",
+          "membershipTier": "Membership tier",
+          "status": "Status",
+          "source": "Source",
+          "createdAt": "Created at",
+          "growthValue": "Growth value",
+          "points": "Points",
+          "retentionStatus": "Retention status",
+          "lastBenefitUsedAt": "Last benefit"
+        },
+        "failed": "Failed to create export task",
+        "taskCreated": "Task {id} created",
+        "taskDesc": "A notification will include the download link once ready.",
+        "submit": "Create export task",
+        "noFields": "Select at least one field"
+      },
+      "form": {
+        "name": "Name",
+        "namePlaceholder": "Enter customer name",
+        "type": "Customer type",
+        "typePlaceholder": "Select type",
+        "phone": "Phone number",
+        "phonePlaceholder": "Enter phone number",
+        "email": "Email",
+        "emailPlaceholder": "Enter email address",
+        "gender": "Gender",
+        "genderPlaceholder": "Select gender",
+        "birthDate": "Birth date",
+        "birthPlaceholder": "Select birth date",
+        "address": "Address",
+        "addressPlaceholder": "Enter address",
+        "tier": "Membership tier",
+        "tierPlaceholder": "Select tier",
+        "source": "Source",
+        "sourcePlaceholder": "Select source",
+        "status": "Status",
+        "statusPlaceholder": "Select status",
+        "tags": "Tags",
+        "tagsPlaceholder": "Enter tag and press Enter",
+        "addTag": "Add",
+        "notes": "Notes",
+        "notesPlaceholder": "Enter notes",
+        "registeredAt": "Registered at",
+        "currentStatus": "Current status",
+        "totalOrders": "Total orders",
+        "totalSpent": "Total spend"
+      }
+    },
+    "membership": {
+      "title": "Membership Insights",
+      "subtitle": "Monitor tier, growth value and retention risk to keep members engaged",
+      "actions": {
+        "apply": "Apply filters",
+        "reset": "Reset",
+        "cancel": "Cancel",
+        "refresh": "Refresh data",
+        "remind": "Bulk reminder",
+        "import": "Import members",
+        "export": "Export list",
+        "quickDowngrade": "At risk",
+        "clearSegment": "Clear segment"
+      },
+      "cards": {
+        "title": "Membership KPIs",
+        "subtitle": "Realtime view of member volume and retention status",
+        "lastUpdated": "Last synced",
+        "never": "Never",
+        "refresh": "Refresh",
+        "total": "Total members",
+        "totalDesc": "Covered by current filters",
+        "active": "Healthy",
+        "activeDesc": "Safe retention status",
+        "warning": "Warning",
+        "warningDesc": "Close to downgrade threshold",
+        "downgrade": "At risk",
+        "downgradeDesc": "Need reminder now",
+        "averageGrowth": "Avg. growth value",
+        "averageGrowthDesc": "Average across valid samples"
+      },
+      "filters": {
+        "tier": "Membership tier",
+        "retentionStatus": "Retention status",
+        "benefitStatus": "Benefit usage",
+        "growthRange": "Growth range",
+        "pointsRange": "Points range",
+        "any": "All",
+        "benefitAny": "All benefit states",
+        "benefitUnused": "Benefits unused",
+        "benefitUsed": "Benefits used",
+        "tierOptions": {
+          "gold": "Gold",
+          "silver": "Silver",
+          "platinum": "Platinum",
+          "diamond": "Diamond"
+        }
+      },
+      "segments": {
+        "safe": "Safe",
+        "warning": "Warning",
+        "downgrade": "At risk"
+      },
+      "table": {
+        "name": "Member",
+        "tier": "Tier",
+        "growth": "Growth value",
+        "points": "Points",
+        "retention": "Retention",
+        "lastBenefit": "Last benefit",
+        "actions": "Actions",
+        "remind": "Remind",
+        "empty": "No members match the filters"
+      },
+      "messages": {
+        "invalidGrowthRange": "Please ensure growth range end is greater than start.",
+        "exportSuccess": "Export task created. Track status in the task center.",
+        "exportFailed": "Failed to create export task. Try again later.",
+        "errorTitle": "Failed to load membership data"
+      },
+      "reminder": {
+        "title": "Bulk retention reminder",
+        "selection": "{count} members selected",
+        "channel": "Channel",
+        "channelSms": "SMS",
+        "channelEmail": "Email",
+        "channelInapp": "In-app",
+        "template": "Template",
+        "templatePlaceholder": "Enter template ID e.g. retain-tier-1",
+        "templateRequired": "Please choose a reminder template",
+        "note": "Note/context",
+        "notePlaceholder": "Optional: add campaign or benefit details",
+        "metricsTitle": "Reminder metrics",
+        "successRate": "Success rate",
+        "failureRate": "Failure rate",
+        "lastTask": "Last task: {id}",
+        "submit": "Submit task",
+        "emptySelection": "Please select at least one member",
+        "failed": "Failed to submit reminder"
+      }
+    }
   }
 }

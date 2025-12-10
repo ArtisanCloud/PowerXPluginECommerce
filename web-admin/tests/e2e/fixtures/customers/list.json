@@ -1,0 +1,18 @@
+{
+  "data": [
+    {
+      "id": "cust-fixture",
+      "name": "Fixture 用户",
+      "type": "individual",
+      "email": "fixture@example.com",
+      "phone": "+8613800000000",
+      "membershipTier": "gold",
+      "status": "active",
+      "tags": ["VIP"],
+      "createdAt": "2025-12-01T00:00:00Z"
+    }
+  ],
+  "meta": {
+    "total": 1
+  }
+}

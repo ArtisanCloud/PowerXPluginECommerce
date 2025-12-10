@@ -1,0 +1,3 @@
+name,type,phone,email,source,country,region,membershipTier,accountManager,tags,notes
+张三,individual,+8613800000000,zhangsan@example.com,website,中国,华东,gold,Alice,"vip,campaign","来自官网留资"
+ACME Inc,enterprise,+8613900000000,contact@acme.com,partner,美国,北美,platinum,Bob,"enterprise,crm","重点账户"

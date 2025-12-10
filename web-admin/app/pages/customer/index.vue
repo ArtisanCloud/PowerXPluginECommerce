@@ -1,249 +1,284 @@
 <template>
-  <div>
-    <!-- 页面标题和操作 -->
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold text-gray-900 dark:text-white">客户管理</h1>
-      <UButton color="primary" icon="i-heroicons-plus" @click="openCreateModal">
-        添加客户
-      </UButton>
-    </div>
+  <div class="space-y-4">
+    <header class="flex flex-wrap gap-3 items-center justify-between">
+      <div>
+        <h1 class="text-2xl font-semibold text-gray-900">
+          {{ t("customer.directory.title") }}
+        </h1>
+        <p class="text-sm text-gray-500">
+          {{ t("customer.directory.subtitle") }}
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <UButton
+          v-if="canManageCustomers"
+          icon="i-heroicons-arrow-up-tray"
+          color="primary"
+          @click="openImportDialog"
+        >
+          {{ t("customer.directory.actions.import") }}
+        </UButton>
+        <UButton
+          v-if="canExportCustomers"
+          icon="i-heroicons-arrow-down-tray"
+          variant="soft"
+          @click="openExportDialog"
+        >
+          {{ t("customer.directory.actions.export") }}
+        </UButton>
+        <UButton icon="i-heroicons-arrow-path" variant="ghost" @click="handleRefresh" :loading="loading">
+          {{ t("customer.directory.actions.refresh") }}
+        </UButton>
+      </div>
+    </header>
 
-    <!-- 客户表格 -->
-    <UCard>
-      <UTable
-        :data="customers"
-        :columns="columns"
-        class="w-full"
-        :ui="{
-          root: 'relative overflow-auto',
-          base: 'min-w-full table-fixed',
-          thead: 'bg-gray-50',
-          tbody: 'bg-white divide-y',
-          tr: 'hover:bg-gray-50',
-          th: 'text-left rtl:text-right px-4 py-3.5 text-sm font-semibold text-gray-900',
-          td: 'whitespace-nowrap px-4 py-4 text-sm text-gray-500',
-        }"
-      >
-        <!-- v3: 用 -cell，而不是 -data -->
-        <template #status-cell="{ getValue }">
-          <UBadge
-            :color="getValue() === 'active' ? 'success' : 'neutral'"
-            variant="subtle"
-          >
-            {{ getValue() === "active" ? "活跃" : "非活跃" }}
-          </UBadge>
-        </template>
+    <CustomerFilterBar />
+    <CustomerBulkActions />
 
-        <template #actions-cell="{ row }">
-          <div class="flex gap-2">
-            <UButton
-              color="neutral"
-              variant="ghost"
-              size="sm"
-              icon="i-heroicons-eye"
-              @click="openViewModal(row)"
-            >
-              查看
-            </UButton>
-            <UButton
-              color="primary"
-              variant="ghost"
-              size="sm"
-              icon="i-heroicons-pencil"
-              @click="openEditModal(row)"
-            >
-              编辑
-            </UButton>
-            <UButton
-              color="error"
-              variant="ghost"
-              size="sm"
-              icon="i-heroicons-trash"
-              @click="deleteCustomer(row)"
-            >
-              删除
-            </UButton>
-          </div>
-        </template>
-      </UTable>
-    </UCard>
+    <UAlert v-if="error" color="red" :title="t('customer.directory.errors.title')" :description="error">
+      <template #actions>
+        <UButton size="xs" color="red" variant="solid" @click="handleRefresh">
+          {{ t("customer.directory.actions.retry") }}
+        </UButton>
+      </template>
+    </UAlert>
 
-    <!-- 添加客户模态框 -->
-    <CreateCustomerModal
-      v-model:open="showCreateModal"
-      @created="handleCustomerCreated"
+    <CustomerTable
+      :can-manage="canManageCustomers"
+      @view="handleViewCustomer"
+      @pin="handleViewCustomer"
+      @edit="handleEditCustomer"
+      @delete="handleDeleteCustomer"
     />
 
-    <!-- 查看客户模态框 -->
-    <ViewCustomerModal
-      v-if="viewingCustomer"
-      v-model:open="showViewModal"
-      :customer="viewingCustomer"
-      @edit="handleViewToEdit"
+    <CustomerDetailDrawer
+      v-model="detailOpen"
+      :customer="activeCustomer"
+      :loading="detailLoading"
+      :can-manage="canManageCustomers"
+      @edit="handleEditCustomer"
+      @delete="handleDeleteCustomer"
     />
 
-    <!-- 编辑客户模态框 -->
     <EditCustomerModal
-      v-if="editingCustomer"
-      v-model:open="showEditModal"
+      v-if="canManageCustomers && editingCustomer"
+      v-model:open="editModalOpen"
       :customer="editingCustomer"
       @updated="handleCustomerUpdated"
+      @close="handleEditModalClose"
+    />
+    <CustomerDeleteConfirm
+      v-if="canManageCustomers"
+      v-model:open="deleteConfirmOpen"
+      :customer="deleteTarget"
       @deleted="handleCustomerDeleted"
+    />
+
+    <CustomerImportDialog
+      v-if="canManageCustomers"
+      v-model="importModalOpen"
+      context="directory"
+      @submitted="handleImportSubmitted"
+    />
+    <CustomerExportDialog
+      v-if="canExportCustomers"
+      v-model="exportModalOpen"
+      :filters="filters"
+      context="directory"
+      @submitted="handleExportSubmitted"
     />
   </div>
 </template>
 
 <script setup lang="ts">
-import type { TableColumn } from "@nuxt/ui";
-import CreateCustomerModal from "~/components/Modals/CreateCustomerModal.vue";
+import { computed, onMounted, ref, watch } from "vue";
+import { storeToRefs } from "pinia";
+import { useI18n, useToast } from "#imports";
+import CustomerFilterBar from "~/components/customer/CustomerFilterBar.vue";
+import CustomerTable from "~/components/customer/CustomerTable.vue";
+import CustomerBulkActions from "~/components/customer/CustomerBulkActions.vue";
+import CustomerDetailDrawer from "~/components/customer/CustomerDetailDrawer.vue";
+import CustomerImportDialog from "~/components/customer/CustomerImportDialog.vue";
+import CustomerExportDialog from "~/components/customer/CustomerExportDialog.vue";
+import { useCustomerStore } from "~/stores/customer";
+import { usePermissions } from "~/composables/usePermissions";
+import { useCustomerMetrics } from "~/composables/useCustomerMetrics";
 import EditCustomerModal from "~/components/Modals/EditCustomerModal.vue";
-import ViewCustomerModal from "~/components/Modals/ViewCustomerModal.vue";
+import CustomerDeleteConfirm from "~/components/customer/CustomerDeleteConfirm.vue";
+import type { Customer } from "~/types/customer";
 
-type Customer = {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  customerType: string;
-  gender?: string;
-  birthDate?: string;
-  address?: string;
-  membershipTier: string;
-  source: string;
-  tags: string[];
-  notes?: string;
-  registrationDate: string;
-  status: "active" | "inactive";
-  totalOrders?: number;
-  totalSpent?: number;
-};
+const store = useCustomerStore();
+const { loading, error, filters } = storeToRefs(store);
+const { t } = useI18n();
+const toast = useToast();
+const metrics = useCustomerMetrics();
+const { hasPermission } = usePermissions();
 
-// 模态框状态
-const showCreateModal = ref(false);
-const showViewModal = ref(false);
-const showEditModal = ref(false);
-const viewingCustomer = ref<Customer | null>(null);
+const detailOpen = ref(false);
+const detailLoading = ref(false);
+const viewingCustomerId = ref<string | null>(null);
+const activeCustomer = ref<Customer | null>(null);
+const importModalOpen = ref(false);
+const exportModalOpen = ref(false);
+const editModalOpen = ref(false);
+const deleteConfirmOpen = ref(false);
 const editingCustomer = ref<Customer | null>(null);
+const deleteTarget = ref<Customer | null>(null);
 
-// 列定义
-const columns = computed<TableColumn<Customer>[]>(() => [
-  { accessorKey: "id", header: "客户ID" },
-  { accessorKey: "name", header: "客户姓名" },
-  { accessorKey: "email", header: "邮箱" },
-  { accessorKey: "phone", header: "手机号" },
-  { accessorKey: "registrationDate", header: "注册日期" },
-  { accessorKey: "status", header: "状态" },
-  // 自定义操作列
-  { id: "actions", header: "操作" },
-]);
+const canManageCustomers = computed(() => hasPermission("customer.manage"));
+const canExportCustomers = computed(() => hasPermission("customer.export"));
+const permissionMetadata = computed(() => ({
+  canManage: canManageCustomers.value,
+  canExport: canExportCustomers.value,
+}));
 
-// 客户数据（使用响应式数据）
-const customers = ref<Customer[]>([
-  {
-    id: "C001",
-    name: "张三",
-    email: "zhangsan@example.com",
-    phone: "138****1234",
-    customerType: "individual",
-    membershipTier: "gold",
-    source: "website",
-    tags: ["VIP", "老客户"],
-    registrationDate: "2024-01-10",
-    status: "active",
-    totalOrders: 15,
-    totalSpent: 12500,
-  },
-  {
-    id: "C002",
-    name: "李四",
-    email: "lisi@example.com",
-    phone: "139****5678",
-    customerType: "enterprise",
-    membershipTier: "platinum",
-    source: "referral",
-    tags: ["企业客户"],
-    registrationDate: "2024-01-08",
-    status: "active",
-    totalOrders: 8,
-    totalSpent: 25600,
-  },
-  {
-    id: "C003",
-    name: "王五",
-    email: "wangwu@example.com",
-    phone: "137****9012",
-    customerType: "individual",
-    membershipTier: "silver",
-    source: "advertisement",
-    tags: [],
-    registrationDate: "2024-01-05",
-    status: "inactive",
-    totalOrders: 3,
-    totalSpent: 890,
-  },
-]);
-
-// 打开创建模态框
-const openCreateModal = () => {
-  showCreateModal.value = true;
+const blurActiveElement = () => {
+  if (typeof document === "undefined") return;
+  const active = document.activeElement as HTMLElement | null;
+  active?.blur?.();
 };
 
-// 打开查看模态框
-const openViewModal = (customer: Customer) => {
-  viewingCustomer.value = customer;
-  showViewModal.value = true;
-};
-
-// 打开编辑模态框
-const openEditModal = (customer: Customer) => {
-  editingCustomer.value = customer;
-  showEditModal.value = true;
-};
-
-// 从查看模态框切换到编辑模态框
-const handleViewToEdit = (customer: Customer) => {
-  showViewModal.value = false;
-  viewingCustomer.value = null;
-  editingCustomer.value = customer;
-  showEditModal.value = true;
-};
-
-// 处理客户创建
-const handleCustomerCreated = (newCustomer: Customer) => {
-  customers.value.unshift(newCustomer);
-  showCreateModal.value = false;
-};
-
-// 处理客户更新
-const handleCustomerUpdated = (updatedCustomer: Customer) => {
-  const index = customers.value.findIndex((c) => c.id === updatedCustomer.id);
-  if (index !== -1) {
-    customers.value[index] = updatedCustomer;
+const handleRefresh = async () => {
+  try {
+    await store.fetchCustomers();
+  } catch (err: any) {
+    toast.add({
+      title: t("customer.directory.errors.toastTitle"),
+      description: err?.message ?? t("customer.directory.errors.generic"),
+      color: "error",
+    });
   }
-  showEditModal.value = false;
+};
+
+const handleViewCustomer = async (customer: Customer) => {
+  if (!customer?.id) return;
+  blurActiveElement();
+  activeCustomer.value = customer;
+  detailOpen.value = true;
+  detailLoading.value = true;
+  viewingCustomerId.value = customer.id;
+  try {
+    const full = await store.fetchCustomerById(customer.id);
+    if (viewingCustomerId.value === customer.id && full) {
+      activeCustomer.value = full as Customer;
+    }
+  } catch (err: any) {
+    toast.add({
+      title: t("customer.directory.errors.toastTitle"),
+      description: err?.message ?? t("customer.directory.errors.generic"),
+      color: "error",
+    });
+  } finally {
+    if (viewingCustomerId.value === customer.id) {
+      detailLoading.value = false;
+    }
+  }
+};
+
+const handleEditCustomer = (customer: Customer) => {
+  if (!customer) return;
+  editingCustomer.value = customer;
+  editModalOpen.value = true;
+};
+
+type EditClosePayload = { action?: string; customer?: Customer } | boolean | undefined;
+
+const handleEditModalClose = (payload?: EditClosePayload) => {
+  editModalOpen.value = false;
+  if (payload && typeof payload === "object" && "customer" in payload && payload.customer) {
+    activeCustomer.value = payload.customer;
+  }
   editingCustomer.value = null;
 };
 
-// 处理客户删除
-const handleCustomerDeleted = (customerId: string) => {
-  const index = customers.value.findIndex((c) => c.id === customerId);
-  if (index !== -1) {
-    customers.value.splice(index, 1);
+const handleCustomerUpdated = (customer: Customer) => {
+  if (customer) {
+    activeCustomer.value = customer;
+    editingCustomer.value = customer;
   }
-  showEditModal.value = false;
-  editingCustomer.value = null;
 };
 
-// 直接删除客户
-const deleteCustomer = async (customer: Customer) => {
-  if (!confirm(`确定要删除客户 "${customer.name}" 吗？此操作不可撤销。`)) {
-    return;
-  }
+const handleDeleteCustomer = (customer: Customer) => {
+  if (!customer) return;
+  deleteTarget.value = customer;
+  deleteConfirmOpen.value = true;
+};
 
-  // 模拟删除操作
-  const index = customers.value.findIndex((c) => c.id === customer.id);
-  if (index !== -1) {
-    customers.value.splice(index, 1);
+const handleCustomerDeleted = (id: string) => {
+  if (!id) return;
+  if (activeCustomer.value?.id === id) {
+    activeCustomer.value = null;
+    detailOpen.value = false;
   }
+  deleteConfirmOpen.value = false;
+  deleteTarget.value = null;
+};
+
+watch(
+  () => error.value,
+  (message) => {
+    if (message) {
+      toast.add({
+        title: t("customer.directory.errors.toastTitle"),
+        description: message,
+        color: "error",
+      });
+    }
+  }
+);
+
+onMounted(async () => {
+  store.loadSavedViews();
+  await handleRefresh();
+});
+
+watch(detailOpen, (open) => {
+  if (!open) {
+    detailLoading.value = false;
+    viewingCustomerId.value = null;
+    blurActiveElement();
+  }
+});
+
+watch(editModalOpen, (open) => {
+  if (!open) {
+    editingCustomer.value = null;
+  }
+});
+
+watch(deleteConfirmOpen, (open) => {
+  if (!open) {
+    deleteTarget.value = null;
+  }
+});
+
+const openImportDialog = () => {
+  metrics.recordEvent({
+    name: "customer_import_modal_open",
+    metadata: { source: "directory", ...permissionMetadata.value },
+  });
+  importModalOpen.value = true;
+};
+
+const openExportDialog = () => {
+  metrics.recordEvent({
+    name: "customer_export_modal_open",
+    metadata: { source: "directory", ...permissionMetadata.value },
+  });
+  exportModalOpen.value = true;
+};
+
+const handleImportSubmitted = () => {
+  metrics.recordEvent({
+    name: "customer_import_submitted",
+    metadata: { source: "directory" },
+  });
+};
+
+const handleExportSubmitted = () => {
+  metrics.recordEvent({
+    name: "customer_export_submitted",
+    metadata: { source: "directory" },
+  });
 };
 </script>

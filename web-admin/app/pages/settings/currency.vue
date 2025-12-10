@@ -22,21 +22,21 @@
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">基础配置</h3>
       </template>
       <div class="grid gap-4 md:grid-cols-2">
-        <UFormGroup label="默认币种">
+        <UFormField label="默认币种">
           <USelect v-model="baseCurrency" :options="currencyOptions" />
-        </UFormGroup>
-        <UFormGroup label="显示精度">
+        </UFormField>
+        <UFormField label="显示精度">
           <USelect v-model="decimalPrecision" :options="precisionOptions" />
-        </UFormGroup>
-        <UFormGroup label="四舍五入规则">
+        </UFormField>
+        <UFormField label="四舍五入规则">
           <USelect v-model="roundingMode" :options="roundingOptions" />
-        </UFormGroup>
-        <UFormGroup label="税前展示">
+        </UFormField>
+        <UFormField label="税前展示">
           <UToggle v-model="displayWithoutTax" />
           <p class="mt-1 text-xs text-gray-500">
             开启后列表默认为税前价格，可在详情页切换。
           </p>
-        </UFormGroup>
+        </UFormField>
       </div>
     </UCard>
 

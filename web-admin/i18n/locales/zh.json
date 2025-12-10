@@ -225,5 +225,332 @@
     "noData": "暂无数据",
     "networkError": "网络异常，请检查连接",
     "templateCreated": "模板创建成功"
+  },
+  "customer": {
+    "directory": {
+      "title": "客户运营",
+      "subtitle": "全量客户的筛选、分群与批量动作",
+      "filters": {
+        "keyword": "关键词",
+        "keywordPlaceholder": "姓名/邮箱/手机号",
+        "tier": "会员等级",
+        "type": "客户类型",
+        "risk": "风险等级",
+        "source": "来源渠道",
+        "region": "地区",
+        "tags": "标签",
+        "tagsPlaceholder": "回车添加标签",
+        "any": "不限",
+        "tierOptions": {
+          "gold": "金卡",
+          "silver": "银卡",
+          "platinum": "白金"
+        },
+        "typeOptions": {
+          "individual": "个人",
+          "enterprise": "企业"
+        },
+        "riskOptions": {
+          "low": "低",
+          "medium": "中",
+          "high": "高"
+        },
+        "sourceOptions": {
+          "website": "官网",
+          "offline": "线下",
+          "referral": "推荐",
+          "miniapp": "小程序"
+        }
+      },
+      "actions": {
+        "apply": "应用筛选",
+        "reset": "清除",
+        "save": "保存",
+        "cancel": "取消",
+        "confirm": "确认",
+        "refresh": "刷新",
+        "retry": "重试",
+        "view": "查看",
+        "pin": "固定",
+        "import": "导入客户",
+        "export": "导出客户",
+        "create": "添加客户",
+        "editRecord": "编辑客户",
+        "deleteRecord": "删除客户"
+      },
+      "write": {
+        "disabledTitle": "客户写入能力未开放",
+        "disabledDesc": "宿主 CRM 暂未开放创建/编辑/删除客户，相关按钮已禁用。",
+        "retry": "重新检测"
+      },
+      "savedViews": {
+        "save": "保存视图",
+        "title": "保存当前筛选",
+        "name": "视图名称",
+        "delete": "删除视图"
+      },
+      "status": {
+        "total": "共 {total} 人",
+        "selected": "已选择 {count} 人",
+        "lastSynced": "最后同步",
+        "never": "暂无记录"
+      },
+      "bulk": {
+        "selected": "已勾选 {count} 位客户",
+        "assignOwner": "指派负责人",
+        "ownerInput": "负责人账号",
+        "addTags": "批量打标",
+        "removeTags": "移除标签",
+        "tagsInput": "输入标签，回车确认",
+        "disable": "批量禁用",
+        "failed": "批处理失败",
+        "unknownError": "发生未知错误",
+        "ownerRequired": "请输入负责人账号",
+        "tagsRequired": "请至少添加一个标签"
+      },
+      "table": {
+        "name": "客户",
+        "contact": "联系方式",
+        "tier": "会员等级",
+        "source": "来源",
+        "tags": "标签",
+        "lastOrder": "最近订单",
+        "status": "状态",
+        "actions": "操作",
+        "masked": "已隐藏",
+        "statusActive": "活跃",
+        "statusInactive": "停用",
+        "statusBlocked": "风控"
+      },
+      "drawer": {
+        "title": "客户 360",
+        "unknown": "未知",
+        "unknownSource": "暂无来源信息",
+        "accountManager": "当前负责人",
+        "unassigned": "未指派",
+        "tabs": {
+          "overview": "概览",
+          "orders": "订单",
+          "afterSales": "售后",
+          "points": "积分/成长值",
+          "notes": "备注",
+          "audit": "审计"
+        },
+        "empty": "请选择客户查看详情",
+        "lastOrder": "最近订单时间",
+        "lastOrderAmount": "最近订单金额：¥{amount}",
+        "growthValue": "成长值：{value}",
+        "points": "积分：{value}",
+        "retentionStatus": "保级状态",
+        "createdAt": "创建时间",
+        "notesPlaceholder": "暂无备注",
+        "afterSalesPlaceholder": "售后/纠纷时间线将在接入后呈现。",
+        "auditPlaceholder": "{id} 的审计日志将接入后展示。"
+      },
+      "errors": {
+        "title": "客户列表加载失败",
+        "toastTitle": "客户视图异常",
+        "generic": "请求异常，请稍后重试。"
+      },
+      "modals": {
+        "create": {
+          "title": "添加客户",
+          "description": "创建新的客户档案",
+          "success": "客户创建成功",
+          "failed": "创建客户失败",
+          "missing": "请完善必填信息后再提交"
+        },
+        "edit": {
+          "title": "编辑客户",
+          "description": "更新客户基础信息与会员字段",
+          "success": "客户信息已更新",
+          "failed": "更新客户失败",
+          "missing": "请检查必填字段",
+          "submit": "保存修改"
+        },
+        "delete": {
+          "title": "删除客户",
+          "desc": "此操作将永久删除客户，并写入审计日志。",
+          "target": "即将删除：{name}",
+          "reason": "删除原因",
+          "placeholder": "请输入删除理由，便于后续审计...",
+          "hint": "删除请求会写入审计日志，并通知任务中心。",
+          "confirm": "确认删除",
+          "success": "客户已删除",
+          "failed": "删除客户失败"
+        }
+      },
+      "import": {
+        "title": "导入客户",
+        "membersTitle": "导入会员变更",
+        "subtitle": "通过模板导入批量新增/更新，自动写入审计与任务中心。",
+        "downloadTemplate": "下载模板",
+        "templateHint": "模板包含字段说明，请先下载并填写。",
+        "uploadLabel": "上传已填写的文件",
+        "emptyUpload": "尚未选择文件",
+        "steps": {
+          "title": "导入步骤",
+          "download": "下载官方模板",
+          "fill": "填写客户数据并校验格式",
+          "upload": "上传文件以创建导入任务"
+        },
+        "submit": "提交导入任务",
+        "failed": "导入任务创建失败",
+        "taskCreated": "任务 {id} 已创建",
+        "taskDesc": "可前往任务中心查看进度与错误报告。",
+        "noFile": "请选择要上传的导入文件"
+      },
+      "export": {
+        "title": "导出客户名单",
+        "membersTitle": "导出会员名单",
+        "subtitle": "基于当前筛选导出数据，完成后可从通知/任务中心下载。",
+        "summaryTitle": "筛选摘要",
+        "noFilters": "当前使用全部客户",
+        "fieldLabel": "选择导出字段",
+        "fieldPlaceholder": "请选择导出字段",
+        "fieldHint": "建议保留 ID、联系方式、等级等关键字段。",
+        "fields": {
+          "id": "客户 ID",
+          "name": "姓名",
+          "email": "邮箱",
+          "phone": "手机号",
+          "membershipTier": "会员等级",
+          "status": "状态",
+          "source": "来源",
+          "createdAt": "创建时间",
+          "growthValue": "成长值",
+          "points": "积分",
+          "retentionStatus": "保级状态",
+          "lastBenefitUsedAt": "最近权益"
+        },
+        "failed": "导出任务创建失败",
+        "taskCreated": "任务 {id} 已创建",
+        "taskDesc": "任务完成后将推送下载链接。",
+        "submit": "生成导出任务",
+        "noFields": "请至少选择一个导出字段"
+      },
+      "form": {
+        "name": "客户姓名",
+        "namePlaceholder": "输入客户姓名...",
+        "type": "客户类型",
+        "typePlaceholder": "选择客户类型",
+        "phone": "手机号码",
+        "phonePlaceholder": "输入手机号码...",
+        "email": "邮箱地址",
+        "emailPlaceholder": "输入邮箱地址...",
+        "gender": "性别",
+        "genderPlaceholder": "选择性别",
+        "birthDate": "出生日期",
+        "birthPlaceholder": "选择出生日期",
+        "address": "详细地址",
+        "addressPlaceholder": "输入详细地址...",
+        "tier": "会员等级",
+        "tierPlaceholder": "选择会员等级",
+        "source": "客户来源",
+        "sourcePlaceholder": "选择客户来源",
+        "status": "客户状态",
+        "statusPlaceholder": "选择客户状态",
+        "tags": "客户标签",
+        "tagsPlaceholder": "输入标签，回车添加",
+        "addTag": "添加",
+        "notes": "备注信息",
+        "notesPlaceholder": "输入备注信息...",
+        "registeredAt": "注册时间",
+        "currentStatus": "当前状态",
+        "totalOrders": "订单总数",
+        "totalSpent": "消费总额"
+      }
+    },
+    "membership": {
+      "title": "会员运营视角",
+      "subtitle": "通过等级、成长值与权益使用洞察保级风险人群",
+      "actions": {
+        "apply": "应用筛选",
+        "reset": "重置筛选",
+        "cancel": "取消",
+        "refresh": "刷新数据",
+        "remind": "批量提醒",
+        "import": "导入会员",
+        "export": "导出名单",
+        "quickDowngrade": "即将降级",
+        "clearSegment": "清除分群"
+      },
+      "cards": {
+        "title": "会员指标卡",
+        "subtitle": "实时统计会员规模与保级状态",
+        "lastUpdated": "上次同步",
+        "never": "暂无",
+        "refresh": "刷新",
+        "total": "会员总数",
+        "totalDesc": "当前筛选覆盖人数",
+        "active": "稳定保级",
+        "activeDesc": "安全区客户数",
+        "warning": "预警",
+        "warningDesc": "成长值接近阈值",
+        "downgrade": "即将降级",
+        "downgradeDesc": "需立即提醒的客户",
+        "averageGrowth": "平均成长值",
+        "averageGrowthDesc": "纳入统计的平均值"
+      },
+      "filters": {
+        "tier": "会员等级",
+        "retentionStatus": "保级状态",
+        "benefitStatus": "权益使用",
+        "growthRange": "成长值区间",
+        "pointsRange": "积分区间",
+        "any": "不限",
+        "benefitAny": "全部权益状态",
+        "benefitUnused": "权益未使用",
+        "benefitUsed": "权益已使用",
+        "tierOptions": {
+          "gold": "金卡",
+          "silver": "银卡",
+          "platinum": "白金",
+          "diamond": "黑金"
+        }
+      },
+      "segments": {
+        "safe": "安全",
+        "warning": "预警",
+        "downgrade": "即将降级"
+      },
+      "table": {
+        "name": "客户",
+        "tier": "等级",
+        "growth": "成长值",
+        "points": "积分",
+        "retention": "保级状态",
+        "lastBenefit": "最近权益",
+        "actions": "操作",
+        "remind": "提醒",
+        "empty": "暂无符合条件的会员"
+      },
+      "messages": {
+        "invalidGrowthRange": "请检查成长值区间，结束值必须大于开始值",
+        "exportSuccess": "导出任务已创建，可在任务中心查看",
+        "exportFailed": "导出失败，请稍后重试",
+        "errorTitle": "会员数据加载失败"
+      },
+      "reminder": {
+        "title": "批量保级提醒",
+        "selection": "已选择 {count} 位会员",
+        "channel": "提醒渠道",
+        "channelSms": "短信",
+        "channelEmail": "邮件",
+        "channelInapp": "站内信",
+        "template": "提醒模板",
+        "templatePlaceholder": "请输入模板 ID，例如 retain-tier-1",
+        "templateRequired": "请选择提醒模板",
+        "note": "备注/上下文",
+        "notePlaceholder": "可选：例如添加发券信息或活动说明",
+        "metricsTitle": "提醒指标",
+        "successRate": "成功率",
+        "failureRate": "失败率",
+        "lastTask": "最近任务：{id}",
+        "submit": "提交任务",
+        "emptySelection": "请先勾选目标会员",
+        "failed": "提醒提交失败"
+      }
+    }
   }
 }

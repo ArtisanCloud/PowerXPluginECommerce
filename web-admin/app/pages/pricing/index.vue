@@ -330,9 +330,10 @@
 <script setup lang="ts">
 import { h } from "vue";
 import type { TableColumn } from "@nuxt/ui";
+import { useToastAlert } from "~/composables/useToastAlert";
 
 const { t } = useI18n();
-const toast = useToast();
+const toast = useToastAlert();
 
 /** ======================
  *  类型

@@ -49,13 +49,13 @@ func main() {
 		fmt.Println("migrate ok")
 
 	case "seed":
-		if err := seed.SeedPluginData(ctx, db); err != nil {
-			log.Fatal("seed failed:", err)
-		}
 		if includeIAM {
 			if err := iamservice.SeedLocalAdmin(ctx, db, cfg); err != nil {
 				log.Fatal("iam seed failed:", err)
 			}
+		}
+		if err := seed.SeedPluginData(ctx, db); err != nil {
+			log.Fatal("seed failed:", err)
 		}
 		fmt.Println("seed ok")
 
@@ -65,13 +65,13 @@ func main() {
 		}
 		fmt.Println("migrate ok")
 
-		if err := seed.SeedPluginData(ctx, db); err != nil {
-			log.Fatal("seed failed:", err)
-		}
 		if includeIAM {
 			if err := iamservice.SeedLocalAdmin(ctx, db, cfg); err != nil {
 				log.Fatal("iam seed failed:", err)
 			}
+		}
+		if err := seed.SeedPluginData(ctx, db); err != nil {
+			log.Fatal("seed failed:", err)
 		}
 		fmt.Println("seed ok")
 
@@ -89,13 +89,13 @@ func main() {
 		fmt.Println("migrate ok")
 
 		// 最后 seed
-		if err := seed.SeedPluginData(ctx, db); err != nil {
-			log.Fatal("seed failed:", err)
-		}
 		if includeIAM {
 			if err := iamservice.SeedLocalAdmin(ctx, db, cfg); err != nil {
 				log.Fatal("iam seed failed:", err)
 			}
+		}
+		if err := seed.SeedPluginData(ctx, db); err != nil {
+			log.Fatal("seed failed:", err)
 		}
 		fmt.Println("seed ok")
 

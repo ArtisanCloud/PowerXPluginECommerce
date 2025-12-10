@@ -1,185 +1,450 @@
 <template>
-  <div class="p-6">
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
-        {{ $t("nav.members") }}
-      </h1>
-      <UButton color="primary" icon="i-heroicons-plus">
-        {{ $t("common.add") }}
-      </UButton>
+  <div class="space-y-4">
+    <header class="flex flex-wrap items-center justify-between gap-3">
+      <div>
+        <h1 class="text-2xl font-semibold text-gray-900">
+          {{ t("customer.membership.title") }}
+        </h1>
+        <p class="text-sm text-gray-500">
+          {{ t("customer.membership.subtitle") }}
+        </p>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <UButton
+          v-if="canManageCustomers"
+          icon="i-heroicons-arrow-up-tray"
+          color="primary"
+          @click="openImportDialog"
+        >
+          {{ t("customer.membership.actions.import") }}
+        </UButton>
+        <UButton
+          v-if="canExportCustomers"
+          icon="i-heroicons-arrow-down-tray"
+          variant="soft"
+          @click="openExportDialog"
+        >
+          {{ t("customer.membership.actions.export") }}
+        </UButton>
+        <UButton
+          icon="i-heroicons-arrow-path"
+          variant="ghost"
+          :loading="membershipLoading"
+          @click="handleRefresh"
+        >
+          {{ t("customer.membership.actions.refresh") }}
+        </UButton>
+      </div>
+    </header>
+
+    <MembershipFilterBar />
+
+    <MembershipCards
+      :stats="membershipStats"
+      :loading="membershipLoading"
+      :last-updated="membershipLastFetchedAt"
+      @refresh="handleRefresh"
+    />
+
+    <UAlert
+      v-if="membershipError"
+      color="red"
+      :title="t('customer.membership.messages.errorTitle')"
+      :description="membershipError"
+    >
+      <template #actions>
+        <UButton
+          size="xs"
+          color="red"
+          variant="solid"
+          :loading="membershipLoading"
+          @click="handleRefresh"
+        >
+          {{ t("customer.directory.actions.retry") }}
+        </UButton>
+      </template>
+    </UAlert>
+
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex flex-wrap items-center gap-2">
+        <UBadge
+          v-for="segment in segments"
+          :key="segment.key"
+          :color="segment.color"
+          :variant="selectedSegment === segment.key ? 'solid' : 'subtle'"
+          class="cursor-pointer"
+          @click="handleSegmentClick(segment.key)"
+        >
+          {{ segment.label }} · {{ segment.count }}
+        </UBadge>
+        <UButton
+          v-if="selectedSegment"
+          size="xs"
+          variant="ghost"
+          icon="i-heroicons-x-mark"
+          @click="handleClearSegment"
+        >
+          {{ t("customer.membership.actions.clearSegment") }}
+        </UButton>
+      </div>
+      <div class="flex flex-wrap gap-2">
+        <UButton
+          icon="i-heroicons-exclamation-circle"
+          variant="soft"
+          @click="handleSegmentClick('downgrade')"
+        >
+          {{ t("customer.membership.actions.quickDowngrade") }}
+        </UButton>
+        <UButton
+          color="primary"
+          icon="i-heroicons-megaphone"
+          :disabled="!hasSelection"
+          @click="reminderDrawerOpen = true"
+        >
+          {{ t("customer.membership.actions.remind") }}
+        </UButton>
+      </div>
     </div>
 
     <UCard>
-      <template #header>
-        <div class="flex justify-between items-center">
-          <h3 class="text-lg font-semibold">会员列表</h3>
-          <div class="flex space-x-2">
-            <UInput
-              v-model="searchQuery"
-              :placeholder="$t('common.search')"
-              icon="i-heroicons-magnifying-glass"
-            />
-            <USelect
-              v-model="selectedLevel"
-              :options="memberLevels"
-              :placeholder="$t('common.filter')"
-              option-attribute="label"
-              value-attribute="value"
-              class="w-40"
-            />
+      <div class="flex items-center justify-between mb-3 text-sm text-gray-500">
+        <span>
+          {{ t("customer.directory.status.total", { total: membershipStats.total }) }}
+        </span>
+        <USelectMenu
+          v-model="pageSize"
+          :options="pageSizeOptions"
+          value-attribute="value"
+          option-attribute="label"
+          class="w-32"
+        />
+      </div>
+      <UTable :rows="rows" :columns="columns" :loading="membershipLoading">
+        <template #select-cell="{ row }">
+          <UCheckbox :model-value="selectionSet.has(row.id)" @change="() => toggleRow(row.id)" />
+        </template>
+        <template #name-cell="{ row }">
+          <div class="flex flex-col">
+            <span class="font-medium text-gray-900">{{ row.customer.name }}</span>
+            <span class="text-xs text-gray-500">{{ row.customer.id }}</span>
           </div>
-        </div>
-      </template>
-
-      <UTable
-        :data="filteredMembers"
-        :columns="columns"
-        :loading="loading"
-        class="w-full"
-      >
-        <!-- v3: 单元格插槽用 -cell -->
-        <template #level-cell="{ getValue }">
-          <UBadge :color="getLevelColor(getValue())" variant="subtle">
-            {{ getValue() }}
+        </template>
+        <template #tier-cell="{ row }">
+          <UBadge variant="subtle">
+            {{ row.snapshot.tier || "—" }}
           </UBadge>
         </template>
-
-        <template #status-cell="{ getValue }">
-          <UBadge
-            :color="getValue() === '活跃' ? 'success' : 'neutral'"
-            variant="subtle"
-          >
-            {{ getValue() }}
+        <template #growthValue-cell="{ row }">
+          {{ row.snapshot.growthValue ?? "—" }}
+        </template>
+        <template #points-cell="{ row }">
+          {{ row.snapshot.points ?? "—" }}
+        </template>
+        <template #retentionStatus-cell="{ row }">
+          <UBadge :color="retentionColor(row.snapshot.retentionStatus)" variant="subtle">
+            {{ retentionLabel(row.snapshot.retentionStatus) }}
           </UBadge>
         </template>
-
+        <template #lastBenefitUsedAt-cell="{ row }">
+          {{ formatDate(row.snapshot.lastBenefitUsedAt) }}
+        </template>
         <template #actions-cell="{ row }">
-          <div class="flex space-x-2">
-            <UButton
-              size="xs"
-              color="neutral"
-              variant="ghost"
-              icon="i-heroicons-eye"
-            >
-              {{ $t("common.view") }}
-            </UButton>
-            <UButton
-              size="xs"
-              color="primary"
-              variant="ghost"
-              icon="i-heroicons-pencil-square"
-            >
-              {{ $t("common.edit") }}
-            </UButton>
+          <UButton
+            size="xs"
+            variant="ghost"
+            icon="i-heroicons-bell-alert"
+            @click="openReminderFor(row.id)"
+          >
+            {{ t("customer.membership.table.remind") }}
+          </UButton>
+        </template>
+        <template #empty>
+          <div class="py-6 text-center text-sm text-gray-500">
+            {{ t("customer.membership.table.empty") }}
           </div>
         </template>
       </UTable>
+
+      <div class="mt-4 flex items-center justify-between text-sm text-gray-500">
+        <span>
+          {{ t("customer.directory.status.selected", { count: selectionSet.size }) }}
+        </span>
+        <UPagination v-model="page" :total="membershipStats.total" :page-count="pageSize" />
+      </div>
     </UCard>
+
+    <MembershipReminderDrawer
+      v-model="reminderDrawerOpen"
+      :selected-ids="selection"
+      @completed="handleReminderComplete"
+    />
+    <CustomerImportDialog
+      v-if="canManageCustomers"
+      v-model="importModalOpen"
+      context="members"
+      @submitted="handleImportSubmitted"
+    />
+    <CustomerExportDialog
+      v-if="canExportCustomers"
+      v-model="exportModalOpen"
+      :filters="membershipFilters"
+      context="members"
+      @submitted="handleExportSubmitted"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed, onMounted, ref, watch } from "vue";
+import { storeToRefs } from "pinia";
+import { useI18n } from "#imports";
 import type { TableColumn } from "@nuxt/ui";
+import MembershipFilterBar from "~/components/customer/MembershipFilterBar.vue";
+import MembershipCards from "~/components/customer/MembershipCards.vue";
+import MembershipReminderDrawer from "~/components/customer/MembershipReminderDrawer.vue";
+import CustomerImportDialog from "~/components/customer/CustomerImportDialog.vue";
+import CustomerExportDialog from "~/components/customer/CustomerExportDialog.vue";
+import { useCustomerStore } from "~/stores/customer";
+import { useCustomerMetrics } from "~/composables/useCustomerMetrics";
+import { useToastAlert } from "~/composables/useToastAlert";
+import { usePermissions } from "~/composables/usePermissions";
+import type { MembershipInsight } from "~/types/customer";
+
+type MembershipRow = {
+  id: string;
+  customer: MembershipInsight["customer"];
+  snapshot: MembershipInsight["snapshot"];
+};
+
+const store = useCustomerStore();
+const {
+	membershipInsights,
+	membershipStats,
+	membershipSegments,
+	membershipLoading,
+	membershipError,
+	membershipLastFetchedAt,
+	membershipFilters,
+	selection,
+} = storeToRefs(store);
+
 const { t } = useI18n();
+const toast = useToastAlert();
+const metrics = useCustomerMetrics();
+const { hasPermission } = usePermissions();
 
-// 响应式数据
-const searchQuery = ref("");
-const selectedLevel = ref<string | "">("");
-const loading = ref(false);
+const reminderDrawerOpen = ref(false);
+const importModalOpen = ref(false);
+const exportModalOpen = ref(false);
+const page = ref(membershipFilters.value.page || 1);
+const pageSize = ref(membershipFilters.value.pageSize || 20);
+const selectedSegment = ref<string | null>(membershipFilters.value.retentionStatus || null);
 
-// 会员等级选项
-const memberLevels = [
-  { label: "全部等级", value: "" },
-  { label: "普通会员", value: "普通会员" },
-  { label: "银卡会员", value: "银卡会员" },
-  { label: "金卡会员", value: "金卡会员" },
-  { label: "VIP会员", value: "VIP会员" },
+const rows = computed<MembershipRow[]>(() =>
+  membershipInsights.value.map((entry) => ({
+    id: entry.customer.id,
+    customer: entry.customer,
+    snapshot: entry.snapshot,
+  }))
+);
+
+const selectionSet = computed(() => new Set(selection.value));
+const hasSelection = computed(() => selection.value.length > 0);
+
+const segments = computed(() => [
+  {
+    key: "safe",
+    label: t("customer.membership.segments.safe"),
+    count: membershipSegments.value.safe,
+    color: "success",
+  },
+  {
+    key: "warning",
+    label: t("customer.membership.segments.warning"),
+    count: membershipSegments.value.warning,
+    color: "warning",
+  },
+  {
+    key: "downgrade",
+    label: t("customer.membership.segments.downgrade"),
+    count: membershipSegments.value.downgrade,
+    color: "error",
+  },
+]);
+
+const columns = computed<TableColumn<MembershipRow>[]>(() => [
+  { accessorKey: "select", header: "", size: 48, sortable: false },
+  { accessorKey: "name", header: t("customer.membership.table.name") },
+  { accessorKey: "tier", header: t("customer.membership.table.tier") },
+  { accessorKey: "growthValue", header: t("customer.membership.table.growth") },
+  { accessorKey: "points", header: t("customer.membership.table.points") },
+  { accessorKey: "retentionStatus", header: t("customer.membership.table.retention") },
+  { accessorKey: "lastBenefitUsedAt", header: t("customer.membership.table.lastBenefit") },
+  { accessorKey: "actions", header: t("customer.membership.table.actions") },
+]);
+
+const pageSizeOptions = [
+  { label: "20", value: 20 },
+  { label: "50", value: 50 },
+  { label: "100", value: 100 },
 ];
 
-// 模拟会员数据
-type Member = {
-  memberId: string;
-  name: string;
-  level: "普通会员" | "银卡会员" | "金卡会员" | "VIP会员";
-  points: number;
-  totalSpent: string;
-  joinDate: string;
-  status: "活跃" | "不活跃";
+const handleRefresh = async () => {
+  const stopTimer = metrics.startLatencyTimer("membership_manual_refresh");
+  try {
+    await store.fetchMemberships();
+  } finally {
+    stopTimer();
+  }
 };
 
-const members = ref<Member[]>([
-  {
-    memberId: "M001",
-    name: "张三",
-    level: "VIP会员",
-    points: 2580,
-    totalSpent: "¥25,800",
-    joinDate: "2023-01-15",
-    status: "活跃",
-  },
-  {
-    memberId: "M002",
-    name: "李四",
-    level: "金卡会员",
-    points: 1200,
-    totalSpent: "¥12,000",
-    joinDate: "2023-03-20",
-    status: "活跃",
-  },
-  {
-    memberId: "M003",
-    name: "王五",
-    level: "银卡会员",
-    points: 680,
-    totalSpent: "¥6,800",
-    joinDate: "2023-06-10",
-    status: "活跃",
-  },
-  {
-    memberId: "M004",
-    name: "赵六",
-    level: "普通会员",
-    points: 320,
-    totalSpent: "¥3,200",
-    joinDate: "2023-08-05",
-    status: "不活跃",
-  },
-]);
+const toggleRow = (id: string) => {
+  store.toggleSelection(id);
+};
 
-// v3：列定义（用 accessorKey / header / cell）
-// 用 computed 包起来，i18n 切换时表头会更新
-const columns = computed<TableColumn<Member>[]>(() => [
-  { accessorKey: "memberId", header: t("members.id") || "会员ID" },
-  { accessorKey: "name", header: t("members.name") || "会员姓名" },
-  { accessorKey: "level", header: t("members.level") || "会员等级" },
-  { accessorKey: "points", header: t("members.points") || "积分" },
-  { accessorKey: "totalSpent", header: t("members.totalSpent") || "累计消费" },
-  { accessorKey: "joinDate", header: t("members.joinDate") || "加入日期" },
-  { accessorKey: "status", header: t("members.status") || "状态" },
-  { id: "actions", header: t("common.actions") || "操作" },
-]);
+const formatDate = (value?: string | null) => {
+  if (!value) return "—";
+  return new Date(value).toLocaleString();
+};
 
-// 过滤
-const filteredMembers = computed(() => {
-  const q = searchQuery.value.trim().toLowerCase();
-  return members.value.filter((m) => {
-    const passQ =
-      !q ||
-      m.name.toLowerCase().includes(q) ||
-      m.memberId.toLowerCase().includes(q);
-    const passLevel = !selectedLevel.value || m.level === selectedLevel.value;
-    return passQ && passLevel;
+const retentionColor = (status?: string) => {
+  switch (status) {
+    case "warning":
+      return "warning";
+    case "downgrade":
+      return "error";
+    default:
+      return "success";
+  }
+};
+
+const retentionLabel = (status?: string) => {
+  if (!status) return t("customer.membership.segments.safe");
+  switch (status) {
+    case "warning":
+      return t("customer.membership.segments.warning");
+    case "downgrade":
+      return t("customer.membership.segments.downgrade");
+    default:
+      return t("customer.membership.segments.safe");
+  }
+};
+
+const handleSegmentClick = async (segment: string) => {
+  if (selectedSegment.value === segment) {
+    await handleClearSegment();
+    return;
+  }
+  selectedSegment.value = segment;
+  metrics.recordEvent({
+    name: "membership_segment_apply",
+    metadata: { segment },
   });
+  await store.fetchMemberships({ retentionStatus: segment, page: 1 });
+};
+
+const handleClearSegment = async () => {
+  selectedSegment.value = null;
+  metrics.recordEvent({
+    name: "membership_segment_clear",
+  });
+  await store.fetchMemberships({ retentionStatus: undefined, page: 1 });
+};
+
+const openReminderFor = (id: string) => {
+	store.replaceSelection([id]);
+	reminderDrawerOpen.value = true;
+};
+
+const handleReminderComplete = () => {
+  store.clearSelection();
+};
+
+watch(
+  () => membershipError.value,
+  (message) => {
+    if (message) {
+      toast.add({
+        title: t("customer.membership.messages.errorTitle"),
+        description: message,
+        color: "error",
+      });
+    }
+  }
+);
+
+watch(
+  () => membershipFilters.value.page,
+  (next) => {
+    if (typeof next === "number" && next !== page.value) {
+      page.value = next;
+    }
+  }
+);
+
+watch(
+  () => membershipFilters.value.pageSize,
+  (next) => {
+    if (typeof next === "number" && next !== pageSize.value) {
+      pageSize.value = next;
+    }
+  }
+);
+
+watch(
+  () => membershipFilters.value.retentionStatus,
+  (next) => {
+    selectedSegment.value = next || null;
+  }
+);
+
+watch(page, async (value, oldValue) => {
+  if (value === oldValue) return;
+  await store.fetchMemberships({ page: value });
 });
 
-// 等级 -> 语义色映射（v3 推荐用语义色）
-const getLevelColor = (level: string) => {
-  const map: Record<string, "primary" | "secondary" | "warning" | "neutral"> = {
-    VIP会员: "primary",
-    金卡会员: "warning",
-    银卡会员: "secondary",
-    普通会员: "neutral",
-  };
-  return map[level] || "neutral";
+watch(pageSize, async (value, oldValue) => {
+  if (value === oldValue) return;
+  await store.fetchMemberships({ pageSize: value, page: 1 });
+});
+
+onMounted(async () => {
+	if (!membershipInsights.value.length) {
+		await store.fetchMemberships();
+	}
+});
+
+const canManageCustomers = computed(() => hasPermission("customer.manage"));
+const canExportCustomers = computed(() => hasPermission("customer.export"));
+
+const openImportDialog = () => {
+	metrics.recordEvent({
+		name: "customer_import_modal_open",
+		metadata: { source: "members" },
+  });
+  importModalOpen.value = true;
 };
+
+const openExportDialog = () => {
+  metrics.recordEvent({
+    name: "customer_export_modal_open",
+    metadata: { source: "members" },
+  });
+  exportModalOpen.value = true;
+};
+
+const handleImportSubmitted = () => {
+  metrics.recordEvent({
+    name: "customer_import_submitted",
+    metadata: { source: "members" },
+  });
+};
+
+const handleExportSubmitted = () => {
+  metrics.recordEvent({
+    name: "customer_export_submitted",
+    metadata: { source: "members" },
+  });
+};
+
 </script>

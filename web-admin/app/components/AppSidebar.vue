@@ -1,6 +1,6 @@
 <template>
   <aside
-    class="w-64 min-w-64 max-w-64 bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-800 min-h-screen flex-shrink-0 overflow-y-auto"
+    class="w-64 min-w-64 max-w-64 bg-slate-900/90 text-slate-100 border-r border-gray-800 min-h-screen flex-shrink-0 overflow-y-auto backdrop-blur"
   >
     <nav class="p-4 space-y-4">
       <!-- 经营总览 -->

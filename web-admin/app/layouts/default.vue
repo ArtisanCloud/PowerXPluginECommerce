@@ -2,11 +2,11 @@
   <div v-if="disableShell" class="min-h-screen">
     <slot />
   </div>
-  <div v-else class="min-h-screen bg-gray-50 dark:bg-gray-900">
+  <div v-else class="min-h-screen bg-slate-950 text-slate-100">
     <!-- 顶部导航栏 - 根据环境变量控制显示 -->
-    <UContainer v-if="showNavigation" class="max-w-none">
+    <div v-if="showNavigation" class="w-full">
       <AppNavbar />
-    </UContainer>
+    </div>
 
     <div class="flex">
       <!-- 左侧边栏 - 根据环境变量控制显示 -->
@@ -71,10 +71,11 @@ const showNavigation = computed(() => {
 
 // 主内容区样式
 const mainContentClass = computed(() => {
+  const base = "bg-slate-950 min-h-screen";
   if (disableShell.value) {
-    return "w-full";
+    return `${base} w-full`;
   }
-  return showNavigation.value ? "flex-1 p-6" : "w-full p-6";
+  return showNavigation.value ? `${base} flex-1 p-6` : `${base} w-full p-6`;
 });
 
 const getAdapterRegistry = (win) => {
