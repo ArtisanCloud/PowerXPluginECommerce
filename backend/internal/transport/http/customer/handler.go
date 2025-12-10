@@ -2,6 +2,8 @@ package customer
 
 import (
 	"errors"
+	"fmt"
+	"io"
 	"net/http"
 	"strings"
 
@@ -16,6 +18,8 @@ import (
 type Handler struct {
 	service *srv.Service
 }
+
+const maxImportFileSize = 5 << 20
 
 // NewHandler 构造 handler。
 func NewHandler(deps *app.Deps) *Handler {
@@ -53,6 +57,28 @@ func (h *Handler) ListCustomers(c *gin.Context) {
 		return
 	}
 	contracts.ResponseSuccess(c, result)
+}
+
+// GetCustomer returns a single customer by ID.
+func (h *Handler) GetCustomer(c *gin.Context) {
+	id := strings.TrimSpace(c.Param("id"))
+	if id == "" {
+		contracts.ResponseBadRequest(c, "customer id is required")
+		return
+	}
+	customer, err := h.service.GetCustomer(c.Request.Context(), id)
+	if err != nil {
+		switch {
+		case errors.Is(err, authx.ErrTenantMissing):
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant context missing"})
+		case errors.Is(err, srv.ErrCustomerNotFound):
+			contracts.ResponseNotFound(c, "客户不存在或已被删除")
+		default:
+			contracts.ResponseInternalError(c, err)
+		}
+		return
+	}
+	contracts.ResponseSuccess(c, customer)
 }
 
 // CreateCustomer handles POST /customers requests.
@@ -105,6 +131,60 @@ func (h *Handler) DeleteCustomer(c *gin.Context) {
 		return
 	}
 	contracts.ResponseSuccessWithMessage(c, gin.H{"id": deleted.ID}, "customer deleted")
+}
+
+// CreateImportTask accepts a CSV upload and schedules background processing.
+func (h *Handler) CreateImportTask(c *gin.Context) {
+	file, err := c.FormFile("file")
+	if err != nil {
+		contracts.ResponseBadRequest(c, "import file is required")
+		return
+	}
+	if file.Size == 0 {
+		contracts.ResponseBadRequest(c, "import file cannot be empty")
+		return
+	}
+	if file.Size > maxImportFileSize {
+		contracts.ResponseBadRequest(c, "导入文件不能超过 5MB")
+		return
+	}
+	if !strings.HasSuffix(strings.ToLower(file.Filename), ".csv") {
+		contracts.ResponseBadRequest(c, "暂仅支持 CSV 模板导入")
+		return
+	}
+	src, err := file.Open()
+	if err != nil {
+		contracts.ResponseInternalError(c, err)
+		return
+	}
+	defer src.Close()
+	payload, err := io.ReadAll(src)
+	if err != nil {
+		contracts.ResponseInternalError(c, err)
+		return
+	}
+	taskID, err := h.service.StartImportJob(c.Request.Context(), file.Filename, payload)
+	if err != nil {
+		if errors.Is(err, authx.ErrTenantMissing) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant context missing"})
+			return
+		}
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, gin.H{"taskId": taskID})
+}
+
+// DownloadImportTemplate streams the CSV template used for bulk import.
+func (h *Handler) DownloadImportTemplate(c *gin.Context) {
+	if len(customerImportTemplate) == 0 {
+		contracts.ResponseInternalError(c, errors.New("import template unavailable"))
+		return
+	}
+	c.Header("Content-Type", "text/csv; charset=utf-8")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", importTemplateFilename))
+	c.Header("Cache-Control", "no-store")
+	c.Data(http.StatusOK, "text/csv; charset=utf-8", customerImportTemplate)
 }
 
 type listQuery struct {

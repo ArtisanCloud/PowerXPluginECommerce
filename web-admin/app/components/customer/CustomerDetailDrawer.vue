@@ -1,7 +1,33 @@
 <template>
-  <USlideover v-model="open" :title="t('customer.directory.drawer.title')" :ui="{ width: 'max-w-3xl' }">
-    <template v-if="customer">
-      <div class="space-y-6">
+  <UDrawer
+    v-model:open="open"
+    direction="right"
+    :title="drawerTitle"
+    :description="drawerDescription"
+    portal="body"
+    :ui="{
+      width: 'max-w-3xl w-full',
+      overlay: 'bg-black/30 dark:bg-black/50',
+      container: 'flex h-full flex-col',
+      body: 'flex-1 overflow-hidden p-0',
+      header: 'sr-only'
+    }"
+  >
+    <template #body>
+      <div class="flex h-full flex-col">
+        <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4 dark:border-gray-800">
+          <p class="text-lg font-semibold text-gray-900 dark:text-white">
+            {{ t('customer.directory.drawer.title') }}
+          </p>
+          <UButton icon="i-heroicons-x-mark" color="neutral" variant="ghost" size="sm" @click="open = false" />
+        </div>
+        <div class="flex-1 overflow-y-auto">
+          <div v-if="props.loading" class="space-y-4 p-6">
+            <USkeleton class="h-20 rounded-2xl" />
+            <USkeleton class="h-32 rounded-2xl" />
+            <USkeleton class="h-48 rounded-2xl" />
+          </div>
+          <div v-else-if="customer" class="space-y-6 p-6">
         <section
           class="rounded-2xl border border-gray-100 bg-white/90 p-5 shadow-sm ring-1 ring-gray-50 dark:border-gray-800 dark:bg-gray-900/80 dark:ring-gray-900/40"
         >
@@ -223,14 +249,14 @@
             </template>
           </UTabs>
         </section>
+          </div>
+          <div v-else class="py-16 text-center text-sm text-gray-500">
+            {{ t('customer.directory.drawer.empty') }}
+          </div>
+        </div>
       </div>
     </template>
-    <template v-else>
-      <div class="py-16 text-center text-sm text-gray-500">
-        {{ t('customer.directory.drawer.empty') }}
-      </div>
-    </template>
-  </USlideover>
+  </UDrawer>
 </template>
 
 <script setup lang="ts">
@@ -243,6 +269,7 @@ const props = defineProps<{
   customer: Customer | null
   modelValue: boolean
   canManage?: boolean
+  loading?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -259,7 +286,16 @@ const open = computed({
   set: (value: boolean) => emit('update:modelValue', value),
 })
 
+const drawerTitle = computed(() => props.customer?.name || t('customer.directory.drawer.title'))
+const drawerDescription = computed(() => props.customer?.id || t('customer.directory.subtitle'))
+
 const activeTab = ref('overview')
+watch(
+  () => props.customer?.id,
+  () => {
+    activeTab.value = 'overview'
+  }
+)
 const allowWrite = computed(() => Boolean(props.canManage))
 
 const isMasked = (field: string) => (props.customer ? store.isFieldMasked(props.customer, field) : false)

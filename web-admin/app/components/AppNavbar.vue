@@ -1,6 +1,6 @@
 <template>
   <div
-    class="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900"
+    class="border-b border-gray-800 bg-slate-900/95 text-slate-100 shadow-lg shadow-slate-900/40 backdrop-blur"
   >
     <div class="flex h-16 items-center justify-between px-6">
       <!-- 左侧品牌 -->
@@ -10,7 +10,7 @@
           alt="PowerX Plugin Logo"
           class="h-8 w-auto mr-3"
         />
-        <h1 class="text-xl font-semibold text-gray-900 dark:text-white">
+        <h1 class="text-xl font-semibold text-slate-100">
           {{ $t("common.appName") }}
         </h1>
       </div>

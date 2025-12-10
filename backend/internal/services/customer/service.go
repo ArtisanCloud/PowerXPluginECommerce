@@ -1,13 +1,19 @@
 package customer
 
 import (
+	"bytes"
 	"context"
+	"encoding/csv"
 	"encoding/json"
+	"fmt"
+	"io"
 	"strings"
 	"time"
 
 	customermodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/customer"
 	customerrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/customer"
+	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
+	taskcenter "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/taskcenter"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/google/uuid"
 	"gorm.io/datatypes"
@@ -17,6 +23,7 @@ import (
 type Service struct {
 	deps *app.Deps
 	repo *customerrepo.Repository
+	jobs *taskcenter.Store
 }
 
 // NewService 创建客户服务。
@@ -27,6 +34,7 @@ func NewService(deps *app.Deps) *Service {
 	return &Service{
 		deps: deps,
 		repo: customerrepo.NewRepository(deps.DB),
+		jobs: taskcenter.DefaultStore(),
 	}
 }
 
@@ -48,6 +56,22 @@ type ListFilters struct {
 type CustomerListResult struct {
 	Data []Customer       `json:"data"`
 	Meta CustomerListMeta `json:"meta"`
+}
+
+// GetCustomer returns detail of a single customer by business ID.
+func (s *Service) GetCustomer(ctx context.Context, id string) (*Customer, error) {
+	if strings.TrimSpace(id) == "" {
+		return nil, fmt.Errorf("customer id is required")
+	}
+	entity, err := s.repo.FindByCustomerID(ctx, id)
+	if err != nil {
+		return nil, err
+	}
+	if entity == nil {
+		return nil, ErrCustomerNotFound
+	}
+	result := convertEntityToCustomer(entity)
+	return &result, nil
 }
 
 // CustomerListMeta 附带分页信息。
@@ -204,6 +228,138 @@ func copyCustomerToEntity(entity *customermodel.Customer, c Customer) {
 	if updated := parseTime(c.UpdatedAt); !updated.IsZero() {
 		entity.UpdatedAt = updated
 	}
+}
+
+const importJobType = "customer_import"
+
+// StartImportJob registers an async import task and returns task ID for polling.
+func (s *Service) StartImportJob(ctx context.Context, filename string, payload []byte) (string, error) {
+	if len(payload) == 0 {
+		return "", fmt.Errorf("导入文件内容为空")
+	}
+	tenant := tenantFromContext(ctx)
+	if tenant == "" {
+		return "", authx.ErrTenantMissing
+	}
+	meta := map[string]any{
+		"tenantUuid": tenant,
+		"filename":   filename,
+	}
+	job := s.jobs.Create(importJobType, meta)
+	if job == nil {
+		return "", fmt.Errorf("无法创建导入任务")
+	}
+	go s.executeImportJob(authx.ContextWithTenantUUID(context.Background(), tenant), job.TaskID, filename, payload)
+	return job.TaskID, nil
+}
+
+func (s *Service) executeImportJob(ctx context.Context, taskID, filename string, payload []byte) {
+	_, _ = s.jobs.SetStatus(taskID, "running", fmt.Sprintf("正在导入 %s", filename))
+	count, err := s.importCustomersFromCSV(ctx, bytes.NewReader(payload))
+	if err != nil {
+		_, _ = s.jobs.Fail(taskID, err)
+		return
+	}
+	message := fmt.Sprintf("成功导入 %d 条客户", count)
+	_, _ = s.jobs.Success(taskID, message, "")
+}
+
+func (s *Service) importCustomersFromCSV(ctx context.Context, reader io.Reader) (int, error) {
+	csvReader := csv.NewReader(reader)
+	csvReader.TrimLeadingSpace = true
+	header, err := csvReader.Read()
+	if err != nil {
+		return 0, fmt.Errorf("解析表头失败: %w", err)
+	}
+	index := map[string]int{}
+	for i, column := range header {
+		key := strings.ToLower(strings.TrimSpace(column))
+		if key != "" {
+			index[key] = i
+		}
+	}
+	required := []string{"name", "type", "phone"}
+	for _, key := range required {
+		if _, ok := index[key]; !ok {
+			return 0, fmt.Errorf("模板缺少必填列: %s", key)
+		}
+	}
+	line := 1
+	imported := 0
+	for {
+		record, err := csvReader.Read()
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			return imported, fmt.Errorf("解析第 %d 行失败: %w", line+1, err)
+		}
+		line++
+		if isEmptyRecord(record) {
+			continue
+		}
+		input := s.recordToInput(record, index)
+		if _, err := s.CreateCustomer(ctx, input); err != nil {
+			return imported, fmt.Errorf("第 %d 行导入失败: %v", line, err)
+		}
+		imported++
+	}
+	return imported, nil
+}
+
+func (s *Service) recordToInput(record []string, index map[string]int) CreateCustomerInput {
+	read := func(key string) string {
+		i, ok := index[key]
+		if !ok || i >= len(record) {
+			return ""
+		}
+		return strings.TrimSpace(record[i])
+	}
+	tags := normalizeTags(splitCSVTags(read("tags")))
+	return CreateCustomerInput{
+		Name:           read("name"),
+		Type:           read("type"),
+		Email:          read("email"),
+		Phone:          read("phone"),
+		Source:         fallbackString(read("source"), "import"),
+		Country:        read("country"),
+		Region:         read("region"),
+		MembershipTier: fallbackString(read("membershiptier"), "bronze"),
+		AccountManager: read("accountmanager"),
+		Tags:           tags,
+		Notes:          read("notes"),
+	}
+}
+
+func splitCSVTags(raw string) []string {
+	if strings.TrimSpace(raw) == "" {
+		return nil
+	}
+	parts := strings.Split(raw, ",")
+	var tags []string
+	for _, part := range parts {
+		tag := strings.TrimSpace(part)
+		if tag != "" {
+			tags = append(tags, tag)
+		}
+	}
+	return tags
+}
+
+func fallbackString(value, fallback string) string {
+	if strings.TrimSpace(value) == "" {
+		return fallback
+	}
+	return value
+}
+
+func isEmptyRecord(record []string) bool {
+	for _, value := range record {
+		if strings.TrimSpace(value) != "" {
+			return false
+		}
+	}
+	return true
 }
 
 func encodeStringSlice(values []string) datatypes.JSON {

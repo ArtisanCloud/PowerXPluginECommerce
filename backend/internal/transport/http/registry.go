@@ -19,6 +19,7 @@ import (
 	agentapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/agent"
 	customerapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/customer"
 	integrationapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/integration"
+	jobapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/jobs"
 
 	publicassets "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/public/assets"
 	publicmarketplace "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/public/marketplace"
@@ -50,6 +51,7 @@ func (r *Registry) RegisterAPIRoutes(gApi *gin.RouterGroup) {
 	templates.RegisterAPIRoutes(gApi, r.deps)
 	integrationapi.RegisterAPIRoutes(gApi, r.deps)
 	customerapi.RegisterRoutes(adminGroup, r.deps)
+	jobapi.RegisterRoutes(gApi, r.deps)
 	r.RegisterMarketplaceRoutes(gApi)
 	if isDevEnvironment(r.deps) {
 		r.registerDevAssetsRoute()
@@ -64,6 +66,7 @@ func (r *Registry) RegisterAPIRoutes(gApi *gin.RouterGroup) {
 	r.mergeRBAC(integrationRBACEntries(r.apiPrefix()))
 	r.mergeRBAC(marketplacePublicRBACEntries(r.apiPrefix()))
 	r.mergeRBAC(customerapi.RBACEntries(r.apiPrefix()))
+	r.mergeRBAC(jobapi.RBACEntries(r.apiPrefix()))
 }
 
 func (r *Registry) PrintRegisteredRoutes() {

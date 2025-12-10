@@ -268,6 +268,13 @@ export const useCustomerStore = defineStore("customer.directory", {
     clearError() {
       this.error = null;
     },
+    async fetchCustomerById(id: string) {
+      if (!id) {
+        throw new Error("客户 ID 不能为空");
+      }
+      const service = useCustomerService();
+      return service.getCustomer(id);
+    },
     isFieldMasked(customer: Customer, field: string) {
       return customer?.maskedFields?.includes(field);
     },

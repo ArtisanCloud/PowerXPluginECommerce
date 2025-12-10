@@ -1,23 +1,15 @@
 <template>
   <UModal
-    v-model="open"
+    v-model:open="resolveOpen"
+    :title="title"
+    :description="subtitle"
     :ui="modalUi"
     :close="false"
     :dismissible="false"
   >
-    <template #header>
-      <div>
-        <p class="text-base font-semibold text-gray-900">
-          {{ title }}
-        </p>
-        <p class="text-sm text-gray-500">
-          {{ t("customer.directory.export.subtitle") }}
-        </p>
-      </div>
-    </template>
 
     <template #body>
-      <div class="space-y-4">
+      <div class="space-y-5 p-4 sm:p-5">
         <UAlert color="gray" variant="soft">
           <template #title>
             {{ t("customer.directory.export.summaryTitle") }}
@@ -27,7 +19,7 @@
               <UBadge v-for="item in summary" :key="item" size="xs" variant="subtle">
                 {{ item }}
               </UBadge>
-              <span v-if="summary.length === 0" class="text-xs text-gray-500">
+              <span v-if="summary.length === 0" class="text-xs text-gray-400">
                 {{ t("customer.directory.export.noFilters") }}
               </span>
             </div>
@@ -60,7 +52,7 @@
               </span>
             </template>
           </USelect>
-          <p class="mt-1 text-xs text-gray-500">
+          <p class="mt-1 text-xs text-gray-400">
             {{ t("customer.directory.export.fieldHint") }}
           </p>
         </UFormField>
@@ -83,8 +75,8 @@
     </template>
 
     <template #footer>
-      <div class="flex justify-end gap-2 w-full">
-        <UButton variant="ghost" @click="closeModal">
+      <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end">
+        <UButton color="neutral" variant="subtle" @click="closeModal">
           {{ t("customer.directory.actions.cancel") }}
         </UButton>
         <UButton
@@ -106,23 +98,25 @@ import { useCustomerStore } from "~/stores/customer";
 import type { CustomerListFilters } from "~/types/customer";
 
 const props = defineProps<{
-  modelValue: boolean;
+  modelValue?: boolean;
+  open?: boolean;
   filters?: Partial<CustomerListFilters>;
   context?: "directory" | "members";
 }>();
 
 const emit = defineEmits<{
   "update:modelValue": [boolean];
+  "update:open": [boolean];
   submitted: [];
 }>();
 
 const store = useCustomerStore();
 const { t } = useI18n();
 const modalUi = {
-  content: "max-w-3xl w-full",
-  body: "p-4 sm:p-5",
-  header: "p-4 sm:px-5",
-  footer: "p-4 sm:px-5",
+  content: "max-w-3xl w-[min(95vw,40rem)]",
+  header: "px-5 pt-5 pb-4 border-b border-gray-200/40 dark:border-white/10",
+  body: "p-0",
+  footer: "px-5 py-4 border-t border-gray-200/40 dark:border-white/10",
 };
 
 const directoryFields = [
@@ -145,9 +139,12 @@ const membershipFields = [
   "lastBenefitUsedAt",
 ];
 
-const open = computed({
-  get: () => props.modelValue,
-  set: (value: boolean) => emit("update:modelValue", value),
+const resolveOpen = computed({
+  get: () => props.open ?? props.modelValue ?? false,
+  set: (value: boolean) => {
+    emit("update:open", value);
+    emit("update:modelValue", value);
+  },
 });
 
 const defaultFields = computed(() =>
@@ -167,10 +164,10 @@ const closeModal = () => {
   if (typeof document !== "undefined") {
     (document.activeElement as HTMLElement | null)?.blur();
   }
-  emit("update:modelValue", false);
+  resolveOpen.value = false;
 };
 
-watch(open, (value) => {
+watch(resolveOpen, (value) => {
   if (value) {
     selectedFields.value = [...defaultFields.value];
     store.resetExportState();
@@ -186,6 +183,8 @@ const title = computed(() =>
     ? t("customer.directory.export.membersTitle")
     : t("customer.directory.export.title")
 );
+
+const subtitle = computed(() => t("customer.directory.export.subtitle"));
 
 const summary = computed(() => {
   const active: string[] = [];

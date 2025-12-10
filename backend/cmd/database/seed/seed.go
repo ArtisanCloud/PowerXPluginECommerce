@@ -2,11 +2,14 @@ package seed
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models"
+	customermodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/customer"
 	iammodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/iam"
 	templatemodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/template"
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
@@ -23,6 +26,9 @@ func SeedPluginData(ctx context.Context, db *gorm.DB) error {
 		return err
 	}
 	if err := seedCustomerRoleBindings(ctxDB, permIDs); err != nil {
+		return err
+	}
+	if err := seedSampleCustomers(ctxDB); err != nil {
 		return err
 	}
 	return nil
@@ -141,4 +147,120 @@ func seedCustomerRoleBindings(db *gorm.DB, permIDs map[string]uint64) error {
 		}
 	}
 	return nil
+}
+
+func seedSampleCustomers(db *gorm.DB) error {
+	if db == nil || db.Migrator() == nil || !db.Migrator().HasTable(&customermodel.Customer{}) {
+		return nil
+	}
+	samples := []struct {
+		CustomerID          string
+		Name                string
+		Type                string
+		Email               string
+		Phone               string
+		Source              string
+		Country             string
+		Region              string
+		MembershipTier      string
+		MembershipTierLabel string
+		AccountManager      string
+		Tags                []string
+		Notes               string
+		Status              string
+	}{
+		{
+			CustomerID:          "seed-retail-001",
+			Name:                "示例零售客户",
+			Type:                "individual",
+			Email:               "seed-retail-001@demo.powerx",
+			Phone:               "+8613512345670",
+			Source:              "seed-data",
+			Country:             "中国",
+			Region:              "华北",
+			MembershipTier:      "silver",
+			MembershipTierLabel: "Silver",
+			AccountManager:      "Demo Owner",
+			Tags:                []string{"demo", "retail"},
+			Notes:               "演示用途客户，避免与导入模板冲突。",
+			Status:              "active",
+		},
+		{
+			CustomerID:          "seed-enterprise-001",
+			Name:                "示例企业客户",
+			Type:                "enterprise",
+			Email:               "seed-enterprise-001@demo.powerx",
+			Phone:               "+8613612345670",
+			Source:              "seed-data",
+			Country:             "新加坡",
+			Region:              "亚太",
+			MembershipTier:      "platinum",
+			MembershipTierLabel: "Platinum",
+			AccountManager:      "Demo Owner",
+			Tags:                []string{"demo", "enterprise"},
+			Notes:               "默认企业客户示例。",
+			Status:              "active",
+		},
+	}
+	for _, sample := range samples {
+		var existing customermodel.Customer
+		err := db.Where("tenant_uuid = ? AND customer_id = ?", defaultTenantUUID, sample.CustomerID).
+			First(&existing).Error
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			entity := customermodel.Customer{
+				TenantUUID:          defaultTenantUUID,
+				CustomerID:          sample.CustomerID,
+				Name:                sample.Name,
+				Type:                sample.Type,
+				Email:               sample.Email,
+				Phone:               sample.Phone,
+				Source:              sample.Source,
+				Country:             sample.Country,
+				Region:              sample.Region,
+				MembershipTier:      sample.MembershipTier,
+				MembershipTierLabel: sample.MembershipTierLabel,
+				AccountManager:      sample.AccountManager,
+				Tags:                encodeStringSlice(sample.Tags),
+				Status:              sample.Status,
+				Notes:               sample.Notes,
+			}
+			if err := db.Create(&entity).Error; err != nil {
+				return err
+			}
+		case err != nil:
+			return err
+		default:
+			updates := map[string]interface{}{
+				"name":                  sample.Name,
+				"type":                  sample.Type,
+				"email":                 sample.Email,
+				"phone":                 sample.Phone,
+				"source":                sample.Source,
+				"country":               sample.Country,
+				"region":                sample.Region,
+				"membership_tier":       sample.MembershipTier,
+				"membership_tier_label": sample.MembershipTierLabel,
+				"account_manager":       sample.AccountManager,
+				"tags":                  encodeStringSlice(sample.Tags),
+				"status":                sample.Status,
+				"notes":                 sample.Notes,
+			}
+			if err := db.Model(&existing).Updates(updates).Error; err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func encodeStringSlice(values []string) datatypes.JSON {
+	if len(values) == 0 {
+		return datatypes.JSON([]byte("[]"))
+	}
+	data, err := json.Marshal(values)
+	if err != nil {
+		return datatypes.JSON([]byte("[]"))
+	}
+	return datatypes.JSON(data)
 }
