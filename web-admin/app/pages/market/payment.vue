@@ -630,6 +630,7 @@ function exportCsv() {
 }
 
 // 明细/退款/重试（示例）
+const toast = useToastAlert();
 const detailOpen = ref(false);
 const current = ref<PaymentRow | null>(null);
 function openDetail(row: PaymentRow) {
@@ -638,9 +639,9 @@ function openDetail(row: PaymentRow) {
 }
 function requestRefund(row: PaymentRow) {
   // 这里调用后端退款接口；演示先提示
-  useToast().add({ title: `已提交退款申请：${row.paymentNo}`, color: "info" });
+  toast.add({ title: `已提交退款申请：${row.paymentNo}`, color: "info" });
 }
 function retryPay(row: PaymentRow) {
-  useToast().add({ title: `已触发重试：${row.paymentNo}`, color: "primary" });
+  toast.add({ title: `已触发重试：${row.paymentNo}`, color: "primary" });
 }
 </script>

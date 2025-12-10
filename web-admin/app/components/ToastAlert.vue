@@ -7,34 +7,43 @@
       role="status"
       aria-live="assertive"
       >
-      <UAlert
-        :color="color"
-        :variant="variant"
-        :title="displayTitle"
-        :description="displayMessage"
-        :ui="{
-      // 关键：覆盖默认 max-w，且让 UAlert 占满外层宽度
-      root: 'w-full max-w-none',
-      // 可选：让图标/文本/动作在同一行或两行的对齐
-      wrapper: 'items-start',
-      // 文案断行：保留 \n，长连续字符串也能断
-      description: 'mt-1 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words break-all leading-relaxed',
-      title: 'font-medium text-gray-900 dark:text-gray-100'
-    }"
-      >
-        <template #icon>
-          <UIcon v-if="computedIcon" :name="computedIcon" class="h-5 w-5 mt-0.5"/>
-        </template>
-        <template #close>
-          <UButton
-            variant="ghost"
-            color="neutral"
-            size="xs"
-            icon="i-heroicons-x-mark"
-            @click="closeAlert"
-          />
-        </template>
-      </UAlert>
+      <div class="relative">
+        <UAlert
+          :color="color"
+          :variant="variant"
+          :title="displayTitle"
+          :description="displayMessage"
+          :ui="{
+        // 关键：覆盖默认 max-w，且让 UAlert 占满外层宽度
+        root: 'w-full max-w-none rounded-2xl bg-white/95 dark:bg-gray-900/90 shadow-2xl ring-1 ring-black/5 dark:ring-white/10 backdrop-blur',
+        // 可选：让图标/文本/动作在同一行或两行的对齐
+        wrapper: 'items-start',
+        // 文案断行：保留 \\n，长连续字符串也能断
+        description: 'mt-1 text-sm text-gray-700 dark:text-gray-300 whitespace-pre-wrap break-words break-all leading-relaxed',
+        title: 'font-medium text-gray-900 dark:text-gray-100'
+      }"
+        >
+          <template #icon>
+            <UIcon v-if="computedIcon" :name="computedIcon" class="h-5 w-5 mt-0.5"/>
+          </template>
+          <template #close>
+            <UButton
+              variant="ghost"
+              color="neutral"
+              size="xs"
+              icon="i-heroicons-x-mark"
+              class="text-gray-700 dark:text-gray-200 hover:bg-white/20"
+              @click="closeAlert"
+            />
+          </template>
+        </UAlert>
+        <span
+          v-if="props.duration > 0"
+          :key="progressKey"
+          class="toast-progress-bar"
+          :style="progressStyle"
+        />
+      </div>
       </div>
 
     </Transition>
@@ -60,7 +69,7 @@ const props = withDefaults(defineProps<{
   title: DEFAULT_TITLE,
   message: DEFAULT_MESSAGE,
   color: "primary",
-  variant: "soft",
+  variant: "solid",
   duration: 3000,
   icon: null,
 })
@@ -108,6 +117,7 @@ const computedIcon = computed(() => {
 })
 
 const timer = ref<ReturnType<typeof setTimeout> | null>(null)
+const progressKey = ref(0)
 
 const clearTimer = () => {
   if (timer.value) {
@@ -119,6 +129,7 @@ const clearTimer = () => {
 const startTimer = () => {
   clearTimer()
   if (props.duration > 0) {
+    progressKey.value++
     timer.value = setTimeout(() => {
       visible.value = false
     }, props.duration)
@@ -144,6 +155,10 @@ onBeforeUnmount(() => {
 const closeAlert = () => {
   visible.value = false
 }
+
+const progressStyle = computed(() => ({
+  animationDuration: `${props.duration}ms`,
+}))
 </script>
 
 <style scoped>
@@ -156,5 +171,31 @@ const closeAlert = () => {
 .toast-slide-leave-to {
   opacity: 0;
   transform: translateY(12px);
+}
+
+.toast-progress-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0.85),
+    rgba(255, 255, 255, 0.35)
+  );
+  transform-origin: left center;
+  animation-name: toast-progress;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+}
+
+@keyframes toast-progress {
+  from {
+    transform: scaleX(1);
+  }
+  to {
+    transform: scaleX(0);
+  }
 }
 </style>

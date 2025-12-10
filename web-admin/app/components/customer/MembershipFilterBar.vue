@@ -1,51 +1,29 @@
 <template>
   <UCard class="mb-4">
-    <div class="flex flex-col gap-4">
-      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <UFormField :label="t('customer.membership.filters.tier')">
-          <USelectMenu
-            v-model="form.tier"
-            :options="tierOptions"
-            value-attribute="value"
-            option-attribute="label"
-            clearable
-          />
+    <div class="flex flex-col gap-6">
+      <div class="grid grid-cols-12 gap-4">
+        <UFormField
+          :label="t('customer.membership.filters.tier')"
+          class="col-span-12 sm:col-span-6 xl:col-span-3"
+          :ui="inlineFieldUi"
+        >
+          <USelect v-model="tierModel" class="w-full" :items="tierOptions" />
         </UFormField>
-        <UFormField :label="t('customer.membership.filters.retentionStatus')">
-          <USelectMenu
-            v-model="form.retentionStatus"
-            :options="retentionOptions"
-            value-attribute="value"
-            option-attribute="label"
-            clearable
-          />
+        <UFormField
+          :label="t('customer.membership.filters.retentionStatus')"
+          class="col-span-12 sm:col-span-6 xl:col-span-3"
+          :ui="inlineFieldUi"
+        >
+          <USelect v-model="retentionModel" class="w-full" :items="retentionOptions" />
         </UFormField>
-        <UFormField :label="t('customer.membership.filters.benefitStatus')">
-          <USelectMenu
-            v-model="form.benefitStatus"
-            :options="benefitOptions"
-            value-attribute="value"
-            option-attribute="label"
-            clearable
-          />
+        <UFormField
+          :label="t('customer.membership.filters.benefitStatus')"
+          class="col-span-12 sm:col-span-6 xl:col-span-3"
+          :ui="inlineFieldUi"
+        >
+          <USelect v-model="benefitModel" class="w-full" :items="benefitOptions" />
         </UFormField>
-      </div>
-      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        <UFormField :label="t('customer.membership.filters.growthRange')">
-          <div class="flex items-center gap-2">
-            <UInput v-model="form.growthMin" type="number" placeholder="0" />
-            <span class="text-sm text-gray-400">~</span>
-            <UInput v-model="form.growthMax" type="number" placeholder="200" />
-          </div>
-        </UFormField>
-        <UFormField :label="t('customer.membership.filters.pointsRange')">
-          <div class="flex items-center gap-2">
-            <UInput v-model="form.pointsMin" type="number" placeholder="0" />
-            <span class="text-sm text-gray-400">~</span>
-            <UInput v-model="form.pointsMax" type="number" placeholder="2000" />
-          </div>
-        </UFormField>
-        <div class="flex items-end justify-end gap-2">
+        <div class="col-span-12 sm:col-span-6 xl:col-span-3 flex items-center justify-end gap-2">
           <UButton variant="ghost" @click="handleReset">
             {{ t("customer.membership.actions.reset") }}
           </UButton>
@@ -54,6 +32,30 @@
           </UButton>
         </div>
       </div>
+      <div class="grid grid-cols-12 gap-4">
+        <UFormField
+          :label="t('customer.membership.filters.growthRange')"
+          class="col-span-12 lg:col-span-6"
+          :ui="rangeFieldUi"
+        >
+          <div class="flex items-center gap-2 w-full">
+            <UInput v-model="form.growthMin" class="w-full" type="number" placeholder="0" />
+            <span class="text-sm text-gray-400">~</span>
+            <UInput v-model="form.growthMax" class="w-full" type="number" placeholder="200" />
+          </div>
+        </UFormField>
+        <UFormField
+          :label="t('customer.membership.filters.pointsRange')"
+          class="col-span-12 lg:col-span-6"
+          :ui="rangeFieldUi"
+        >
+          <div class="flex items-center gap-2 w-full">
+            <UInput v-model="form.pointsMin" class="w-full" type="number" placeholder="0" />
+            <span class="text-sm text-gray-400">~</span>
+            <UInput v-model="form.pointsMax" class="w-full" type="number" placeholder="2000" />
+          </div>
+        </UFormField>
+      </div>
     </div>
   </UCard>
 </template>
@@ -61,15 +63,16 @@
 <script setup lang="ts">
 import { reactive, watch, computed, ref } from "vue";
 import { storeToRefs } from "pinia";
-import { useI18n, useToast } from "#imports";
+import { useI18n } from "#imports";
 import { useCustomerStore } from "~/stores/customer";
 import type { MembershipFilters } from "~/types/customer";
 import { useCustomerMetrics } from "~/composables/useCustomerMetrics";
+import { useToastAlert } from "~/composables/useToastAlert";
 
 const store = useCustomerStore();
 const { membershipFilters, membershipLoading } = storeToRefs(store);
 const { t } = useI18n();
-const toast = useToast();
+const toast = useToastAlert();
 const metrics = useCustomerMetrics();
 
 const form = reactive({
@@ -81,8 +84,22 @@ const form = reactive({
   pointsMin: membershipFilters.value.pointsRange?.[0] ?? "",
   pointsMax: membershipFilters.value.pointsRange?.[1] ?? "",
 });
+const ANY_OPTION_VALUE = "__all__";
+
+const inlineFieldUi = {
+  root: "flex items-center gap-3 w-full",
+  wrapper: "w-28 sm:w-32 shrink-0",
+  labelWrapper: "flex items-center gap-2",
+  label: "text-sm font-medium text-gray-600 whitespace-nowrap",
+  container: "mt-0 flex-1",
+};
+const rangeFieldUi = {
+  ...inlineFieldUi,
+  container: "mt-0 flex-1",
+};
 
 const tierOptions = computed(() => [
+  { label: t("customer.membership.filters.any"), value: ANY_OPTION_VALUE },
   { label: t("customer.membership.filters.tierOptions.gold"), value: "gold" },
   { label: t("customer.membership.filters.tierOptions.silver"), value: "silver" },
   { label: t("customer.membership.filters.tierOptions.platinum"), value: "platinum" },
@@ -90,16 +107,29 @@ const tierOptions = computed(() => [
 ]);
 
 const retentionOptions = computed(() => [
+  { label: t("customer.membership.filters.any"), value: ANY_OPTION_VALUE },
   { label: t("customer.membership.segments.safe"), value: "safe" },
   { label: t("customer.membership.segments.warning"), value: "warning" },
   { label: t("customer.membership.segments.downgrade"), value: "downgrade" },
 ]);
 
 const benefitOptions = computed(() => [
-  { label: t("customer.membership.filters.benefitAny"), value: "" },
+  { label: t("customer.membership.filters.benefitAny"), value: ANY_OPTION_VALUE },
   { label: t("customer.membership.filters.benefitUnused"), value: "unused" },
   { label: t("customer.membership.filters.benefitUsed"), value: "used" },
 ]);
+
+const createSelectModel = <K extends keyof typeof form>(key: K) =>
+  computed<string>({
+    get: () => (form[key] ? String(form[key]) : ANY_OPTION_VALUE),
+    set: (value) => {
+      form[key] = (value === ANY_OPTION_VALUE ? "" : value) as (typeof form)[K];
+    },
+  });
+
+const tierModel = createSelectModel("tier");
+const retentionModel = createSelectModel("retentionStatus");
+const benefitModel = createSelectModel("benefitStatus");
 
 const isSubmitting = ref(false);
 

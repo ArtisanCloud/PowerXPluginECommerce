@@ -365,7 +365,7 @@
 
 <script setup lang="ts">
 import { ref, reactive, computed, onMounted } from 'vue'
-import { useToast } from '#imports'
+import { useToastAlert } from '~/composables/useToastAlert'
 
 // 选项卡配置
 const activeTab = ref<'list' | 'configuration'>('list')
@@ -375,7 +375,7 @@ const tabs = [
 ]
 
 // toast
-const toast = useToast()
+const toast = useToastAlert()
 
 // 品牌数据
 const brands = ref<any[]>([])

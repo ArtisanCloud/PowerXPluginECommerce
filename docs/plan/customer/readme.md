@@ -43,7 +43,7 @@
    - 支持 Pinia store 同步标签树，便于其他模块复用。
 6. **权限控制与审计**
    - 与 `/settings/roles.vue` 对接；支持按角色限制批量操作、导出。
-   - 所有写操作调用后端 `admin_console_audit_events` 记录审计，前端通过 `AuditContext` 自动注入 `X-Audit-Action/Resource`。
+   - 所有写操作调用后端 `admin_console_audit_events` 记录审计（依赖宿主上下文，无需额外自定义头）。
 
 ### 3.1 指标与可观测性
 - 统一通过 `useCustomerMetrics` 上报：

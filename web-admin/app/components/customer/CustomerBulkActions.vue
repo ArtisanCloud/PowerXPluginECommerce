@@ -40,77 +40,90 @@
       </div>
     </div>
 
-    <UModal v-model="showOwnerModal">
-      <UCard :ui="{ body: 'space-y-4' }">
-        <template #header>
-          <div class="text-lg font-semibold">{{ t("customer.directory.bulk.assignOwner") }}</div>
-        </template>
-        <UFormField :label="t('customer.directory.bulk.ownerInput')">
-          <UInput v-model="ownerForm.owner" placeholder="ops-001" />
+    <UModal
+      v-model="showOwnerModal"
+      :ui="modalUi"
+      :close="false"
+      :dismissible="false"
+    >
+      <template #header>
+        <div class="text-lg font-semibold">{{ t("customer.directory.bulk.assignOwner") }}</div>
+      </template>
+      <template #body>
+        <UFormField :label="t('customer.directory.bulk.ownerInput')" :ui="inlineFieldUi">
+          <UInput v-model="ownerForm.owner" class="w-full" placeholder="ops-001" />
         </UFormField>
-        <template #footer>
-          <div class="flex justify-end gap-2">
-            <UButton variant="ghost" @click="showOwnerModal = false">
-              {{ t("customer.directory.actions.cancel") }}
-            </UButton>
-            <UButton color="primary" @click="handleAssignOwner" :loading="submitting">
-              {{ t("customer.directory.actions.confirm") }}
-            </UButton>
-          </div>
-        </template>
-      </UCard>
+      </template>
+      <template #footer>
+        <div class="flex justify-end gap-2 w-full">
+          <UButton variant="ghost" @click="closeOwnerModal">
+            {{ t("customer.directory.actions.cancel") }}
+          </UButton>
+          <UButton color="primary" @click="handleAssignOwner" :loading="submitting">
+            {{ t("customer.directory.actions.confirm") }}
+          </UButton>
+        </div>
+      </template>
     </UModal>
 
-    <UModal v-model="showTagsModal">
-      <UCard :ui="{ body: 'space-y-4' }">
-        <template #header>
-          <div class="text-lg font-semibold">
-            {{
-              tagMode === "add"
-                ? t("customer.directory.bulk.addTags")
-                : t("customer.directory.bulk.removeTags")
-            }}
-          </div>
-        </template>
-        <UFormField :label="t('customer.directory.bulk.tagsInput')">
-          <UInput v-model="tagsInput" @keyup.enter.prevent="appendTag" />
-        </UFormField>
-        <div class="flex flex-wrap gap-2">
-          <UBadge
-            v-for="tag in tagForm.tags"
-            :key="tag"
-            variant="subtle"
-            class="cursor-pointer"
-            @click="removeTag(tag)"
-          >
-            {{ tag }}
-          </UBadge>
+    <UModal
+      v-model="showTagsModal"
+      :ui="modalUi"
+      :close="false"
+      :dismissible="false"
+    >
+      <template #header>
+        <div class="text-lg font-semibold">
+          {{
+            tagMode === "add"
+              ? t("customer.directory.bulk.addTags")
+              : t("customer.directory.bulk.removeTags")
+          }}
         </div>
-        <template #footer>
-          <div class="flex justify-end gap-2">
-            <UButton variant="ghost" @click="showTagsModal = false">
-              {{ t("customer.directory.actions.cancel") }}
-            </UButton>
-            <UButton color="primary" @click="handleTags" :loading="submitting">
-              {{ t("customer.directory.actions.confirm") }}
-            </UButton>
+      </template>
+      <template #body>
+        <div class="space-y-3">
+          <UFormField :label="t('customer.directory.bulk.tagsInput')" :ui="inlineFieldUi">
+            <UInput v-model="tagsInput" class="w-full" @keyup.enter.prevent="appendTag" />
+          </UFormField>
+          <div class="flex flex-wrap gap-2">
+            <UBadge
+              v-for="tag in tagForm.tags"
+              :key="tag"
+              variant="subtle"
+              class="cursor-pointer"
+              @click="removeTag(tag)"
+            >
+              {{ tag }}
+            </UBadge>
           </div>
-        </template>
-      </UCard>
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex justify-end gap-2 w-full">
+          <UButton variant="ghost" @click="closeTagsModal">
+            {{ t("customer.directory.actions.cancel") }}
+          </UButton>
+          <UButton color="primary" @click="handleTags" :loading="submitting">
+            {{ t("customer.directory.actions.confirm") }}
+          </UButton>
+        </div>
+      </template>
     </UModal>
   </UCard>
 </template>
 
 <script setup lang="ts">
 import { computed, reactive, ref } from "vue";
-import { useI18n, useToast } from "#imports";
+import { useI18n } from "#imports";
 import { useCustomerStore } from "~/stores/customer";
 import { useCustomerBulkActions } from "~/composables/useCustomerBulkActions";
+import { useToastAlert } from "~/composables/useToastAlert";
 
 const store = useCustomerStore();
 const bulk = useCustomerBulkActions();
 const { t } = useI18n();
-const toast = useToast();
+const toast = useToastAlert();
 
 const showOwnerModal = ref(false);
 const showTagsModal = ref(false);
@@ -120,6 +133,19 @@ const submitting = ref(false);
 const ownerForm = reactive({ owner: "" });
 const tagForm = reactive({ tags: [] as string[] });
 const tagsInput = ref("");
+const modalUi = {
+  content: "max-w-lg w-full",
+  body: "p-4 sm:p-5",
+  header: "p-4 sm:px-5",
+  footer: "p-4 sm:px-5",
+};
+const inlineFieldUi = {
+  root: "flex items-center gap-3 w-full",
+  wrapper: "w-28 sm:w-32 shrink-0",
+  labelWrapper: "flex items-center gap-2",
+  label: "text-sm font-medium text-gray-600 whitespace-nowrap",
+  container: "mt-0 flex-1",
+};
 
 const selectionCount = computed(() => store.selection.length);
 const hasSelection = computed(() => selectionCount.value > 0);
@@ -127,6 +153,17 @@ const hasSelection = computed(() => selectionCount.value > 0);
 const openOwnerModal = () => {
   ownerForm.owner = "";
   showOwnerModal.value = true;
+};
+
+const blurActiveElement = () => {
+  if (typeof document !== "undefined") {
+    (document.activeElement as HTMLElement | null)?.blur();
+  }
+};
+
+const closeOwnerModal = () => {
+  blurActiveElement();
+  showOwnerModal.value = false;
 };
 
 const appendTag = () => {
@@ -149,6 +186,11 @@ const openTagsModal = (mode: "add" | "remove") => {
   showTagsModal.value = true;
 };
 
+const closeTagsModal = () => {
+  blurActiveElement();
+  showTagsModal.value = false;
+};
+
 const confirmDisable = async () => {
   if (!hasSelection.value) return;
   submitting.value = true;
@@ -156,10 +198,6 @@ const confirmDisable = async () => {
     await bulk.submitBulkAction({
       action: "bulk-disable",
       ids: [...store.selection],
-      audit: {
-        action: "customer.bulk.disable",
-        resource: `customers:${store.selection.length}`,
-      },
     });
     store.clearSelection();
     await store.fetchCustomers();
@@ -189,7 +227,7 @@ const handleAssignOwner = async () => {
       ids: [...store.selection],
       payload: { owner: ownerForm.owner.trim() },
     });
-    showOwnerModal.value = false;
+    closeOwnerModal();
     await store.fetchCustomers();
   } catch (error: any) {
     toast.add({
@@ -217,7 +255,7 @@ const handleTags = async () => {
       ids: [...store.selection],
       payload: { tags: [...tagForm.tags] },
     });
-    showTagsModal.value = false;
+    closeTagsModal();
     await store.fetchCustomers();
   } catch (error: any) {
     toast.add({

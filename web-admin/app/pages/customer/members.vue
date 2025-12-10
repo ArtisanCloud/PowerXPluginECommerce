@@ -197,7 +197,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
-import { useI18n, useToast } from "#imports";
+import { useI18n } from "#imports";
 import type { TableColumn } from "@nuxt/ui";
 import MembershipFilterBar from "~/components/customer/MembershipFilterBar.vue";
 import MembershipCards from "~/components/customer/MembershipCards.vue";
@@ -206,6 +206,7 @@ import CustomerImportDialog from "~/components/customer/CustomerImportDialog.vue
 import CustomerExportDialog from "~/components/customer/CustomerExportDialog.vue";
 import { useCustomerStore } from "~/stores/customer";
 import { useCustomerMetrics } from "~/composables/useCustomerMetrics";
+import { useToastAlert } from "~/composables/useToastAlert";
 import { usePermissions } from "~/composables/usePermissions";
 import type { MembershipInsight } from "~/types/customer";
 
@@ -217,18 +218,18 @@ type MembershipRow = {
 
 const store = useCustomerStore();
 const {
-  membershipInsights,
-  membershipStats,
-  membershipSegments,
-  membershipLoading,
-  membershipError,
-  membershipLastFetchedAt,
-  membershipFilters,
-  selection,
+	membershipInsights,
+	membershipStats,
+	membershipSegments,
+	membershipLoading,
+	membershipError,
+	membershipLastFetchedAt,
+	membershipFilters,
+	selection,
 } = storeToRefs(store);
 
 const { t } = useI18n();
-const toast = useToast();
+const toast = useToastAlert();
 const metrics = useCustomerMetrics();
 const { hasPermission } = usePermissions();
 
@@ -351,8 +352,8 @@ const handleClearSegment = async () => {
 };
 
 const openReminderFor = (id: string) => {
-  store.replaceSelection([id]);
-  reminderDrawerOpen.value = true;
+	store.replaceSelection([id]);
+	reminderDrawerOpen.value = true;
 };
 
 const handleReminderComplete = () => {
@@ -408,18 +409,18 @@ watch(pageSize, async (value, oldValue) => {
 });
 
 onMounted(async () => {
-  if (!membershipInsights.value.length) {
-    await store.fetchMemberships();
-  }
+	if (!membershipInsights.value.length) {
+		await store.fetchMemberships();
+	}
 });
 
 const canManageCustomers = computed(() => hasPermission("customer.manage"));
 const canExportCustomers = computed(() => hasPermission("customer.export"));
 
 const openImportDialog = () => {
-  metrics.recordEvent({
-    name: "customer_import_modal_open",
-    metadata: { source: "members" },
+	metrics.recordEvent({
+		name: "customer_import_modal_open",
+		metadata: { source: "members" },
   });
   importModalOpen.value = true;
 };
@@ -445,4 +446,5 @@ const handleExportSubmitted = () => {
     metadata: { source: "members" },
   });
 };
+
 </script>

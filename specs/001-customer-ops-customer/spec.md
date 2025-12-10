@@ -57,6 +57,12 @@
 - 当用户缺失 `customer.sensitive.read` 权限时，即使在详情抽屉也必须保持联系方式遮罩；尝试导出时需自动剔除敏感字段。
 - 会员视角中某些客户没有成长值/积分数据时，需要以 `—` 显示并在指标卡中不计入平均值，防止数据显示异常。
 
+### Scope Adjustment (2025-12-08)
+
+- 宿主 PowerX CRM 暂未向插件开放 `POST/PATCH/DELETE /api/admin/customers` 等写入接口，因此 **当前迭代仅上线“列表/详情/批量任务/会员视角/导入导出”能力**。
+- `CreateCustomerModal`、详情抽屉内的“编辑”入口仅保留 UI 占位，不会触发真实 API；所有新增/编辑仍需在宿主管理台完成并通过同步列表体现。
+- 一旦宿主开放写入权限，本规范内的 CRUD 要求（FR-001~FR-004 的“创建/编辑/删除”部分）将恢复为强制交付内容，并补充 API 鉴权+审计覆盖。
+
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
@@ -80,9 +86,34 @@
 
 ### Assumptions
 
-1. CRM 已提供必要的 REST API，系统只需消费，不负责主数据创建流程。
+1. CRM 目前仅对插件暴露“查询 / 批量任务” REST API；主数据创建仍由宿主控制。未来若开放写入，再恢复插件内的创建/更新流程。
 2. 审计与任务中心能力已存在，可直接写入审计事件并显示任务状态。
 3. 批量操作限制（数量/频率）由后端统一控制，前端仅展示反馈。
+
+## Implementation Plan – Customer CRUD (Future Scope)
+
+为确保一旦宿主开放写权限即可快速上线，制定如下实施方案：
+
+1. **Backend Tasks**
+   - 路由：在 `customer/routes.go` 注册 `POST/PATCH/DELETE /api/admin/customers`，受 `httpmw.EnsureTenant + RBAC` 保护。
+   - Handler：新增 `CreateCustomer`, `UpdateCustomer`, `DeleteCustomer`，对接 `internal/services/customer.Service`，并在失败时返回结构化错误。
+   - Service：实现 `Create/Update/Delete` 调用，封装宿主 CRM 客户写入 API；支持乐观锁（etag/version）并在冲突时返回 409。
+   - Tests：`handler_test.go` & `service_test.go` 覆盖成功/校验失败/无权限/宿主错误场景。
+
+2. **Frontend Tasks**
+   - `useCustomerService` 新增 `createCustomer`, `updateCustomer`, `deleteCustomer`，统一处理创建/更新/删除所需的错误态。
+   - `useCustomerStore` 添加对应 action，并在成功后刷新列表或更新本地 `list`/`selection`。
+   - `CreateCustomerModal`、`EditCustomerModal` 升级为基于 `UForm` 的校验表单；`CustomerDetailDrawer` 开启编辑入口；行操作菜单新增“删除”，带确认对话框与原因输入。
+   - E2E：新增 `tests/e2e/customer-crud.cy.ts`，覆盖创建→编辑→删除流程。
+
+3. **Permissions & Audit**
+   - 新增权限位：`customer.manage`（create/update）、`customer.delete`（可与 manage 合并）；`customer.sensitive.read` 继续控制敏感字段。
+   - 所有写操作默认要求用户提供原因（删除/禁用），并写入 `admin_console_audit_events`。
+
+4. **Rollout Checklist**
+   - 与宿主团队确认写入 API SLA、速率限制、审计需求。
+   - 开启功能旗标（如 `NUXT_PUBLIC_ENABLE_CUSTOMER_CRUD`），方便逐租户灰度。
+   - 更新文档、演示脚本与客服培训材料。
 
 ## Success Criteria *(mandatory)*
 

@@ -444,9 +444,10 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
 import ContractPricingWizard from "~/components/ContractPricingWizard.vue";
+import { useToastAlert } from "~/composables/useToastAlert";
 
 const { t } = useI18n();
-const toast = useToast();
+const toast = useToastAlert();
 
 /** 常量 */
 const EXPIRY_THRESHOLD = 30; // 天

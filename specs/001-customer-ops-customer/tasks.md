@@ -94,12 +94,36 @@ description: "Task list for implementing Customer List & Membership Views"
 - [X] T028 [US3] 在 `web-admin/app/pages/customer/index.vue` 接入导入/导出入口、权限判断（`customer.manage`/`customer.export`）、任务中心提醒，并向 `useCustomerMetrics` 上报导入/导出任务耗时。
 - [X] T029 [US3] 在 `web-admin/app/pages/customer/members.vue` 复用导入/导出入口，区分会员视角默认字段与筛选摘要，并上报 KPI。
 - [X] T030 [US3] 在导入/导出流程与任务轮询中实现 FR-009 错误提示/重试（含文件校验错误报告、签名链接失效后的提示与再触发），并计入错误率统计。
-- [X] T031 [US3] 更新 `web-admin/app/composables/api/_client.ts`，为导入/导出/批量操作请求统一注入 `X-Audit-Action`、`X-Audit-Resource` 头、捕获错误信息并暴露给 UI。
+- [X] T031 [US3] 更新 `web-admin/app/composables/api/_client.ts`，统一处理批量任务请求错误并暴露给 UI（不再新增自定义头）。
 - [X] T032 [P] [US3] 编写 `web-admin/tests/unit/customer-import-export.spec.ts` 与 `web-admin/tests/e2e/customer-import-export.cy.ts`，模拟权限缺失/成功/错误重试场景、下载链接签名校验与 KPI 统计。
 
 ---
 
-## Phase 6: Polish & Cross-Cutting Concerns
+## Phase 6: User Story 4 - 客户 CRUD 接入 (Priority: P1+)
+
+**Goal**: 当宿主 CRM 开放写入权限时，提供端到端的客户创建/编辑/删除能力，并符合权限、审计与数据一致性要求。
+
+**Independent Test**: 在 `/customer` 页面发起创建→列表出现→抽屉内编辑→在更多操作中删除，验证 `customer.manage/customer.delete` 权限以及任务中心事件都按 `docs/plan/customer/customer.md` 第 8 节记录。
+
+### Implementation for User Story 4
+
+- [X] T036 [US4] 在 `backend/internal/transport/http/customer/routes.go` 与 `backend/internal/transport/http/customer/rbac.go` 注册 `POST|PATCH|DELETE /api/admin/customers` 路由，绑定 `handler.CreateCustomer/UpdateCustomer/DeleteCustomer`，并配置 `customer.manage`、`customer.delete` 权限映射及审计动作常量。
+- [X] T037 [P] [US4] 在 `backend/internal/transport/http/customer/handler.go`（及 `dto.go` 如有）实现 CRUD Handler：包含请求体校验（手机/邮箱/标签长度、会员等级枚举）与 403/409/422 错误映射，并复用现有上下文记录日志。
+- [X] T038 [US4] 扩展 `backend/internal/services/customer/service.go`、`internal/services/customer/types.go` 与 CRM Client（REST/gRPC adapter），提供 `Create/Update/Delete` 方法、写操作后的 `CustomerChanged` 事件发布与缓存刷新，并处理宿主 409/400/500 错误。
+- [X] T039 [P] [US4] 在 `backend/internal/transport/http/customer/handler_test.go` 与 `backend/internal/services/customer/service_test.go` 编写单元测试，覆盖 201/204 成功、403 权限拒绝、409 并发冲突与宿主错误透传。
+- [X] T040 [US4] 更新 `web-admin/app/composables/api/services/customerService.ts`，补充 `createCustomer`, `updateCustomer`, `deleteCustomer` 方法，支持删除原因参数与宿主 409/400 错误重试提示。
+- [X] T041 [US4] 扩展 `web-admin/app/stores/customer/index.ts`，新增对应 actions 与 loading/error 状态；创建/编辑成功需刷新 `list`、`savedViews`、`membershipSnapshots`，删除后清理当前 selection，并在 `bulkTasks` 中记录 `CustomerChanged` 事件。
+- [X] T042 [P] [US4] 在 `web-admin/app/components/customer/CreateCustomerModal.vue` 与 `EditCustomerModal.vue` 实现 `UForm` + schema 校验、初始值、提交禁用/Toast，并支持会员等级、来源渠道、标签等字段映射。
+- [X] T043 [US4] 在 `web-admin/app/components/customer/CustomerDetailDrawer.vue`、`CustomerTable.vue` 与 `web-admin/app/pages/customer/index.vue` 启用“创建/编辑/删除”入口：列表顶部按钮、行级操作、抽屉快捷编辑，成功后调用 store action 并刷新数据。
+- [X] T044 [P] [US4] 新增 `web-admin/app/components/customer/CustomerDeleteConfirm.vue`（或同等弹窗），要求输入客户名称/删除原因，调用 `store.deleteCustomer` 并在失败时展示宿主返回的保护信息；同步在抽屉/表格中引用。
+- [X] T045 [P] [US4] 在 `web-admin/app/pages/customer/index.vue` 与 `web-admin/app/pages/customer/members.vue` 加入宿主写入可用性检测（来自 featureFlag/health API），当不可用时禁用创建/编辑按钮并显示 Banner，提示“客户写入能力暂不可用”。
+- [X] T046 [US4] 编写 `web-admin/tests/unit/customer-crud-store.spec.ts` 与 `web-admin/tests/e2e/customer-crud.cy.ts`，覆盖创建→刷新列表、编辑 diff 提交、删除需输入原因、宿主 409/400 提示、写入禁用 Banner 以及 KPI 事件触发。
+- [X] T047 [US4] 新增 `backend/internal/entity/models/customer/customer.go` 与 `backend/cmd/database/migrate/migrate.go` 迁移项：定义 `customers` 表字段、JSON 列、租户索引，并确保 `make migrate` 会创建该表。
+- [X] T048 [US4] 改造 `backend/internal/services/customer/service.go` / `mutations.go`：优先使用 GORM CRUD（含 mock seed、JSON 编解码、冲突检测），保留内存 fallback，并更新 `service_test.go` 使用 sqlite 验证。
+
+---
+
+## Phase 7: Polish & Cross-Cutting Concerns
 
 **Purpose**: 文档、运行指南与收尾工作，确保易用与可运维。
 
@@ -112,8 +136,8 @@ description: "Task list for implementing Customer List & Membership Views"
 ## Dependencies & Execution Order
 
 1. **Setup → Foundational**：必须先完成运行配置与文档（Phase 1），再完成类型、API、Store、批量动作基础设施（Phase 2）。
-2. **User Story 顺序**：在 Phase 2 完成后，可按优先级交付：US1 (目录) → US2 (会员) → US3 (导入/导出)。若人力充足，US2/US3 可并行但需依赖 US1 中 store/table 的成熟度。
-3. **Polish**：Phase 6 依赖所有计划交付的用户故事完成后再开展文档与 Runbook 更新。
+2. **User Story 顺序**：在 Phase 2 完成后，可按优先级交付：US1 (目录) → US2 (会员) → US3 (导入/导出) → US4 (CRUD)。若人力充足，US2/US3 可并行但需依赖 US1 中 store/table 的成熟度；US4 需等宿主开放写入权限后再执行。
+3. **Polish**：Phase 7 依赖所有计划交付的用户故事完成后再开展文档与 Runbook 更新。
 
 ## Parallel Execution Opportunities
 
@@ -126,5 +150,5 @@ description: "Task list for implementing Customer List & Membership Views"
 ## Implementation Strategy
 
 - **MVP**: 完成 Phase 1~3（US1）即可 Demo：客服能筛选客户、保存视图、触发批量任务并查看详情。
-- **Incremental**: 在 MVP 稳定后，交付 US2 以支持会员洞察，再交付 US3 以补齐导入/导出合规链路，最后执行 Polish。
-- **Quality Gates**: 每个用户故事结束前，确保对应测试任务（T017、T024、T032）通过，并按 quickstart 指南验证任务中心与审计记录。
+- **Incremental**: 在 MVP 稳定后，交付 US2 以支持会员洞察，再交付 US3 以补齐导入/导出合规链路，宿主开放写入后推进 US4（CRUD），最后执行 Polish。
+- **Quality Gates**: 每个用户故事结束前，确保对应测试任务（T017、T024、T032、T046）通过，并按 quickstart 指南验证任务中心与审计记录。

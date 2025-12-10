@@ -1,89 +1,101 @@
 <template>
-  <UModal v-model="open">
-    <UCard :ui="{ body: 'space-y-4' }">
-      <template #header>
-        <div>
-          <p class="text-base font-semibold text-gray-900">
-            {{ title }}
-          </p>
-          <p class="text-sm text-gray-500">
-            {{ t("customer.directory.export.subtitle") }}
-          </p>
-        </div>
-      </template>
+  <UModal
+    v-model="open"
+    :ui="modalUi"
+    :close="false"
+    :dismissible="false"
+  >
+    <template #header>
+      <div>
+        <p class="text-base font-semibold text-gray-900">
+          {{ title }}
+        </p>
+        <p class="text-sm text-gray-500">
+          {{ t("customer.directory.export.subtitle") }}
+        </p>
+      </div>
+    </template>
 
-      <UAlert color="gray" variant="soft">
-        <template #title>
-          {{ t("customer.directory.export.summaryTitle") }}
-        </template>
-        <template #description>
-          <div class="flex flex-wrap gap-2">
-            <UBadge v-for="item in summary" :key="item" size="xs" variant="subtle">
-              {{ item }}
-            </UBadge>
-            <span v-if="summary.length === 0" class="text-xs text-gray-500">
-              {{ t("customer.directory.export.noFilters") }}
-            </span>
-          </div>
-        </template>
-      </UAlert>
-
-      <UFormField :label="t('customer.directory.export.fieldLabel')">
-        <USelectMenu
-          v-model="selectedFields"
-          :options="fieldOptions"
-          multiple
-          value-attribute="value"
-          option-attribute="label"
-        >
-          <template #label>
+    <template #body>
+      <div class="space-y-4">
+        <UAlert color="gray" variant="soft">
+          <template #title>
+            {{ t("customer.directory.export.summaryTitle") }}
+          </template>
+          <template #description>
             <div class="flex flex-wrap gap-2">
-              <UBadge
-                v-for="field in selectedFields"
-                :key="field"
-                variant="subtle"
-                size="xs"
-              >
-                {{ formatField(field) }}
+              <UBadge v-for="item in summary" :key="item" size="xs" variant="subtle">
+                {{ item }}
               </UBadge>
+              <span v-if="summary.length === 0" class="text-xs text-gray-500">
+                {{ t("customer.directory.export.noFilters") }}
+              </span>
             </div>
           </template>
-        </USelectMenu>
-        <p class="mt-1 text-xs text-gray-500">
-          {{ t("customer.directory.export.fieldHint") }}
-        </p>
-      </UFormField>
+        </UAlert>
 
-      <UAlert
-        v-if="exportError"
-        color="red"
-        variant="soft"
-        :title="t('customer.directory.export.failed')"
-        :description="exportError"
-      />
-      <UAlert
-        v-else-if="lastTaskId"
-        color="primary"
-        variant="soft"
-        :title="t('customer.directory.export.taskCreated', { id: lastTaskId })"
-        :description="t('customer.directory.export.taskDesc')"
-      />
-
-      <template #footer>
-        <div class="flex justify-end gap-2">
-          <UButton variant="ghost" @click="emit('update:modelValue', false)">
-            {{ t("customer.directory.actions.cancel") }}
-          </UButton>
-          <UButton
-            color="primary"
-            :loading="exporting"
-            @click="handleSubmit"
+        <UFormField :label="t('customer.directory.export.fieldLabel')">
+          <USelect
+            v-model="selectedFields"
+            class="w-full"
+            multiple
+            :items="fieldOptions"
           >
-            {{ t("customer.directory.export.submit") }}
-          </UButton>
-        </div>
-      </template>
-    </UCard>
+            <template #default="{ modelValue }">
+              <div
+                v-if="Array.isArray(modelValue) && modelValue.length"
+                class="flex flex-wrap gap-2"
+              >
+                <UBadge
+                  v-for="field in modelValue"
+                  :key="field"
+                  variant="subtle"
+                  size="xs"
+                >
+                  {{ formatField(field) }}
+                </UBadge>
+              </div>
+              <span v-else class="text-sm text-gray-400">
+                {{ t("customer.directory.export.fieldPlaceholder") }}
+              </span>
+            </template>
+          </USelect>
+          <p class="mt-1 text-xs text-gray-500">
+            {{ t("customer.directory.export.fieldHint") }}
+          </p>
+        </UFormField>
+
+        <UAlert
+          v-if="exportError"
+          color="red"
+          variant="soft"
+          :title="t('customer.directory.export.failed')"
+          :description="exportError"
+        />
+        <UAlert
+          v-else-if="lastTaskId"
+          color="primary"
+          variant="soft"
+          :title="t('customer.directory.export.taskCreated', { id: lastTaskId })"
+          :description="t('customer.directory.export.taskDesc')"
+        />
+      </div>
+    </template>
+
+    <template #footer>
+      <div class="flex justify-end gap-2 w-full">
+        <UButton variant="ghost" @click="closeModal">
+          {{ t("customer.directory.actions.cancel") }}
+        </UButton>
+        <UButton
+          color="primary"
+          :loading="exporting"
+          @click="handleSubmit"
+        >
+          {{ t("customer.directory.export.submit") }}
+        </UButton>
+      </div>
+    </template>
   </UModal>
 </template>
 
@@ -106,6 +118,12 @@ const emit = defineEmits<{
 
 const store = useCustomerStore();
 const { t } = useI18n();
+const modalUi = {
+  content: "max-w-3xl w-full",
+  body: "p-4 sm:p-5",
+  header: "p-4 sm:px-5",
+  footer: "p-4 sm:px-5",
+};
 
 const directoryFields = [
   "id",
@@ -144,6 +162,13 @@ const fieldOptions = computed(() =>
 );
 
 const selectedFields = ref<string[]>([...defaultFields.value]);
+
+const closeModal = () => {
+  if (typeof document !== "undefined") {
+    (document.activeElement as HTMLElement | null)?.blur();
+  }
+  emit("update:modelValue", false);
+};
 
 watch(open, (value) => {
   if (value) {
@@ -219,7 +244,7 @@ const handleSubmit = async () => {
       context: props.context || "directory",
     });
     emit("submitted");
-    emit("update:modelValue", false);
+    closeModal();
   } catch (error) {
     console.error("[CustomerExportDialog] export failed", error);
   }

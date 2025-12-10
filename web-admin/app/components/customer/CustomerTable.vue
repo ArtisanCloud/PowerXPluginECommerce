@@ -4,46 +4,58 @@
       <div class="text-sm text-gray-500">
         {{ t("customer.directory.status.total", { total }) }}
       </div>
-      <USelectMenu
+      <USelect
         v-model="pageSize"
-        :options="pageSizeOptions"
-        value-attribute="value"
-        option-attribute="label"
+        :items="pageSizeOptions"
         class="w-32"
       />
     </div>
     <UTable
-      :rows="rows"
       :columns="columns"
+      :data="tableRows"
       :loading="loading"
-      :page="{ page: filters.page, pageCount: pageCount }"
-      @update:page="handlePageChange"
+      :ui="{ table: 'min-w-full table-fixed divide-y divide-gray-200 dark:divide-gray-700' }"
     >
       <template #select-cell="{ row }">
         <UCheckbox
-          :model-value="selection.has(row.id)"
-          @change="() => store.toggleSelection(row.id)"
+          :model-value="selection.has(row.original.id)"
+          @change="() => store.toggleSelection(row.original.id)"
         />
       </template>
       <template #name-cell="{ row }">
         <div class="flex flex-col">
-          <span class="font-medium text-gray-900">{{ row.name }}</span>
-          <span class="text-xs text-gray-500">{{ row.id }}</span>
+          <span class="font-medium text-gray-900 dark:text-white">
+            {{ row.original.name }}
+          </span>
+          <span class="text-xs text-gray-500 dark:text-gray-400">
+            {{ row.original.id }}
+          </span>
         </div>
       </template>
       <template #contact-cell="{ row }">
         <div class="text-sm text-gray-700">
-          <span v-if="row.email && !isMasked(row, 'email')">{{ row.email }}</span>
-          <span v-else-if="row.email">{{ t("customer.directory.table.masked") }}</span>
-          <span v-if="row.phone && !isMasked(row, 'phone')" class="block">{{ row.phone }}</span>
-          <span v-else-if="row.phone" class="block">{{ t("customer.directory.table.masked") }}</span>
+          <span v-if="row.original.email && !isMasked(row.original, 'email')">
+            {{ row.original.email }}
+          </span>
+          <span v-else-if="row.original.email">
+            {{ t("customer.directory.table.masked") }}
+          </span>
+          <span
+            v-if="row.original.phone && !isMasked(row.original, 'phone')"
+            class="block"
+          >
+            {{ row.original.phone }}
+          </span>
+          <span v-else-if="row.original.phone" class="block">
+            {{ t("customer.directory.table.masked") }}
+          </span>
         </div>
       </template>
       <template #tags-cell="{ row }">
         <div class="flex flex-wrap gap-1">
           <UBadge
-            v-for="tag in row.tags"
-            :key="`${row.id}-${tag}`"
+            v-for="tag in row.original.tags"
+            :key="`${row.original.id}-${tag}`"
             size="xs"
             variant="subtle"
           >
@@ -53,10 +65,16 @@
       </template>
       <template #status-cell="{ row }">
         <UBadge
-          :color="row.status === 'active' ? 'success' : row.status === 'blocked' ? 'error' : 'neutral'"
+          :color="
+            row.original.status === 'active'
+              ? 'success'
+              : row.original.status === 'blocked'
+                ? 'error'
+                : 'neutral'
+          "
           variant="subtle"
         >
-          {{ statusLabel(row.status) }}
+          {{ statusLabel(row.original.status) }}
         </UBadge>
       </template>
       <template #actions-cell="{ row }">
@@ -66,7 +84,7 @@
               icon="i-heroicons-eye"
               variant="ghost"
               size="sm"
-              @click="$emit('view', row)"
+              @click="$emit('view', row.original)"
             />
           </UTooltip>
           <UTooltip :text="t('customer.directory.actions.pin')" :popper="{ placement: 'top' }">
@@ -74,7 +92,32 @@
               icon="i-heroicons-clipboard-document-list"
               variant="ghost"
               size="sm"
-              @click="$emit('pin', row)"
+              @click="$emit('pin', row.original)"
+            />
+          </UTooltip>
+          <UTooltip
+            v-if="allowWrite"
+            :text="t('customer.directory.actions.editRecord')"
+            :popper="{ placement: 'top' }"
+          >
+            <UButton
+              icon="i-heroicons-pencil-square"
+              variant="ghost"
+              size="sm"
+              @click="$emit('edit', row.original)"
+            />
+          </UTooltip>
+          <UTooltip
+            v-if="allowWrite"
+            :text="t('customer.directory.actions.deleteRecord')"
+            :popper="{ placement: 'top' }"
+          >
+            <UButton
+              icon="i-heroicons-trash"
+              variant="ghost"
+              size="sm"
+              color="red"
+              @click="$emit('delete', row.original)"
             />
           </UTooltip>
         </div>
@@ -103,41 +146,56 @@ import type { TableColumn } from "@nuxt/ui";
 import { useCustomerStore } from "~/stores/customer";
 import type { Customer } from "~/types/customer";
 
+const props = defineProps<{ canManage?: boolean }>();
+
 const emit = defineEmits<{
   view: [Customer];
   pin: [Customer];
+  edit: [Customer];
+  delete: [Customer];
 }>();
 
 const store = useCustomerStore();
+const allowWrite = computed(() => Boolean(props.canManage));
 const { list, filters, loading, meta } = storeToRefs(store);
 const { t } = useI18n();
 
 const page = ref(filters.value.page || 1);
 const pageSize = ref(filters.value.pageSize || 20);
 
-watch(page, (value) => {
-  store.setPage(value);
-  store.fetchCustomers();
-});
+watch(
+  page,
+  (value, oldValue) => {
+    if (value === oldValue) return;
+    if (value === filters.value.page) {
+      return;
+    }
+    store.setPage(value);
+    store.fetchCustomers();
+  },
+);
 
-watch(pageSize, (value) => {
-  store.setPageSize(value);
-  store.fetchCustomers();
-});
+watch(
+  pageSize,
+  (value, oldValue) => {
+    if (value === oldValue) return;
+    if (value === filters.value.pageSize) {
+      return;
+    }
+    store.setPageSize(value);
+    store.fetchCustomers();
+  },
+);
 
 const selection = computed(() => new Set(store.selection));
 const total = computed(() => meta.value.total || 0);
-const pageCount = computed(() =>
-  filters.value.pageSize ? Math.ceil(total.value / filters.value.pageSize) : 1
-);
-
 const pageSizeOptions = [
   { label: "20", value: 20 },
   { label: "50", value: 50 },
   { label: "100", value: 100 },
 ];
 
-const rows = computed(() => list.value || []);
+const tableRows = computed(() => list.value || []);
 
 const columns = computed<TableColumn<Customer>[]>(() => [
   { accessorKey: "select", header: "", sortable: false, size: 48 },
@@ -165,9 +223,6 @@ const statusLabel = (status?: string) => {
   }
 };
 
-const handlePageChange = (value: number) => {
-  page.value = value || 1;
-};
 watch(
   () => filters.value.page,
   (value) => {

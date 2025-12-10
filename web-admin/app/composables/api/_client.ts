@@ -2,16 +2,12 @@
 
 import { resolveApiBase, getAuthToken, getTenantUuid } from "./_base";
 import { useAuth } from "~/composables/useAuth";
-import { useRouter, useToast } from "#imports";
+import { useRouter } from "#imports";
+import { useToastAlert } from "../useToastAlert";
 import { useHostCtxStore } from "~/stores/hostCtx";
 import { PLUGIN_ID } from "~/utils/powerx-bridge";
 
 type Json = Record<string, any>;
-
-type AuditContext = {
-  action?: string;
-  resource?: string;
-};
 
 let _client: typeof $fetch | null = null;
 let _baseURL: string | null = null;
@@ -117,21 +113,10 @@ export function useApiClient() {
       }
     }
 
-    const audit: AuditContext | undefined = (next as any).audit;
-    if (audit) {
-      if (audit.action && !headers.has("X-Audit-Action")) {
-        headers.set("X-Audit-Action", audit.action);
-      }
-      if (audit.resource && !headers.has("X-Audit-Resource")) {
-        headers.set("X-Audit-Resource", audit.resource);
-      }
-      delete (next as any).audit;
-    }
-
     return next;
   };
 
-  const toast = process.client ? useToast() : null;
+  const toast = process.client ? useToastAlert() : null;
 
   const handleAuthError = (response?: { status?: number; _data?: any }) => {
     if (!response) return;
@@ -168,9 +153,17 @@ export function useApiClient() {
     } catch (error: any) {
       handleAuthError(error?.response);
       const responseMessage =
-        error?.response?._data?.message || error?.data?.message;
-      if (responseMessage && !error.message) {
+        error?.response?._data?.message ||
+        error?.response?._data?.error?.message ||
+        error?.data?.message;
+      if (responseMessage) {
         error.message = responseMessage;
+        if (!error.data) {
+          error.data = {} as any;
+        }
+        if (!error.data.message) {
+          error.data.message = responseMessage;
+        }
       }
       throw error;
     }

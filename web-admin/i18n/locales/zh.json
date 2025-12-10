@@ -240,6 +240,7 @@
         "region": "地区",
         "tags": "标签",
         "tagsPlaceholder": "回车添加标签",
+        "any": "不限",
         "tierOptions": {
           "gold": "金卡",
           "silver": "银卡",
@@ -272,7 +273,15 @@
         "view": "查看",
         "pin": "固定",
         "import": "导入客户",
-        "export": "导出客户"
+        "export": "导出客户",
+        "create": "添加客户",
+        "editRecord": "编辑客户",
+        "deleteRecord": "删除客户"
+      },
+      "write": {
+        "disabledTitle": "客户写入能力未开放",
+        "disabledDesc": "宿主 CRM 暂未开放创建/编辑/删除客户，相关按钮已禁用。",
+        "retry": "重新检测"
       },
       "savedViews": {
         "save": "保存视图",
@@ -343,6 +352,34 @@
         "toastTitle": "客户视图异常",
         "generic": "请求异常，请稍后重试。"
       },
+      "modals": {
+        "create": {
+          "title": "添加客户",
+          "description": "创建新的客户档案",
+          "success": "客户创建成功",
+          "failed": "创建客户失败",
+          "missing": "请完善必填信息后再提交"
+        },
+        "edit": {
+          "title": "编辑客户",
+          "description": "更新客户基础信息与会员字段",
+          "success": "客户信息已更新",
+          "failed": "更新客户失败",
+          "missing": "请检查必填字段",
+          "submit": "保存修改"
+        },
+        "delete": {
+          "title": "删除客户",
+          "desc": "此操作将永久删除客户，并写入审计日志。",
+          "target": "即将删除：{name}",
+          "reason": "删除原因",
+          "placeholder": "请输入删除理由，便于后续审计...",
+          "hint": "删除请求会写入审计日志，并通知任务中心。",
+          "confirm": "确认删除",
+          "success": "客户已删除",
+          "failed": "删除客户失败"
+        }
+      },
       "import": {
         "title": "导入客户",
         "membersTitle": "导入会员变更",
@@ -370,6 +407,7 @@
         "summaryTitle": "筛选摘要",
         "noFilters": "当前使用全部客户",
         "fieldLabel": "选择导出字段",
+        "fieldPlaceholder": "请选择导出字段",
         "fieldHint": "建议保留 ID、联系方式、等级等关键字段。",
         "fields": {
           "id": "客户 ID",
@@ -390,6 +428,37 @@
         "taskDesc": "任务完成后将推送下载链接。",
         "submit": "生成导出任务",
         "noFields": "请至少选择一个导出字段"
+      },
+      "form": {
+        "name": "客户姓名",
+        "namePlaceholder": "输入客户姓名...",
+        "type": "客户类型",
+        "typePlaceholder": "选择客户类型",
+        "phone": "手机号码",
+        "phonePlaceholder": "输入手机号码...",
+        "email": "邮箱地址",
+        "emailPlaceholder": "输入邮箱地址...",
+        "gender": "性别",
+        "genderPlaceholder": "选择性别",
+        "birthDate": "出生日期",
+        "birthPlaceholder": "选择出生日期",
+        "address": "详细地址",
+        "addressPlaceholder": "输入详细地址...",
+        "tier": "会员等级",
+        "tierPlaceholder": "选择会员等级",
+        "source": "客户来源",
+        "sourcePlaceholder": "选择客户来源",
+        "status": "客户状态",
+        "statusPlaceholder": "选择客户状态",
+        "tags": "客户标签",
+        "tagsPlaceholder": "输入标签，回车添加",
+        "addTag": "添加",
+        "notes": "备注信息",
+        "notesPlaceholder": "输入备注信息...",
+        "registeredAt": "注册时间",
+        "currentStatus": "当前状态",
+        "totalOrders": "订单总数",
+        "totalSpent": "消费总额"
       }
     },
     "membership": {
@@ -429,6 +498,7 @@
         "benefitStatus": "权益使用",
         "growthRange": "成长值区间",
         "pointsRange": "积分区间",
+        "any": "不限",
         "benefitAny": "全部权益状态",
         "benefitUnused": "权益未使用",
         "benefitUsed": "权益已使用",

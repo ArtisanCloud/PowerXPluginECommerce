@@ -12,6 +12,14 @@
       <div class="flex flex-wrap gap-2">
         <UButton
           v-if="canManageCustomers"
+          icon="i-heroicons-user-plus"
+          color="primary"
+          @click="openCreateDialog"
+        >
+          {{ t("customer.directory.actions.create") }}
+        </UButton>
+        <UButton
+          v-if="canManageCustomers"
           icon="i-heroicons-arrow-up-tray"
           color="primary"
           @click="openImportDialog"
@@ -33,6 +41,7 @@
     </header>
 
     <CustomerFilterBar />
+
     <CustomerBulkActions />
 
     <UAlert v-if="error" color="red" :title="t('customer.directory.errors.title')" :description="error">
@@ -43,11 +52,20 @@
       </template>
     </UAlert>
 
-    <CustomerTable @view="handleViewCustomer" @pin="handleViewCustomer" />
+    <CustomerTable
+      :can-manage="canManageCustomers"
+      @view="handleViewCustomer"
+      @pin="handleViewCustomer"
+      @edit="handleEditCustomer"
+      @delete="handleDeleteCustomer"
+    />
 
     <CustomerDetailDrawer
       v-model="detailOpen"
       :customer="activeCustomer"
+      :can-manage="canManageCustomers"
+      @edit="handleEditCustomer"
+      @delete="handleDeleteCustomer"
     />
 
     <CustomerImportDialog
@@ -63,28 +81,49 @@
       context="directory"
       @submitted="handleExportSubmitted"
     />
+    <CreateCustomerModal
+      v-if="canManageCustomers"
+      v-model:open="createModalOpen"
+      @created="handleCreatedCustomer"
+    />
+    <EditCustomerModal
+      v-if="canManageCustomers && editingCustomer"
+      v-model:open="editModalOpen"
+      :customer="editingCustomer as Customer"
+      @updated="handleViewCustomer"
+    />
+    <CustomerDeleteConfirm
+      v-if="canManageCustomers && deleteTarget"
+      v-model:open="deleteModalOpen"
+      :customer="deleteTarget"
+      @deleted="handleDeleteCompleted"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
-import { useI18n, useToast } from "#imports";
+import { useI18n } from "#imports";
 import CustomerFilterBar from "~/components/customer/CustomerFilterBar.vue";
 import CustomerTable from "~/components/customer/CustomerTable.vue";
 import CustomerBulkActions from "~/components/customer/CustomerBulkActions.vue";
 import CustomerDetailDrawer from "~/components/customer/CustomerDetailDrawer.vue";
 import CustomerImportDialog from "~/components/customer/CustomerImportDialog.vue";
 import CustomerExportDialog from "~/components/customer/CustomerExportDialog.vue";
+import CreateCustomerModal from "~/components/Modals/CreateCustomerModal.vue";
+import EditCustomerModal from "~/components/Modals/EditCustomerModal.vue";
+import CustomerDeleteConfirm from "~/components/customer/CustomerDeleteConfirm.vue";
 import { useCustomerStore } from "~/stores/customer";
 import { usePermissions } from "~/composables/usePermissions";
 import { useCustomerMetrics } from "~/composables/useCustomerMetrics";
+import { useToastAlert } from "~/composables/useToastAlert";
 import type { Customer } from "~/types/customer";
 
 const store = useCustomerStore();
 const { loading, error, filters } = storeToRefs(store);
 const { t } = useI18n();
-const toast = useToast();
+const toast = useToastAlert();
 const metrics = useCustomerMetrics();
 const { hasPermission } = usePermissions();
 
@@ -92,12 +131,17 @@ const detailOpen = ref(false);
 const activeCustomer = ref<Customer | null>(null);
 const importModalOpen = ref(false);
 const exportModalOpen = ref(false);
+const createModalOpen = ref(false);
+const editModalOpen = ref(false);
+const deleteModalOpen = ref(false);
+const editingCustomer = ref<Customer | null>(null);
+const deleteTarget = ref<Customer | null>(null);
 
 const canManageCustomers = computed(() => hasPermission("customer.manage"));
 const canExportCustomers = computed(() => hasPermission("customer.export"));
 const permissionMetadata = computed(() => ({
-  canManage: canManageCustomers.value,
-  canExport: canExportCustomers.value,
+	canManage: canManageCustomers.value,
+	canExport: canExportCustomers.value,
 }));
 
 const handleRefresh = async () => {
@@ -112,9 +156,34 @@ const handleRefresh = async () => {
   }
 };
 
+const openCreateDialog = () => {
+	createModalOpen.value = true;
+};
+
 const handleViewCustomer = (customer: Customer) => {
   activeCustomer.value = customer;
   detailOpen.value = true;
+};
+
+const handleCreatedCustomer = async (customer: Customer) => {
+  toast.add({
+    title: t("customer.directory.modals.create.success"),
+    color: "green",
+  });
+  await handleRefresh().catch(() => undefined);
+  handleViewCustomer(customer);
+};
+
+const handleEditCustomer = (customer: Customer) => {
+	if (!canManageCustomers.value) return;
+	editingCustomer.value = customer;
+	editModalOpen.value = true;
+};
+
+const handleDeleteCustomer = (customer: Customer) => {
+	if (!canManageCustomers.value) return;
+	deleteTarget.value = customer;
+	deleteModalOpen.value = true;
 };
 
 watch(
@@ -130,9 +199,21 @@ watch(
   }
 );
 
+watch(editModalOpen, (open) => {
+  if (!open) {
+    editingCustomer.value = null;
+  }
+});
+
+watch(deleteModalOpen, (open) => {
+  if (!open) {
+    deleteTarget.value = null;
+  }
+});
+
 onMounted(async () => {
-  store.loadSavedViews();
-  await handleRefresh();
+	store.loadSavedViews();
+	await handleRefresh();
 });
 
 const openImportDialog = () => {
@@ -163,5 +244,13 @@ const handleExportSubmitted = () => {
     name: "customer_export_submitted",
     metadata: { source: "directory" },
   });
+};
+
+const handleDeleteCompleted = (id: string) => {
+  deleteModalOpen.value = false;
+  if (activeCustomer.value?.id === id) {
+    activeCustomer.value = null;
+    detailOpen.value = false;
+  }
 };
 </script>

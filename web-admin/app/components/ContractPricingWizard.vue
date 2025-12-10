@@ -10,6 +10,8 @@
  *  - saved(payload)       保存成功时触发
  */
 
+import { useToastAlert } from "~/composables/useToastAlert";
+
 const props = defineProps<{
   modelValue: boolean;
   initialData?: any;
@@ -19,7 +21,7 @@ const emit = defineEmits<{
   (e: "saved", payload: any): void;
 }>();
 
-const toast = useToast();
+const toast = useToastAlert();
 
 /* ====== 向导状态 ====== */
 const step = ref(1);

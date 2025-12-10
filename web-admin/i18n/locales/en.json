@@ -238,6 +238,7 @@
         "region": "Region",
         "tags": "Tags",
         "tagsPlaceholder": "Press Enter to add tag",
+        "any": "All",
         "tierOptions": {
           "gold": "Gold",
           "silver": "Silver",
@@ -270,7 +271,15 @@
         "view": "View",
         "pin": "Pin",
         "import": "Import customers",
-        "export": "Export customers"
+        "export": "Export customers",
+        "create": "Add customer",
+        "editRecord": "Edit",
+        "deleteRecord": "Delete"
+      },
+      "write": {
+        "disabledTitle": "Customer write access disabled",
+        "disabledDesc": "The host CRM has not enabled create/update/delete yet. Actions remain read-only.",
+        "retry": "Check again"
       },
       "savedViews": {
         "save": "Save view",
@@ -341,6 +350,34 @@
         "toastTitle": "Customer directory error",
         "generic": "Something went wrong."
       },
+      "modals": {
+        "create": {
+          "title": "Add customer",
+          "description": "Create a new customer record",
+          "success": "Customer created",
+          "failed": "Failed to create customer",
+          "missing": "Please complete required fields"
+        },
+        "edit": {
+          "title": "Edit customer",
+          "description": "Update customer basics and membership info",
+          "success": "Customer updated",
+          "failed": "Failed to update customer",
+          "missing": "Please review required fields",
+          "submit": "Save changes"
+        },
+        "delete": {
+          "title": "Delete customer",
+          "desc": "This action deletes the customer permanently and logs an audit entry.",
+          "target": "Deleting: {name}",
+          "reason": "Reason",
+          "placeholder": "Provide a reason for deletion...",
+          "hint": "Deletion will be recorded for auditing.",
+          "confirm": "Delete",
+          "success": "Customer deleted",
+          "failed": "Failed to delete customer"
+        }
+      },
       "import": {
         "title": "Import customers",
         "membersTitle": "Import member updates",
@@ -368,6 +405,7 @@
         "summaryTitle": "Filter summary",
         "noFilters": "Using full customer base",
         "fieldLabel": "Choose fields to export",
+        "fieldPlaceholder": "Select fields to export",
         "fieldHint": "Keep ID, contact and tier for traceability.",
         "fields": {
           "id": "Customer ID",
@@ -388,6 +426,37 @@
         "taskDesc": "A notification will include the download link once ready.",
         "submit": "Create export task",
         "noFields": "Select at least one field"
+      },
+      "form": {
+        "name": "Name",
+        "namePlaceholder": "Enter customer name",
+        "type": "Customer type",
+        "typePlaceholder": "Select type",
+        "phone": "Phone number",
+        "phonePlaceholder": "Enter phone number",
+        "email": "Email",
+        "emailPlaceholder": "Enter email address",
+        "gender": "Gender",
+        "genderPlaceholder": "Select gender",
+        "birthDate": "Birth date",
+        "birthPlaceholder": "Select birth date",
+        "address": "Address",
+        "addressPlaceholder": "Enter address",
+        "tier": "Membership tier",
+        "tierPlaceholder": "Select tier",
+        "source": "Source",
+        "sourcePlaceholder": "Select source",
+        "status": "Status",
+        "statusPlaceholder": "Select status",
+        "tags": "Tags",
+        "tagsPlaceholder": "Enter tag and press Enter",
+        "addTag": "Add",
+        "notes": "Notes",
+        "notesPlaceholder": "Enter notes",
+        "registeredAt": "Registered at",
+        "currentStatus": "Current status",
+        "totalOrders": "Total orders",
+        "totalSpent": "Total spend"
       }
     },
     "membership": {
@@ -427,6 +496,7 @@
         "benefitStatus": "Benefit usage",
         "growthRange": "Growth range",
         "pointsRange": "Points range",
+        "any": "All",
         "benefitAny": "All benefit states",
         "benefitUnused": "Benefits unused",
         "benefitUsed": "Benefits used",

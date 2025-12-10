@@ -2,10 +2,11 @@ import { ref } from 'vue'
 
 import type { SafeOpPayload, JobRun } from '~/stores/dev-console/troubleshoot'
 import { useDevConsoleTroubleshootStore } from '~/stores/dev-console/troubleshoot'
+import { useToastAlert } from '~/composables/useToastAlert'
 
 export function useSafeOps() {
   const store = useDevConsoleTroubleshootStore()
-  const toast = useToast()
+  const toast = useToastAlert()
   const loading = ref(false)
 
   async function execute(payload: SafeOpPayload): Promise<JobRun | undefined> {

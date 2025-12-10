@@ -16,7 +16,9 @@ import (
 	adminruntime "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/runtime_ops"
 	adminsecurity "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/security"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/templates"
+	agentapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/agent"
 	customerapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/customer"
+	integrationapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/integration"
 
 	publicassets "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/public/assets"
 	publicmarketplace "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/public/marketplace"
@@ -42,11 +44,12 @@ func NewRegistry(engine *gin.Engine, deps *app.Deps) *Registry {
 
 // RegisterRoutes 注册所有路由
 func (r *Registry) RegisterAPIRoutes(gApi *gin.RouterGroup) {
+	adminGroup := gApi.Group("/admin")
 	admin.RegisterAPIRoutes(gApi, r.deps)
 	agentapi.RegisterAPIRoutes(gApi, r.deps)
 	templates.RegisterAPIRoutes(gApi, r.deps)
 	integrationapi.RegisterAPIRoutes(gApi, r.deps)
-	customerapi.RegisterRoutes(gApi, r.deps)
+	customerapi.RegisterRoutes(adminGroup, r.deps)
 	r.RegisterMarketplaceRoutes(gApi)
 	if isDevEnvironment(r.deps) {
 		r.registerDevAssetsRoute()

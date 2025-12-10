@@ -4,18 +4,19 @@ import { useCustomerMetrics } from "~/composables/useCustomerMetrics";
 import { useMembershipInsights } from "~/composables/useMembershipInsights";
 import { useCustomerBulkActions } from "~/composables/useCustomerBulkActions";
 import type {
-  AuditContext,
-  BulkReminderPayload,
-  BulkTask,
-  Customer,
-  CustomerListFilters,
-  MembershipFilters,
-  MembershipInsight,
-  MembershipReminderState,
-  MembershipSnapshot,
-  MembershipSegments,
-  MembershipStats,
-  SavedView,
+	BulkReminderPayload,
+	BulkTask,
+	Customer,
+	CustomerCreatePayload,
+	CustomerListFilters,
+	CustomerUpdatePayload,
+	MembershipFilters,
+	MembershipInsight,
+	MembershipReminderState,
+	MembershipSnapshot,
+	MembershipSegments,
+	MembershipStats,
+	SavedView,
 } from "~/types/customer";
 
 const SAVED_VIEWS_KEY = "px_customer_saved_views";
@@ -74,6 +75,15 @@ const createExportState = () => ({
   lastTaskId: null as string | null,
 });
 
+const createMutationState = () => ({
+  creating: false,
+  updating: false,
+  deleting: false,
+  error: null as string | null,
+  lastAction: null as "create" | "update" | "delete" | null,
+  lastCustomerId: null as string | null,
+});
+
 const readSavedViews = (): SavedView[] => {
   if (typeof window === "undefined") return [];
   try {
@@ -129,6 +139,7 @@ export const useCustomerStore = defineStore("customer.directory", {
     importState: createImportState(),
     exportState: createExportState(),
     taskPolling: {} as Record<string, boolean>,
+    mutationState: createMutationState(),
     visibleColumns: [
       "name",
       "contact",
@@ -175,6 +186,18 @@ export const useCustomerStore = defineStore("customer.directory", {
         task,
         ...this.bulkTasks.filter((item) => item.taskId !== task.taskId),
       ];
+    },
+    recordCustomerChange(action: "created" | "updated" | "deleted", customer: Customer | { id: string }) {
+      if (!customer?.id) return;
+      this.registerTask({
+        taskId: `customer-${action}-${customer.id}-${Date.now()}`,
+        type: "customerChanged",
+        status: "success",
+        createdAt: new Date().toISOString(),
+        scope: { ids: [customer.id] },
+        context: "directory",
+        message: action,
+      });
     },
     updateTask(taskId: string, patch: Partial<BulkTask>) {
       this.bulkTasks = this.bulkTasks.map((task) =>
@@ -326,7 +349,6 @@ export const useCustomerStore = defineStore("customer.directory", {
     async submitImportTask(params: {
       file: File;
       context?: "directory" | "members";
-      audit?: AuditContext;
     }) {
       if (!params.file) {
         throw new Error("请提供导入文件");
@@ -337,14 +359,6 @@ export const useCustomerStore = defineStore("customer.directory", {
       try {
         const response = await bulkActions.submitImport({
           file: params.file,
-          audit:
-            params.audit ||
-            (params.context === "members"
-              ? {
-                  action: "customer.membership.import",
-                  resource: "customers:members",
-                }
-              : undefined),
         });
         this.importState.lastTaskId = response.taskId;
         this.registerTask({
@@ -371,7 +385,6 @@ export const useCustomerStore = defineStore("customer.directory", {
       fields: string[];
       filters?: CustomerListFilters;
       context?: "directory" | "members";
-      audit?: AuditContext;
     }) {
       const bulkActions = useCustomerBulkActions();
       this.exportState.submitting = true;
@@ -380,14 +393,6 @@ export const useCustomerStore = defineStore("customer.directory", {
         const response = await bulkActions.submitExport({
           filters: params.filters,
           fields: params.fields,
-          audit:
-            params.audit ||
-            (params.context === "members"
-              ? {
-                  action: "customer.membership.export",
-                  resource: "customers:members",
-                }
-              : undefined),
         });
         this.exportState.lastTaskId = response.taskId;
         this.registerTask({
@@ -464,6 +469,87 @@ export const useCustomerStore = defineStore("customer.directory", {
         throw error;
       } finally {
         this.reminderState.submitting = false;
+      }
+    },
+    resetMutationState() {
+      this.mutationState = createMutationState();
+    },
+    async createCustomer(payload: CustomerCreatePayload) {
+      if (!payload?.name) {
+        throw new Error("缺少客户必填字段");
+      }
+      const service = useCustomerService();
+      this.mutationState.creating = true;
+      this.mutationState.error = null;
+      try {
+        const customer = await service.createCustomer(payload);
+        this.mutationState.lastAction = "create";
+        this.mutationState.lastCustomerId = customer.id;
+        if (this.filters.page !== 1) {
+          this.setPage(1);
+        }
+        await this.fetchCustomers();
+        if (this.membershipSnapshots.length) {
+          await this.fetchMemberships();
+        }
+        this.recordCustomerChange("created", customer);
+        return customer;
+      } catch (error: any) {
+        this.mutationState.error =
+          error?.data?.message || error?.message || "创建客户失败";
+        throw error;
+      } finally {
+        this.mutationState.creating = false;
+      }
+    },
+    async updateCustomer(id: string, payload: CustomerUpdatePayload) {
+      if (!id) {
+        throw new Error("customerId is required");
+      }
+      const service = useCustomerService();
+      this.mutationState.updating = true;
+      this.mutationState.error = null;
+      try {
+        const customer = await service.updateCustomer(id, payload);
+        this.mutationState.lastAction = "update";
+        this.mutationState.lastCustomerId = customer.id;
+        await this.fetchCustomers();
+        if (this.membershipSnapshots.length) {
+          await this.fetchMemberships();
+        }
+        this.recordCustomerChange("updated", customer);
+        return customer;
+      } catch (error: any) {
+        this.mutationState.error =
+          error?.data?.message || error?.message || "更新客户失败";
+        throw error;
+      } finally {
+        this.mutationState.updating = false;
+      }
+    },
+    async deleteCustomer(params: { id: string; reason: string; customer?: Customer }) {
+      if (!params?.id) {
+        throw new Error("customerId is required");
+      }
+      const service = useCustomerService();
+      this.mutationState.deleting = true;
+      this.mutationState.error = null;
+      try {
+        await service.deleteCustomer(params.id, { reason: params.reason });
+        this.mutationState.lastAction = "delete";
+        this.mutationState.lastCustomerId = params.id;
+        this.selection = this.selection.filter((item) => item !== params.id);
+        await this.fetchCustomers();
+        if (this.membershipSnapshots.length) {
+          await this.fetchMemberships();
+        }
+        this.recordCustomerChange("deleted", params.customer ?? { id: params.id });
+      } catch (error: any) {
+        this.mutationState.error =
+          error?.data?.message || error?.message || "删除客户失败";
+        throw error;
+      } finally {
+        this.mutationState.deleting = false;
       }
     },
   },

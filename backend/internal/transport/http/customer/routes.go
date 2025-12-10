@@ -15,5 +15,8 @@ func RegisterRoutes(rg *gin.RouterGroup, deps *app.Deps) {
 	group := rg.Group("/customers", httpmw.EnsureTenant())
 	{
 		group.GET("", handler.ListCustomers)
+		group.POST("", handler.CreateCustomer)
+		group.PATCH(":id", handler.UpdateCustomer)
+		group.DELETE(":id", handler.DeleteCustomer)
 	}
 }

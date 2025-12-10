@@ -1,63 +1,69 @@
 <template>
   <UCard class="mb-4">
-    <div class="flex flex-col gap-4">
-      <div class="flex flex-wrap gap-4">
-        <UFormField :label="t('customer.directory.filters.keyword')" class="flex-1 min-w-[220px]">
+    <div class="flex flex-col gap-6">
+      <div class="grid grid-cols-12 gap-4">
+        <UFormField
+          :label="t('customer.directory.filters.keyword')"
+          class="col-span-12 sm:col-span-6 xl:col-span-3"
+          :ui="inlineFieldUi"
+        >
           <UInput
             v-model="form.keyword"
+            class="w-full"
             :placeholder="t('customer.directory.filters.keywordPlaceholder')"
             icon="i-heroicons-magnifying-glass"
             clearable
           />
         </UFormField>
-        <UFormField :label="t('customer.directory.filters.tier')" class="w-48">
-          <USelectMenu
-            v-model="form.tier"
-            :options="tierOptions"
-            value-attribute="value"
-            option-attribute="label"
-            clearable
-          />
+        <UFormField
+          :label="t('customer.directory.filters.tier')"
+          class="col-span-12 sm:col-span-6 xl:col-span-3"
+          :ui="inlineFieldUi"
+        >
+          <USelect v-model="tierModel" class="w-full" :items="tierOptions" />
         </UFormField>
-        <UFormField :label="t('customer.directory.filters.type')" class="w-48">
-          <USelectMenu
-            v-model="form.type"
-            :options="typeOptions"
-            value-attribute="value"
-            option-attribute="label"
-            clearable
-          />
+        <UFormField
+          :label="t('customer.directory.filters.type')"
+          class="col-span-12 sm:col-span-6 xl:col-span-3"
+          :ui="inlineFieldUi"
+        >
+          <USelect v-model="typeModel" class="w-full" :items="typeOptions" />
         </UFormField>
-        <UFormField :label="t('customer.directory.filters.risk')" class="w-48">
-          <USelectMenu
-            v-model="form.riskLevel"
-            :options="riskOptions"
-            value-attribute="value"
-            option-attribute="label"
-            clearable
-          />
+        <UFormField
+          :label="t('customer.directory.filters.risk')"
+          class="col-span-12 sm:col-span-6 xl:col-span-3"
+          :ui="inlineFieldUi"
+        >
+          <USelect v-model="riskModel" class="w-full" :items="riskOptions" />
+        </UFormField>
+        <UFormField
+          :label="t('customer.directory.filters.source')"
+          class="col-span-12 sm:col-span-6 xl:col-span-3"
+          :ui="inlineFieldUi"
+        >
+          <USelect v-model="sourceModel" class="w-full" :items="sourceOptions" />
+        </UFormField>
+        <UFormField
+          :label="t('customer.directory.filters.region')"
+          class="col-span-12 sm:col-span-6 xl:col-span-3"
+          :ui="inlineFieldUi"
+        >
+          <UInput v-model="form.region" class="w-full" clearable />
         </UFormField>
       </div>
-      <div class="flex flex-wrap gap-4">
-        <UFormField :label="t('customer.directory.filters.source')" class="w-48">
-          <USelectMenu
-            v-model="form.source"
-            :options="sourceOptions"
-            value-attribute="value"
-            option-attribute="label"
-            clearable
-          />
-        </UFormField>
-        <UFormField :label="t('customer.directory.filters.region')" class="w-48">
-          <UInput v-model="form.region" clearable />
-        </UFormField>
-        <UFormField :label="t('customer.directory.filters.tags')" class="flex-1 min-w-[220px]">
+      <div class="grid grid-cols-12 gap-4 items-start">
+        <UFormField
+          :label="t('customer.directory.filters.tags')"
+          class="col-span-12 lg:col-span-6"
+          :ui="stackedFieldUi"
+        >
           <UInput
             v-model="tagsInput"
+            class="w-full"
             :placeholder="t('customer.directory.filters.tagsPlaceholder')"
             @keyup.enter.prevent="appendTag"
           />
-          <div class="flex flex-wrap gap-2 mt-2">
+          <div class="flex flex-wrap gap-2 pt-1">
             <UBadge
               v-for="tag in form.tags"
               :key="tag"
@@ -69,7 +75,7 @@
             </UBadge>
           </div>
         </UFormField>
-        <div class="flex-1 flex items-end justify-end gap-2">
+        <div class="col-span-12 lg:col-span-6 flex flex-wrap items-center justify-end gap-2">
           <UButton :label="t('customer.directory.actions.reset')" variant="ghost" @click="handleReset" />
           <UButton :label="t('customer.directory.actions.apply')" color="primary" @click="handleSubmit" />
         </div>
@@ -108,27 +114,32 @@
       </div>
     </div>
 
-    <UModal v-model="showSaveModal">
-      <UCard :ui="{ body: 'space-y-4' }">
-        <template #header>
-          <div class="text-lg font-semibold">
-            {{ t("customer.directory.savedViews.title") }}
-          </div>
-        </template>
-        <UFormField :label="t('customer.directory.savedViews.name')">
-          <UInput v-model="newViewName" autofocus />
+    <UModal
+      v-model="showSaveModal"
+      :ui="modalUi"
+      :close="false"
+      :dismissible="false"
+    >
+      <template #header>
+        <div class="text-lg font-semibold">
+          {{ t("customer.directory.savedViews.title") }}
+        </div>
+      </template>
+      <template #body>
+        <UFormField :label="t('customer.directory.savedViews.name')" :ui="inlineFieldUi">
+          <UInput v-model="newViewName" autofocus class="w-full" />
         </UFormField>
-        <template #footer>
-          <div class="flex justify-end gap-2">
-            <UButton variant="ghost" @click="showSaveModal = false">
-              {{ t("customer.directory.actions.cancel") }}
-            </UButton>
-            <UButton color="primary" @click="handleSaveView">
-              {{ t("customer.directory.actions.save") }}
-            </UButton>
-          </div>
-        </template>
-      </UCard>
+      </template>
+      <template #footer>
+        <div class="flex justify-end gap-2 w-full">
+          <UButton variant="ghost" @click="closeSaveModal">
+            {{ t("customer.directory.actions.cancel") }}
+          </UButton>
+          <UButton color="primary" @click="handleSaveView">
+            {{ t("customer.directory.actions.save") }}
+          </UButton>
+        </div>
+      </template>
     </UModal>
   </UCard>
 </template>
@@ -148,6 +159,25 @@ const tagsInput = ref("");
 const showSaveModal = ref(false);
 const newViewName = ref("");
 const selectedViewId = ref<string | null>(null);
+const ANY_OPTION_VALUE = "__all__";
+
+const inlineFieldUi = {
+  root: "flex items-center gap-3 w-full",
+  wrapper: "w-28 sm:w-32 shrink-0",
+  labelWrapper: "flex items-center gap-2",
+  label: "text-sm font-medium text-gray-600 whitespace-nowrap",
+  container: "mt-0 flex-1",
+};
+const stackedFieldUi = {
+  ...inlineFieldUi,
+  container: "mt-0 flex-1 flex flex-col gap-2",
+};
+const modalUi = {
+  content: "max-w-xl w-full",
+  body: "p-4 sm:p-5 space-y-4",
+  header: "p-4 sm:px-5",
+  footer: "p-4 sm:px-5",
+};
 
 watch(
   () => filters.value,
@@ -165,28 +195,45 @@ watch(
 );
 
 const tierOptions = computed(() => [
+  { label: t("customer.directory.filters.any"), value: ANY_OPTION_VALUE },
   { label: t("customer.directory.filters.tierOptions.gold"), value: "gold" },
   { label: t("customer.directory.filters.tierOptions.silver"), value: "silver" },
   { label: t("customer.directory.filters.tierOptions.platinum"), value: "platinum" },
 ]);
 
 const typeOptions = computed(() => [
+  { label: t("customer.directory.filters.any"), value: ANY_OPTION_VALUE },
   { label: t("customer.directory.filters.typeOptions.individual"), value: "individual" },
   { label: t("customer.directory.filters.typeOptions.enterprise"), value: "enterprise" },
 ]);
 
 const riskOptions = computed(() => [
+  { label: t("customer.directory.filters.any"), value: ANY_OPTION_VALUE },
   { label: t("customer.directory.filters.riskOptions.low"), value: "low" },
   { label: t("customer.directory.filters.riskOptions.medium"), value: "medium" },
   { label: t("customer.directory.filters.riskOptions.high"), value: "high" },
 ]);
 
 const sourceOptions = computed(() => [
+  { label: t("customer.directory.filters.any"), value: ANY_OPTION_VALUE },
   { label: t("customer.directory.filters.sourceOptions.website"), value: "website" },
   { label: t("customer.directory.filters.sourceOptions.offline"), value: "offline" },
   { label: t("customer.directory.filters.sourceOptions.referral"), value: "referral" },
   { label: t("customer.directory.filters.sourceOptions.miniapp"), value: "miniapp" },
 ]);
+
+const createSelectModel = <K extends keyof typeof form>(key: K) =>
+  computed<string>({
+    get: () => (form[key] ? String(form[key]) : ANY_OPTION_VALUE),
+    set: (value) => {
+      form[key] = (value === ANY_OPTION_VALUE ? "" : value) as (typeof form)[K];
+    },
+  });
+
+const tierModel = createSelectModel("tier");
+const typeModel = createSelectModel("type");
+const riskModel = createSelectModel("riskLevel");
+const sourceModel = createSelectModel("source");
 
 const viewOptions = computed(() =>
   savedViews.value.map((view) => ({
@@ -199,6 +246,13 @@ const lastFetchedAtDisplay = computed(() => {
   if (!lastFetchedAt.value) return "";
   return new Date(lastFetchedAt.value).toLocaleString();
 });
+
+const closeSaveModal = () => {
+  if (typeof document !== "undefined") {
+    (document.activeElement as HTMLElement | null)?.blur();
+  }
+  showSaveModal.value = false;
+};
 
 const appendTag = () => {
   const value = tagsInput.value?.trim();
@@ -236,7 +290,7 @@ const openSaveModal = () => {
 const handleSaveView = () => {
   try {
     store.saveCurrentView(newViewName.value);
-    showSaveModal.value = false;
+    closeSaveModal();
   } catch (error) {
     // rely on UI toast from caller
     console.error(error);

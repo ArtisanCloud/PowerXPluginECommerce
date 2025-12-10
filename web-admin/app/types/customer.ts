@@ -29,6 +29,7 @@ export interface Customer {
   tags?: string[];
   createdAt?: string;
   updatedAt?: string;
+  notes?: string;
   maskedFields?: string[];
   membershipSnapshot?: MembershipSnapshot;
   metadata?: Record<string, any>;
@@ -130,11 +131,6 @@ export interface MembershipReminderState {
   success: number;
 }
 
-export interface AuditContext {
-  action?: string;
-  resource?: string;
-}
-
 export interface BulkActionPayload {
   action: BulkActionType;
   ids: string[];
@@ -164,10 +160,36 @@ export interface JobStatus {
 }
 
 export interface BulkTask extends JobStatus {
-  type: BulkActionType | "import" | "export" | "reminder";
+  type: BulkActionType | "import" | "export" | "reminder" | "customerChanged";
   scope?: {
     ids?: string[];
     filters?: CustomerListFilters;
   };
   context?: "directory" | "members";
+}
+
+export interface CustomerCreatePayload {
+  name: string;
+  type: CustomerType;
+  phone: string;
+  email?: string;
+  source: string;
+  country?: string;
+  region?: string;
+  membershipTier: string;
+  accountManager?: string;
+  tags?: string[];
+  notes?: string;
+}
+
+export type CustomerUpdatePayload = Partial<Omit<CustomerCreatePayload, "type" | "phone" | "membershipTier" | "source">> & {
+  type?: CustomerType;
+  phone?: string;
+  membershipTier?: string;
+  source?: string;
+  status?: CustomerStatus;
+};
+
+export interface CustomerDeletePayload {
+  reason: string;
 }
