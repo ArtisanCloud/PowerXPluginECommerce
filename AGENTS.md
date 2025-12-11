@@ -38,6 +38,8 @@ Always respond in Chinese-simplified
 - PostgreSQL（schema: powerx_plugin_base），可选 Redis 做列表/任务缓存 (003-channels-subscription)
 - TypeScript 5.x + Nuxt 4（Node 20 运行时） + Nuxt UI 3.3.x、Pinia、@vueuse/core、@nuxtuse/asyncData、内部任务中心与 CRM REST API (001-customer-ops-customer)
 - N/A（前端仅消费既有 API；后端由 CRM 服务管理数据） (001-customer-ops-customer)
+- Go 1.24（backend）、TypeScript 5.9 + Nuxt 4（web-admin） + Gin HTTP、GORM（Postgres driver）、PowerX plugin framework、JWT/STS、多租户任务中心、Nuxt UI 3.3.x、Pinia、@vueuse/core、Nuxt i18n (001-product-spu-management)
+- PostgreSQL (`powerx_plugin_base` schema) — 表：`product_spus`、`product_spu_versions`、`product_spu_channels`、`product_spu_subscription_plans`、`product_spu_audit_logs`、任务记录表等 (001-product-spu-management)
 
 ## Recent Changes
 - 003-channels-subscription: Added Backend Go 1.24; Frontend Node 20 + TypeScript 5.9 + Nuxt 4 + Gin, GORM (postgres driver), PowerX plugin framework, JWT、grpc/protobuf、Redis 客户端；前端 @nuxt/ui 3.3.x、Pinia、i18n、Nuxt Icon
