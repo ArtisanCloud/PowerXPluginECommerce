@@ -1,6 +1,6 @@
 # Feature Specification: 商品（SPU）管理
 
-**Feature Branch**: `[001-product-spu-management]`  
+**Feature Branch**: `[002-product-spu-management]`  
 **Created**: 2025-12-11  
 **Status**: Draft  
 **Input**: User description: "根据 docs/plan/product/spu.md 衍生的商品（SPU）管理规范"

@@ -1,7 +1,7 @@
 # Implementation Plan: 商品（SPU）管理
 
-**Branch**: `001-product-spu-management` | **Date**: 2025-12-11 | **Spec**: [spec.md](./spec.md)
-**Input**: Feature specification from `/specs/001-product-spu-management/spec.md`
+**Branch**: `002-product-spu-management` | **Date**: 2025-12-11 | **Spec**: [spec.md](./spec.md)
+**Input**: Feature specification from `/specs/002-product-spu-management/spec.md`
 
 **Note**: 本计划遵循 `.specify/templates/commands/plan.md` 所定义的流程。
 
@@ -36,7 +36,7 @@
 ### Documentation (this feature)
 
 ```text
-specs/001-product-spu-management/
+specs/002-product-spu-management/
 ├── plan.md          # /speckit.plan 产物
 ├── research.md      # Phase 0 研究结论
 ├── data-model.md    # Phase 1 数据模型

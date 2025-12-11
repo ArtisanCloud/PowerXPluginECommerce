@@ -14,6 +14,7 @@ import (
 	iammodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/iam"
 	marketplaceModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/marketplace"
 	operationsModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/operations"
+	productmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product"
 	runtimeOpsModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/runtime_ops"
 	securityModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/security"
 	templateModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/template"
@@ -27,6 +28,15 @@ var businessTables = []interface{}{
 	&models.PluginTenantExt{},
 	&customermodel.Customer{},
 	&templateModel.Template{},
+	&productmodel.SPU{},
+	&productmodel.SPUVersion{},
+	&productmodel.SPULocale{},
+	&productmodel.ChannelVisibility{},
+	&productmodel.SubscriptionPlan{},
+	&productmodel.SPUImportTask{},
+	&productmodel.SPUExportTask{},
+	&productmodel.SPUApprovalRecord{},
+	&productmodel.SPUAuditLog{},
 	&marketplaceModel.Listing{},
 	&marketplaceModel.ListingAsset{},
 	&marketplaceModel.ListingVersion{},

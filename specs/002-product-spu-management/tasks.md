@@ -1,15 +1,15 @@
 # Tasks: 商品（SPU）管理
 
-**Input**: Design documents from `/specs/001-product-spu-management/`
+**Input**: Design documents from `/specs/002-product-spu-management/`
 **Prerequisites**: plan.md, spec.md, research.md, data-model.md, contracts/, quickstart.md
 
 ## Phase 1: Setup (Shared Infrastructure)
 
 **Purpose**: 建立 backend/product 与 web-admin/product 的基础目录与管线，以承载后续实现。
 
-- [ ] T001 初始化 product 模块目录与 Go 包（backend/internal/domain/{models,repository}/product, backend/internal/services/admin/product/spu, backend/internal/transport/http/admin/product/spu）。
-- [ ] T002 建立渠道任务与观测目录骨架（backend/internal/jobs/channels/、backend/internal/observability/product/）并写入 TODO 注释说明目标。
-- [ ] T003 创建 web-admin/product 目录结构（web-admin/app/pages/product/spus/**、app/components/product、app/composables、app/stores/product）并导出空组件骨架。
+- [x] T001 初始化 product 模块目录与 Go 包（backend/internal/domain/{models,repository}/product, backend/internal/services/admin/product/spu, backend/internal/transport/http/admin/product/spu）。
+- [x] T002 建立渠道任务与观测目录骨架（backend/internal/jobs/channels/、backend/internal/observability/product/）并写入 TODO 注释说明目标。
+- [x] T003 创建 web-admin/product 目录结构（web-admin/app/pages/product/spus/**、app/components/product、app/composables、app/stores/product）并导出空组件骨架。
 
 ---
 
@@ -17,14 +17,14 @@
 
 **Purpose**: 搭建数据库、模型、仓储、接口与前端 API 客户端，作为所有用户故事的统一底座。
 
-- [ ] T004 增加 product_spus、product_spu_versions、product_spu_locales 的迁移脚本（backend/cmd/database/migrate/migrations/*_create_spu_tables.go）。
-- [ ] T005 增加 product_spu_channels、product_spu_subscription_plans、product_spu_approvals、product_spu_audit_logs、product_spu_import_tasks、product_spu_export_tasks 的迁移脚本（同目录）。
-- [ ] T006 实现数据模型结构体及 TableName 常量（backend/internal/domain/models/product/{spu.go,version.go,locale.go,channel.go,subscription_plan.go,approval.go,audit_log.go}）。
-- [ ] T007 实现仓储层并内嵌 BaseRepository，统一 Tenant 过滤（backend/internal/domain/repository/product/{spu_repository.go,version_repository.go,channel_repository.go,subscription_plan_repository.go}）。
-- [ ] T008 定义 SPU 服务接口、DTO 与通用校验逻辑（backend/internal/services/admin/product/spu/service.go）。
-- [ ] T009 注册 HTTP 路由与基础 Handler 入口（backend/internal/transport/http/admin/product/spu/router.go）。
-- [ ] T010 实现多语言字段验证与默认语言复制工具（backend/internal/services/admin/product/spu/locale_service.go），确保 FR-002 后端校验。
-- [ ] T011 [P] 创建 SPU API client 及 Pinia store skeleton（web-admin/app/composables/useSpuApi.ts、app/stores/product/spu.ts）。
+- [x] T004 增加 product_spus、product_spu_versions、product_spu_locales 的迁移脚本（backend/cmd/database/migrate/migrations/*_create_spu_tables.go）。
+- [x] T005 增加 product_spu_channels、product_spu_subscription_plans、product_spu_approvals、product_spu_audit_logs、product_spu_import_tasks、product_spu_export_tasks 的迁移脚本（同目录）。
+- [x] T006 实现数据模型结构体及 TableName 常量（backend/internal/domain/models/product/{spu.go,version.go,locale.go,channel.go,subscription_plan.go,approval.go,audit_log.go}）。
+- [x] T007 实现仓储层并内嵌 BaseRepository，统一 Tenant 过滤（backend/internal/domain/repository/product/{spu_repository.go,version_repository.go,channel_repository.go,subscription_plan_repository.go}）。
+- [x] T008 定义 SPU 服务接口、DTO 与通用校验逻辑（backend/internal/services/admin/product/spu/service.go）。
+- [x] T009 注册 HTTP 路由与基础 Handler 入口（backend/internal/transport/http/admin/product/spu/router.go）。
+- [x] T010 实现多语言字段验证与默认语言复制工具（backend/internal/services/admin/product/spu/locale_service.go），确保 FR-002 后端校验。
+- [x] T011 [P] 创建 SPU API client 及 Pinia store skeleton（web-admin/app/composables/useSpuApi.ts、app/stores/product/spu.ts）。
 
 **Checkpoint**: 完成后可独立实现各用户故事。
 
@@ -110,7 +110,7 @@
 
 **Purpose**: 收尾文档、可观测性、验证 quickstart，并量化成功指标。
 
-- [ ] T040 [P] 更新 quickstart 与 API 合同以记录最新流程（specs/001-product-spu-management/{quickstart.md,contracts/spu-api.md}）。
+- [ ] T040 [P] 更新 quickstart 与 API 合同以记录最新流程（specs/002-product-spu-management/{quickstart.md,contracts/spu-api.md}）。
 - [ ] T041 增加 KPI 指标与日志（backend/internal/observability/product/spu_metrics.go），覆盖 SC-001~SC-004（上线 Lead Time、导入成功率、渠道同步率、审批 SLA）。
 - [ ] T042 执行 quickstart 自检并将记录写入 reports/spu-management-validation.md，确认成功标准与边界场景。
 
@@ -139,4 +139,3 @@
    - 小组 B：前端页面/交互（T011, T017-T022, T028-T029, T037-T038）。
    - 小组 C：测试与可观测性（T012-T013, T023-T024, T031-T032, T040-T042）。
 4. **验证节奏**：每完成一阶段即跑 quickstart + 相关测试（例如完 US1 后运行 T012-T013/T019-T022 验证），确保故事独立可演示并记录 KPI。
-
