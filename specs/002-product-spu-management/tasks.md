@@ -89,18 +89,18 @@
 
 ### Tests for User Story 3
 
-- [ ] T031 [P] [US3] 编写导入部分成功/失败报告的 service 测试（backend/internal/services/admin/product/spu/import_service_test.go）。
+- [x] T031 [P] [US3] 编写导入部分成功/失败报告的 service 测试（backend/internal/services/admin/product/spu/import_service_test.go）。
 - [ ] T032 [P] [US3] 编写渠道配置+批量导入端到端测试（web-admin/tests/e2e/product-spu-bulk.spec.ts）。
 
 ### Implementation for User Story 3
 
 - [x] T033 [US3] 实现渠道可见性服务与 Handler（backend/internal/services/admin/product/spu/channel_service.go、transport/http/admin/product/spu/channel_handler.go）。
-- [ ] T034 [US3] 实现订阅计划 effectScope 选项及更新接口（backend/internal/transport/http/admin/product/spu/handler_plans.go）。
-- [ ] T035 [US3] 实现导入/导出 orchestrator，写入任务中心与审计（backend/internal/services/admin/product/spu/import_service.go）。
-- [ ] T036 [US3] 实现异步 worker 处理导入导出与渠道同步回执（backend/internal/jobs/channels/spu_sync_worker.go）。
+- [x] T034 [US3] 实现订阅计划 effectScope 选项及更新接口（backend/internal/transport/http/admin/product/spu/handler_plans.go）。
+- [x] T035 [US3] 实现导入/导出 orchestrator，写入任务中心与审计（backend/internal/services/admin/product/spu/import_service.go）。
+- [x] T036 [US3] 实现异步 worker 处理导入导出与渠道同步回执（backend/internal/jobs/channels/spu_sync_worker.go）。
 - [ ] T037 [P] [US3] 实现前端渠道配置 Tab（web-admin/app/pages/product/spus/components/ChannelVisibilityForm.vue）。
 - [ ] T038 [US3] 实现批量导入/导出对话框与失败报告查看（web-admin/app/components/product/SpuBulkDialog.vue）。
-- [ ] T039 [US3] 在导入流水中实现 SPU 编码/SKU 关联重复校验与错误提示（backend/internal/services/admin/product/spu/import_validator.go），确保 Edge Case 处理。
+- [x] T039 [US3] 在导入流水中实现 SPU 编码/SKU 关联重复校验与错误提示（backend/internal/services/admin/product/spu/import_validator.go），确保 Edge Case 处理。
 
 **Checkpoint**: 三个用户故事均可独立演示。
 

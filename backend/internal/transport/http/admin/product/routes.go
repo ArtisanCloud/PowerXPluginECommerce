@@ -16,10 +16,12 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) {
 	productGroup := router.Group("/product", httpmw.EnsureTenant())
 
 	var (
-		handler        *spu.Handler
-		skuHandler     *spu.SKUHandler
-		versionHandler *spu.VersionHandler
-		channelHandler *spu.ChannelHandler
+		handler             *spu.Handler
+		skuHandler          *spu.SKUHandler
+		versionHandler      *spu.VersionHandler
+		channelHandler      *spu.ChannelHandler
+		planHandler         *spu.PlanHandler
+		importExportHandler *spu.ImportExportHandler
 	)
 	if deps != nil && deps.DB != nil {
 		service := spuservice.NewService(deps)
@@ -30,11 +32,17 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) {
 		versionHandler = spu.NewVersionHandler(versionService)
 		channelService := spuservice.NewChannelService(deps)
 		channelHandler = spu.NewChannelHandler(channelService)
+		planService := spuservice.NewSubscriptionPlanService(deps)
+		planHandler = spu.NewPlanHandler(planService)
+		importService := spuservice.NewImportService(deps)
+		importExportHandler = spu.NewImportExportHandler(importService)
 	} else {
 		handler = spu.NewHandler(nil)
 		skuHandler = spu.NewSKUHandler(nil)
 		versionHandler = spu.NewVersionHandler(nil)
 		channelHandler = spu.NewChannelHandler(nil)
+		planHandler = spu.NewPlanHandler(nil)
+		importExportHandler = spu.NewImportExportHandler(nil)
 	}
 
 	spus := productGroup.Group("/spus")
@@ -55,5 +63,11 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) {
 		spus.GET("/:id/channels", channelHandler.List)
 		spus.POST("/:id/channels", channelHandler.Upsert)
 		spus.DELETE("/:id/channels/:channel", channelHandler.Delete)
+		spus.GET("/:id/subscription-plans", planHandler.List)
+		spus.POST("/:id/subscription-plans", planHandler.Create)
+		spus.PATCH("/:id/subscription-plans/:planId", planHandler.Update)
+		spus.DELETE("/:id/subscription-plans/:planId", planHandler.Delete)
+		spus.POST("/import", importExportHandler.Import)
+		spus.POST("/export", importExportHandler.Export)
 	}
 }
