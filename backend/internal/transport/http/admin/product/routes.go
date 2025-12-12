@@ -19,6 +19,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) {
 		handler        *spu.Handler
 		skuHandler     *spu.SKUHandler
 		versionHandler *spu.VersionHandler
+		channelHandler *spu.ChannelHandler
 	)
 	if deps != nil && deps.DB != nil {
 		service := spuservice.NewService(deps)
@@ -27,10 +28,13 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) {
 		skuHandler = spu.NewSKUHandler(skuService)
 		versionService := spuservice.NewVersionService(deps)
 		versionHandler = spu.NewVersionHandler(versionService)
+		channelService := spuservice.NewChannelService(deps)
+		channelHandler = spu.NewChannelHandler(channelService)
 	} else {
 		handler = spu.NewHandler(nil)
 		skuHandler = spu.NewSKUHandler(nil)
 		versionHandler = spu.NewVersionHandler(nil)
+		channelHandler = spu.NewChannelHandler(nil)
 	}
 
 	spus := productGroup.Group("/spus")
@@ -48,5 +52,8 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) {
 		spus.POST("/:id/versions/:versionId/approve", versionHandler.Approve)
 		spus.POST("/:id/versions/:versionId/reject", versionHandler.Reject)
 		spus.POST("/:id/versions/:versionId/rollback", versionHandler.Rollback)
+		spus.GET("/:id/channels", channelHandler.List)
+		spus.POST("/:id/channels", channelHandler.Upsert)
+		spus.DELETE("/:id/channels/:channel", channelHandler.Delete)
 	}
 }

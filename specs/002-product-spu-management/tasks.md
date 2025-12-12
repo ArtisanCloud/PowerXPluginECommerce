@@ -94,7 +94,7 @@
 
 ### Implementation for User Story 3
 
-- [ ] T033 [US3] 实现渠道可见性服务与 Handler（backend/internal/services/admin/product/spu/channel_service.go、transport/http/admin/product/spu/channel_handler.go）。
+- [x] T033 [US3] 实现渠道可见性服务与 Handler（backend/internal/services/admin/product/spu/channel_service.go、transport/http/admin/product/spu/channel_handler.go）。
 - [ ] T034 [US3] 实现订阅计划 effectScope 选项及更新接口（backend/internal/transport/http/admin/product/spu/handler_plans.go）。
 - [ ] T035 [US3] 实现导入/导出 orchestrator，写入任务中心与审计（backend/internal/services/admin/product/spu/import_service.go）。
 - [ ] T036 [US3] 实现异步 worker 处理导入导出与渠道同步回执（backend/internal/jobs/channels/spu_sync_worker.go）。
