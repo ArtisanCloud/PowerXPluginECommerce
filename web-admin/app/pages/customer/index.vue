@@ -1,92 +1,99 @@
 <template>
-  <div class="space-y-4">
-    <header class="flex flex-wrap gap-3 items-center justify-between">
-      <div>
-        <h1 class="text-2xl font-semibold text-gray-900">
-          {{ t("customer.directory.title") }}
-        </h1>
-        <p class="text-sm text-gray-500">
-          {{ t("customer.directory.subtitle") }}
-        </p>
-      </div>
-      <div class="flex flex-wrap gap-2">
-        <UButton
+  <div class="px-6 py-8 text-white">
+    <div class="mx-auto flex max-w-6xl flex-col gap-6">
+      <header class="flex flex-wrap items-center justify-between gap-3">
+        <div class="flex-1">
+          <p class="text-xs uppercase tracking-[0.2em] text-primary-200">
+            客户运营
+          </p>
+          <h1 class="mt-1 text-3xl font-semibold text-white">
+            {{ t("customer.directory.title") }}
+          </h1>
+          <p class="text-sm text-white/60">
+            {{ t("customer.directory.subtitle") }}
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+          <UButton
+            v-if="canManageCustomers"
+            icon="i-heroicons-arrow-up-tray"
+            color="primary"
+            @click="openImportDialog"
+          >
+            {{ t("customer.directory.actions.import") }}
+          </UButton>
+          <UButton
+            v-if="canExportCustomers"
+            icon="i-heroicons-arrow-down-tray"
+            variant="soft"
+            @click="openExportDialog"
+          >
+            {{ t("customer.directory.actions.export") }}
+          </UButton>
+          <UButton icon="i-heroicons-arrow-path" variant="ghost" @click="handleRefresh" :loading="loading">
+            {{ t("customer.directory.actions.refresh") }}
+          </UButton>
+        </div>
+      </header>
+
+      <div class="space-y-6">
+        <CustomerFilterBar />
+        <CustomerBulkActions />
+
+        <UAlert v-if="error" color="red" :title="t('customer.directory.errors.title')" :description="error">
+          <template #actions>
+            <UButton size="xs" color="red" variant="solid" @click="handleRefresh">
+              {{ t("customer.directory.actions.retry") }}
+            </UButton>
+          </template>
+        </UAlert>
+
+        <CustomerTable
+          :can-manage="canManageCustomers"
+          @view="handleViewCustomer"
+          @pin="handleViewCustomer"
+          @edit="handleEditCustomer"
+          @delete="handleDeleteCustomer"
+        />
+
+        <CustomerDetailDrawer
+          v-model="detailOpen"
+          :customer="activeCustomer"
+          :loading="detailLoading"
+          :can-manage="canManageCustomers"
+          @edit="handleEditCustomer"
+          @delete="handleDeleteCustomer"
+        />
+
+        <EditCustomerModal
+          v-if="canManageCustomers && editingCustomer"
+          v-model:open="editModalOpen"
+          :customer="editingCustomer"
+          @updated="handleCustomerUpdated"
+          @close="handleEditModalClose"
+        />
+        <CustomerDeleteConfirm
           v-if="canManageCustomers"
-          icon="i-heroicons-arrow-up-tray"
-          color="primary"
-          @click="openImportDialog"
-        >
-          {{ t("customer.directory.actions.import") }}
-        </UButton>
-        <UButton
+          v-model:open="deleteConfirmOpen"
+          :customer="deleteTarget"
+          @deleted="handleCustomerDeleted"
+        />
+
+        <CustomerImportDialog
+          v-if="canManageCustomers"
+          v-model="importModalOpen"
+          context="directory"
+          @submitted="handleImportSubmitted"
+        />
+        <CustomerExportDialog
           v-if="canExportCustomers"
-          icon="i-heroicons-arrow-down-tray"
-          variant="soft"
-          @click="openExportDialog"
-        >
-          {{ t("customer.directory.actions.export") }}
-        </UButton>
-        <UButton icon="i-heroicons-arrow-path" variant="ghost" @click="handleRefresh" :loading="loading">
-          {{ t("customer.directory.actions.refresh") }}
-        </UButton>
+          v-model="exportModalOpen"
+          :filters="filters"
+          context="directory"
+          @submitted="handleExportSubmitted"
+        />
       </div>
-    </header>
-
-    <CustomerFilterBar />
-    <CustomerBulkActions />
-
-    <UAlert v-if="error" color="red" :title="t('customer.directory.errors.title')" :description="error">
-      <template #actions>
-        <UButton size="xs" color="red" variant="solid" @click="handleRefresh">
-          {{ t("customer.directory.actions.retry") }}
-        </UButton>
-      </template>
-    </UAlert>
-
-    <CustomerTable
-      :can-manage="canManageCustomers"
-      @view="handleViewCustomer"
-      @pin="handleViewCustomer"
-      @edit="handleEditCustomer"
-      @delete="handleDeleteCustomer"
-    />
-
-    <CustomerDetailDrawer
-      v-model="detailOpen"
-      :customer="activeCustomer"
-      :loading="detailLoading"
-      :can-manage="canManageCustomers"
-      @edit="handleEditCustomer"
-      @delete="handleDeleteCustomer"
-    />
-
-    <EditCustomerModal
-      v-if="canManageCustomers && editingCustomer"
-      v-model:open="editModalOpen"
-      :customer="editingCustomer"
-      @updated="handleCustomerUpdated"
-      @close="handleEditModalClose"
-    />
-    <CustomerDeleteConfirm
-      v-if="canManageCustomers"
-      v-model:open="deleteConfirmOpen"
-      :customer="deleteTarget"
-      @deleted="handleCustomerDeleted"
-    />
-
-    <CustomerImportDialog
-      v-if="canManageCustomers"
-      v-model="importModalOpen"
-      context="directory"
-      @submitted="handleImportSubmitted"
-    />
-    <CustomerExportDialog
-      v-if="canExportCustomers"
-      v-model="exportModalOpen"
-      :filters="filters"
-      context="directory"
-      @submitted="handleExportSubmitted"
-    />
+    </div>
   </div>
 </template>
 

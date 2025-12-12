@@ -1,0 +1,17 @@
+node_modules/
+.nuxt/
+.output/
+.cache/
+.nitro/
+.vercel/
+coverage/
+dist/
+build/
+tests/
+playwright-report/
+.eslintcache
+.stylelintcache
+.env
+.env.*
+*.log
+tmp/

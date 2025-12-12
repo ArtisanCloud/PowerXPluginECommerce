@@ -512,7 +512,7 @@
                   $route.path === '/product/specifications',
               }"
             >
-              <UIcon name="i-heroicons-ruler" class="w-3 h-3 mr-2"/>
+              <UIcon name="i-heroicons-wrench" class="w-3 h-3 mr-2"/>
               规格
             </UButton>
             
@@ -542,7 +542,7 @@
                   $route.path === '/product/category-templates',
               }"
             >
-              <UIcon name="i-heroicons-template" class="w-3 h-3 mr-2"/>
+              <UIcon name="i-heroicons-rectangle-stack" class="w-3 h-3 mr-2"/>
               类目模板
             </UButton>
           </div>

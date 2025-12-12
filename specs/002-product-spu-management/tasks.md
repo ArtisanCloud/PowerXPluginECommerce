@@ -38,20 +38,20 @@
 
 ### Tests for User Story 1
 
-- [ ] T012 [P] [US1] 编写创建→发布生命周期的 service 单测（backend/internal/services/admin/product/spu/service_create_test.go）。
-- [ ] T013 [P] [US1] 编写端到端测试脚本覆盖创建与发布（web-admin/tests/e2e/product-spu-create.spec.ts）。
+- [x] T012 [P] [US1] 编写创建→发布生命周期的 service 单测（backend/internal/services/admin/product/spu/service_create_test.go）。
+- [x] T013 [P] [US1] 编写端到端测试脚本覆盖创建与发布（web-admin/tests/e2e/product-spu-create.spec.ts）。
 
 ### Implementation for User Story 1
 
-- [ ] T014 [US1] 实现创建/草稿/发布核心服务方法并写入审计与渠道任务钩子（backend/internal/services/admin/product/spu/service.go）。
-- [ ] T015 [US1] 实现 SPU 列表、创建、更新、提交、发布的 HTTP Handler（backend/internal/transport/http/admin/product/spu/handler.go）。
-- [ ] T016 [US1] 实现渠道发布任务触发器与回执记录（backend/internal/jobs/channels/publisher.go）。
-- [ ] T017 [P] [US1] 实现 Pinia actions（列表、创建、提交、发布）和 API 绑定（web-admin/app/stores/product/spu.ts）。
-- [ ] T018 [P] [US1] 实现 SPU 列表页（过滤器、概览卡、批量入口）（web-admin/app/pages/product/spus/index.vue）。
-- [ ] T019 [P] [US1] 实现多步骤创建向导与订阅计划配置（web-admin/app/pages/product/spus/create.vue 及 components/product/SpuWizardStep*.vue）。
-- [ ] T020 [US1] 实现 SPU↔SKU 关联服务/Handler（backend/internal/services/admin/product/spu/sku_link_service.go 与 transport/http/admin/product/spu/handler_skus.go），支持批量创建/复制并同步库存与定价模块。
-- [ ] T021 [P] [US1] 实现 SKU 关联管理 UI（web-admin/app/pages/product/spus/components/SpuSkuLinker.vue）以批量创建、复制与可视化继承关系。
-- [ ] T022 [P] [US1] 实现多语言表单组件与必填校验（web-admin/app/components/product/SpuLocaleForm.vue），支持默认语言一键复制与缺失字段阻断提交。
+- [x] T014 [US1] 实现创建/草稿/发布核心服务方法并写入审计与渠道任务钩子（backend/internal/services/admin/product/spu/service.go）。
+- [x] T015 [US1] 实现 SPU 列表、创建、更新、提交、发布的 HTTP Handler（backend/internal/transport/http/admin/product/spu/handler.go）。
+- [x] T016 [US1] 实现渠道发布任务触发器与回执记录（backend/internal/jobs/channels/publisher.go）。
+- [x] T017 [P] [US1] 实现 Pinia actions（列表、创建、提交、发布）和 API 绑定（web-admin/app/stores/product/spu.ts）。
+- [x] T018 [P] [US1] 实现 SPU 列表页（过滤器、概览卡、批量入口）（web-admin/app/pages/product/spus/index.vue）。
+- [x] T019 [P] [US1] 实现多步骤创建向导与订阅计划配置（web-admin/app/pages/product/spus/create.vue 及 components/product/SpuWizardStep*.vue）。
+- [x] T020 [US1] 实现 SPU↔SKU 关联服务/Handler（backend/internal/services/admin/product/spu/sku_link_service.go 与 transport/http/admin/product/spu/handler_skus.go），支持批量创建/复制并同步库存与定价模块。
+- [x] T021 [P] [US1] 实现 SKU 关联管理 UI（web-admin/app/pages/product/spus/components/SpuSkuLinker.vue）以批量创建、复制与可视化继承关系。
+- [x] T022 [P] [US1] 实现多语言表单组件与必填校验（web-admin/app/components/product/SpuLocaleForm.vue），支持默认语言一键复制与缺失字段阻断提交。
 
 **Checkpoint**: US1 可独立测试并演示，覆盖多语言、SKU 关联与渠道发布。
 
@@ -65,17 +65,17 @@
 
 ### Tests for User Story 2
 
-- [ ] T023 [P] [US2] 编写版本 diff/回滚服务单测（backend/internal/services/admin/product/spu/version_service_test.go）。
-- [ ] T024 [P] [US2] 编写审批 SLA 提醒逻辑测试（backend/internal/services/admin/product/spu/approval_notifier_test.go）。
+- [x] T023 [P] [US2] 编写版本 diff/回滚服务单测（backend/internal/services/admin/product/spu/version_service_test.go）。
+- [x] T024 [P] [US2] 编写审批 SLA 提醒逻辑测试（backend/internal/services/admin/product/spu/approval_notifier_test.go）。
 
 ### Implementation for User Story 2
 
-- [ ] T025 [US2] 实现版本快照、差异与回滚服务（backend/internal/services/admin/product/spu/version_service.go）。
-- [ ] T026 [US2] 实现版本/审批相关 Handler（列表、差异、审批、驳回、回滚）（backend/internal/transport/http/admin/product/spu/handler_versions.go）。
-- [ ] T027 [US2] 实现审批 SLA 提醒/升级任务（backend/internal/jobs/channels/approval_sla_worker.go）。
-- [ ] T028 [P] [US2] 实现版本时间线与 diff 组件（web-admin/app/pages/product/spus/components/VersionDiff.vue）。
-- [ ] T029 [US2] 在详情页添加审批面板与意见输入（web-admin/app/pages/product/spus/edit/[id].vue）。
-- [ ] T030 [US2] 扩展审计时间轴组件以展示版本与审批事件（web-admin/app/components/product/SpuAuditTimeline.vue）。
+- [x] T025 [US2] 实现版本快照、差异与回滚服务（backend/internal/services/admin/product/spu/version_service.go）。
+- [x] T026 [US2] 实现版本/审批相关 Handler（列表、差异、审批、驳回、回滚）（backend/internal/transport/http/admin/product/spu/handler_versions.go）。
+- [x] T027 [US2] 实现审批 SLA 提醒/升级任务（backend/internal/jobs/channels/approval_sla_worker.go）。
+- [x] T028 [P] [US2] 实现版本时间线与 diff 组件（web-admin/app/pages/product/spus/components/VersionDiff.vue）。
+- [x] T029 [US2] 在详情页添加审批面板与意见输入（web-admin/app/pages/product/spus/edit/[id].vue）。
+- [x] T030 [US2] 扩展审计时间轴组件以展示版本与审批事件（web-admin/app/components/product/SpuAuditTimeline.vue）。
 
 **Checkpoint**: US1 + US2 可并行验证且互不阻塞。
 
