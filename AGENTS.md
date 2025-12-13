@@ -40,6 +40,8 @@ Always respond in Chinese-simplified
 - N/A（前端仅消费既有 API；后端由 CRM 服务管理数据） (001-customer-ops-customer)
 - Go 1.24（backend）、TypeScript 5.9 + Nuxt 4（web-admin） + Gin HTTP、GORM（Postgres driver）、PowerX plugin framework、JWT/STS、多租户任务中心、Nuxt UI 3.3.x、Pinia、@vueuse/core、Nuxt i18n (002-product-spu-management)
 - PostgreSQL (`powerx_plugin_base` schema) — 表：`product_spus`、`product_spu_versions`、`product_spu_channels`、`product_spu_subscription_plans`、`product_spu_audit_logs`、任务记录表等 (002-product-spu-management)
+- Backend Go 1.24；Frontend TypeScript 5.9 + Nuxt 4（Node 20） + Gin、GORM（Postgres driver）、PowerX plugin framework、Redis client、Nuxt UI 3.3.x、Pinia、Nuxt i18n、@vueuse/core (003-channel-master)
+- PostgreSQL（schema `powerx_plugin_base`）存放 channel_* 表；Redis 用于凭证巡检与 KPI 缓存 (003-channel-master)
 
 ## Recent Changes
 - 003-channels-subscription: Added Backend Go 1.24; Frontend Node 20 + TypeScript 5.9 + Nuxt 4 + Gin, GORM (postgres driver), PowerX plugin framework, JWT、grpc/protobuf、Redis 客户端；前端 @nuxt/ui 3.3.x、Pinia、i18n、Nuxt Icon
