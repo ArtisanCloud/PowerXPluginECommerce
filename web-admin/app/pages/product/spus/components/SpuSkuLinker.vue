@@ -3,8 +3,8 @@
 		<template #header>
 			<div class="flex flex-wrap items-center justify-between gap-4">
 				<div>
-					<h3 class="text-lg font-semibold">关联 SKU</h3>
-					<p class="text-sm text-gray-500">批量创建/复制 SKU 并同步价格、库存引用。</p>
+					<h3 class="text-lg font-semibold text-gray-900 dark:text-white">关联 SKU</h3>
+					<p class="text-sm text-gray-500 dark:text-gray-400">批量创建/复制 SKU 并同步价格、库存引用。</p>
 				</div>
 				<div class="flex gap-2">
 					<UButton icon="i-heroicons-plus" @click="addRow">新增 SKU</UButton>
@@ -67,7 +67,7 @@
 				</div>
 				<UFormField label="扩展属性 JSON">
 					<template #default="{ id }">
-						<UTextarea :id="id" v-model="row.attributesText" rows="2" placeholder='{"color":"red"}' />
+						<UTextarea :id="id" v-model="row.attributesText" :rows="2" placeholder='{"color":"red"}' />
 					</template>
 				</UFormField>
 			</div>

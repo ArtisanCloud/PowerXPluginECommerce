@@ -40,7 +40,12 @@
 </template>
 
 <script setup lang="ts">
-import type { ChecklistSummary, IncidentTimelineEntry, TimelineCreatePayload } from '~/types/operations'
+import type {
+  ChecklistSummary,
+  IncidentChannel,
+  IncidentTimelineEntry,
+  TimelineCreatePayload,
+} from '~/types/operations'
 
 const props = defineProps<{
   entries: IncidentTimelineEntry[]
@@ -60,15 +65,19 @@ const entryTypes = [
   { label: 'Postmortem', value: 'postmortem' },
 ]
 
-const channels = [
+const channels: Array<{ label: string; value: IncidentChannel | null }> = [
   { label: 'Support Hub', value: 'support_hub' },
   { label: 'Status Page', value: 'status_page' },
   { label: 'Security Email', value: 'security_email' },
   { label: 'Hotline', value: 'hotline' },
-  { label: 'Skip Notification', value: '' },
+  { label: 'Skip Notification', value: null },
 ]
 
-const form = reactive<TimelineCreatePayload>({
+const form = reactive<{
+  entry_type: string
+  message: string
+  stakeholder_channel: IncidentChannel | null
+}>({
   entry_type: 'announcement',
   message: '',
   stakeholder_channel: 'support_hub',
@@ -80,7 +89,12 @@ const submit = () => {
   if (!form.message.trim()) {
     return
   }
-  emit('create', { ...form })
+  const payload: TimelineCreatePayload = {
+    entry_type: form.entry_type,
+    message: form.message,
+    stakeholder_channel: form.stakeholder_channel ?? '',
+  }
+  emit('create', payload)
   form.message = ''
   form.entry_type = 'update'
   form.stakeholder_channel = 'support_hub'

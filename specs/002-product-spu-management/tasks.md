@@ -98,9 +98,16 @@
 - [x] T034 [US3] 实现订阅计划 effectScope 选项及更新接口（backend/internal/transport/http/admin/product/spu/handler_plans.go）。
 - [x] T035 [US3] 实现导入/导出 orchestrator，写入任务中心与审计（backend/internal/services/admin/product/spu/import_service.go）。
 - [x] T036 [US3] 实现异步 worker 处理导入导出与渠道同步回执（backend/internal/jobs/channels/spu_sync_worker.go）。
-- [ ] T037 [P] [US3] 实现前端渠道配置 Tab（web-admin/app/pages/product/spus/components/ChannelVisibilityForm.vue）。
-- [ ] T038 [US3] 实现批量导入/导出对话框与失败报告查看（web-admin/app/components/product/SpuBulkDialog.vue）。
+- [x] T037 [P] [US3] 实现前端渠道配置 Tab（web-admin/app/pages/product/spus/components/ChannelVisibilityForm.vue）。
+- [x] T038 [US3] 实现批量导入/导出对话框与失败报告查看（web-admin/app/components/product/SpuBulkDialog.vue）。
 - [x] T039 [US3] 在导入流水中实现 SPU 编码/SKU 关联重复校验与错误提示（backend/internal/services/admin/product/spu/import_validator.go），确保 Edge Case 处理。
+- [x] T043 [US3] 实现 SPU 下架服务与 Handler（backend/internal/services/admin/product/spu/service.go + transport/http/.../handler_withdraw.go），支持多渠道/定时下架并写入审计与渠道任务。
+- [x] T044 [P] [US3] 在 Pinia store 与详情页添加“下架”动作（web-admin/app/stores/product/spu.ts、app/pages/product/spus/edit/[id].vue），包含渠道选择、定时与理由输入。
+- [x] T045 [US3] 补充服务单测与前端 E2E（backend/internal/services/admin/product/spu/service_withdraw_test.go、web-admin/tests/e2e/product-spu-withdraw.spec.ts），覆盖“发布→下架→重新发布”路径。
+- [x] T046 [US3] 实现软删除 API（backend/internal/services/admin/product/spu/service.go、transport/http/.../handler_delete.go）与审计、权限校验，限定仅草稿/下架状态可删除。
+- [x] T047 [P] [US3] 在详情页增加“删除”弹窗及 Pinia action（web-admin/app/pages/product/spus/edit/[id].vue、app/stores/product/spu.ts），支持删除理由并在成功后跳转列表。
+- [x] T048 [US3] 设计硬删除清理脚本与运维指南（backend/cmd/tools/spu_hard_delete.go 或 docs/plan/addenda.md），确保级联清理与审计留痕。
+- [x] T049 [US3] 编写软删除单测与前端 E2E（backend/internal/services/admin/product/spu/service_delete_test.go、web-admin/tests/e2e/product-spu-delete.spec.ts），验证删除条件及提示信息。
 
 **Checkpoint**: 三个用户故事均可独立演示。
 
@@ -110,9 +117,9 @@
 
 **Purpose**: 收尾文档、可观测性、验证 quickstart，并量化成功指标。
 
-- [ ] T040 [P] 更新 quickstart 与 API 合同以记录最新流程（specs/002-product-spu-management/{quickstart.md,contracts/spu-api.md}）。
-- [ ] T041 增加 KPI 指标与日志（backend/internal/observability/product/spu_metrics.go），覆盖 SC-001~SC-004（上线 Lead Time、导入成功率、渠道同步率、审批 SLA）。
-- [ ] T042 执行 quickstart 自检并将记录写入 reports/spu-management-validation.md，确认成功标准与边界场景。
+- [x] T040 [P] 更新 quickstart 与 API 合同以记录最新流程（specs/002-product-spu-management/{quickstart.md,contracts/spu-api.md}）。
+- [x] T041 增加 KPI 指标与日志（backend/internal/observability/product/spu_metrics.go），覆盖 SC-001~SC-004（上线 Lead Time、导入成功率、渠道同步率、审批 SLA）。
+- [x] T042 执行 quickstart 自检并将记录写入 reports/spu-management-validation.md，确认成功标准与边界场景。
 
 ---
 

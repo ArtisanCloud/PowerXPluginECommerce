@@ -15,6 +15,7 @@ import (
 
 	productmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
+	productmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/product"
 	taskcenter "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/taskcenter"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/google/uuid"
@@ -45,6 +46,7 @@ type ExportRequest struct {
 type ImportService struct {
 	deps     *app.Deps
 	jobStore *taskcenter.Store
+	metrics  *productmetrics.SPUMetrics
 }
 
 // NewImportService constructs the orchestrator with shared dependencies.
@@ -55,6 +57,7 @@ func NewImportService(deps *app.Deps) *ImportService {
 	return &ImportService{
 		deps:     deps,
 		jobStore: taskcenter.DefaultStore(),
+		metrics:  resolveSPUMetrics(deps, "product-spu-import-service"),
 	}
 }
 
@@ -134,6 +137,9 @@ func (s *ImportService) runImportJob(ctx context.Context, taskID string, req Imp
 	if err := s.finalizeImportTask(ctx, taskID, summary, reportPath); err != nil {
 		s.failImport(ctx, taskID, err)
 		return
+	}
+	if s.metrics != nil {
+		s.metrics.RecordImport(summary.SuccessCount, len(summary.Failures))
 	}
 	message := fmt.Sprintf("成功 %d 行，失败 %d 行", summary.SuccessCount, len(summary.Failures))
 	_, _ = s.jobStore.Success(taskID, message, reportPath)

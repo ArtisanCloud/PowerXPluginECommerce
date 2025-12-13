@@ -12,6 +12,7 @@ import (
 	productrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/domain/repository/product"
 	productmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
+	productmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/product"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -23,6 +24,7 @@ type VersionService struct {
 	spuRepo      *productrepo.SPURepository
 	versionRepo  *productrepo.VersionRepository
 	approvalRepo *productrepo.ApprovalRepository
+	metrics      *productmetrics.SPUMetrics
 }
 
 // VersionListFilters controls pagination and filtering for version list queries.
@@ -107,6 +109,7 @@ func NewVersionService(deps *app.Deps) *VersionService {
 		spuRepo:      productrepo.NewSPURepository(deps.DB),
 		versionRepo:  productrepo.NewVersionRepository(deps.DB),
 		approvalRepo: productrepo.NewApprovalRepository(deps.DB),
+		metrics:      resolveSPUMetrics(deps, "product-spu-version-service"),
 	}
 }
 
@@ -292,6 +295,7 @@ func (s *VersionService) handleApprovalAction(ctx context.Context, spuID, versio
 			return err
 		}
 		now := time.Now().UTC()
+		onTime := pending.SLADueAt == nil || !now.After(*pending.SLADueAt)
 		status := "rejected"
 		if approve {
 			status = "approved"
@@ -307,6 +311,9 @@ func (s *VersionService) handleApprovalAction(ctx context.Context, spuID, versio
 			Where("tenant_uuid = ? AND id = ?", tenantID, pending.ID).
 			Updates(updates).Error; err != nil {
 			return err
+		}
+		if s.metrics != nil {
+			s.metrics.RecordApprovalSLA(onTime)
 		}
 		if approve {
 			var remaining int64

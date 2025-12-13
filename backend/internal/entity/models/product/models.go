@@ -36,7 +36,7 @@ func (SPU) TableName() string { return models.S(models.TableProductSpus) }
 type SPUVersion struct {
 	ID                    string         `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	TenantUUID            string         `gorm:"type:uuid;not null;index" json:"tenant_uuid"`
-	SPUID                 string         `gorm:"type:uuid;not null;index" json:"spu_id"`
+	SPUID                 string         `gorm:"column:spu_id;type:uuid;not null;index" json:"spu_id"`
 	VersionNumber         int            `gorm:"not null;comment:版本号" json:"version_number"`
 	Status                string         `gorm:"type:varchar(32);not null;index" json:"status"`
 	Payload               datatypes.JSON `gorm:"type:jsonb;not null;comment:版本快照" json:"payload"`
@@ -57,7 +57,7 @@ func (SPUVersion) TableName() string { return models.S(models.TableProductSpuVer
 type SPULocale struct {
 	ID          string         `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	TenantUUID  string         `gorm:"type:uuid;not null;index" json:"tenant_uuid"`
-	SPUID       string         `gorm:"type:uuid;not null;index" json:"spu_id"`
+	SPUID       string         `gorm:"column:spu_id;type:uuid;not null;index" json:"spu_id"`
 	Locale      string         `gorm:"type:varchar(16);not null;index:idx_spu_locale_unique,priority:1" json:"locale"`
 	Title       string         `gorm:"type:varchar(255);not null" json:"title"`
 	Subtitle    string         `gorm:"type:varchar(255);comment:副标题" json:"subtitle,omitempty"`
@@ -74,7 +74,7 @@ func (SPULocale) TableName() string { return models.S(models.TableProductSpuLoca
 type ChannelVisibility struct {
 	ID              string         `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	TenantUUID      string         `gorm:"type:uuid;not null;index" json:"tenant_uuid"`
-	SPUID           string         `gorm:"type:uuid;not null;index" json:"spu_id"`
+	SPUID           string         `gorm:"column:spu_id;type:uuid;not null;index" json:"spu_id"`
 	Channel         string         `gorm:"type:varchar(64);not null;index:idx_spu_channel_unique,priority:1" json:"channel"`
 	Availability    string         `gorm:"type:varchar(32);not null;index" json:"availability"`
 	PublishAt       *time.Time     `json:"publish_at,omitempty"`
@@ -92,7 +92,7 @@ func (ChannelVisibility) TableName() string { return models.S(models.TableProduc
 type SubscriptionPlan struct {
 	ID           string         `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	TenantUUID   string         `gorm:"type:uuid;not null;index" json:"tenant_uuid"`
-	SPUID        string         `gorm:"type:uuid;not null;index" json:"spu_id"`
+	SPUID        string         `gorm:"column:spu_id;type:uuid;not null;index" json:"spu_id"`
 	PlanCode     string         `gorm:"type:varchar(64);not null;index:idx_spu_plan_unique,priority:1" json:"plan_code"`
 	Name         string         `gorm:"type:varchar(120);not null" json:"name"`
 	BillingCycle string         `gorm:"type:varchar(32);not null" json:"billing_cycle"`
@@ -153,7 +153,7 @@ func (SPUExportTask) TableName() string {
 type SPUApprovalRecord struct {
 	ID         string     `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	TenantUUID string     `gorm:"type:uuid;not null;index" json:"tenant_uuid"`
-	SPUID      string     `gorm:"type:uuid;not null;index" json:"spu_id"`
+	SPUID      string     `gorm:"column:spu_id;type:uuid;not null;index" json:"spu_id"`
 	VersionID  string     `gorm:"type:uuid;not null;index" json:"version_id"`
 	ChainOrder int        `gorm:"not null" json:"chain_order"`
 	Role       string     `gorm:"type:varchar(32);not null" json:"role"`
@@ -174,7 +174,7 @@ func (SPUApprovalRecord) TableName() string {
 type SPUAuditLog struct {
 	ID         string         `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	TenantUUID string         `gorm:"type:uuid;not null;index" json:"tenant_uuid"`
-	SPUID      string         `gorm:"type:uuid;not null;index" json:"spu_id"`
+	SPUID      string         `gorm:"column:spu_id;type:uuid;not null;index" json:"spu_id"`
 	EventType  string         `gorm:"type:varchar(64);not null" json:"event_type"`
 	Payload    datatypes.JSON `gorm:"type:jsonb" json:"payload,omitempty"`
 	Operator   string         `gorm:"type:varchar(64)" json:"operator"`

@@ -1,16 +1,16 @@
 <template>
-	<div class="grid gap-4 lg:grid-cols-2">
-		<UCard>
+	<div class="grid gap-4 lg:grid-cols-3">
+		<UCard class="lg:col-span-1">
 			<template #header>
 				<div class="flex items-center justify-between">
-					<div>
-						<h3 class="text-lg font-semibold">版本时间线</h3>
-						<p class="text-sm text-gray-500">查看历史版本并回滚。</p>
-					</div>
+				<div>
+					<h3 class="text-lg font-semibold text-gray-900 dark:text-white">版本时间线</h3>
+					<p class="text-sm text-gray-500 dark:text-gray-400">查看历史版本并回滚。</p>
+				</div>
 					<UBadge color="gray" variant="soft">{{ versions.length }} 个版本</UBadge>
 				</div>
 			</template>
-			<div v-if="!versions.length" class="text-sm text-gray-500">尚无历史版本。</div>
+			<div v-if="!versions.length" class="text-sm text-gray-500 dark:text-gray-400">尚无历史版本。</div>
 			<ul v-else class="space-y-3">
 				<li
 					v-for="version in versions"
@@ -25,9 +25,10 @@
 							版本 #{{ version.versionNumber }}
 							<UBadge class="ml-2" size="xs">{{ version.status }}</UBadge>
 						</p>
-						<p class="text-xs text-gray-500">
-							提交人：{{ version.submittedBy || '—' }} · 提交时间：{{ formatTimestamp(version.submittedAt || version.createdAt) }}
-						</p>
+					<p class="text-xs text-gray-500 dark:text-gray-400 space-y-1">
+						<span class="block break-all">提交人：{{ version.submittedBy || '—' }}</span>
+						<span class="block">提交时间：{{ formatTimestamp(version.submittedAt || version.createdAt) }}</span>
+					</p>
 					</div>
 					<div class="flex gap-2">
 						<UButton size="xs" color="primary" variant="soft" @click="emit('select', version.id)"> 查看 </UButton>
@@ -36,12 +37,12 @@
 				</li>
 			</ul>
 		</UCard>
-		<UCard>
+		<UCard class="lg:col-span-2">
 			<template #header>
 				<div class="flex items-center justify-between">
 					<div>
-						<h3 class="text-lg font-semibold">字段差异</h3>
-						<p class="text-sm text-gray-500">当前选中版本与已发布版本的差异。</p>
+					<h3 class="text-lg font-semibold text-gray-900 dark:text-white">字段差异</h3>
+					<p class="text-sm text-gray-500 dark:text-gray-400">当前选中版本与已发布版本的差异。</p>
 					</div>
 					<UBadge v-if="detail" color="primary" variant="soft">#{{ detail.versionNumber }}</UBadge>
 				</div>
@@ -54,23 +55,23 @@
 			<div v-else-if="detail && detail.diff.length" class="overflow-x-auto">
 				<table class="min-w-full text-sm">
 					<thead>
-						<tr class="text-left text-gray-500">
+						<tr class="text-left text-gray-500 dark:text-gray-400">
 							<th class="pb-2 pr-4">字段</th>
 							<th class="pb-2 pr-4">原值</th>
 							<th class="pb-2">变更值</th>
 						</tr>
 					</thead>
 					<tbody>
-						<tr v-for="entry in detail.diff" :key="entry.field" class="border-t text-sm">
-							<td class="py-2 pr-4 font-medium text-gray-700">{{ entry.field }}</td>
-							<td class="py-2 pr-4 text-gray-500">{{ formatValue(entry.before) }}</td>
-							<td class="py-2 text-gray-900">{{ formatValue(entry.after) }}</td>
+						<tr v-for="entry in detail.diff" :key="entry.field" class="border-t text-sm dark:border-gray-700">
+							<td class="py-2 pr-4 font-medium text-gray-700 dark:text-gray-200">{{ entry.field }}</td>
+							<td class="py-2 pr-4 text-gray-500 dark:text-gray-400">{{ formatValue(entry.before) }}</td>
+							<td class="py-2 text-gray-900 dark:text-white">{{ formatValue(entry.after) }}</td>
 						</tr>
 					</tbody>
 				</table>
 			</div>
-			<div v-else-if="detail && !detail.diff.length" class="text-sm text-gray-500">该版本与线上版本一致。</div>
-			<div v-else class="text-sm text-gray-500">选择一个版本以查看差异。</div>
+			<div v-else-if="detail && !detail.diff.length" class="text-sm text-gray-500 dark:text-gray-400">该版本与线上版本一致。</div>
+			<div v-else class="text-sm text-gray-500 dark:text-gray-400">选择一个版本以查看差异。</div>
 		</UCard>
 	</div>
 </template>

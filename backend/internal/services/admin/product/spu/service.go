@@ -12,6 +12,7 @@ import (
 	productmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/jobs/channels"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
+	productmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/product"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/google/uuid"
 	"github.com/lib/pq"
@@ -35,6 +36,7 @@ type Service struct {
 	approvalRepo *productrepo.ApprovalRepository
 	locales      *LocaleService
 	publisher    channels.Publisher
+	metrics      *productmetrics.SPUMetrics
 }
 
 // NewService wires repositories and helpers using the shared dependency bundle.
@@ -52,6 +54,7 @@ func NewService(deps *app.Deps) *Service {
 		approvalRepo: productrepo.NewApprovalRepository(deps.DB),
 		locales:      NewLocaleService([]string{"zh-CN"}),
 		publisher:    channels.NewAsyncPublisher(logger),
+		metrics:      resolveSPUMetrics(deps, "product-spu-service"),
 	}
 }
 
@@ -411,6 +414,18 @@ type PublishRequest struct {
 	PublishMode string   `json:"publishMode"`
 }
 
+// WithdrawRequest describes payload for deactivating channels.
+type WithdrawRequest struct {
+	Channels   []string `json:"channels"`
+	WithdrawAt string   `json:"withdrawAt"`
+	Reason     string   `json:"reason"`
+}
+
+// DeleteRequest captures audit info when removing an SPU.
+type DeleteRequest struct {
+	Reason string `json:"reason"`
+}
+
 // Submit transitions a draft SPU into reviewing state.
 func (s *Service) Submit(ctx context.Context, id string, req SubmitRequest) (*SPUDetail, error) {
 	tenantID, err := s.tenantFromContext(ctx)
@@ -488,7 +503,10 @@ func (s *Service) Publish(ctx context.Context, id string, req PublishRequest) (*
 		return nil, err
 	}
 	req.Channels = dedupeStrings(req.Channels)
-	var detail *SPUDetail
+	var (
+		detail   *SPUDetail
+		leadTime time.Duration
+	)
 	err = s.spuRepo.WithTenantTx(ctx, tenantID, func(tx *gorm.DB) error {
 		var spu productmodel.SPU
 		if err := tx.Where("tenant_uuid = ? AND id = ?", tenantID, id).First(&spu).Error; err != nil {
@@ -528,6 +546,195 @@ func (s *Service) Publish(ctx context.Context, id string, req PublishRequest) (*
 		spu.ChannelsSummary = summary
 		spu.CurrentVersionID = &version.ID
 		detail = convertToDetail(&spu, nil, version.ID)
+		if !spu.CreatedAt.IsZero() {
+			leadTime = now.Sub(spu.CreatedAt)
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	if s.metrics != nil && leadTime > 0 {
+		s.metrics.ObserveLeadTime(leadTime)
+	}
+	return detail, nil
+}
+
+// Withdraw marks specified channels as offboarded and optionally schedules the operation.
+func (s *Service) Withdraw(ctx context.Context, id string, req WithdrawRequest) (*SPUDetail, error) {
+	if s == nil {
+		return nil, errors.New("spu service not initialized")
+	}
+	tenantID, err := s.tenantFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	req.Reason = strings.TrimSpace(req.Reason)
+	req.WithdrawAt = strings.TrimSpace(req.WithdrawAt)
+	req.Channels = dedupeStrings(req.Channels)
+	var vErrs ValidationErrors
+	if req.Reason == "" {
+		vErrs = vErrs.add("reason", "reason is required")
+	}
+	var scheduledAt *time.Time
+	if req.WithdrawAt != "" {
+		if parsed, err := time.Parse(time.RFC3339, req.WithdrawAt); err != nil {
+			vErrs = vErrs.add("withdrawAt", "withdrawAt must be RFC3339 timestamp")
+		} else {
+			utc := parsed.UTC()
+			scheduledAt = &utc
+		}
+	}
+	if !vErrs.empty() {
+		return nil, vErrs
+	}
+	var detail *SPUDetail
+	err = s.spuRepo.WithTenantTx(ctx, tenantID, func(tx *gorm.DB) error {
+		var spu productmodel.SPU
+		if err := tx.Where("tenant_uuid = ? AND id = ?", tenantID, id).First(&spu).Error; err != nil {
+			return err
+		}
+		if spu.Status != "published" {
+			return fmt.Errorf("spu status %s cannot withdraw", spu.Status)
+		}
+		var records []productmodel.ChannelVisibility
+		if err := tx.Where("tenant_uuid = ? AND spu_id = ?", tenantID, spu.ID).Find(&records).Error; err != nil {
+			return err
+		}
+		if len(records) == 0 {
+			return errors.New("spu has no configured channels to withdraw")
+		}
+		recordMap := make(map[string]productmodel.ChannelVisibility, len(records))
+		for _, record := range records {
+			recordMap[strings.ToLower(record.Channel)] = record
+		}
+		targetChannels := make([]productmodel.ChannelVisibility, 0, len(records))
+		if len(req.Channels) == 0 {
+			targetChannels = records
+		} else {
+			for _, ch := range req.Channels {
+				record, ok := recordMap[strings.ToLower(ch)]
+				if !ok {
+					return fmt.Errorf("channel %s not found on spu", ch)
+				}
+				targetChannels = append(targetChannels, record)
+			}
+		}
+		if len(targetChannels) == 0 {
+			return errors.New("no eligible channels selected for withdraw")
+		}
+		now := time.Now().UTC()
+		effectiveAt := now
+		if scheduledAt != nil {
+			effectiveAt = *scheduledAt
+		}
+		feedback := map[string]any{
+			"reason":    req.Reason,
+			"operator":  actorFromContext(ctx),
+			"action":    "withdraw",
+			"timestamp": effectiveAt,
+		}
+		for _, record := range targetChannels {
+			updates := map[string]any{
+				"availability":  "offboarded",
+				"withdraw_at":   effectiveAt,
+				"updated_at":    now,
+				"last_feedback": encodeGenericJSON(feedback),
+			}
+			if err := tx.Model(&productmodel.ChannelVisibility{}).
+				Where("tenant_uuid = ? AND id = ?", tenantID, record.ID).
+				Updates(updates).Error; err != nil {
+				return err
+			}
+		}
+		var updated []productmodel.ChannelVisibility
+		if err := tx.Where("tenant_uuid = ? AND spu_id = ?", tenantID, spu.ID).Find(&updated).Error; err != nil {
+			return err
+		}
+		summary := summarizeChannelRecords(updated)
+		if err := tx.Model(&productmodel.SPU{}).
+			Where("tenant_uuid = ? AND id = ?", tenantID, spu.ID).
+			Update("channels_summary", summary).Error; err != nil {
+			return err
+		}
+		var activeCount int64
+		if err := tx.Model(&productmodel.ChannelVisibility{}).
+			Where("tenant_uuid = ? AND spu_id = ? AND availability <> ?", tenantID, spu.ID, "offboarded").
+			Count(&activeCount).Error; err != nil {
+			return err
+		}
+		newStatus := spu.Status
+		if activeCount == 0 {
+			newStatus = "offboarded"
+		}
+		updatePayload := map[string]any{"updated_at": now}
+		if newStatus != spu.Status {
+			updatePayload["status"] = newStatus
+			spu.Status = newStatus
+		}
+		if err := tx.Model(&spu).Updates(updatePayload).Error; err != nil {
+			return err
+		}
+		if s.publisher != nil {
+			channels := make([]string, 0, len(targetChannels))
+			for _, ch := range targetChannels {
+				channels = append(channels, ch.Channel)
+			}
+			if _, err := s.publisher.EnqueueWithdraw(ctx, tenantID, spu.ID, channels, effectiveAt, req.Reason); err != nil {
+				return err
+			}
+		}
+		detail = convertToDetail(&spu, nil, derefString(spu.CurrentVersionID))
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return detail, nil
+}
+
+// Delete soft-deletes an SPU when eligible.
+func (s *Service) Delete(ctx context.Context, id string, req DeleteRequest) (*SPUDetail, error) {
+	if s == nil {
+		return nil, errors.New("spu service not initialized")
+	}
+	tenantID, err := s.tenantFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	req.Reason = strings.TrimSpace(req.Reason)
+	if req.Reason == "" {
+		return nil, ValidationErrors{{Field: "reason", Message: "reason is required"}}
+	}
+	var detail *SPUDetail
+	err = s.spuRepo.WithTenantTx(ctx, tenantID, func(tx *gorm.DB) error {
+		var spu productmodel.SPU
+		if err := tx.Where("tenant_uuid = ? AND id = ?", tenantID, id).First(&spu).Error; err != nil {
+			return err
+		}
+		allowed := map[string]struct{}{"draft": {}, "offboarded": {}}
+		if _, ok := allowed[strings.ToLower(spu.Status)]; !ok {
+			return fmt.Errorf("spu status %s cannot be deleted", spu.Status)
+		}
+		if err := tx.Delete(&spu).Error; err != nil {
+			return err
+		}
+		body, _ := json.Marshal(map[string]any{
+			"reason":   req.Reason,
+			"operator": actorFromContext(ctx),
+		})
+		entry := productmodel.SPUAuditLog{
+			ID:         uuidString(),
+			TenantUUID: tenantID,
+			SPUID:      spu.ID,
+			EventType:  "spu.deleted",
+			Payload:    datatypes.JSON(body),
+			Operator:   actorFromContext(ctx),
+		}
+		if err := tx.Create(&entry).Error; err != nil {
+			return err
+		}
+		detail = convertToDetail(&spu, nil, derefString(spu.CurrentVersionID))
 		return nil
 	})
 	if err != nil {

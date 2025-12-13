@@ -201,6 +201,7 @@
 <script setup lang="ts">
 import { h } from "vue";
 import type { TableColumn } from "@nuxt/ui";
+import { channelCatalog } from "~/data/channelCatalog";
 const { t } = useI18n();
 
 // ---- 概览（演示数据） ----
@@ -283,52 +284,19 @@ const columns = computed<TableColumn<Channel>[]>(() => [
 ]);
 
 // ---- 示例数据 ----
-const channels = ref<Channel[]>([
-  {
-    id: "CH001",
-    name: "华北核心渠道",
-    contact: "孙经理 (138****0001)",
-    level: "A",
-    region: "华北",
-    status: "活跃",
-    commissionRate: 0.1,
-    settlement: "月结",
-    gmv30d: 680000,
-  },
-  {
-    id: "CH002",
-    name: "华东优选代理",
-    contact: "周总 (139****0002)",
-    level: "A",
-    region: "华东",
-    status: "活跃",
-    commissionRate: 0.08,
-    settlement: "半月结",
-    gmv30d: 520000,
-  },
-  {
-    id: "CH003",
-    name: "华南分销网络",
-    contact: "刘主管 (137****0003)",
-    level: "B",
-    region: "华南",
-    status: "暂停",
-    commissionRate: 0.06,
-    settlement: "月结",
-    gmv30d: 120000,
-  },
-  {
-    id: "CH004",
-    name: "西南成长渠道",
-    contact: "张经理 (136****0004)",
-    level: "C",
-    region: "西南",
-    status: "待审核",
-    commissionRate: 0.05,
-    settlement: "季结",
-    gmv30d: 80000,
-  },
-]);
+const channels = ref<Channel[]>(
+	channelCatalog.map((entry) => ({
+		id: entry.code,
+		name: entry.name,
+		contact: entry.contact,
+		level: entry.level,
+		region: entry.region,
+		status: entry.status,
+		commissionRate: entry.commissionRate,
+		settlement: entry.settlement,
+		gmv30d: entry.gmv30d,
+	})),
+);
 
 // ---- 过滤逻辑 ----
 const filteredChannels = computed(() => {

@@ -87,3 +87,32 @@ web-admin/
 | Violation | Why Needed | Simpler Alternative Rejected Because |
 |-----------|------------|-------------------------------------|
 | *(None)* | — | — |
+
+## Offboarding Strategy
+
+1. **流程目标**：为已发布 SPU 提供即时/定时下架能力，保持渠道与审计一致，并能在需要时重新走发布流程。
+2. **服务能力**：
+   - 在 `backend/internal/services/admin/product/spu/service.go` 新增 `Withdraw` 逻辑，参数包含 `channels[]`（默认全渠道）、`withdrawAt`、`reason`，逐个更新 `product_spu_channels`，当所有渠道下架后将 `product_spus.status` 置为 `offboarded`。
+   - 触发渠道任务中心（沿用 publisher worker）并记录任务 ID + 下架理由到 `product_spu_audit_logs`，供时间轴展示。
+3. **前端体验**：
+   - 在 `web-admin/app/stores/product/spu.ts` 增加 `withdraw` action，与新的 API `POST /api/v1/admin/product/spus/{id}/withdraw` 对接。
+   - 在 `spus/edit/[id].vue` 添加“下架”按钮与对话框，支持多渠道勾选+定时下架，操作完成后刷新详情并在 `SpuAuditTimeline` 中显示。
+   - 在渠道任务看板增加下架任务状态，以便运营跟踪执行结果。
+4. **测试与文档**：在 `tasks.md` 中新增对应任务，要求补充 service 单测 / E2E；在 `spec.md` 的“下架策略”章节描述状态流转，quickstart 更新“重新上架/下架”步骤。
+
+## Deletion Strategy
+
+1. **软删除（Soft Delete）**
+   - 适用状态：`draft`、`offboarded`。对于 `published` 或 `reviewing`，必须下架/驳回后才能删除。
+   - 实现：在 `product_spus` 上设置 `deleted_at` 并隐藏于列表 API；同时保留所有版本、审批、渠道和审计记录。
+   - 审计：`POST /api/v1/admin/product/spus/{id}/delete`（待实现）需记录删除原因、操作者、时间，并发通知给责任人。
+2. **硬删除（Hard Delete）**
+   - 仅平台管理员通过后台工具触发，前提是 SPU 已软删除 ≥ 30 天且无活跃引用（订单、套餐、营销活动等）。
+   - 执行时级联清理 `product_spu_versions`、`product_spu_channels`、`product_spu_subscription_plans`、`product_spu_audit_logs` 等表；写入审计与变更日志。运维流程记录于 `docs/plan/addenda/spu-hard-delete.md`，并提供 `backend/cmd/tools/spu_hard_delete.go` 辅助生成 SQL。
+3. **UI/权限**
+   - 详情页增加“删除”入口，仅对草稿/下架状态显示，提交删除前需再次确认理由。
+   - 权限项复用 `product.spu.manage`，硬删除需额外的后台运维权限。
+4. **任务规划**
+   - 后端：新增 Delete Service + Handler、软删校验、审计写入、硬删脚本。
+   - 前端：新增删除按钮/确认弹窗、Pinia action、成功后的跳转体验。
+   - 测试：单测覆盖软删条件，E2E 覆盖删除 UI；文档更新 spec/quickstart 说明.

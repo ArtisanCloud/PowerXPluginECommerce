@@ -77,21 +77,23 @@ func (s *SKULinkService) List(ctx context.Context, spuID string) ([]LinkedSKU, e
 	if err != nil {
 		return nil, err
 	}
-	var payload datatypes.JSON
+	var versionPayload struct {
+		Payload []byte
+	}
 	err = s.versionRepo.DB.WithContext(ctx).
 		Table("product_spus").
 		Select("product_spu_versions.payload").
 		Joins("JOIN product_spu_versions ON product_spus.current_version_id = product_spu_versions.id").
 		Where("product_spus.tenant_uuid = ? AND product_spus.id = ?", tenantID, spuID).
 		Limit(1).
-		Scan(&payload).Error
+		Take(&versionPayload).Error
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return []LinkedSKU{}, nil
 		}
 		return nil, err
 	}
-	decoded := decodeVersionPayload(payload)
+	decoded := decodeVersionPayload(datatypes.JSON(versionPayload.Payload))
 	return parseLinkedSKUs(decoded), nil
 }
 

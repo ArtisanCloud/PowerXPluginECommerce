@@ -9,6 +9,7 @@ import (
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	adminmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/admin_console"
 	opsmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/operations"
+	productmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/product"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/authproxy"
 	iamservice "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/iam"
 	marketplacesvc "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/marketplace"
@@ -35,6 +36,7 @@ type Deps struct {
 	LicenseCache        marketplacesvc.LicenseCache
 	OperationsMetrics   *opsmetrics.Metrics
 	AdminConsoleMetrics *adminmetrics.Metrics
+	ProductMetrics      *productmetrics.Metrics
 	IAMMode             iamservice.IAMMode
 	IAMModeSource       string
 	AuthProxy           DelegatedAuthProxy

@@ -10,6 +10,8 @@ import type {
 	SpuVersionDetail,
 	SpuVersionSummary,
 	SubmitSpuPayload,
+	WithdrawSpuPayload,
+	DeleteSpuPayload,
 	VersionListParams,
 } from '~/composables/api/useSpu'
 import { useSpuApi } from '~/composables/api/useSpu'
@@ -89,6 +91,20 @@ export const useSpuStore = defineStore('product-spu', {
 			const api = useSpuApi()
 			const detail = await api.publishSpu(id, payload)
 			this.current = detail
+			await this.fetchList()
+			return detail
+		},
+		async withdraw(id: string, payload: WithdrawSpuPayload) {
+			const api = useSpuApi()
+			const detail = await api.withdrawSpu(id, payload)
+			this.current = detail
+			await this.fetchList()
+			return detail
+		},
+		async delete(id: string, payload: DeleteSpuPayload) {
+			const api = useSpuApi()
+			const detail = await api.deleteSpu(id, payload)
+			this.current = null
 			await this.fetchList()
 			return detail
 		},

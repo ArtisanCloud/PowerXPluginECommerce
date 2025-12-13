@@ -146,6 +146,60 @@ func (h *Handler) Publish(c *gin.Context) {
 	contracts.ResponseSuccessWithMessage(c, detail, "spu publish request accepted")
 }
 
+// Withdraw downlines specific channels for an SPU.
+func (h *Handler) Withdraw(c *gin.Context) {
+	if h.service == nil {
+		contracts.ResponseError(c, http.StatusServiceUnavailable, contracts.ErrCodeInternalError, "spu service unavailable")
+		return
+	}
+	var req spuservice.WithdrawRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		contracts.ResponseError(c, http.StatusBadRequest, contracts.ErrCodeInvalidRequest, err.Error())
+		return
+	}
+	detail, err := h.service.Withdraw(c.Request.Context(), c.Param("id"), req)
+	if err != nil {
+		if vErrs, ok := err.(spuservice.ValidationErrors); ok {
+			contracts.ResponseErrorWithDetails(c, http.StatusUnprocessableEntity, contracts.ErrCodeValidationFailed, "参数校验失败", vErrs)
+			return
+		}
+		status := http.StatusBadRequest
+		if err == gorm.ErrRecordNotFound {
+			status = http.StatusNotFound
+		}
+		contracts.ResponseError(c, status, contracts.ErrCodeInvalidRequest, err.Error())
+		return
+	}
+	contracts.ResponseSuccessWithMessage(c, detail, "spu withdraw request accepted")
+}
+
+// Delete soft deletes a draft/offboarded SPU.
+func (h *Handler) Delete(c *gin.Context) {
+	if h.service == nil {
+		contracts.ResponseError(c, http.StatusServiceUnavailable, contracts.ErrCodeInternalError, "spu service unavailable")
+		return
+	}
+	var req spuservice.DeleteRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		contracts.ResponseError(c, http.StatusBadRequest, contracts.ErrCodeInvalidRequest, err.Error())
+		return
+	}
+	detail, err := h.service.Delete(c.Request.Context(), c.Param("id"), req)
+	if err != nil {
+		if vErrs, ok := err.(spuservice.ValidationErrors); ok {
+			contracts.ResponseErrorWithDetails(c, http.StatusUnprocessableEntity, contracts.ErrCodeValidationFailed, "参数校验失败", vErrs)
+			return
+		}
+		status := http.StatusBadRequest
+		if err == gorm.ErrRecordNotFound {
+			status = http.StatusNotFound
+		}
+		contracts.ResponseError(c, status, contracts.ErrCodeInvalidRequest, err.Error())
+		return
+	}
+	contracts.ResponseSuccessWithMessage(c, detail, "spu deleted")
+}
+
 // Get returns SPU detail by id.
 func (h *Handler) Get(c *gin.Context) {
 	if h.service == nil {

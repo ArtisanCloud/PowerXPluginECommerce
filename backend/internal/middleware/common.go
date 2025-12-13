@@ -6,6 +6,7 @@ import (
 	"os"
 	"runtime/debug"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
@@ -151,26 +152,27 @@ func Timeout(timeout time.Duration) gin.HandlerFunc {
 
 // RateLimiter 简单的速率限制中间件（基于 IP）
 func RateLimiter(maxRequests int, window time.Duration) gin.HandlerFunc {
-	// 简单的内存存储，生产环境建议使用 Redis
+	// 简单的内存存储，生产环境建议使用 Redis；此处通过互斥锁避免并发写 map
 	clientRequests := make(map[string][]time.Time)
+	var mu sync.Mutex
 
 	return func(c *gin.Context) {
 		clientIP := c.ClientIP()
 		now := time.Now()
 
-		// 清理过期记录
-		if requests, exists := clientRequests[clientIP]; exists {
-			var validRequests []time.Time
-			for _, reqTime := range requests {
-				if now.Sub(reqTime) <= window {
-					validRequests = append(validRequests, reqTime)
-				}
+		mu.Lock()
+		requests := clientRequests[clientIP]
+		validRequests := requests[:0]
+		for _, reqTime := range requests {
+			if now.Sub(reqTime) <= window {
+				validRequests = append(validRequests, reqTime)
 			}
-			clientRequests[clientIP] = validRequests
 		}
 
-		// 检查请求数量
-		if len(clientRequests[clientIP]) >= maxRequests {
+		if len(validRequests) >= maxRequests {
+			// 更新清理后的记录再解锁，避免下一次重复遍历
+			clientRequests[clientIP] = validRequests
+			mu.Unlock()
 			c.JSON(http.StatusTooManyRequests, gin.H{
 				"error":   "Rate limit exceeded",
 				"message": fmt.Sprintf("Maximum %d requests per %v allowed", maxRequests, window),
@@ -179,8 +181,8 @@ func RateLimiter(maxRequests int, window time.Duration) gin.HandlerFunc {
 			return
 		}
 
-		// 记录当前请求
-		clientRequests[clientIP] = append(clientRequests[clientIP], now)
+		clientRequests[clientIP] = append(validRequests, now)
+		mu.Unlock()
 
 		c.Next()
 	}

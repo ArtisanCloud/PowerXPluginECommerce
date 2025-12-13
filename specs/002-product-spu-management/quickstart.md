@@ -24,6 +24,22 @@
    - 新建 SPU：完成向导、提交审批、通过后发布，检查渠道任务与审计。
    - 版本回滚：编辑已发布 SPU，生成草稿，查看 diff 并回滚。
    - 批量导入：下载模板、上传 50+ 行数据，确认任务中心显示成功/失败报告。
+     ```bash
+     curl -X POST \
+       -H "Authorization: Bearer <token>" \
+       -F "templateId=default" \
+       -F "file=@spu_import.csv" \
+       http://localhost:8086/api/v1/admin/product/spus/import
+     curl http://localhost:8086/api/v1/jobs/<taskId> -H "Authorization: Bearer <token>"
+     ```
+   - 批量导出：过滤字段后排队导出并从任务中心下载。
+     ```bash
+     curl -X POST \
+       -H "Authorization: Bearer <token>" \
+       -H "Content-Type: application/json" \
+       -d '{"fields":["code","name","type","status"],"filters":{"status":"published"}}' \
+       http://localhost:8086/api/v1/admin/product/spus/export
+     ```
    - 渠道同步：在详情页配置多渠道上架，观察渠道回执展示。
    - 订阅计划：新增计划并测试“仅新订阅”与“新+存量订阅”两种作用范围。
 

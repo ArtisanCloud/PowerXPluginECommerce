@@ -36,6 +36,59 @@ export interface SpuDetail extends SpuSummary {
   updatedAt: string
 }
 
+export interface SpuChannelEntry {
+  id: string
+  channel: string
+  availability: string
+  publishAt?: string
+  withdrawAt?: string
+  auditState?: string
+  contentOverride?: Record<string, any>
+  lastFeedback?: Record<string, any>
+  updatedAt?: string
+}
+
+export interface SpuChannelPayload {
+  channel: string
+  availability: string
+  publishAt?: string | null
+  withdrawAt?: string | null
+  title?: string
+  description?: string
+}
+
+export interface SpuSubscriptionPlan {
+  id: string
+  planCode: string
+  name: string
+  billingCycle: string
+  billingValue?: number
+  price: number
+  currency: string
+  trialDays?: number
+  autoRenew: boolean
+  cancelPolicy: string
+  effectScope: string
+  status: string
+  updatedAt: string
+  createdAt: string
+}
+
+export interface SubscriptionPlanPayload {
+  planCode?: string
+  name: string
+  billingCycle: string
+  billingValue?: number
+  price: number
+  currency?: string
+  trialDays?: number
+  autoRenew?: boolean
+  cancelPolicy: string
+  effectScope?: string
+  status?: string
+  metadata?: Record<string, any>
+}
+
 export interface SpuVersionSummary {
   id: string
   versionNumber: number
@@ -80,6 +133,16 @@ export interface PublishSpuPayload {
   versionId: string
   channels: string[]
   publishMode?: string
+}
+
+export interface WithdrawSpuPayload {
+  channels?: string[]
+  withdrawAt?: string
+  reason?: string
+}
+
+export interface DeleteSpuPayload {
+  reason: string
 }
 
 export interface VersionListResponse {
@@ -149,6 +212,10 @@ export function useSpuApi() {
 
   const publishSpu = (id: string, payload: PublishSpuPayload, init?: any) =>
     unwrap(apiPost<ApiResponse<SpuDetail>>(`${basePath}/${id}/publish`, payload, init))
+  const withdrawSpu = (id: string, payload: WithdrawSpuPayload, init?: any) =>
+    unwrap(apiPost<ApiResponse<SpuDetail>>(`${basePath}/${id}/withdraw`, payload, init))
+  const deleteSpu = (id: string, payload: DeleteSpuPayload, init?: any) =>
+    unwrap(apiPost<ApiResponse<SpuDetail>>(`${basePath}/${id}/delete`, payload, init))
 
   const listSpuSkus = (id: string, init?: any) =>
     unwrap(apiGet<ApiResponse<SpuSkuListResponse>>(`${basePath}/${id}/skus`, undefined, init))
@@ -165,6 +232,24 @@ export function useSpuApi() {
     unwrap(apiPost<ApiResponse<SpuVersionDetail>>(`${basePath}/${id}/versions/${versionId}/reject`, payload ?? {}, init))
   const rollbackSpuVersion = (id: string, versionId: string, payload: RollbackPayload, init?: any) =>
     unwrap(apiPost<ApiResponse<SpuVersionDetail>>(`${basePath}/${id}/versions/${versionId}/rollback`, payload, init))
+  const listSpuChannels = (id: string, init?: any) =>
+    unwrap(apiGet<ApiResponse<{ items: SpuChannelEntry[] }>>(`${basePath}/${id}/channels`, undefined, init))
+  const upsertSpuChannel = (id: string, payload: SpuChannelPayload, init?: any) =>
+    unwrap(apiPost<ApiResponse<SpuChannelEntry>>(`${basePath}/${id}/channels`, payload, init))
+  const deleteSpuChannel = (id: string, channel: string, init?: any) =>
+    unwrap(apiDel<ApiResponse<unknown>>(`${basePath}/${id}/channels/${channel}`, init))
+  const listSubscriptionPlans = (id: string, init?: any) =>
+    unwrap(apiGet<ApiResponse<{ items: SpuSubscriptionPlan[] }>>(`${basePath}/${id}/subscription-plans`, undefined, init))
+  const createSubscriptionPlan = (id: string, payload: SubscriptionPlanPayload, init?: any) =>
+    unwrap(apiPost<ApiResponse<SpuSubscriptionPlan>>(`${basePath}/${id}/subscription-plans`, payload, init))
+  const updateSubscriptionPlan = (id: string, planId: string, payload: SubscriptionPlanPayload, init?: any) =>
+    unwrap(apiPatch<ApiResponse<SpuSubscriptionPlan>>(`${basePath}/${id}/subscription-plans/${planId}`, payload, init))
+  const deleteSubscriptionPlan = (id: string, planId: string, init?: any) =>
+    unwrap(apiDel<ApiResponse<unknown>>(`${basePath}/${id}/subscription-plans/${planId}`, init))
+  const importSpus = (formData: FormData, init?: any) =>
+    unwrap(apiPost<ApiResponse<{ taskId: string }>>(`${basePath}/import`, formData, init))
+  const exportSpus = (payload: Record<string, any>, init?: any) =>
+    unwrap(apiPost<ApiResponse<{ taskId: string }>>(`${basePath}/export`, payload, init))
 
   return {
     baseURL,
@@ -174,6 +259,8 @@ export function useSpuApi() {
     getSpu,
     submitSpu,
     publishSpu,
+    withdrawSpu,
+    deleteSpu,
     listSpuSkus,
     replaceSpuSkus,
     listSpuVersions,
@@ -181,5 +268,14 @@ export function useSpuApi() {
     approveSpuVersion,
     rejectSpuVersion,
     rollbackSpuVersion,
+    listSpuChannels,
+    upsertSpuChannel,
+    deleteSpuChannel,
+    listSubscriptionPlans,
+    createSubscriptionPlan,
+    updateSubscriptionPlan,
+    deleteSubscriptionPlan,
+    importSpus,
+    exportSpus,
   }
 }

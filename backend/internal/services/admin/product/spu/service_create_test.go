@@ -118,6 +118,29 @@ func createTables(t *testing.T, db *gorm.DB) {
 			created_at DATETIME,
 			updated_at DATETIME
 		)`,
+		`CREATE TABLE IF NOT EXISTS product_spu_channels (
+			id TEXT PRIMARY KEY,
+			tenant_uuid TEXT NOT NULL,
+			spu_id TEXT NOT NULL,
+			channel TEXT NOT NULL,
+			availability TEXT NOT NULL,
+			publish_at DATETIME,
+			withdraw_at DATETIME,
+			content_override TEXT,
+			audit_state TEXT,
+			last_feedback TEXT,
+			created_at DATETIME,
+			updated_at DATETIME
+		)`,
+		`CREATE TABLE IF NOT EXISTS product_spu_audit_logs (
+			id TEXT PRIMARY KEY,
+			tenant_uuid TEXT NOT NULL,
+			spu_id TEXT NOT NULL,
+			event_type TEXT NOT NULL,
+			payload TEXT,
+			operator TEXT,
+			created_at DATETIME
+		)`,
 	}
 	for _, stmt := range stmts {
 		require.NoError(t, db.Exec(stmt).Error)

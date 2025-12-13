@@ -2,9 +2,11 @@ package channels
 
 import (
 	"context"
+	"strings"
 	"sync"
 	"time"
 
+	productmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/product"
 	taskcenter "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/taskcenter"
 	"github.com/sirupsen/logrus"
 )
@@ -20,15 +22,16 @@ type Feedback struct {
 
 // SyncWorker consumes feedback messages and reconciles job statuses asynchronously.
 type SyncWorker struct {
-	jobs   *taskcenter.Store
-	logger *logrus.Entry
+	jobs    *taskcenter.Store
+	logger  *logrus.Entry
+	metrics *productmetrics.SPUMetrics
 
 	queue chan Feedback
 	wg    sync.WaitGroup
 }
 
 // NewSyncWorker creates a worker bound to the shared taskcenter store.
-func NewSyncWorker(store *taskcenter.Store, logger *logrus.Entry) *SyncWorker {
+func NewSyncWorker(store *taskcenter.Store, logger *logrus.Entry, metrics *productmetrics.SPUMetrics) *SyncWorker {
 	if store == nil {
 		store = taskcenter.DefaultStore()
 	}
@@ -36,9 +39,10 @@ func NewSyncWorker(store *taskcenter.Store, logger *logrus.Entry) *SyncWorker {
 		logger = logrus.New().WithField("component", "spu-sync-worker")
 	}
 	return &SyncWorker{
-		jobs:   store,
-		logger: logger,
-		queue:  make(chan Feedback, 128),
+		jobs:    store,
+		logger:  logger,
+		metrics: metrics,
+		queue:   make(chan Feedback, 128),
 	}
 }
 
@@ -107,6 +111,15 @@ func (w *SyncWorker) handleFeedback(fb Feedback) {
 			fields["resource"] = fb.Resource
 		}
 		w.logger.WithFields(fields).Info("processed channel feedback")
+	}
+	if w.metrics != nil && fb.Channel != "" {
+		state := strings.ToLower(fb.State)
+		switch state {
+		case "success", "published":
+			w.metrics.RecordChannelSync(true)
+		case "failed", "withheld":
+			w.metrics.RecordChannelSync(false)
+		}
 	}
 }
 

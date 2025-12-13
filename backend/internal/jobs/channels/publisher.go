@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/sirupsen/logrus"
@@ -22,6 +23,7 @@ type PublishTask struct {
 // Publisher declares behavior required by the SPU service to enqueue channel tasks.
 type Publisher interface {
 	EnqueuePublish(ctx context.Context, tenantUUID, spuID, versionID string, channels []string) (*PublishTask, error)
+	EnqueueWithdraw(ctx context.Context, tenantUUID, spuID string, channels []string, withdrawAt time.Time, reason string) (*WithdrawTask, error)
 }
 
 // AsyncPublisher is a lightweight implementation that logs the intent.
@@ -69,6 +71,52 @@ func (p *AsyncPublisher) EnqueuePublish(ctx context.Context, tenantUUID, spuID, 
 			"channels":    filtered,
 			"task_id":     task.TaskID,
 		}).Info("enqueued channel publish task")
+	}
+	return task, nil
+}
+
+// WithdrawTask reflects a queued channel withdraw action.
+type WithdrawTask struct {
+	TaskID     string    `json:"taskId"`
+	TenantUUID string    `json:"tenantUuid"`
+	SPUID      string    `json:"spuId"`
+	Channels   []string  `json:"channels"`
+	ExecuteAt  time.Time `json:"executeAt"`
+	Reason     string    `json:"reason"`
+	Status     string    `json:"status"`
+}
+
+// EnqueueWithdraw records a channel withdraw task for downstream processing.
+func (p *AsyncPublisher) EnqueueWithdraw(ctx context.Context, tenantUUID, spuID string, channels []string, withdrawAt time.Time, reason string) (*WithdrawTask, error) {
+	filtered := make([]string, 0, len(channels))
+	for _, ch := range channels {
+		c := strings.TrimSpace(ch)
+		if c == "" {
+			continue
+		}
+		filtered = append(filtered, c)
+	}
+	if len(filtered) == 0 {
+		return nil, fmt.Errorf("channels are required for withdraw")
+	}
+	task := &WithdrawTask{
+		TaskID:     uuid.NewString(),
+		TenantUUID: tenantUUID,
+		SPUID:      spuID,
+		Channels:   filtered,
+		ExecuteAt:  withdrawAt,
+		Reason:     reason,
+		Status:     "queued",
+	}
+	if p.logger != nil {
+		p.logger.WithContext(ctx).WithFields(logrus.Fields{
+			"tenant_uuid": tenantUUID,
+			"spu_id":      spuID,
+			"channels":    filtered,
+			"execute_at":  withdrawAt,
+			"reason":      reason,
+			"task_id":     task.TaskID,
+		}).Info("enqueued channel withdraw task")
 	}
 	return task, nil
 }
