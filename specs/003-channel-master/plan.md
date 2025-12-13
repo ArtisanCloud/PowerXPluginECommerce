@@ -65,9 +65,8 @@ backend/
 │   ├── plugin/
 │   └── database/
 ├── internal/
-│   ├── domain/channel_master/
-│   │   ├── models/
-│   │   └── repository/
+│   ├── entity/models/channel_master/
+│   ├── entity/repository/channel_master/
 │   ├── services/admin/channel_master/
 │   ├── transport/http/admin/channel_master/
 │   ├── transport/grpc/admin/channel_master/    # 预留
@@ -92,7 +91,7 @@ web-admin/
     └── component/channel-panel.spec.ts
 ```
 
-**Structure Decision**: 采取标准「backend + web-admin」结构：后端在 `internal/domain/channel_master` 起新子域并贯穿 repo/service/transport/job/observability；前端在 `web-admin/app/pages/channels` 及相关组件、store、composable 中实现 UI，与 tests/unit+component 对应。
+**Structure Decision**: 采取标准「backend + web-admin」结构：后端在 `internal/entity/models|repository/channel_master` 存放模型与仓储，服务/transport/job/observability 位于既定层级；前端在 `web-admin/app/pages/channels` 及相关组件、store、composable 中实现 UI，与 tests/unit+component 对应。
 
 ## Complexity Tracking
 

@@ -10,6 +10,7 @@ import (
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/config"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models"
 	adminconsoleModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/admin_console"
+	channelmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/channel_master"
 	customermodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/customer"
 	iammodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/iam"
 	marketplaceModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/marketplace"
@@ -37,6 +38,10 @@ var businessTables = []interface{}{
 	&productmodel.SPUExportTask{},
 	&productmodel.SPUApprovalRecord{},
 	&productmodel.SPUAuditLog{},
+	&channelmodel.ChannelMaster{},
+	&channelmodel.ChannelTaskLink{},
+	&channelmodel.ChannelNote{},
+	&channelmodel.ChannelSyncHistory{},
 	&marketplaceModel.Listing{},
 	&marketplaceModel.ListingAsset{},
 	&marketplaceModel.ListingVersion{},
@@ -96,7 +101,10 @@ func MigratePluginModels(ctx context.Context, db *gorm.DB, includeIAM bool) erro
 	if len(tables) == 0 {
 		return nil
 	}
-	return safeAutoMigrate(ctx, db, tables)
+	if err := safeAutoMigrate(ctx, db, tables); err != nil {
+		return err
+	}
+	return ensureChannelRLSPolicies(ctx, db)
 }
 
 func safeAutoMigrate(ctx context.Context, db *gorm.DB, tables []interface{}) error {
@@ -237,6 +245,33 @@ func isSQLiteSafeTable(tbl interface{}) bool {
 	default:
 		return false
 	}
+}
+
+func ensureChannelRLSPolicies(ctx context.Context, db *gorm.DB) error {
+	if db == nil || db.Dialector == nil || !strings.EqualFold(db.Dialector.Name(), "postgres") {
+		return nil
+	}
+	type policy struct {
+		table string
+		name  string
+	}
+	targets := []policy{
+		{models.S(models.TableChannelMasters), "channel_master_tenant_rls"},
+		{models.S(models.TableChannelTaskLinks), "channel_task_link_tenant_rls"},
+		{models.S(models.TableChannelNotes), "channel_note_tenant_rls"},
+		{models.S(models.TableChannelSyncHistory), "channel_sync_history_tenant_rls"},
+	}
+	for _, p := range targets {
+		if err := db.WithContext(ctx).Exec(fmt.Sprintf("ALTER TABLE %s ENABLE ROW LEVEL SECURITY", p.table)).Error; err != nil {
+			return err
+		}
+		using := "tenant_uuid::text = current_setting('app.tenant_uuid', true)"
+		stmt := fmt.Sprintf(`CREATE POLICY IF NOT EXISTS %s ON %s USING (%s) WITH CHECK (%s)`, p.name, p.table, using, using)
+		if err := db.WithContext(ctx).Exec(stmt).Error; err != nil {
+			return err
+		}
+	}
+	return nil
 }
 
 func ResetDatabase(ctx context.Context, db *gorm.DB, cfg *config.DatabaseConfig) error {

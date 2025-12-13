@@ -11,8 +11,8 @@
 
 **Purpose**: 为后端 channel 模块与 web-admin 页面建立基础骨架。
 
-- [ ] T001 Scaffold channel_master 目录结构（`backend/internal/domain/channel_master/`, `backend/internal/services/admin/channel_master/`, `backend/internal/transport/http/admin/channel_master/`, `backend/internal/observability/channel_master/`, `backend/internal/jobs/channel_master/`）并放置 doc.go 以便编译。
-- [ ] T002 初始化 Nuxt 渠道路由骨架：创建 `web-admin/app/pages/channels/index.vue`, `[id].vue`, `approval.vue` 空壳以及 `web-admin/app/app.config.ts` 临时菜单。
+- [X] T001 Scaffold channel_master 目录结构（`backend/internal/entity/models/channel_master/`, `backend/internal/entity/repository/channel_master/`, `backend/internal/services/admin/channel_master/`, `backend/internal/transport/http/admin/channel_master/`, `backend/internal/observability/channel_master/`, `backend/internal/jobs/channel_master/`）并放置 doc.go 以便编译。
+- [X] T002 初始化 Nuxt 渠道路由骨架：创建 `web-admin/app/pages/channels/index.vue`, `[id].vue`, `approval.vue` 空壳以及 `web-admin/app/app.config.ts` 临时菜单。
 
 ---
 
@@ -20,16 +20,16 @@
 
 **Purpose**: 所有用户故事前置的模型、迁移、Service/DTO 骨架与前端 API 基建。
 
-- [ ] T003 定义 `ChannelMaster` GORM 模型（含 `channel_type`）与常量 (`backend/internal/domain/channel_master/models/channel_master.go`, `backend/internal/domain/models/model.go`) 并补齐 JSON/GORM 标签。
-- [ ] T004 创建 `channel_masters` 迁移 + RLS 策略 (`backend/cmd/database/migrate/migrations/20251213_channel_masters.go`) 并注册至 `migrate.go`。
-- [ ] T005 定义 `ChannelSyncHistory` 模型 + 迁移 (`backend/internal/domain/channel_master/models/channel_sync_history.go`, `…/migrations/20251213_channel_sync_history.go`) 以记录手动/自动同步历史。
-- [ ] T006 定义 `ChannelTaskLink` 与 `ChannelNote` 模型/迁移 (`backend/internal/domain/channel_master/models/channel_task_link.go`, `channel_note.go`) 支撑任务关联与备注。
-- [ ] T007 实现 `ChannelMasterRepository` (`backend/internal/domain/channel_master/repository/channel_master_repository.go`) 含 `BeginTenantTx`、联合唯一校验、筛选器与审计读辅助。
-- [ ] T008 建立 `ChannelMasterService` 基础接口 (`backend/internal/services/admin/channel_master/service.go`) 注入 repository/audit emitter，并暴露 Draft/Approval stub。
-- [ ] T009 添加观测与审计骨架 (`backend/internal/observability/channel_master/{audit_emitter,metrics}.go`) 输出结构化日志、审批 SLA、凭证覆盖率、同步成功率指标。
-- [ ] T010 注册 `/v1/channels/**` HTTP 路由与 middleware (`backend/internal/transport/http/admin/channel_master/router.go`) 并创建 `handler.go`/`dto.go` 占位，预留 tasks/notes/sync endpoints。
-- [ ] T011 将 `contracts/channel.yaml` 纳入 Spectral 校验流程，并在 `backend/internal/transport/http/admin/channel_master/dto.go` 生成 DTO。
-- [ ] T012 建立前端 API client & store 基础 (`web-admin/app/composables/useChannels.ts`, `web-admin/app/stores/channels.ts`, `web-admin/app/types/channels.ts`) 以 `$fetch` + `runtimeConfig.public.apiBaseUrl` 调用 `/v1/channels`。
+- [X] T003 定义 `ChannelMaster` GORM 模型（含 `channel_type`）与常量 (`backend/internal/entity/models/channel_master/channel_master.go`, `backend/internal/entity/models/model.go`) 并补齐 JSON/GORM 标签。
+- [X] T004 创建 `channel_masters` 迁移 + RLS 策略 (`backend/cmd/database/migrate/migrations/20251213_channel_masters.go`) 并注册至 `migrate.go`。
+- [X] T005 定义 `ChannelSyncHistory` 模型 + 迁移 (`backend/internal/entity/models/channel_master/channel_sync_history.go`, `…/migrations/20251213_channel_sync_history.go`) 以记录手动/自动同步历史。
+- [X] T006 定义 `ChannelTaskLink` 与 `ChannelNote` 模型/迁移 (`backend/internal/entity/models/channel_master/channel_task_link.go`, `channel_note.go`) 支撑任务关联与备注。
+- [X] T007 实现 `ChannelMasterRepository` (`backend/internal/entity/repository/channel_master/channel_master_repository.go`) 含 `BeginTenantTx`、联合唯一校验、筛选器与审计读辅助。
+- [X] T008 建立 `ChannelMasterService` 基础接口 (`backend/internal/services/admin/channel_master/service.go`) 注入 repository/audit emitter，并暴露 Draft/Approval stub。
+- [X] T009 添加观测与审计骨架 (`backend/internal/observability/channel_master/{audit_emitter,metrics}.go`) 输出结构化日志、审批 SLA、凭证覆盖率、同步成功率指标。
+- [X] T010 注册 `/v1/channels/**` HTTP 路由与 middleware (`backend/internal/transport/http/admin/channel_master/router.go`) 并创建 `handler.go`/`dto.go` 占位，预留 tasks/notes/sync endpoints。
+- [X] T011 将 `contracts/channel.yaml` 纳入 Spectral 校验流程，并在 `backend/internal/transport/http/admin/channel_master/dto.go` 生成 DTO。
+- [X] T012 建立前端 API client & store 基础 (`web-admin/app/composables/useChannels.ts`, `web-admin/app/stores/channels.ts`, `web-admin/app/types/channels.ts`) 以 `$fetch` + `runtimeConfig.public.apiBaseUrl` 调用 `/v1/channels`。
 
 **Checkpoint**: RLS/模型/契约/日志指标就位，可开始 P1 故事。
 
@@ -48,7 +48,7 @@
 ### Implementation for User Story 1
 
 - [ ] T015 [US1] 实现 Service CRUD/审批逻辑 (`backend/internal/services/admin/channel_master/service.go`)，处理 `channel_type`、租户唯一校验与线下渠道流程，并写入 `channel_audit_logs`。
-- [ ] T016 [US1] 扩展 Repository 查询 (`backend/internal/domain/channel_master/repository/channel_master_repository.go`) 提供平台/状态/负责人/区域/GMV/健康度/标签筛选 + 分页。
+- [ ] T016 [US1] 扩展 Repository 查询 (`backend/internal/entity/repository/channel_master/channel_master_repository.go`) 提供平台/状态/负责人/区域/GMV/健康度/标签筛选 + 分页。
 - [ ] T017 [US1] 实现 HTTP handler (`backend/internal/transport/http/admin/channel_master/handler.go`)：`POST /channels`, `PATCH /channels/{id}`, `POST /channels/{id}/submit`, `POST /channels/{id}/approval`，DTO 支持线下字段。
 - [ ] T018 [P] [US1] 构建 `web-admin/app/components/channels/ChannelForm.vue` 包含 UForm、平台/区域/类型联动、线下渠道文件上传占位。
 - [ ] T019 [US1] 完成渠道列表页 (`web-admin/app/pages/channels/index.vue`)：表格、筛选器、健康度/标签渲染、创建/编辑抽屉。
@@ -71,11 +71,11 @@
 
 ### Implementation for User Story 2
 
-- [ ] T024 [US2] 定义 `ChannelCredential` 模型/迁移 (`backend/internal/domain/channel_master/models/channel_credential.go`, `…/migrations/20251213_channel_credentials.go`) 含 scope/status/test_result。
+- [ ] T024 [US2] 定义 `ChannelCredential` 模型/迁移 (`backend/internal/entity/models/channel_master/channel_credential.go`, `…/migrations/20251213_channel_credentials.go`) 含 scope/status/test_result。
 - [ ] T025 [US2] 扩展 `pkg/security/encryption` 与 Service (`backend/internal/services/admin/channel_master/credential_service.go`) 支持 `UpsertCredential`/`TestCredential`、线下凭证附件以及 STS 解密。
 - [ ] T026 [US2] 实现 `/channels/{id}/credentials` 与 `/credentials/test` handler (`backend/internal/transport/http/admin/channel_master/credentials_handler.go`) 覆盖 OAuth 回调、线下上传。
 - [ ] T027 [US2] 创建凭证巡检 job (`backend/internal/jobs/channel_master/credential_checker.go`) 并在 `cmd/plugin/main.go` 注册，向 `ChannelAlert` 写入即将到期记录。
-- [ ] T028 [US2] 定义 `ChannelAlert` 模型/迁移 (`backend/internal/domain/channel_master/models/channel_alert.go`, `…/migrations/20251213_channel_alerts.go`) 支持凭证/同步/KPI 告警。
+- [ ] T028 [US2] 定义 `ChannelAlert` 模型/迁移 (`backend/internal/entity/models/channel_master/channel_alert.go`, `…/migrations/20251213_channel_alerts.go`) 支持凭证/同步/KPI 告警。
 - [ ] T029 [US2] 在 `backend/internal/observability/channel_master/alert_emitter.go` 完成告警写入 + 通知中心推送，更新 service 调用。
 - [ ] T030 [P] [US2] 构建 `web-admin/app/components/channels/ChannelCredentialDrawer.vue`，实现 OAuth/手动/线下凭证表单与文件上传。
 - [ ] T031 [US2] 更新渠道详情页 (`web-admin/app/pages/channels/[id].vue`) 展示凭证状态、到期提醒、巡检结果。
@@ -97,12 +97,12 @@
 
 ### Implementation for User Story 3
 
-- [ ] T035 [US3] 定义 `ChannelMetric` 模型/迁移 (`backend/internal/domain/channel_master/models/channel_metric.go`, `…/migrations/20251213_channel_metrics.go`) 支持 d1/d7/d30。
+- [ ] T035 [US3] 定义 `ChannelMetric` 模型/迁移 (`backend/internal/entity/models/channel_master/channel_metric.go`, `…/migrations/20251213_channel_metrics.go`) 支持 d1/d7/d30。
 - [ ] T036 [US3] 在 service 新增 `LoadMetrics` + `ComputeHealthScore` (`backend/internal/services/admin/channel_master/metrics_service.go`) 聚合 KPI/健康度/同步状态。
 - [ ] T037 [US3] 实现 `/channels/{id}` 详情补充字段、`/channels/{id}/alerts` GET/PATCH、`/channels/{id}/sync` 触发等 handler (`backend/internal/transport/http/admin/channel_master/detail_handler.go`, `alerts_handler.go`, `sync_handler.go`)；返回 KPI、sync 历史摘要。
 - [ ] T038 [US3] 创建 KPI/健康度刷新 job (`backend/internal/jobs/channel_master/metric_refresh.go`) 读取任务中心视图并写入 `channel_metrics`。
-- [ ] T039 [US3] 实现 `ChannelTaskLinkRepository`/service (`backend/internal/domain/channel_master/repository/channel_task_link_repository.go`, `services/.../task_note_service.go`) 提供任务关联 CRUD + 审计。
-- [ ] T040 [US3] 实现 `ChannelNoteRepository`/service (`backend/internal/domain/channel_master/repository/channel_note_repository.go`) 提供备注增删查。
+- [ ] T039 [US3] 实现 `ChannelTaskLinkRepository`/service (`backend/internal/entity/repository/channel_master/channel_task_link_repository.go`, `services/.../task_note_service.go`) 提供任务关联 CRUD + 审计。
+- [ ] T040 [US3] 实现 `ChannelNoteRepository`/service (`backend/internal/entity/repository/channel_master/channel_note_repository.go`) 提供备注增删查。
 - [ ] T041 [US3] 暴露 `/channels/{id}/tasks` 与 `/channels/{id}/notes` API (`backend/internal/transport/http/admin/channel_master/task_note_handler.go`) 支持关联/解除/备注。
 - [ ] T042 [US3] 实现 `ChannelSyncHistoryRepository` 与 service (`backend/internal/services/admin/channel_master/sync_history_service.go`) 记录手动/自动同步结果、耗时、触发人。
 - [ ] T043 [US3] 在 detail handler 暴露 `/channels/{id}/sync-history` GET，并将手动触发写入 `channel_sync_history`。
@@ -126,7 +126,7 @@
 
 ### Implementation for User Story 4
 
-- [ ] T049 [US4] 定义 `ChannelConfig` 模型/迁移 (`backend/internal/domain/channel_master/models/channel_config.go`, `…/migrations/20251213_channel_configs.go`) 记录 pricebook/inventory/logistics/cs/财务字段。
+- [ ] T049 [US4] 定义 `ChannelConfig` 模型/迁移 (`backend/internal/entity/models/channel_master/channel_config.go`, `…/migrations/20251213_channel_configs.go`) 记录 pricebook/inventory/logistics/cs/财务字段。
 - [ ] T050 [US4] 实现策略/团队 service (`backend/internal/services/admin/channel_master/strategy_service.go`) 校验引用、fee_rate、审批人、负责人及 audit。
 - [ ] T051 [US4] 暴露策略/权限 API (`backend/internal/transport/http/admin/channel_master/strategy_handler.go`) 或扩展 `/v1/channels/{id}` PATCH，返回最新 config。
 - [ ] T052 [US4] 更新 RBAC/manifest (`backend/internal/transport/http/middleware/permission.go`, `plugin.yaml`) 限定策略与团队指派权限。

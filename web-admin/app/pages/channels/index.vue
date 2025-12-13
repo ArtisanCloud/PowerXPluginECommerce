@@ -8,10 +8,18 @@
         </p>
       </div>
       <div class="flex gap-2">
-        <UButton color="neutral" variant="ghost" icon="i-heroicons-arrow-path">
+        <UButton color="neutral" variant="ghost" icon="i-heroicons-arrow-path" @click="refreshChannels">
           同步授权
         </UButton>
-        <UButton color="primary" icon="i-heroicons-plus">
+        <UButton
+          color="neutral"
+          variant="ghost"
+          icon="i-heroicons-clipboard-document-check"
+          @click="goToApproval"
+        >
+          审批台
+        </UButton>
+        <UButton color="primary" icon="i-heroicons-plus" @click="startChannelWizard">
           接入新渠道
         </UButton>
       </div>
@@ -97,10 +105,14 @@
             </span>
           </div>
         </template>
-        <template #actions-cell>
+        <template #actions-cell="{ row }">
           <div class="flex gap-2">
-            <UButton size="xs" variant="ghost">设置</UButton>
-            <UButton size="xs" variant="ghost" color="primary">检查授权</UButton>
+            <UButton size="xs" variant="ghost" @click="openChannelDetail(row.original.id)">
+              详情
+            </UButton>
+            <UButton size="xs" variant="ghost" color="primary" @click="startChannelWizard">
+              授权
+            </UButton>
           </div>
         </template>
       </UTable>
@@ -192,6 +204,9 @@ type Channel = {
   syncStatus: SyncStatus;
   updatedAt: string;
 };
+
+const router = useRouter();
+const toast = useToast();
 
 const channels = ref<Channel[]>([
   {
@@ -335,4 +350,26 @@ const alerts = ref([
     date: "周三 14:30",
   },
 ]);
+
+const refreshChannels = () => {
+  toast.add({
+    title: "同步已触发",
+    description: "系统将在后台刷新渠道授权与健康度状态。",
+  });
+};
+
+const goToApproval = () => {
+  router.push("/channels/approval");
+};
+
+const openChannelDetail = (channelId: string) => {
+  router.push(`/channels/${channelId}`);
+};
+
+const startChannelWizard = () => {
+  toast.add({
+    title: "即将支持",
+    description: "渠道接入向导即将开放，当前为占位流程。",
+  });
+};
 </script>
