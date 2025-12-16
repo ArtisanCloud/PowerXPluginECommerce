@@ -27,6 +27,11 @@
     "help": "帮助",
     "logout": "退出"
   },
+  "menus": {
+    "menu.com.powerx.plugin.ecommerce.channels": "渠道中心",
+    "menu.com.powerx.plugin.ecommerce.channels.list": "渠道列表",
+    "menu.com.powerx.plugin.ecommerce.channels.approval": "渠道审批"
+  },
   "theme": {
     "light": "浅色模式",
     "dark": "深色模式"

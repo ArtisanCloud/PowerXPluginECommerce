@@ -420,7 +420,7 @@ const historyColumns: TableColumn<PriceHistoryRow>[] = [
   {
     id: "amount",
     accessorKey: "amount",
-    header: () => h("div", { class: "text-right" }, "变更金额"),
+    header: "变更金额",
     meta: { class: { td: "text-right" } },
   },
   { accessorKey: "date", header: "变更时间" },

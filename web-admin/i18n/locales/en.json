@@ -27,6 +27,11 @@
     "help": "Help",
     "logout": "Logout"
   },
+  "menus": {
+    "menu.com.powerx.plugin.ecommerce.channels": "Channel Center",
+    "menu.com.powerx.plugin.ecommerce.channels.list": "Channels",
+    "menu.com.powerx.plugin.ecommerce.channels.approval": "Channel Approvals"
+  },
   "theme": {
     "light": "Light Theme",
     "dark": "Dark Theme"

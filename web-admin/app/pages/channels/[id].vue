@@ -3,238 +3,516 @@
     <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
       <div>
         <p class="text-sm text-gray-500 dark:text-gray-400">渠道 ID · {{ channelId }}</p>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ channelProfile.name }}</h1>
-        <p class="text-gray-500 dark:text-gray-400">{{ channelProfile.platform }} · {{ channelProfile.region }}</p>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">
+          {{ detail?.name ?? '加载中…' }}
+        </h1>
+        <p class="text-gray-500 dark:text-gray-400">
+          {{ detail?.platform ?? '--' }} · {{ detail?.region ?? '未知' }}
+        </p>
       </div>
       <div class="flex gap-2">
         <UButton color="neutral" variant="ghost" icon="i-heroicons-arrow-uturn-left" @click="goBack">
           返回列表
         </UButton>
-        <UButton color="neutral" variant="ghost" icon="i-heroicons-arrow-path" @click="triggerSync">
+        <UButton color="neutral" variant="ghost" icon="i-heroicons-arrow-path" :loading="syncLoading" @click="handleManualSync">
           手动同步
         </UButton>
-        <UButton color="primary" icon="i-heroicons-cog-6-tooth" @click="openConfig">
+        <UButton
+          color="primary"
+          icon="i-heroicons-cog-6-tooth"
+          :disabled="!canManageStrategy"
+          @click="openConfig"
+        >
           配置策略
         </UButton>
       </div>
-    </div>
-
-    <div class="grid gap-4 md:grid-cols-3">
-      <UCard v-for="card in kpiCards" :key="card.title">
-        <p class="text-sm text-gray-500 dark:text-gray-400">{{ card.title }}</p>
-        <div class="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">{{ card.value }}</div>
-        <p class="text-xs" :class="card.trend >= 0 ? 'text-emerald-500' : 'text-rose-500'">
-          {{ card.trend >= 0 ? '+' : '' }}{{ card.trend }}% vs last period
-        </p>
-      </UCard>
     </div>
 
     <UCard>
       <template #header>
         <div class="flex items-center justify-between">
           <h3 class="text-lg font-semibold">基础信息</h3>
-          <UBadge :color="channelProfile.statusMeta.color" variant="subtle">
-            {{ channelProfile.statusMeta.label }}
+          <UBadge :color="statusBadge.color" variant="subtle">
+            {{ statusBadge.label }}
           </UBadge>
         </div>
       </template>
       <dl class="grid gap-4 md:grid-cols-3">
         <div>
           <dt class="text-sm text-gray-500">负责人</dt>
-          <dd class="text-gray-900 dark:text-white">{{ channelProfile.owner }}</dd>
+          <dd class="text-gray-900 dark:text-white">{{ detail?.ownerUuid ?? '—' }}</dd>
         </div>
         <div>
           <dt class="text-sm text-gray-500">联系人</dt>
-          <dd class="text-gray-900 dark:text-white">{{ channelProfile.contact }}</dd>
+          <dd class="text-gray-900 dark:text-white">
+            {{ detail?.contact?.name ?? '—' }} · {{ detail?.contact?.phone ?? '' }}
+          </dd>
         </div>
         <div>
           <dt class="text-sm text-gray-500">上次同步</dt>
-          <dd class="text-gray-900 dark:text-white">{{ channelProfile.lastSync }}</dd>
+          <dd class="text-gray-900 dark:text-white">{{ detail?.syncHistory?.[0]?.createdAt ? formatDate(detail.syncHistory[0].createdAt) : '—' }}</dd>
         </div>
       </dl>
     </UCard>
 
-    <div class="grid gap-6 lg:grid-cols-2">
-      <UCard>
-        <template #header>
-          <div class="flex items-center justify-between">
-            <div>
-              <h3 class="text-lg font-semibold">KPI & 健康度</h3>
-              <p class="text-sm text-gray-500">占位图表，后续将接入指标 API</p>
-            </div>
-            <UBadge color="info" variant="subtle">占位</UBadge>
-          </div>
-        </template>
-        <ul class="space-y-3">
-          <li v-for="kpi in kpiHighlights" :key="kpi.label" class="flex items-center justify-between">
-            <span class="text-gray-500">{{ kpi.label }}</span>
-            <span class="font-semibold text-gray-900 dark:text-white">{{ kpi.value }}</span>
-          </li>
-        </ul>
-      </UCard>
-
-      <UCard>
-        <template #header>
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold">告警</h3>
-            <UBadge color="warning" variant="subtle">{{ alerts.length }} 个</UBadge>
-          </div>
-        </template>
-        <ul class="space-y-4">
-          <li v-for="alert in alerts" :key="alert.id" class="border-b border-gray-200 pb-3 last:border-0 last:pb-0 dark:border-gray-800">
-            <div class="flex items-center justify-between">
-              <div>
-                <p class="font-semibold text-gray-900 dark:text-white">{{ alert.title }}</p>
-                <p class="text-sm text-gray-500">{{ alert.description }}</p>
-              </div>
-              <UBadge :color="alert.severity === 'critical' ? 'error' : 'warning'" variant="subtle">
-                {{ alert.severity === 'critical' ? '严重' : '提醒' }}
-              </UBadge>
-            </div>
-          </li>
-        </ul>
-      </UCard>
-    </div>
-
-    <div class="grid gap-6 lg:grid-cols-2">
-      <UCard>
-        <template #header>
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold">任务关联</h3>
-            <UButton size="xs" variant="ghost" @click="linkTask">关联任务</UButton>
-          </div>
-        </template>
-        <ul class="space-y-3">
-          <li v-for="task in taskLinks" :key="task.id" class="flex items-center justify-between">
-            <div>
-              <p class="font-semibold">{{ task.title }}</p>
-              <p class="text-sm text-gray-500">{{ task.description }}</p>
-            </div>
-            <UBadge :color="task.status === 'done' ? 'success' : 'info'" variant="subtle">
-              {{ task.status === 'done' ? '已完成' : '进行中' }}
-            </UBadge>
-          </li>
-        </ul>
-      </UCard>
-
-      <UCard>
-        <template #header>
-          <div class="flex items-center justify-between">
-            <h3 class="text-lg font-semibold">运营备注</h3>
-            <UButton size="xs" variant="ghost" @click="addNote" :disabled="!newNote">
-              保存备注
-            </UButton>
-          </div>
-        </template>
-        <UTextarea v-model="newNote" placeholder="记录运营决策、授权背景信息等" class="mb-4"/>
-        <ul class="space-y-3">
-          <li v-for="note in notes" :key="note.id" class="border-b border-gray-200 pb-3 last:border-0 last:pb-0 dark:border-gray-800">
-            <p class="font-semibold text-gray-900 dark:text-white">{{ note.author }}</p>
-            <p class="text-sm text-gray-500">{{ note.createdAt }}</p>
-            <p class="mt-1 text-gray-800 dark:text-gray-200">{{ note.body }}</p>
-          </li>
-        </ul>
-      </UCard>
-    </div>
+    <ChannelTeamSection
+      :team="detail?.team"
+      :strategy="detail?.strategy"
+      :can-edit="canManageStrategy"
+      @edit="openConfig"
+    />
 
     <UCard>
       <template #header>
         <div class="flex items-center justify-between">
-          <h3 class="text-lg font-semibold">同步历史</h3>
-          <UBadge color="neutral" variant="subtle">展示最近 {{ syncHistory.length }} 条</UBadge>
+          <div>
+            <h3 class="text-lg font-semibold">授权凭证</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400">管理 OAuth/API Key/线下凭证。</p>
+          </div>
+          <UButton size="sm" icon="i-heroicons-plus" @click="openCredentialDrawer">
+            新增凭证
+          </UButton>
         </div>
       </template>
-      <UTable :columns="syncColumns" :data="syncHistory"/>
+      <div v-if="credentials.length" class="space-y-4">
+        <div
+          v-for="credential in credentials"
+          :key="credential.id"
+          class="rounded-lg border border-gray-100 p-4 dark:border-gray-800"
+        >
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <p class="font-semibold text-gray-900 dark:text-white">{{ credential.type }}</p>
+              <p class="text-xs text-gray-500">
+                范围：{{ credential.scope?.length ? credential.scope.join(', ') : '全部' }}
+              </p>
+            </div>
+            <UBadge :color="credentialStatusMeta(credential.status).color" variant="subtle">
+              {{ credentialStatusMeta(credential.status).label }}
+            </UBadge>
+          </div>
+          <div class="mt-2 text-sm text-gray-500">
+            <p>
+              到期时间：{{ credential.expiresAt ? formatDate(credential.expiresAt) : '未设置' }}
+            </p>
+            <p>
+              最近巡检：{{ credential.lastTestedAt ? formatDate(credential.lastTestedAt) : '未测试' }}
+            </p>
+          </div>
+          <div v-if="credential.attachmentUrl" class="mt-2 text-sm">
+            <a :href="credential.attachmentUrl" class="text-primary-600 hover:underline dark:text-primary-400" target="_blank" rel="noopener">
+              查看线下附件
+            </a>
+          </div>
+          <div class="mt-3 flex flex-wrap gap-2">
+            <UButton size="xs" variant="ghost" @click="markCredentialTested(credential, true)">标记成功</UButton>
+            <UButton size="xs" variant="ghost" color="warning" @click="markCredentialTested(credential, false)">
+              标记失败
+            </UButton>
+          </div>
+        </div>
+      </div>
+      <div v-else class="py-8 text-center text-sm text-gray-500">
+        暂无凭证，请点击“新增凭证”完成授权。
+      </div>
     </UCard>
+
+    <USlideover v-model="credentialDrawerOpen">
+      <UCard class="flex h-full flex-col">
+        <template #header>
+          <div>
+            <p class="text-sm text-gray-500">新增或刷新授权凭证</p>
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-white">凭证表单</h3>
+          </div>
+        </template>
+        <ChannelCredentialDrawer
+          v-model="credentialForm"
+          :loading="credentialSaving"
+          @submit="handleCredentialSubmit"
+          @cancel="() => (credentialDrawerOpen = false)"
+        />
+      </UCard>
+    </USlideover>
+
+    <USlideover v-model="strategyDrawerOpen">
+      <UCard class="flex h-full flex-col">
+        <template #header>
+          <div>
+            <p class="text-sm text-gray-500">更新渠道策略与团队</p>
+            <h3 class="text-xl font-semibold text-gray-900 dark:text-white">策略配置</h3>
+          </div>
+        </template>
+        <ChannelStrategyForm
+          v-model="strategyForm"
+          :loading="strategySaving"
+          @submit="handleStrategySubmit"
+          @cancel="() => (strategyDrawerOpen = false)"
+        />
+      </UCard>
+    </USlideover>
+
+    <div class="grid gap-6 lg:grid-cols-3">
+      <ChannelHealthCard
+        class="lg:col-span-1"
+        :score="detail?.health?.score"
+        :labels="detail?.health?.labels"
+      />
+      <ChannelKpiTrend class="lg:col-span-2" :metrics="detail?.metrics" />
+    </div>
+
+    <div class="grid gap-6 lg:grid-cols-2">
+      <ChannelAlertTimeline
+        :alerts="alerts"
+        :loading="alertsLoading"
+        @update="handleAlertUpdate"
+      />
+      <ChannelTaskPanel
+        :tasks="tasks"
+        :loading="tasksLoading"
+        @link="handleTaskLink"
+        @update="handleTaskUpdate"
+        @remove="handleTaskRemove"
+      />
+    </div>
+
+    <div class="grid gap-6 lg:grid-cols-2">
+      <ChannelNotePanel
+        :notes="notes"
+        :loading="notesLoading"
+        @create="handleNoteCreate"
+      />
+      <ChannelSyncHistory
+        :history="syncHistory"
+        :loading="syncLoading"
+        @trigger="handleManualSync"
+      />
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { TableColumn } from "@nuxt/ui";
+import { computed, onMounted, ref, watch } from 'vue'
+import { useChannelsStore } from '~/stores/channels'
+import ChannelCredentialDrawer from '~/components/channels/ChannelCredentialDrawer.vue'
+import ChannelHealthCard from '~/components/channels/ChannelHealthCard.vue'
+import ChannelKpiTrend from '~/components/channels/ChannelKpiTrend.vue'
+import ChannelAlertTimeline from '~/components/channels/ChannelAlertTimeline.vue'
+import ChannelTaskPanel from '~/components/channels/ChannelTaskPanel.vue'
+import ChannelNotePanel from '~/components/channels/ChannelNotePanel.vue'
+import ChannelSyncHistory from '~/components/channels/ChannelSyncHistory.vue'
+import ChannelStrategyForm from '~/components/channels/ChannelStrategyForm.vue'
+import ChannelTeamSection from '~/components/channels/ChannelTeamSection.vue'
+import type {
+  ChannelCredential,
+  ChannelCredentialUpsertPayload,
+  ChannelAlertUpdatePayload,
+  ChannelTaskLinkPayload,
+  ChannelNotePayload,
+  ChannelStrategyUpdatePayload,
+} from '~/types/channels'
+import { createEmptyCredentialPayload, createEmptyStrategyPayload } from '~/types/channels'
+import { usePermissions } from '~/composables/usePermissions'
 
-const route = useRoute();
-const router = useRouter();
-const toast = useToast();
+const route = useRoute()
+const router = useRouter()
+const toast = useToast()
+const store = useChannelsStore()
+const nuxtApp = useNuxtApp()
 
-const channelId = computed(() => String(route.params.id ?? ""));
+const channelId = computed(() => String(route.params.id ?? ''))
 
-const channelProfile = reactive({
-  name: "渠道占位名称",
-  platform: "天猫国际",
-  region: "全国",
-  owner: "陈曦",
-  contact: "张颖 · 188****5620",
-  lastSync: "2024-02-12 09:30",
-  statusMeta: { label: "未授权", color: "warning" as const },
-});
+const detail = computed(() => store.current)
+const alerts = computed(() => store.alerts)
+const tasks = computed(() => store.tasks)
+const notes = computed(() => store.notes)
+const syncHistory = computed(() => store.syncHistory)
 
-const kpiCards = ref([
-  { title: "GMV (30d)", value: "¥1.2M", trend: 6.3 },
-  { title: "订单量", value: "8,420", trend: 3.1 },
-  { title: "健康度", value: "78", trend: -1.8 },
-]);
+const alertsLoading = ref(false)
+const tasksLoading = ref(false)
+const notesLoading = ref(false)
+const syncLoading = ref(false)
 
-const kpiHighlights = ref([
-  { label: "GMV 环比", value: "+8%" },
-  { label: "库存覆盖", value: "95%" },
-  { label: "错误率", value: "1.8%" },
-  { label: "同步成功率", value: "99.2%" },
-]);
+const credentialDrawerOpen = ref(false)
+const credentialSaving = ref(false)
+const credentials = ref<ChannelCredential[]>([])
+const credentialForm = ref<ChannelCredentialUpsertPayload>(createEmptyCredentialPayload())
+const strategyDrawerOpen = ref(false)
+const strategySaving = ref(false)
+const strategyForm = ref<ChannelStrategyUpdatePayload>(createEmptyStrategyPayload())
+const { hasPermission } = usePermissions()
+const canManageStrategy = computed(() => hasPermission('com.powerx.plugin.ecommerce:channel.strategy:manage'))
 
-const alerts = ref([
-  { id: "al-1", title: "凭证将在 7 天内过期", description: "请提前刷新授权凭证", severity: "warning" },
-  { id: "al-2", title: "库存覆盖跌破 90%", description: "建议触发备货任务", severity: "critical" },
-]);
+const statusBadge = computed(() => {
+  const status = detail.value?.status ?? 'unknown'
+  const map: Record<string, { label: string; color: string }> = {
+    draft: { label: '草稿', color: 'neutral' },
+    pending_review: { label: '待审批', color: 'warning' },
+    rejected: { label: '已驳回', color: 'error' },
+    unauthorized: { label: '未授权', color: 'warning' },
+    authorized: { label: '已授权', color: 'success' },
+    disabled: { label: '已停用', color: 'neutral' },
+  }
+  return map[status] ?? { label: status, color: 'neutral' }
+})
 
-const taskLinks = ref([
-  { id: "task-1", title: "渠道图片整改", description: "等待设计补齐详情页", status: "in_progress" },
-  { id: "task-2", title: "客服脚本更新", description: "关联任务中心 #CS-2881", status: "done" },
-]);
+const measureKpiLoad = async () => {
+  const supportsPerf = typeof performance !== 'undefined'
+  const start = supportsPerf ? performance.now() : 0
+  await store.fetchDetail(channelId.value)
+  if (supportsPerf && nuxtApp.$perf) {
+    const duration = performance.now() - start
+    nuxtApp.$perf.logKpiLoad(duration)
+  }
+}
 
-const notes = ref([
-  { id: "note-1", author: "王芳", body: "等待品牌方确认 3 月营销档期。", createdAt: "2024-02-11" },
-  { id: "note-2", author: "运营机器人", body: "昨晚自动同步成功。", createdAt: "2024-02-10" },
-]);
+const loadDetail = async () => {
+  try {
+    await measureKpiLoad()
+    await Promise.all([
+      loadCredentials(),
+      store.refreshAlerts(channelId.value),
+      store.fetchTasks(channelId.value),
+      store.fetchNotes(channelId.value),
+      store.fetchSyncHistory(channelId.value),
+    ])
+  } catch (error: any) {
+    toast.add({
+      title: '加载详情失败',
+      description: error?.message ?? '请稍后重试',
+      color: 'error',
+    })
+  }
+}
 
-const newNote = ref("");
+watch(channelId, () => {
+  loadDetail()
+})
 
-const syncHistory = ref([
-  { createdAt: "2024-02-12 09:30", triggerType: "manual", triggeredBy: "陈曦", duration: "38s", result: "成功" },
-  { createdAt: "2024-02-11 21:00", triggerType: "scheduled", triggeredBy: "任务中心", duration: "42s", result: "成功" },
-  { createdAt: "2024-02-10 21:00", triggerType: "scheduled", triggeredBy: "任务中心", duration: "41s", result: "失败" },
-]);
+onMounted(() => {
+  loadDetail()
+})
 
-const syncColumns = [
-  { accessorKey: "createdAt", header: "触发时间" },
-  { accessorKey: "triggerType", header: "方式" },
-  { accessorKey: "triggeredBy", header: "触发人" },
-  { accessorKey: "duration", header: "耗时" },
-  { accessorKey: "result", header: "结果" },
-] satisfies TableColumn<(typeof syncHistory)[number]>[];
+const loadCredentials = async () => {
+  try {
+    credentials.value = await store.fetchCredentials(channelId.value)
+  } catch (error: any) {
+    toast.add({
+      title: '加载凭证失败',
+      description: error?.message ?? '请稍后重试',
+      color: 'error',
+    })
+  }
+}
 
-const goBack = () => router.push("/channels");
+const openCredentialDrawer = () => {
+  credentialForm.value = createEmptyCredentialPayload()
+  credentialDrawerOpen.value = true
+}
 
-const triggerSync = () => {
-  toast.add({ title: "同步任务已创建", description: "稍后在同步历史中更新结果。" });
-};
+const buildStrategyPayload = (): ChannelStrategyUpdatePayload => {
+  const payload = createEmptyStrategyPayload()
+  if (detail.value?.strategy) {
+    Object.assign(payload.strategy, detail.value.strategy)
+  }
+  if (detail.value?.team) {
+    Object.assign(payload.team, detail.value.team)
+    payload.team.operators = [...(detail.value.team.operators ?? [])]
+  }
+  if (typeof payload.strategy.feeRate !== 'number') {
+    payload.strategy.feeRate = detail.value?.strategy?.feeRate ?? 0
+  }
+  return payload
+}
 
 const openConfig = () => {
-  toast.add({ title: "策略配置", description: "策略配置面板将在后续迭代提供。" });
-};
+  if (!canManageStrategy.value) {
+    toast.add({
+      title: '无权限',
+      description: '需要 channel.strategy.manage 权限才能编辑策略',
+      color: 'warning',
+    })
+    return
+  }
+  strategyForm.value = buildStrategyPayload()
+  strategyDrawerOpen.value = true
+}
 
-const linkTask = () => {
-  toast.add({ title: "任务关联", description: "即将接入任务中心 API。" });
-};
+const handleStrategySubmit = async (payload: ChannelStrategyUpdatePayload) => {
+  strategySaving.value = true
+  try {
+    await store.saveStrategy(channelId.value, payload)
+    toast.add({ title: '策略已更新' })
+    strategyDrawerOpen.value = false
+  } catch (error: any) {
+    toast.add({
+      title: '更新策略失败',
+      description: error?.message ?? '请稍后重试',
+      color: 'error',
+    })
+  } finally {
+    strategySaving.value = false
+  }
+}
 
-const addNote = () => {
-  if (!newNote.value) return;
-  notes.value.unshift({
-    id: `note-${Date.now()}`,
-    author: "当前用户",
-    body: newNote.value,
-    createdAt: new Date().toISOString().slice(0, 10),
-  });
-  newNote.value = "";
-  toast.add({ title: "备注已保存" });
-};
+const handleCredentialSubmit = async (payload: ChannelCredentialUpsertPayload) => {
+  credentialSaving.value = true
+  try {
+    await store.saveCredential(channelId.value, payload)
+    toast.add({ title: '凭证已保存' })
+    credentialDrawerOpen.value = false
+    await loadCredentials()
+  } catch (error: any) {
+    toast.add({
+      title: '保存凭证失败',
+      description: error?.message ?? '请稍后重试',
+      color: 'error',
+    })
+  } finally {
+    credentialSaving.value = false
+  }
+}
+
+const markCredentialTested = async (credential: ChannelCredential, succeeded: boolean) => {
+  try {
+    await store.testCredential(channelId.value, {
+      type: credential.type,
+      succeeded,
+      result: { tested_at: new Date().toISOString() },
+    })
+    toast.add({
+      title: succeeded ? '测试通过' : '测试失败',
+      description: credential.type,
+      color: succeeded ? 'success' : 'warning',
+    })
+    await loadCredentials()
+  } catch (error: any) {
+    toast.add({
+      title: '提交巡检结果失败',
+      description: error?.message ?? '请稍后重试',
+      color: 'error',
+    })
+  }
+}
+
+const credentialStatusMeta = (status: string) => {
+  switch (status) {
+    case 'expiring':
+      return { label: '即将到期', color: 'warning' }
+    case 'expired':
+      return { label: '已过期', color: 'error' }
+    case 'test_failed':
+      return { label: '测试失败', color: 'error' }
+    case 'valid':
+      return { label: '有效', color: 'success' }
+    default:
+      return { label: status, color: 'neutral' }
+  }
+}
+
+const handleAlertUpdate = async ({ alertId, status }: { alertId: string; status: string }) => {
+  alertsLoading.value = true
+  try {
+    const payload: ChannelAlertUpdatePayload = { status }
+    await store.updateAlert(channelId.value, alertId, payload)
+    toast.add({ title: '告警已更新' })
+  } catch (error: any) {
+    toast.add({
+      title: '更新告警失败',
+      description: error?.message ?? '请稍后重试',
+      color: 'error',
+    })
+  } finally {
+    alertsLoading.value = false
+  }
+}
+
+const handleTaskLink = async (payload: ChannelTaskLinkPayload) => {
+  tasksLoading.value = true
+  try {
+    await store.linkTask(channelId.value, payload)
+    toast.add({ title: '任务已关联' })
+  } catch (error: any) {
+    toast.add({
+      title: '关联任务失败',
+      description: error?.message ?? '请稍后重试',
+      color: 'error',
+    })
+  } finally {
+    tasksLoading.value = false
+  }
+}
+
+const handleTaskUpdate = async (payload: { id: string; status: string }) => {
+  tasksLoading.value = true
+  try {
+    await store.updateTask(channelId.value, payload.id, { status: payload.status })
+    toast.add({ title: '任务状态已更新' })
+  } catch (error: any) {
+    toast.add({
+      title: '更新任务失败',
+      description: error?.message ?? '请稍后重试',
+      color: 'error',
+    })
+  } finally {
+    tasksLoading.value = false
+  }
+}
+
+const handleTaskRemove = async (taskLinkId: string) => {
+  tasksLoading.value = true
+  try {
+    await store.removeTask(channelId.value, taskLinkId)
+    toast.add({ title: '任务已解除' })
+  } catch (error: any) {
+    toast.add({
+      title: '解除任务失败',
+      description: error?.message ?? '请稍后重试',
+      color: 'error',
+    })
+  } finally {
+    tasksLoading.value = false
+  }
+}
+
+const handleNoteCreate = async (payload: ChannelNotePayload) => {
+  notesLoading.value = true
+  try {
+    await store.createNote(channelId.value, payload)
+    toast.add({ title: '备注已保存' })
+  } catch (error: any) {
+    toast.add({
+      title: '新增备注失败',
+      description: error?.message ?? '请稍后重试',
+      color: 'error',
+    })
+  } finally {
+    notesLoading.value = false
+  }
+}
+
+const handleManualSync = async () => {
+  syncLoading.value = true
+  try {
+    await store.triggerSync(channelId.value)
+    toast.add({ title: '同步任务已创建' })
+  } catch (error: any) {
+    toast.add({
+      title: '创建同步任务失败',
+      description: error?.message ?? '请稍后重试',
+      color: 'error',
+    })
+  } finally {
+    syncLoading.value = false
+  }
+}
+
+const goBack = () => router.push('/channels')
+
+const formatDate = (value: string) => {
+  try {
+    return new Date(value).toLocaleString('zh-CN')
+  } catch {
+    return value
+  }
+}
 </script>

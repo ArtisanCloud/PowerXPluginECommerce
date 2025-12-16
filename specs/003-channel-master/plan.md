@@ -70,8 +70,8 @@ backend/
 │   ├── services/admin/channel_master/
 │   ├── transport/http/admin/channel_master/
 │   ├── transport/grpc/admin/channel_master/    # 预留
-│   ├── jobs/channel_master/                    # 凭证巡检、KPI 刷新调度
-│   └── observability/channel_master/
+│   ├── jobs/channel/master/                    # 凭证巡检、KPI 刷新调度
+│   └── observability/channel/master/
 ├── pkg/security/encryption/                    # envelope helper（可复用）
 └── tests/integration/channel_master/
 

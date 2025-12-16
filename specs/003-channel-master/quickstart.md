@@ -24,14 +24,22 @@
    ```
 5. **Expose APIs**  
    - `/v1/channels` 列表 + 筛选  
-   - `/v1/channels/{id}` 详情 & KPI  
+   - `/v1/channels/{id}` 详情 & KPI（包含 `metrics`, `health`, `strategy`, `team`）  
    - `/v1/channels/{id}/credentials` 授权  
    - `/v1/channels/{id}/alerts` 告警  
-   - `/v1/channels/{id}/sync` 手动刷新  
+   - `/v1/channels/{id}/sync` 手动刷新 & `/sync-history` 查询  
    所有请求带 `Authorization: Bearer <tenant JWT>` 与 `X-PowerX-Tenant`.
 6. **Background jobs**  
-   - `jobs/channel_master/credential_checker.go` 每 12h 检测凭证有效期  
-   - `jobs/channel_master/metric_sync.go` 对接任务中心刷新 KPI
+   - `jobs/channel/master/credential_checker.go` 每 12h 检测凭证有效期并写入 `channel_alerts`  
+   - `jobs/channel/master/metric_refresh.go` 读取任务中心视图写入 `channel_metrics`
+
+## Channel Operations
+1. **授权与凭证**：在渠道详情页打开“授权凭证”抽屉，可创建 OAuth/API Key/线下凭证；保存后系统自动触发巡检，巡检失败或即将到期会向 `/channels/{id}/alerts` 写入记录。  
+2. **KPI 与健康度**：详情页默认拉取 KPI 面板与健康度标签，并在 `metrics_service.go` 计算闸门式得分；若关键指标缺失或巡检异常会追加 `no_metrics`、`credential_*` 标签，加载完成后前端通过 `$perf.logKpiLoad` 记录耗时。  
+3. **任务与备注**：通过 `/channels/{id}/tasks` 与 `/channels/{id}/notes` API 维护任务中心关联与运营备注，所有操作写入 `channel_audit_logs`，可在审批/合规场景检索。  
+4. **同步历史**：操作员可调用 `/channels/{id}/sync` 触发手动同步，执行结果记录到 `/channels/{id}/sync-history`，并在 UI 中展示最近 10 条记录；`SyncHistoryService.Complete` 会更新 `SyncSuccessRate` 指标。  
+5. **策略与团队**：使用 `/channels/{id}/strategy` PATCH 更新 pricebook/库存/物流/客服策略及负责/审批人，RBAC 受 `channel.strategy.manage` 限制，所有写入带审计事件。  
+6. **告警闭环**：`/channels/{id}/alerts` 支持前端确认/指派处理人，关闭后会更新 `channel_alerts` 状态并清除 UI 标签。更多操作指引见 `docs/guides/channel_master.md`，指标对照见 `docs/observability/channel/master.md`。
 
 ## Frontend (web-admin) Workflow
 1. **Install & run**  
@@ -42,7 +50,7 @@
    ```
 2. **Runtime config**  
    - `NUXT_PUBLIC_API_BASE_URL=http://localhost:8086/v1`（直连）  
-   - 生产由宿主注入 `/_p/<plugin-id>/api/v1`.
+   - 生产由宿主注入 `/_p/<plugin-id>/api/v1`; 详情页 KPI 面板需要 `useNuxtApp().$perf.logKpiLoad` 插件启用。
 3. **Pages**  
    - `pages/channels/index.vue`: 列表、筛选、批量操作  
    - `pages/channels/[id].vue`: 详情、KPI、告警、策略  

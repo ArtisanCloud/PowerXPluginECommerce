@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	channelmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/channel_master"
@@ -14,14 +15,16 @@ import (
 
 // ChannelListFilters enumerates filters for channel listing endpoints.
 type ChannelListFilters struct {
-	Keyword  string
-	Platform string
-	Status   []string
-	Owner    string
-	Region   string
-	Tags     []string
-	Page     int
-	PageSize int
+	Keyword   string
+	Platform  string
+	Status    []string
+	Owner     string
+	Region    string
+	Tags      []string
+	MinHealth int
+	MinGMV    float64
+	Page      int
+	PageSize  int
 }
 
 // ChannelMasterRepository wraps BaseRepository with tenant-aware helpers.
@@ -114,8 +117,69 @@ func (r *ChannelMasterRepository) FindPage(ctx context.Context, filters ChannelL
 		if arr := normalizeTags(f.Tags); len(arr) > 0 {
 			db = db.Where("tags && ?", pq.StringArray(arr))
 		}
+		if f.MinHealth > 0 {
+			db = db.Where("health_score >= ?", f.MinHealth)
+		}
+		if f.MinGMV > 0 {
+			db = applyMinGMVFilter(db, f.MinGMV)
+		}
 		return db.Order("updated_at DESC")
 	}, filters)
+}
+
+// FindByID returns a channel scoped to the current tenant.
+func (r *ChannelMasterRepository) FindByID(ctx context.Context, id string) (*channelmodel.ChannelMaster, error) {
+	if strings.TrimSpace(id) == "" {
+		return nil, gorm.ErrInvalidData
+	}
+	tenantUUID, err := authx.RequireTenantUUID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var entity channelmodel.ChannelMaster
+	if err := r.DB.WithContext(ctx).
+		Where("tenant_uuid = ? AND id = ?", tenantUUID, strings.TrimSpace(id)).
+		First(&entity).Error; err != nil {
+		return nil, err
+	}
+	return &entity, nil
+}
+
+// Save persists modifications to a channel entity under the tenant scope.
+func (r *ChannelMasterRepository) Save(ctx context.Context, channel *channelmodel.ChannelMaster) (*channelmodel.ChannelMaster, error) {
+	if channel == nil {
+		return nil, gorm.ErrInvalidData
+	}
+	tenantUUID, err := authx.RequireTenantUUID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	if strings.TrimSpace(channel.TenantUUID) == "" {
+		channel.TenantUUID = tenantUUID
+	}
+	return r.BaseRepository.Update(ctx, channel)
+}
+
+// FindByStoreID returns the channel with the given store identifier within a tenant.
+func (r *ChannelMasterRepository) FindByStoreID(ctx context.Context, storeID string) (*channelmodel.ChannelMaster, error) {
+	if strings.TrimSpace(storeID) == "" {
+		return nil, gorm.ErrInvalidData
+	}
+	tenantUUID, err := authx.RequireTenantUUID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var entity channelmodel.ChannelMaster
+	err = r.DB.WithContext(ctx).
+		Where("tenant_uuid = ? AND store_id = ?", tenantUUID, strings.TrimSpace(storeID)).
+		First(&entity).Error
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &entity, nil
 }
 
 func normalizeTags(values []string) []string {
@@ -126,4 +190,19 @@ func normalizeTags(values []string) []string {
 		}
 	}
 	return clean
+}
+
+func applyMinGMVFilter(db *gorm.DB, minGmv float64) *gorm.DB {
+	if db == nil || minGmv <= 0 {
+		return db
+	}
+	dialect := strings.ToLower(db.Dialector.Name())
+	switch dialect {
+	case "sqlite":
+		return db.Where("COALESCE(json_extract(metadata, '$.gmv_30d'), 0) >= ?", minGmv)
+	case "postgres":
+		return db.Where("(metadata->>'gmv_30d')::numeric >= ?", minGmv)
+	default:
+		return db.Where("(metadata->>'gmv_30d')::numeric >= ?", minGmv)
+	}
 }

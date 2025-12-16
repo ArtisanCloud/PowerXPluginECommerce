@@ -12,10 +12,10 @@ import (
 // ChannelMaster captures tenant-scoped channel/store master data.
 type ChannelMaster struct {
 	ID           string         `gorm:"type:uuid;primaryKey;default:gen_random_uuid();comment:渠道ID" json:"id"`
-	TenantUUID   string         `gorm:"column:tenant_uuid;type:uuid;not null;index:idx_channel_master_tenant_store,priority:1;comment:租户" json:"tenant_uuid"`
+	TenantUUID   string         `gorm:"column:tenant_uuid;type:uuid;not null;uniqueIndex:idx_channel_master_tenant_store,priority:1;comment:租户" json:"tenant_uuid"`
 	Platform     string         `gorm:"type:varchar(64);not null;index;comment:平台" json:"platform"`
 	ChannelType  string         `gorm:"type:varchar(32);not null;index;comment:渠道类型" json:"channel_type"`
-	StoreID      string         `gorm:"column:store_id;type:varchar(128);not null;index:idx_channel_master_tenant_store,priority:2;comment:店铺/渠道ID" json:"store_id"`
+	StoreID      string         `gorm:"column:store_id;type:varchar(128);not null;uniqueIndex:idx_channel_master_tenant_store,priority:2;comment:店铺/渠道ID" json:"store_id"`
 	Name         string         `gorm:"type:varchar(255);not null;comment:渠道名称" json:"name"`
 	Domain       string         `gorm:"type:varchar(255);comment:域名" json:"domain,omitempty"`
 	Region       string         `gorm:"type:varchar(64);not null;index;comment:区域" json:"region"`

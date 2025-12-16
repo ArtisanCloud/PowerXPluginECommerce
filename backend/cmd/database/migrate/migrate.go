@@ -42,6 +42,10 @@ var businessTables = []interface{}{
 	&channelmodel.ChannelTaskLink{},
 	&channelmodel.ChannelNote{},
 	&channelmodel.ChannelSyncHistory{},
+	&channelmodel.ChannelCredential{},
+	&channelmodel.ChannelAlert{},
+	&channelmodel.ChannelMetric{},
+	&channelmodel.ChannelConfig{},
 	&marketplaceModel.Listing{},
 	&marketplaceModel.ListingAsset{},
 	&marketplaceModel.ListingVersion{},
@@ -102,6 +106,9 @@ func MigratePluginModels(ctx context.Context, db *gorm.DB, includeIAM bool) erro
 		return nil
 	}
 	if err := safeAutoMigrate(ctx, db, tables); err != nil {
+		return err
+	}
+	if err := ensureChannelMasterUniqueIndex(ctx, db); err != nil {
 		return err
 	}
 	return ensureChannelRLSPolicies(ctx, db)
@@ -186,6 +193,26 @@ func dropConstraintIfExists(ctx context.Context, db *gorm.DB, tableName, constra
 	return db.WithContext(ctx).Exec(query).Error
 }
 
+func ensureChannelMasterUniqueIndex(ctx context.Context, db *gorm.DB) error {
+	if db == nil {
+		return nil
+	}
+	if !strings.EqualFold(db.Dialector.Name(), "postgres") {
+		return nil
+	}
+	const idxName = "idx_channel_master_tenant_store"
+	tableName := models.S(models.TableChannelMasters)
+	dropSQL := fmt.Sprintf(`DROP INDEX IF EXISTS %s`, quoteIdentifier(idxName))
+	if err := db.WithContext(ctx).Exec(dropSQL).Error; err != nil {
+		return fmt.Errorf("drop index %s failed: %w", idxName, err)
+	}
+	createSQL := fmt.Sprintf(`CREATE UNIQUE INDEX IF NOT EXISTS %s ON %s(tenant_uuid, store_id)`, quoteIdentifier(idxName), tableName)
+	if err := db.WithContext(ctx).Exec(createSQL).Error; err != nil {
+		return fmt.Errorf("create unique index %s failed: %w", idxName, err)
+	}
+	return nil
+}
+
 func resolveTableName(db *gorm.DB, table interface{}) (string, error) {
 	stmt := &gorm.Statement{DB: db}
 	if err := stmt.Parse(table); err != nil {
@@ -260,18 +287,50 @@ func ensureChannelRLSPolicies(ctx context.Context, db *gorm.DB) error {
 		{models.S(models.TableChannelTaskLinks), "channel_task_link_tenant_rls"},
 		{models.S(models.TableChannelNotes), "channel_note_tenant_rls"},
 		{models.S(models.TableChannelSyncHistory), "channel_sync_history_tenant_rls"},
+		{models.S(models.TableChannelCredentials), "channel_credential_tenant_rls"},
+		{models.S(models.TableChannelAlerts), "channel_alert_tenant_rls"},
+		{models.S(models.TableChannelConfigs), "channel_config_tenant_rls"},
 	}
 	for _, p := range targets {
 		if err := db.WithContext(ctx).Exec(fmt.Sprintf("ALTER TABLE %s ENABLE ROW LEVEL SECURITY", p.table)).Error; err != nil {
 			return err
 		}
+		exists, err := rlsPolicyExists(ctx, db, p.table, p.name)
+		if err != nil {
+			return err
+		}
+		if exists {
+			continue
+		}
 		using := "tenant_uuid::text = current_setting('app.tenant_uuid', true)"
-		stmt := fmt.Sprintf(`CREATE POLICY IF NOT EXISTS %s ON %s USING (%s) WITH CHECK (%s)`, p.name, p.table, using, using)
+		stmt := fmt.Sprintf(`CREATE POLICY %s ON %s USING (%s) WITH CHECK (%s)`, p.name, p.table, using, using)
 		if err := db.WithContext(ctx).Exec(stmt).Error; err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+func rlsPolicyExists(ctx context.Context, db *gorm.DB, tableName, policyName string) (bool, error) {
+	schema := models.Schema()
+	cleanTable := tableName
+	if schema != "" {
+		prefix := fmt.Sprintf(`"%s".`, schema)
+		if strings.HasPrefix(cleanTable, prefix) {
+			cleanTable = strings.TrimPrefix(cleanTable, prefix)
+		}
+	}
+	query := `SELECT COUNT(*) FROM pg_policies WHERE schemaname = current_schema() AND tablename = ? AND policyname = ?`
+	args := []any{cleanTable, policyName}
+	if schema != "" {
+		query = `SELECT COUNT(*) FROM pg_policies WHERE schemaname = ? AND tablename = ? AND policyname = ?`
+		args = []any{schema, cleanTable, policyName}
+	}
+	var count int64
+	if err := db.WithContext(ctx).Raw(query, args...).Scan(&count).Error; err != nil {
+		return false, err
+	}
+	return count > 0, nil
 }
 
 func ResetDatabase(ctx context.Context, db *gorm.DB, cfg *config.DatabaseConfig) error {

@@ -57,7 +57,7 @@ backend/
 │   ├── services/admin/product/spu/
 │   ├── domain/models/product/
 │   ├── domain/repository/product/
-│   ├── jobs/channels/
+│   ├── jobs/channel/product/
 │   └── observability/product/
 ├── pkg/ (shared infra)
 ├── etc/ (configs)

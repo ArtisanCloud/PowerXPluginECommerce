@@ -7,6 +7,7 @@ import (
 	"os/signal"
 	"strings"
 	"syscall"
+	"time"
 
 	fwbootstrap "github.com/ArtisanCloud/PowerXPlugin/framework/backend/go/bootstrap"
 	"github.com/ArtisanCloud/PowerXPlugin/framework/backend/go/manifest"
@@ -17,11 +18,13 @@ import (
 	marketplacerepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/marketplace"
 	repository "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/plugin"
 	grpcserver "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/grpc/server"
+	channelmasterjobs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/jobs/channel/master"
 	marketplacejobs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/jobs/marketplace"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	manifestx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/manifestx"
 	adminmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/admin_console"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/auth"
+	channelobs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/channel/master"
 	opsmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/operations"
 	pluginrouter "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/router"
 	httpserver "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/server"
@@ -32,6 +35,7 @@ import (
 	recommendation "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/recommendation"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/utils"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/taskbus"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -134,6 +138,19 @@ func main() {
 		}
 	}
 
+	var taskBusClient taskbus.Client
+	if cfg.TaskBusEnabled() {
+		switch cfg.TaskBusAdapter() {
+		case "", "local":
+			taskBusClient = taskbus.NewLocalClient(logger.WithField("component", "taskbus-local"))
+		default:
+			logger.WithField("adapter", cfg.TaskBusAdapter()).Warn("unsupported taskbus adapter, falling back to noop")
+			taskBusClient = taskbus.NewNoopClient()
+		}
+	} else {
+		taskBusClient = taskbus.NewNoopClient()
+	}
+
 	deps := &app.Deps{
 		DB:                  queryDB,
 		Ctx:                 rootCtx,
@@ -149,6 +166,7 @@ func main() {
 		IAMModeSource:       iamResolver.Source(),
 		AuthProxy:           authClient,
 		IAMDirectory:        localIAM,
+		TaskBus:             taskBusClient,
 	}
 
 	listingRepo := marketplacerepo.NewListingRepository(queryDB)
@@ -162,6 +180,16 @@ func main() {
 	var renewalJob *marketplacejobs.RenewalNotifier
 	if cfg != nil && cfg.LicenseReminderLead() > 0 {
 		renewalJob = marketplacejobs.NewLicenseRenewalNotifier(cfg, licenseRepoGlobal, logger.WithField("component", "marketplace_license_renewal_notifier"), listingRepo.ListTenantUuids, nil)
+	}
+
+	var credentialChecker *channelmasterjobs.CredentialChecker
+	var metricRefresh *channelmasterjobs.MetricRefreshJob
+	if deps.DB != nil {
+		alertEmitter := channelobs.NewAlertEmitter(logger.WithField("component", "channel_master_alert"))
+		lead := 7 * 24 * time.Hour
+		interval := time.Hour
+		credentialChecker = channelmasterjobs.NewCredentialChecker(deps, lead, interval, alertEmitter)
+		metricRefresh = channelmasterjobs.NewMetricRefreshJob(deps, 30*time.Minute)
 	}
 
 	// 设置 gin engine 路由
@@ -205,6 +233,18 @@ func main() {
 	if renewalJob != nil {
 		g.Go(func() error {
 			renewalJob.Run(groupCtx)
+			return nil
+		})
+	}
+	if credentialChecker != nil {
+		g.Go(func() error {
+			credentialChecker.Run(groupCtx)
+			return nil
+		})
+	}
+	if metricRefresh != nil {
+		g.Go(func() error {
+			metricRefresh.Run(groupCtx)
 			return nil
 		})
 	}
