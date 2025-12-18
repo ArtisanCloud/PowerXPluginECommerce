@@ -16,6 +16,7 @@ export interface ChannelSummary {
   status: ChannelStatus
   channelType: string
   tags: string[]
+  approvalHistory?: ChannelApprovalHistoryEntry[]
 }
 
 export interface ChannelListMeta {
@@ -158,6 +159,15 @@ export type ChannelApprovalDecision = 'approve' | 'reject'
 export interface ChannelApprovalPayload {
   decision: ChannelApprovalDecision
   reason?: string
+}
+
+export interface ChannelApprovalHistoryEntry {
+  event: string
+  actor: string
+  note?: string
+  reason?: string
+  decision?: string
+  at: string
 }
 
 export interface ChannelMetric {

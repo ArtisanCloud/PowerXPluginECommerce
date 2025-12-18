@@ -1,6 +1,6 @@
 <template>
   <aside
-    class="w-64 min-w-64 max-w-64 bg-slate-900/90 text-slate-100 border-r border-gray-800 min-h-screen flex-shrink-0 overflow-y-auto backdrop-blur"
+    :class="asideClass"
   >
     <nav class="p-4 space-y-4">
       <!-- 经营总览 -->
@@ -1338,6 +1338,13 @@ const toggleAffiliates = () => {
 const toggleReturns = () => {
   showReturns.value = !showReturns.value;
 };
+
+const colorMode = useColorMode();
+const asideClass = computed(() =>
+  colorMode.value === "dark"
+    ? "w-64 min-w-64 max-w-64 bg-slate-900/90 text-slate-100 border-r border-gray-800 min-h-screen flex-shrink-0 overflow-y-auto backdrop-blur"
+    : "w-64 min-w-64 max-w-64 bg-white text-slate-900 border-r border-gray-200 min-h-screen flex-shrink-0 overflow-y-auto"
+);
 
 // 监听路由变化，自动展开相应的子菜单
 const route = useRoute();

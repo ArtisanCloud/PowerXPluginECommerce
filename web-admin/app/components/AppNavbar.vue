@@ -1,6 +1,6 @@
 <template>
   <div
-    class="border-b border-gray-800 bg-slate-900/95 text-slate-100 shadow-lg shadow-slate-900/40 backdrop-blur"
+    :class="navbarClass"
   >
     <div class="flex h-16 items-center justify-between px-6">
       <!-- 左侧品牌 -->
@@ -58,6 +58,13 @@ import { useAuth } from "~/composables/useAuth";
 const { t } = useI18n();
 const runtimeConfig = useRuntimeConfig();
 const auth = useAuth();
+const colorMode = useColorMode();
+
+const navbarClass = computed(() =>
+  colorMode.value === "dark"
+    ? "border-b border-gray-800 bg-slate-900/95 text-slate-100 shadow-lg shadow-slate-900/40 backdrop-blur"
+    : "border-b border-gray-200 bg-white text-slate-900 shadow"
+);
 
 const logoSrc = computed(() => {
   const base = runtimeConfig.public.insidePowerX

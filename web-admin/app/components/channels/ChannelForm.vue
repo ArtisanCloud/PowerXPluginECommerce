@@ -107,7 +107,33 @@
       </UFormField>
       <UFormField label="审批人 / Approver">
         <template #default="{ id }">
-          <UInput :id="id" v-model.trim="form.approverUuid" class="w-full" placeholder="user:approver-01"/>
+          <USelectMenu
+            :id="id"
+            v-model="form.approverUuid"
+            :items="ownerSelectOptions"
+            value-key="value"
+            label-key="label"
+            searchable
+            clearable
+            v-model:search-term="approverSearchTerm"
+            :loading="ownerLoading"
+            :ignore-filter="true"
+            class="w-full"
+            placeholder="可选，选择审批人"
+            @keydown.enter.prevent.stop="confirmApproverSearch"
+          >
+            <template #option="{ option }">
+              <div class="flex flex-col">
+                <span class="font-medium text-sm text-gray-900 dark:text-white">{{ option.label }}</span>
+                <span v-if="option.description" class="text-xs text-gray-500">{{ option.description }}</span>
+              </div>
+            </template>
+            <template #empty>
+              <div class="px-3 py-2 text-sm text-gray-500">
+                <p>未找到匹配审批人，可输入关键词继续搜索。</p>
+              </div>
+            </template>
+          </USelectMenu>
         </template>
       </UFormField>
       <UFormField class="md:col-span-2" label="标签 / Tags (逗号分隔)">
@@ -280,16 +306,18 @@ const ownerOptionsSource = computed<ExtendedSelectOption[]>(() =>
 )
 
 const ownerSearchTerm = ref('')
+const approverSearchTerm = ref('')
 const ownerLoading = computed(() => props.ownerLoading ?? false)
 
 const ownerSelectOptions = computed<ExtendedSelectOption[]>(() => {
   const base = [...ownerOptionsSource.value]
-  if (form.value.ownerUuid && !base.some((option) => option.value === form.value.ownerUuid)) {
-    base.push({
-      label: form.value.ownerUuid,
-      value: form.value.ownerUuid,
-    })
+  const ensureValue = (value?: string) => {
+    if (value && !base.some((option) => option.value === value)) {
+      base.push({ label: value, value })
+    }
   }
+  ensureValue(form.value.ownerUuid)
+  ensureValue(form.value.approverUuid)
   return base
 })
 
@@ -302,6 +330,19 @@ watch(
           ? (val as ExtendedSelectOption).value
           : String((val as ExtendedSelectOption).value ?? '')
       form.value.ownerUuid = normalized
+    }
+  },
+)
+
+watch(
+  () => form.value.approverUuid as unknown,
+  (val) => {
+    if (val && typeof val === 'object') {
+      const normalized =
+        typeof (val as ExtendedSelectOption).value === 'string'
+          ? (val as ExtendedSelectOption).value
+          : String((val as ExtendedSelectOption).value ?? '')
+      form.value.approverUuid = normalized
     }
   },
 )
@@ -329,23 +370,34 @@ const emitOwnerSearch = (term: string, force = false) => {
     return
   }
   lastOwnerQuery = normalized
-  console.debug('[ChannelForm] owner search', normalized)
   emit('search-owner', normalized)
+}
+
+const scheduleOwnerSearch = (term: string) => {
+  if (ownerSearchTimer) {
+    clearTimeout(ownerSearchTimer)
+  }
+  ownerSearchTimer = setTimeout(() => emitOwnerSearch(term), 400)
 }
 
 watch(
   ownerSearchTerm,
-  (term) => {
-    if (ownerSearchTimer) {
-      clearTimeout(ownerSearchTimer)
-    }
-    ownerSearchTimer = setTimeout(() => emitOwnerSearch(term), 400)
-  },
+  (term) => scheduleOwnerSearch(term),
+  { immediate: false },
+)
+
+watch(
+  approverSearchTerm,
+  (term) => scheduleOwnerSearch(term),
   { immediate: false },
 )
 
 const confirmOwnerSearch = () => {
   emitOwnerSearch(ownerSearchTerm.value, true)
+}
+
+const confirmApproverSearch = () => {
+  emitOwnerSearch(approverSearchTerm.value, true)
 }
 
 onBeforeUnmount(() => {

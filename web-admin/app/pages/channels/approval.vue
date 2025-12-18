@@ -49,24 +49,26 @@
                 负责人：{{ request.ownerUuid }} · 渠道类型：{{ request.channelType }}
               </p>
             </div>
-            <div class="space-y-2">
-              <p class="text-sm text-gray-500">
-                审批备注（可选）：
-              </p>
-              <UTextarea
-                v-model="decisionNotes[request.id]"
-                placeholder="驳回时请注明原因，审批意见将写入审计日志"
-              />
+            <div v-if="request.approvalHistory?.length" class="rounded-lg border border-gray-200/70 bg-white/70 p-3 dark:border-gray-800 dark:bg-slate-900/60">
+              <p class="text-xs font-medium uppercase text-gray-400">最近记录</p>
+              <div class="mt-1 space-y-1">
+                <p class="text-sm text-gray-900 dark:text-gray-100">
+                  {{ formatHistoryLabel(latestHistoryEntry(request)) }}
+                </p>
+                <p class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ formatHistoryTime(latestHistoryEntry(request)?.at) }} · {{ latestHistoryEntry(request)?.actor || 'system' }}
+                </p>
+                <p v-if="latestHistoryEntry(request)?.reason" class="text-xs text-rose-400">
+                  原因：{{ latestHistoryEntry(request)?.reason }}
+                </p>
+              </div>
             </div>
             <div class="flex flex-wrap gap-2">
               <UButton color="neutral" variant="ghost" @click="viewDetail(request.id)">
                 查看详情
               </UButton>
-              <UButton color="success" icon="i-heroicons-check" @click="decide(request, 'approve')">
-                通过
-              </UButton>
-              <UButton color="error" variant="outline" icon="i-heroicons-x-mark" @click="decide(request, 'reject')">
-                驳回
+              <UButton color="primary" icon="i-heroicons-clipboard-document-check" @click="openApprovalModal(request)">
+                处理申请
               </UButton>
             </div>
           </div>
@@ -76,12 +78,76 @@
         </div>
       </div>
     </UCard>
+    <UModal
+      v-model:open="approvalModalOpen"
+      title="申请记录与审批操作"
+      description="参考历史记录并提交审批意见"
+      :prevent-close="store.saving"
+      :ui="{ content: 'max-w-3xl w-[90vw]' }"
+    >
+      <template #body>
+        <div class="space-y-6" v-if="activeApproval">
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ activeApproval.name }}</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400">
+              {{ activeApproval.platform }} · {{ activeApproval.region }}
+            </p>
+          </div>
+          <div>
+            <p class="text-sm font-medium text-gray-900 dark:text-white">申请记录</p>
+            <div v-if="modalHistory.length" class="mt-3 space-y-3">
+              <div
+                v-for="entry in modalHistory"
+                :key="entry.at + entry.event"
+                class="rounded-lg border border-gray-200/80 p-3 dark:border-gray-700"
+              >
+                <div class="flex items-center justify-between">
+                  <span class="text-sm font-semibold text-gray-900 dark:text-white">
+                    {{ formatHistoryLabel(entry) }}
+                  </span>
+                  <UBadge variant="soft">{{ entry.actor || 'system' }}</UBadge>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400">{{ formatHistoryTime(entry.at) }}</p>
+                <p v-if="entry.reason" class="mt-1 text-sm text-rose-400">原因：{{ entry.reason }}</p>
+                <p v-if="entry.note && entry.event === 'submitted'" class="mt-1 text-xs text-gray-500">
+                  备注：{{ entry.note }}
+                </p>
+              </div>
+            </div>
+            <p v-else class="mt-3 text-sm text-gray-500 dark:text-gray-400">暂无历史记录，当前为首次提审。</p>
+          </div>
+          <div class="space-y-3">
+            <UFormField label="审批备注" help="驳回时为必填，将记录在审计日志中。">
+              <template #default="{ id }">
+                <UTextarea
+                  :id="id"
+                  v-model="modalNote"
+                  placeholder="例如：资料缺少授权书，请补齐后重新提交"
+                  :rows="3"
+                />
+              </template>
+            </UFormField>
+            <div class="flex flex-wrap gap-2">
+              <UButton color="success" :loading="store.saving" @click="submitDecision('approve')">
+                通过
+              </UButton>
+              <UButton color="error" variant="soft" :loading="store.saving" @click="submitDecision('reject')">
+                驳回
+              </UButton>
+              <UButton color="neutral" variant="ghost" @click="closeApprovalModal">
+                取消
+              </UButton>
+            </div>
+          </div>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, reactive, ref, watch } from 'vue'
-import type { ChannelSummary } from '~/types/channels'
+import type { ChannelSummary, ChannelApprovalHistoryEntry } from '~/types/channels'
 import { useChannelsStore } from '~/stores/channels'
 
 const router = useRouter()
@@ -92,6 +158,9 @@ const approvals = ref<ChannelSummary[]>([])
 const loading = ref(false)
 const platformFilter = ref('')
 const decisionNotes = reactive<Record<string, string>>({})
+const approvalModalOpen = ref(false)
+const activeApproval = ref<ChannelSummary | null>(null)
+const modalNote = ref('')
 
 const loadApprovals = async () => {
   loading.value = true
@@ -122,7 +191,66 @@ const platformOptions = computed(() => {
   return [{ label: '全部平台', value: '' }, ...Array.from(unique).map((platform) => ({ label: platform, value: platform }))]
 })
 
-const decide = async (request: ChannelSummary, decision: 'approve' | 'reject') => {
+const modalHistory = computed(() => activeApproval.value?.approvalHistory ?? [])
+
+const latestHistoryEntry = (request: ChannelSummary) => {
+  const history = request.approvalHistory ?? []
+  return history.length ? history[history.length - 1] : undefined
+}
+
+const formatHistoryLabel = (entry?: ChannelApprovalHistoryEntry) => {
+  if (!entry) {
+    return '暂无记录'
+  }
+  const mapping: Record<string, string> = {
+    submitted: '发起申请',
+    approve: '审批通过',
+    approved: '审批通过',
+    reject: '审批驳回',
+    rejected: '审批驳回',
+  }
+  return mapping[entry.event] || entry.event
+}
+
+const formatHistoryTime = (value?: string) => {
+  if (!value) return '--'
+  try {
+    return new Date(value).toLocaleString('zh-CN')
+  } catch {
+    return value
+  }
+}
+
+const openApprovalModal = (request: ChannelSummary) => {
+  activeApproval.value = request
+  modalNote.value = decisionNotes[request.id] || ''
+  approvalModalOpen.value = true
+}
+
+const closeApprovalModal = () => {
+  approvalModalOpen.value = false
+  activeApproval.value = null
+  modalNote.value = ''
+}
+
+watch(
+  () => activeApproval.value?.id,
+  (id) => {
+    if (!id) {
+      modalNote.value = ''
+      return
+    }
+    modalNote.value = decisionNotes[id] || ''
+  },
+)
+
+watch(modalNote, (val) => {
+  if (activeApproval.value) {
+    decisionNotes[activeApproval.value.id] = val
+  }
+})
+
+const decide = async (request: ChannelSummary, decision: 'approve' | 'reject', options: { closeModal?: boolean } = {}) => {
   if (decision === 'reject' && !decisionNotes[request.id]) {
     toast.add({ title: '请填写驳回原因', color: 'warning' })
     return
@@ -138,6 +266,9 @@ const decide = async (request: ChannelSummary, decision: 'approve' | 'reject') =
       color: decision === 'approve' ? 'success' : 'warning',
     })
     await loadApprovals()
+    if (options.closeModal) {
+      closeApprovalModal()
+    }
   } catch (error: any) {
     toast.add({
       title: '提交审批结果失败',
@@ -149,5 +280,10 @@ const decide = async (request: ChannelSummary, decision: 'approve' | 'reject') =
 
 const viewDetail = (id: string) => {
   router.push(`/channels/${id}`)
+}
+
+const submitDecision = async (decision: 'approve' | 'reject') => {
+  if (!activeApproval.value) return
+  await decide(activeApproval.value, decision, { closeModal: true })
 }
 </script>

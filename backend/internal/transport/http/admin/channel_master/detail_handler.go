@@ -26,25 +26,26 @@ type DetailHandler struct {
 
 // ChannelDetailResponse describes the payload returned to UI.
 type ChannelDetailResponse struct {
-	ID           string                           `json:"id"`
-	Name         string                           `json:"name"`
-	Platform     string                           `json:"platform"`
-	Region       string                           `json:"region"`
-	Status       string                           `json:"status"`
-	StoreID      string                           `json:"storeId"`
-	ChannelType  string                           `json:"channelType"`
-	OwnerUUID    string                           `json:"ownerUuid"`
-	ApproverUUID *string                          `json:"approverUuid,omitempty"`
-	Contact      ContactPayload                   `json:"contact"`
-	Tags         []string                         `json:"tags"`
-	Health       channelservice.HealthComputation `json:"health"`
-	Metrics      []MetricDTO                      `json:"metrics"`
-	Alerts       []AlertDTO                       `json:"alerts"`
-	Tasks        []TaskLinkDTO                    `json:"tasks"`
-	Notes        []ChannelNoteDTO                 `json:"notes"`
-	SyncHistory  []SyncHistoryDTO                 `json:"syncHistory"`
-	Strategy     StrategyDTO                      `json:"strategy"`
-	Team         TeamDTO                          `json:"team"`
+	ID              string                                `json:"id"`
+	Name            string                                `json:"name"`
+	Platform        string                                `json:"platform"`
+	Region          string                                `json:"region"`
+	Status          string                                `json:"status"`
+	StoreID         string                                `json:"storeId"`
+	ChannelType     string                                `json:"channelType"`
+	OwnerUUID       string                                `json:"ownerUuid"`
+	ApproverUUID    *string                               `json:"approverUuid,omitempty"`
+	Contact         ContactPayload                        `json:"contact"`
+	Tags            []string                              `json:"tags"`
+	Health          channelservice.HealthComputation      `json:"health"`
+	Metrics         []MetricDTO                           `json:"metrics"`
+	Alerts          []AlertDTO                            `json:"alerts"`
+	Tasks           []TaskLinkDTO                         `json:"tasks"`
+	Notes           []ChannelNoteDTO                      `json:"notes"`
+	SyncHistory     []SyncHistoryDTO                      `json:"syncHistory"`
+	Strategy        StrategyDTO                           `json:"strategy"`
+	Team            TeamDTO                               `json:"team"`
+	ApprovalHistory []channelservice.ApprovalHistoryEntry `json:"approvalHistory,omitempty"`
 }
 
 // MetricDTO surfaces KPI snapshots.
@@ -153,6 +154,7 @@ func (h *DetailHandler) Get(c *gin.Context) {
 		Team: TeamDTO{
 			OwnerUUID: channel.OwnerUUID,
 		},
+		ApprovalHistory: metadataApprovalHistory(channel.Metadata),
 	}
 	if channel.ApproverUUID != nil {
 		resp.Team.ApproverUUID = *channel.ApproverUUID

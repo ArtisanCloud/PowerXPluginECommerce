@@ -94,11 +94,9 @@ html {
   -moz-osx-font-smoothing: grayscale;
 }
 
-body,
-#__nuxt,
-#__nuxt > div {
+body {
   margin: 0;
-  background-color: #020617;
+  background-color: var(--bg-secondary);
   color: var(--text-primary);
   line-height: 1.6;
 }

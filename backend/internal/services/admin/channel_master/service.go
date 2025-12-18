@@ -34,15 +34,26 @@ type DTOMapper interface {
 
 // ChannelSummaryDTO is a light-weight response used by admin APIs.
 type ChannelSummaryDTO struct {
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	StoreID     string   `json:"storeId"`
-	Platform    string   `json:"platform"`
-	Region      string   `json:"region"`
-	Status      string   `json:"status"`
-	OwnerUUID   string   `json:"ownerUuid"`
-	Tags        []string `json:"tags"`
-	ChannelType string   `json:"channelType"`
+	ID              string                 `json:"id"`
+	Name            string                 `json:"name"`
+	StoreID         string                 `json:"storeId"`
+	Platform        string                 `json:"platform"`
+	Region          string                 `json:"region"`
+	Status          string                 `json:"status"`
+	OwnerUUID       string                 `json:"ownerUuid"`
+	Tags            []string               `json:"tags"`
+	ChannelType     string                 `json:"channelType"`
+	ApprovalHistory []ApprovalHistoryEntry `json:"approvalHistory,omitempty"`
+}
+
+// ApprovalHistoryEntry records submission/decision lifecycle events.
+type ApprovalHistoryEntry struct {
+	Event    string `json:"event"`
+	Actor    string `json:"actor"`
+	Note     string `json:"note,omitempty"`
+	Reason   string `json:"reason,omitempty"`
+	Decision string `json:"decision,omitempty"`
+	At       string `json:"at"`
 }
 
 const (
@@ -65,6 +76,7 @@ const (
 	metadataKeySubmissionNote     = "submission_note"
 	metadataKeyOfflineEvidenceURL = "offline_evidence_url"
 	metadataKeyLastApprovalReason = "last_approval_reason"
+	metadataKeyApprovalHistory    = "approval_history"
 )
 
 var (
@@ -388,8 +400,9 @@ func (s *Service) Submit(ctx context.Context, channelID string, input SubmitChan
 	channel.Status = StatusPendingReview
 	channel.UpdatedBy = actorFromContext(ctx)
 	channel.Metadata = setMetadataValue(channel.Metadata, metadataKeyLastSubmissionAt, now.Format(time.RFC3339Nano))
-	if input.Note != "" {
-		channel.Metadata = setMetadataValue(channel.Metadata, metadataKeySubmissionNote, input.Note)
+	note := strings.TrimSpace(input.Note)
+	if note != "" {
+		channel.Metadata = setMetadataValue(channel.Metadata, metadataKeySubmissionNote, note)
 	} else {
 		channel.Metadata = setMetadataValue(channel.Metadata, metadataKeySubmissionNote, nil)
 	}
@@ -398,6 +411,16 @@ func (s *Service) Submit(ctx context.Context, channelID string, input SubmitChan
 	} else {
 		channel.Metadata = setMetadataValue(channel.Metadata, metadataKeyOfflineEvidenceURL, nil)
 	}
+	entry := ApprovalHistoryEntry{
+		Event: "submitted",
+		Actor: actorFromContext(ctx),
+		At:    now.Format(time.RFC3339Nano),
+	}
+	if note != "" {
+		entry.Note = note
+	}
+	channel.Metadata = appendApprovalHistory(channel.Metadata, entry)
+
 	saved, err := s.repo.Save(ctx, channel)
 	if err != nil {
 		return nil, err
@@ -433,10 +456,21 @@ func (s *Service) ProcessApproval(ctx context.Context, channelID string, decisio
 	} else {
 		channel.Status = StatusRejected
 	}
-	if decision.Reason != "" {
-		channel.Metadata = setMetadataValue(channel.Metadata, metadataKeyLastApprovalReason, decision.Reason)
+	reason := strings.TrimSpace(decision.Reason)
+	if reason != "" {
+		channel.Metadata = setMetadataValue(channel.Metadata, metadataKeyLastApprovalReason, reason)
 	}
 	channel.Metadata = setMetadataValue(channel.Metadata, metadataKeySubmissionNote, nil)
+	decisionEntry := ApprovalHistoryEntry{
+		Event:    decision.Decision,
+		Decision: decision.Decision,
+		Actor:    actorFromContext(ctx),
+		At:       time.Now().UTC().Format(time.RFC3339Nano),
+	}
+	if reason != "" {
+		decisionEntry.Reason = reason
+	}
+	channel.Metadata = appendApprovalHistory(channel.Metadata, decisionEntry)
 	saved, err := s.repo.Save(ctx, channel)
 	if err != nil {
 		return nil, err
@@ -460,15 +494,16 @@ func (defaultMapper) ToChannelSummary(channel *channelmodel.ChannelMaster) Chann
 		return ChannelSummaryDTO{}
 	}
 	return ChannelSummaryDTO{
-		ID:          channel.ID,
-		Name:        channel.Name,
-		StoreID:     channel.StoreID,
-		Platform:    channel.Platform,
-		Region:      channel.Region,
-		Status:      channel.Status,
-		OwnerUUID:   channel.OwnerUUID,
-		Tags:        []string(channel.Tags),
-		ChannelType: channel.ChannelType,
+		ID:              channel.ID,
+		Name:            channel.Name,
+		StoreID:         channel.StoreID,
+		Platform:        channel.Platform,
+		Region:          channel.Region,
+		Status:          channel.Status,
+		OwnerUUID:       channel.OwnerUUID,
+		Tags:            []string(channel.Tags),
+		ChannelType:     channel.ChannelType,
+		ApprovalHistory: metadataApprovalHistory(channel.Metadata),
 	}
 }
 
@@ -525,6 +560,36 @@ func validateChannelType(channelType string) error {
 		return ErrInvalidChannelType
 	}
 	return nil
+}
+
+func appendApprovalHistory(meta datatypes.JSON, entry ApprovalHistoryEntry) datatypes.JSON {
+	if strings.TrimSpace(entry.At) == "" {
+		entry.At = time.Now().UTC().Format(time.RFC3339Nano)
+	}
+	history := metadataApprovalHistory(meta)
+	history = append(history, entry)
+	const maxEntries = 50
+	if len(history) > maxEntries {
+		history = history[len(history)-maxEntries:]
+	}
+	return setMetadataValue(meta, metadataKeyApprovalHistory, history)
+}
+
+func metadataApprovalHistory(meta datatypes.JSON) []ApprovalHistoryEntry {
+	data := metadataAsMap(meta)
+	raw, ok := data[metadataKeyApprovalHistory]
+	if !ok {
+		return nil
+	}
+	bytes, err := json.Marshal(raw)
+	if err != nil {
+		return nil
+	}
+	var history []ApprovalHistoryEntry
+	if err := json.Unmarshal(bytes, &history); err != nil {
+		return nil
+	}
+	return history
 }
 
 func setMetadataValue(meta datatypes.JSON, key string, value any) datatypes.JSON {

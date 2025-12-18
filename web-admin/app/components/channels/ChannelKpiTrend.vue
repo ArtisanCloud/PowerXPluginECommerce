@@ -3,8 +3,8 @@
     <template #header>
       <div class="flex items-center justify-between">
         <div>
-          <h3 class="text-lg font-semibold">KPI 指标</h3>
-          <p class="text-sm text-gray-500">展示 d1/d7/d30 指标快照</p>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">KPI 指标</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400">展示 d1/d7/d30 指标快照</p>
         </div>
         <UBadge variant="subtle" color="neutral">{{ metrics?.length ?? 0 }} 条</UBadge>
       </div>
@@ -12,7 +12,7 @@
     <div v-if="metrics?.length">
       <UTable :columns="columns" :data="tableData" />
     </div>
-    <div v-else class="py-6 text-center text-sm text-gray-500">
+    <div v-else class="py-6 text-center text-sm text-gray-500 dark:text-gray-400">
       暂无 KPI 数据
     </div>
   </UCard>

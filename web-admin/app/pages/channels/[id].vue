@@ -17,21 +17,13 @@
         <UButton color="neutral" variant="ghost" icon="i-heroicons-arrow-path" :loading="syncLoading" @click="handleManualSync">
           手动同步
         </UButton>
-        <UButton
-          color="primary"
-          icon="i-heroicons-cog-6-tooth"
-          :disabled="!canManageStrategy"
-          @click="openConfig"
-        >
-          配置策略
-        </UButton>
       </div>
     </div>
 
-    <UCard>
+    <UCard :class="cardClass">
       <template #header>
         <div class="flex items-center justify-between">
-          <h3 class="text-lg font-semibold">基础信息</h3>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">基础信息</h3>
           <UBadge :color="statusBadge.color" variant="subtle">
             {{ statusBadge.label }}
           </UBadge>
@@ -39,37 +31,38 @@
       </template>
       <dl class="grid gap-4 md:grid-cols-3">
         <div>
-          <dt class="text-sm text-gray-500">负责人</dt>
+          <dt class="text-sm text-gray-500 dark:text-gray-400">负责人</dt>
           <dd class="text-gray-900 dark:text-white">{{ detail?.ownerUuid ?? '—' }}</dd>
         </div>
         <div>
-          <dt class="text-sm text-gray-500">联系人</dt>
+          <dt class="text-sm text-gray-500 dark:text-gray-400">联系人</dt>
           <dd class="text-gray-900 dark:text-white">
             {{ detail?.contact?.name ?? '—' }} · {{ detail?.contact?.phone ?? '' }}
           </dd>
         </div>
         <div>
-          <dt class="text-sm text-gray-500">上次同步</dt>
+          <dt class="text-sm text-gray-500 dark:text-gray-400">上次同步</dt>
           <dd class="text-gray-900 dark:text-white">{{ detail?.syncHistory?.[0]?.createdAt ? formatDate(detail.syncHistory[0].createdAt) : '—' }}</dd>
         </div>
       </dl>
     </UCard>
 
     <ChannelTeamSection
+      :class="cardClass"
       :team="detail?.team"
       :strategy="detail?.strategy"
       :can-edit="canManageStrategy"
       @edit="openConfig"
     />
 
-    <UCard>
+    <UCard :class="cardClass">
       <template #header>
         <div class="flex items-center justify-between">
           <div>
-            <h3 class="text-lg font-semibold">授权凭证</h3>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">授权凭证</h3>
             <p class="text-sm text-gray-500 dark:text-gray-400">管理 OAuth/API Key/线下凭证。</p>
           </div>
-          <UButton size="sm" icon="i-heroicons-plus" @click="openCredentialDrawer">
+          <UButton size="sm" icon="i-heroicons-plus" @click="openCredentialModal">
             新增凭证
           </UButton>
         </div>
@@ -83,7 +76,7 @@
           <div class="flex flex-wrap items-center justify-between gap-3">
             <div>
               <p class="font-semibold text-gray-900 dark:text-white">{{ credential.type }}</p>
-              <p class="text-xs text-gray-500">
+              <p class="text-xs text-gray-500 dark:text-gray-400">
                 范围：{{ credential.scope?.length ? credential.scope.join(', ') : '全部' }}
               </p>
             </div>
@@ -91,7 +84,7 @@
               {{ credentialStatusMeta(credential.status).label }}
             </UBadge>
           </div>
-          <div class="mt-2 text-sm text-gray-500">
+          <div class="mt-2 text-sm text-gray-500 dark:text-gray-400">
             <p>
               到期时间：{{ credential.expiresAt ? formatDate(credential.expiresAt) : '未设置' }}
             </p>
@@ -112,81 +105,219 @@
           </div>
         </div>
       </div>
-      <div v-else class="py-8 text-center text-sm text-gray-500">
+      <div v-else class="py-8 text-center text-sm text-gray-500 dark:text-gray-400">
         暂无凭证，请点击“新增凭证”完成授权。
       </div>
     </UCard>
 
-    <USlideover v-model="credentialDrawerOpen">
-      <UCard class="flex h-full flex-col">
-        <template #header>
-          <div>
-            <p class="text-sm text-gray-500">新增或刷新授权凭证</p>
-            <h3 class="text-xl font-semibold text-gray-900 dark:text-white">凭证表单</h3>
-          </div>
-        </template>
+    <UModal
+      v-model:open="credentialModalOpen"
+      :prevent-close="credentialSaving"
+      :close="!credentialSaving"
+      :title="credentialModalTitle"
+      :description="credentialModalDescription"
+      :ui="{ content: 'max-w-3xl w-[90vw]' }"
+    >
+      <template #body>
         <ChannelCredentialDrawer
           v-model="credentialForm"
           :loading="credentialSaving"
           @submit="handleCredentialSubmit"
-          @cancel="() => (credentialDrawerOpen = false)"
+          @cancel="closeCredentialModal"
         />
-      </UCard>
-    </USlideover>
+      </template>
+    </UModal>
 
-    <USlideover v-model="strategyDrawerOpen">
-      <UCard class="flex h-full flex-col">
-        <template #header>
-          <div>
-            <p class="text-sm text-gray-500">更新渠道策略与团队</p>
-            <h3 class="text-xl font-semibold text-gray-900 dark:text-white">策略配置</h3>
-          </div>
-        </template>
+    <UModal
+      v-model:open="strategyModalOpen"
+      :prevent-close="strategySaving"
+      :close="!strategySaving"
+      :title="strategyModalTitle"
+      :description="strategyModalDescription"
+      :ui="{ content: 'max-w-4xl w-[90vw]' }"
+    >
+      <template #body>
         <ChannelStrategyForm
           v-model="strategyForm"
           :loading="strategySaving"
+          :owner-options="ownerOptions"
+          :owner-loading="store.ownersLoading"
           @submit="handleStrategySubmit"
-          @cancel="() => (strategyDrawerOpen = false)"
+          @cancel="closeStrategyModal"
+          @search-owner="handleStrategyOwnerSearch"
         />
-      </UCard>
-    </USlideover>
+      </template>
+    </UModal>
 
     <div class="grid gap-6 lg:grid-cols-3">
       <ChannelHealthCard
-        class="lg:col-span-1"
+        :class="['lg:col-span-1', cardClass]"
         :score="detail?.health?.score"
         :labels="detail?.health?.labels"
       />
-      <ChannelKpiTrend class="lg:col-span-2" :metrics="detail?.metrics" />
+      <ChannelKpiTrend :class="['lg:col-span-2', cardClass]" :metrics="detail?.metrics" />
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-2">
-      <ChannelAlertTimeline
-        :alerts="alerts"
-        :loading="alertsLoading"
-        @update="handleAlertUpdate"
-      />
-      <ChannelTaskPanel
-        :tasks="tasks"
-        :loading="tasksLoading"
-        @link="handleTaskLink"
-        @update="handleTaskUpdate"
-        @remove="handleTaskRemove"
-      />
+    <div class="grid gap-4 lg:grid-cols-2">
+      <UCard :class="cardClass">
+        <template #header>
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">告警总览</p>
+              <p class="text-xl font-semibold text-gray-900 dark:text-white">
+                {{ alerts.length }} 条
+              </p>
+            </div>
+            <UBadge color="warning" variant="subtle">{{ alerts.length }}</UBadge>
+          </div>
+        </template>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          {{ latestAlertTitle }}
+        </p>
+        <div class="mt-4 flex justify-end">
+          <UButton size="sm" variant="soft" @click="alertsModalOpen = true">
+            查看告警时间轴
+          </UButton>
+        </div>
+      </UCard>
+
+      <UCard :class="cardClass">
+        <template #header>
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">任务中心</p>
+              <p class="text-xl font-semibold text-gray-900 dark:text-white">
+                {{ pendingTaskCount }} / {{ tasks.length }}
+              </p>
+            </div>
+            <UBadge color="info" variant="subtle">
+              进行中
+            </UBadge>
+          </div>
+        </template>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          跟踪渠道接入、巡检和审批相关任务
+        </p>
+        <div class="mt-4 flex justify-end">
+          <UButton size="sm" variant="soft" @click="tasksModalOpen = true">
+            管理任务
+          </UButton>
+        </div>
+      </UCard>
+
+      <UCard :class="cardClass">
+        <template #header>
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">内部备注</p>
+              <p class="text-xl font-semibold text-gray-900 dark:text-white">
+                {{ notes.length }} 条
+              </p>
+            </div>
+            <UBadge color="neutral" variant="subtle">
+              最新
+            </UBadge>
+          </div>
+        </template>
+        <p class="text-sm text-gray-500 dark:text-gray-400 line-clamp-2">
+          {{ latestNotePreview }}
+        </p>
+        <div class="mt-4 flex justify-end">
+          <UButton size="sm" variant="soft" @click="notesModalOpen = true">
+            查看备注
+          </UButton>
+        </div>
+      </UCard>
+
+      <UCard :class="cardClass">
+        <template #header>
+          <div class="flex items-center justify-between">
+            <div>
+              <p class="text-sm text-gray-500 dark:text-gray-400">同步历史</p>
+              <p class="text-xl font-semibold text-gray-900 dark:text-white">
+                {{ latestSyncLabel }}
+              </p>
+            </div>
+            <UBadge color="primary" variant="subtle">
+              {{ latestSyncResult }}
+            </UBadge>
+          </div>
+        </template>
+        <p class="text-sm text-gray-500 dark:text-gray-400">
+          查看渠道与外部平台的同步日志
+        </p>
+        <div class="mt-4 flex justify-end gap-2">
+          <UButton size="sm" variant="ghost" :loading="syncLoading" @click="handleManualSync">
+            手动同步
+          </UButton>
+          <UButton size="sm" variant="soft" @click="syncModalOpen = true">
+            查看记录
+          </UButton>
+        </div>
+      </UCard>
     </div>
 
-    <div class="grid gap-6 lg:grid-cols-2">
-      <ChannelNotePanel
-        :notes="notes"
-        :loading="notesLoading"
-        @create="handleNoteCreate"
-      />
-      <ChannelSyncHistory
-        :history="syncHistory"
-        :loading="syncLoading"
-        @trigger="handleManualSync"
-      />
-    </div>
+    <UModal
+      v-model:open="alertsModalOpen"
+      title="告警时间轴"
+      description="查看渠道的历史告警与状态"
+      :ui="{ content: 'max-w-5xl w-[90vw]' }"
+    >
+      <template #body>
+        <ChannelAlertTimeline
+          :alerts="alerts"
+          :loading="alertsLoading"
+          @update="handleAlertUpdate"
+        />
+      </template>
+    </UModal>
+
+    <UModal
+      v-model:open="tasksModalOpen"
+      title="任务管理"
+      description="跟踪渠道接入、巡检和审批相关任务"
+      :ui="{ content: 'max-w-5xl w-[90vw]' }"
+    >
+      <template #body>
+        <ChannelTaskPanel
+          :tasks="tasks"
+          :loading="tasksLoading"
+          @link="handleTaskLink"
+          @update="handleTaskUpdate"
+          @remove="handleTaskRemove"
+        />
+      </template>
+    </UModal>
+
+    <UModal
+      v-model:open="notesModalOpen"
+      title="渠道备注"
+      description="查看与维护当前渠道的内部备注"
+      :ui="{ content: 'max-w-4xl w-[90vw]' }"
+    >
+      <template #body>
+        <ChannelNotePanel
+          :notes="notes"
+          :loading="notesLoading"
+          @create="handleNoteCreate"
+        />
+      </template>
+    </UModal>
+
+    <UModal
+      v-model:open="syncModalOpen"
+      title="同步历史"
+      description="查看渠道与外部平台的同步记录"
+      :ui="{ content: 'max-w-4xl w-[90vw]' }"
+    >
+      <template #body>
+        <ChannelSyncHistory
+          :history="syncHistory"
+          :loading="syncLoading"
+          @trigger="handleManualSync"
+        />
+      </template>
+    </UModal>
   </div>
 </template>
 
@@ -226,21 +357,49 @@ const alerts = computed(() => store.alerts)
 const tasks = computed(() => store.tasks)
 const notes = computed(() => store.notes)
 const syncHistory = computed(() => store.syncHistory)
+const ownerOptions = computed(() => store.owners)
 
 const alertsLoading = ref(false)
 const tasksLoading = ref(false)
 const notesLoading = ref(false)
 const syncLoading = ref(false)
 
-const credentialDrawerOpen = ref(false)
+const credentialModalOpen = ref(false)
 const credentialSaving = ref(false)
 const credentials = ref<ChannelCredential[]>([])
 const credentialForm = ref<ChannelCredentialUpsertPayload>(createEmptyCredentialPayload())
-const strategyDrawerOpen = ref(false)
+const strategyModalOpen = ref(false)
 const strategySaving = ref(false)
 const strategyForm = ref<ChannelStrategyUpdatePayload>(createEmptyStrategyPayload())
 const { hasPermission } = usePermissions()
 const canManageStrategy = computed(() => hasPermission('com.powerx.plugin.ecommerce:channel.strategy:manage'))
+const alertsModalOpen = ref(false)
+const tasksModalOpen = ref(false)
+const notesModalOpen = ref(false)
+const syncModalOpen = ref(false)
+const cardClass = 'channel-panel-card'
+const credentialModalTitle = '凭证表单'
+const credentialModalDescription = '新增或刷新渠道授权凭证'
+const strategyModalTitle = '策略配置'
+const strategyModalDescription = '更新渠道策略与团队'
+
+const blurActiveElement = () => {
+  if (typeof document === 'undefined') return
+  const active = document.activeElement as HTMLElement | null
+  if (active && typeof active.blur === 'function') {
+    active.blur()
+  }
+}
+
+const closeCredentialModal = () => {
+  blurActiveElement()
+  credentialModalOpen.value = false
+}
+
+const closeStrategyModal = () => {
+  blurActiveElement()
+  strategyModalOpen.value = false
+}
 
 const statusBadge = computed(() => {
   const status = detail.value?.status ?? 'unknown'
@@ -254,6 +413,23 @@ const statusBadge = computed(() => {
   }
   return map[status] ?? { label: status, color: 'neutral' }
 })
+
+const formatDate = (value: string) => {
+  try {
+    return new Date(value).toLocaleString('zh-CN')
+  } catch {
+    return value
+  }
+}
+
+const latestAlertTitle = computed(() => alerts.value[0]?.title ?? '暂无告警')
+const pendingTaskCount = computed(() => tasks.value.filter((task) => task.status !== 'done').length)
+const latestNotePreview = computed(() => notes.value[0]?.body ?? '暂无备注')
+const latestSyncLabel = computed(() => {
+  const record = syncHistory.value[0]
+  return record?.createdAt ? formatDate(record.createdAt) : '暂无同步记录'
+})
+const latestSyncResult = computed(() => syncHistory.value[0]?.result ?? '暂无执行结果')
 
 const measureKpiLoad = async () => {
   const supportsPerf = typeof performance !== 'undefined'
@@ -304,9 +480,9 @@ const loadCredentials = async () => {
   }
 }
 
-const openCredentialDrawer = () => {
+const openCredentialModal = () => {
   credentialForm.value = createEmptyCredentialPayload()
-  credentialDrawerOpen.value = true
+  credentialModalOpen.value = true
 }
 
 const buildStrategyPayload = (): ChannelStrategyUpdatePayload => {
@@ -324,7 +500,34 @@ const buildStrategyPayload = (): ChannelStrategyUpdatePayload => {
   return payload
 }
 
-const openConfig = () => {
+const ensureOwnerOptions = async () => {
+  if (ownerOptions.value.length) {
+    return
+  }
+  try {
+    await store.fetchOwners()
+  } catch (error: any) {
+    toast.add({
+      title: '负责人列表加载失败',
+      description: error?.message ?? '请稍后重试',
+      color: 'error',
+    })
+  }
+}
+
+const handleStrategyOwnerSearch = async (keyword: string) => {
+  try {
+    await store.fetchOwners(keyword)
+  } catch (error: any) {
+    toast.add({
+      title: '负责人搜索失败',
+      description: error?.message ?? '请稍后重试',
+      color: 'error',
+    })
+  }
+}
+
+const openConfig = async () => {
   if (!canManageStrategy.value) {
     toast.add({
       title: '无权限',
@@ -333,8 +536,9 @@ const openConfig = () => {
     })
     return
   }
+  await ensureOwnerOptions()
   strategyForm.value = buildStrategyPayload()
-  strategyDrawerOpen.value = true
+  strategyModalOpen.value = true
 }
 
 const handleStrategySubmit = async (payload: ChannelStrategyUpdatePayload) => {
@@ -342,7 +546,7 @@ const handleStrategySubmit = async (payload: ChannelStrategyUpdatePayload) => {
   try {
     await store.saveStrategy(channelId.value, payload)
     toast.add({ title: '策略已更新' })
-    strategyDrawerOpen.value = false
+    closeStrategyModal()
   } catch (error: any) {
     toast.add({
       title: '更新策略失败',
@@ -359,7 +563,7 @@ const handleCredentialSubmit = async (payload: ChannelCredentialUpsertPayload) =
   try {
     await store.saveCredential(channelId.value, payload)
     toast.add({ title: '凭证已保存' })
-    credentialDrawerOpen.value = false
+    closeCredentialModal()
     await loadCredentials()
   } catch (error: any) {
     toast.add({
@@ -507,12 +711,39 @@ const handleManualSync = async () => {
 }
 
 const goBack = () => router.push('/channels')
-
-const formatDate = (value: string) => {
-  try {
-    return new Date(value).toLocaleString('zh-CN')
-  } catch {
-    return value
-  }
-}
 </script>
+
+<style scoped>
+:global(.channel-panel-card) {
+  position: relative;
+  border-radius: 1rem;
+  border: 1px solid rgba(148, 163, 184, 0.35) !important;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.97), rgba(248, 250, 252, 0.92)) !important;
+  box-shadow: 0 25px 50px rgba(15, 23, 42, 0.15);
+  backdrop-filter: blur(24px);
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+:global(.channel-panel-card:hover) {
+  border-color: rgba(59, 130, 246, 0.35) !important;
+  box-shadow: 0 30px 70px rgba(15, 23, 42, 0.25);
+}
+
+:global(.dark .channel-panel-card) {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.88), rgba(15, 23, 42, 0.95)) !important;
+  border-color: rgba(148, 163, 184, 0.55) !important;
+  box-shadow: 0 30px 70px rgba(2, 6, 23, 0.85);
+}
+
+:global(.dark .channel-panel-card:hover) {
+  border-color: rgba(129, 140, 248, 0.65) !important;
+}
+
+:global(.channel-panel-card h3) {
+  color: #0f172a;
+}
+
+:global(.dark .channel-panel-card h3) {
+  color: #f8fafc;
+}
+</style>

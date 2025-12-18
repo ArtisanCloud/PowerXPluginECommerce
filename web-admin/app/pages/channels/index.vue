@@ -509,7 +509,7 @@ const handleFormSubmit = async (payload: ChannelDraftPayload) => {
   }
 }
 
-const canSubmit = (channel: ChannelSummary) => ['draft', 'rejected'].includes(channel.status)
+const canSubmit = (channel: ChannelSummary) => channel.status === 'draft'
 
 const submitForApproval = async (channel: ChannelSummary) => {
   try {

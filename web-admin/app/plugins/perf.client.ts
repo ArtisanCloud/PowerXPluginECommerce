@@ -6,9 +6,6 @@ export default defineNuxtPlugin(() => {
       passed: durationMs <= 3000,
       timestamp: new Date().toISOString(),
     }
-    if (process.dev) {
-      console.info('[ChannelMaster][KPI]', payload)
-    }
     if (typeof window !== 'undefined') {
       // expose latest payload for quick inspection
       ;(window as any).__channelPerf = {

@@ -3,8 +3,8 @@
     <template #header>
       <div class="flex items-center justify-between">
         <div>
-          <h3 class="text-lg font-semibold">策略与团队</h3>
-          <p class="text-sm text-gray-500">负责人、审批人及当前策略摘要</p>
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">策略与团队</h3>
+          <p class="text-sm text-gray-500 dark:text-gray-400">负责人、审批人及当前策略摘要</p>
         </div>
         <UButton
           v-if="canEdit"
@@ -18,22 +18,22 @@
     </template>
     <div class="grid gap-6 md:grid-cols-2">
       <section class="space-y-3">
-        <h4 class="text-sm font-semibold text-gray-600">团队</h4>
+        <h4 class="text-sm font-semibold text-gray-600 dark:text-gray-100">团队</h4>
         <dl class="space-y-2">
           <div>
-            <dt class="text-xs text-gray-500">负责人</dt>
+            <dt class="text-xs text-gray-500 dark:text-gray-400">负责人</dt>
             <dd class="font-medium text-gray-900 dark:text-white">
               {{ team?.ownerUuid ?? '未设置' }}
             </dd>
           </div>
           <div>
-            <dt class="text-xs text-gray-500">审批人</dt>
+            <dt class="text-xs text-gray-500 dark:text-gray-400">审批人</dt>
             <dd class="font-medium text-gray-900 dark:text-white">
               {{ team?.approverUuid ?? '未设置' }}
             </dd>
           </div>
           <div>
-            <dt class="text-xs text-gray-500">运维成员</dt>
+            <dt class="text-xs text-gray-500 dark:text-gray-400">运维成员</dt>
             <dd class="flex flex-wrap gap-2">
               <UBadge
                 v-for="member in teamOperators"
@@ -43,17 +43,17 @@
               >
                 {{ member }}
               </UBadge>
-              <span v-if="!teamOperators.length" class="text-gray-400">未配置</span>
+              <span v-if="!teamOperators.length" class="text-gray-400 dark:text-gray-500">未配置</span>
             </dd>
           </div>
         </dl>
       </section>
 
       <section class="space-y-3">
-        <h4 class="text-sm font-semibold text-gray-600">策略摘要</h4>
+        <h4 class="text-sm font-semibold text-gray-600 dark:text-gray-100">策略摘要</h4>
         <dl class="space-y-2">
           <div v-for="field in strategySummary" :key="field.label">
-            <dt class="text-xs text-gray-500">{{ field.label }}</dt>
+            <dt class="text-xs text-gray-500 dark:text-gray-400">{{ field.label }}</dt>
             <dd class="font-medium text-gray-900 dark:text-white">
               {{ field.value }}
             </dd>

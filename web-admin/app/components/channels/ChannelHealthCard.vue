@@ -21,7 +21,7 @@
         {{ label }}
       </UBadge>
     </div>
-    <p v-else class="mt-3 text-sm text-gray-500">
+    <p v-else class="mt-3 text-sm text-gray-500 dark:text-gray-400">
       暂无告警标签，渠道运行健康。
     </p>
   </UCard>
