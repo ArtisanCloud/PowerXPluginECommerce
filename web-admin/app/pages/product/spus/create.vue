@@ -199,7 +199,7 @@ if (!validateStep(currentStep.value)) {
 		submitting.value = true
 		const detail = await store.create(payload)
 		toast.add({ title: '草稿已保存', description: '可前往详情提交审批' })
-		const target = detail?.id ? `/product/spus/${detail.id}` : '/product/spus'
+		const target = detail?.id ? `/product/spus/edit/${detail.id}` : '/product/spus'
 		router.push(target)
 	} catch (error) {
 		console.error(error)

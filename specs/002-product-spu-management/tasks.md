@@ -8,7 +8,7 @@
 **Purpose**: 建立 backend/product 与 web-admin/product 的基础目录与管线，以承载后续实现。
 
 - [x] T001 初始化 product 模块目录与 Go 包（backend/internal/domain/{models,repository}/product, backend/internal/services/admin/product/spu, backend/internal/transport/http/admin/product/spu）。
-- [x] T002 建立渠道任务与观测目录骨架（backend/internal/jobs/channels/、backend/internal/observability/product/）并写入 TODO 注释说明目标。
+- [x] T002 建立渠道任务与观测目录骨架（backend/internal/jobs/channel/product/、backend/internal/observability/product/）并写入 TODO 注释说明目标。
 - [x] T003 创建 web-admin/product 目录结构（web-admin/app/pages/product/spus/**、app/components/product、app/composables、app/stores/product）并导出空组件骨架。
 
 ---
@@ -45,7 +45,7 @@
 
 - [x] T014 [US1] 实现创建/草稿/发布核心服务方法并写入审计与渠道任务钩子（backend/internal/services/admin/product/spu/service.go）。
 - [x] T015 [US1] 实现 SPU 列表、创建、更新、提交、发布的 HTTP Handler（backend/internal/transport/http/admin/product/spu/handler.go）。
-- [x] T016 [US1] 实现渠道发布任务触发器与回执记录（backend/internal/jobs/channels/publisher.go）。
+- [x] T016 [US1] 实现渠道发布任务触发器与回执记录（backend/internal/jobs/channel/product/publisher.go）。
 - [x] T017 [P] [US1] 实现 Pinia actions（列表、创建、提交、发布）和 API 绑定（web-admin/app/stores/product/spu.ts）。
 - [x] T018 [P] [US1] 实现 SPU 列表页（过滤器、概览卡、批量入口）（web-admin/app/pages/product/spus/index.vue）。
 - [x] T019 [P] [US1] 实现多步骤创建向导与订阅计划配置（web-admin/app/pages/product/spus/create.vue 及 components/product/SpuWizardStep*.vue）。
@@ -72,7 +72,7 @@
 
 - [x] T025 [US2] 实现版本快照、差异与回滚服务（backend/internal/services/admin/product/spu/version_service.go）。
 - [x] T026 [US2] 实现版本/审批相关 Handler（列表、差异、审批、驳回、回滚）（backend/internal/transport/http/admin/product/spu/handler_versions.go）。
-- [x] T027 [US2] 实现审批 SLA 提醒/升级任务（backend/internal/jobs/channels/approval_sla_worker.go）。
+- [x] T027 [US2] 实现审批 SLA 提醒/升级任务（backend/internal/jobs/channel/product/approval_sla_worker.go）。
 - [x] T028 [P] [US2] 实现版本时间线与 diff 组件（web-admin/app/pages/product/spus/components/VersionDiff.vue）。
 - [x] T029 [US2] 在详情页添加审批面板与意见输入（web-admin/app/pages/product/spus/edit/[id].vue）。
 - [x] T030 [US2] 扩展审计时间轴组件以展示版本与审批事件（web-admin/app/components/product/SpuAuditTimeline.vue）。
@@ -97,7 +97,7 @@
 - [x] T033 [US3] 实现渠道可见性服务与 Handler（backend/internal/services/admin/product/spu/channel_service.go、transport/http/admin/product/spu/channel_handler.go）。
 - [x] T034 [US3] 实现订阅计划 effectScope 选项及更新接口（backend/internal/transport/http/admin/product/spu/handler_plans.go）。
 - [x] T035 [US3] 实现导入/导出 orchestrator，写入任务中心与审计（backend/internal/services/admin/product/spu/import_service.go）。
-- [x] T036 [US3] 实现异步 worker 处理导入导出与渠道同步回执（backend/internal/jobs/channels/spu_sync_worker.go）。
+- [x] T036 [US3] 实现异步 worker 处理导入导出与渠道同步回执（backend/internal/jobs/channel/product/spu_sync_worker.go）。
 - [x] T037 [P] [US3] 实现前端渠道配置 Tab（web-admin/app/pages/product/spus/components/ChannelVisibilityForm.vue）。
 - [x] T038 [US3] 实现批量导入/导出对话框与失败报告查看（web-admin/app/components/product/SpuBulkDialog.vue）。
 - [x] T039 [US3] 在导入流水中实现 SPU 编码/SKU 关联重复校验与错误提示（backend/internal/services/admin/product/spu/import_validator.go），确保 Edge Case 处理。

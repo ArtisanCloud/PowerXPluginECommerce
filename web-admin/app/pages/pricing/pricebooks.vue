@@ -324,13 +324,13 @@ const productColumns: TableColumn<PricebookProduct>[] = [
   {
     id: "price",
     accessorKey: "price",
-    header: () => h("div", { class: "text-right" }, "价格"),
+    header: "价格",
     meta: { class: { td: "text-right" } },
   },
   {
     id: "margin",
     accessorKey: "margin",
-    header: () => h("div", { class: "text-right" }, "毛利率"),
+    header: "毛利率",
     meta: { class: { td: "text-right" } },
   },
 ];

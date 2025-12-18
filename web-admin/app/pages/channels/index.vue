@@ -4,14 +4,22 @@
       <div>
         <h1 class="text-2xl font-bold text-gray-900 dark:text-white">店铺 / 渠道</h1>
         <p class="text-gray-500 dark:text-gray-400">
-          管理各平台店铺、授权与接入状态，监控渠道健康度。
+          管理多平台店铺、跟踪授权状态，并在此发起入驻审批。
         </p>
       </div>
       <div class="flex gap-2">
-        <UButton color="neutral" variant="ghost" icon="i-heroicons-arrow-path">
-          同步授权
+        <UButton color="neutral" variant="ghost" icon="i-heroicons-arrow-path" @click="refreshChannels">
+          刷新
         </UButton>
-        <UButton color="primary" icon="i-heroicons-plus">
+        <UButton
+          color="neutral"
+          variant="ghost"
+          icon="i-heroicons-clipboard-document-check"
+          @click="goToApproval"
+        >
+          审批台
+        </UButton>
+        <UButton color="primary" icon="i-heroicons-plus" @click="startChannelWizard">
           接入新渠道
         </UButton>
       </div>
@@ -23,8 +31,8 @@
         <div class="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">
           {{ card.value }}
         </div>
-        <p class="text-xs" :class="card.trend >= 0 ? 'text-emerald-600' : 'text-rose-500'">
-          {{ card.trend >= 0 ? '+' : '' }}{{ card.trend }}% 较上周
+        <p class="text-xs text-gray-400">
+          {{ card.helper }}
         </p>
       </UCard>
     </div>
@@ -35,76 +43,129 @@
           <div>
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">渠道列表</h3>
             <p class="text-sm text-gray-500 dark:text-gray-400">
-              支持按平台、授权状态、运营负责人筛选。
+              支持按平台、状态搜索，抽屉即可完成创建/编辑。
             </p>
           </div>
           <div class="flex flex-wrap gap-2">
             <UInput
-              v-model="keyword"
+              v-model.trim="keyword"
               class="w-56"
-              placeholder="搜索店铺/负责人"
+              placeholder="搜索渠道 / 负责人"
               icon="i-heroicons-magnifying-glass"
             />
-            <USelect
+            <USelectMenu
               v-model="platformFilter"
               class="w-44"
-              :options="platformOptions"
+              :options="platformFilterOptions"
+              value-attribute="value"
+              option-attribute="label"
               placeholder="全部平台"
             />
-            <USelect
+            <USelectMenu
               v-model="statusFilter"
-              class="w-40"
+              class="w-44"
               :options="statusOptions"
+              value-attribute="value"
+              option-attribute="label"
               placeholder="授权状态"
             />
           </div>
         </div>
       </template>
 
-      <UTable :columns="columns" :data="filteredChannels">
-        <template #status-cell="{ getValue }">
-          <UBadge :color="statusMeta(getValue()).color" variant="subtle">
-            {{ statusMeta(getValue()).label }}
-          </UBadge>
-        </template>
-        <template #syncStatus-cell="{ getValue }">
-          <div class="flex items-center gap-2">
-            <UIcon
-              :name="
-                getValue() === 'success'
-                  ? 'i-heroicons-check-circle'
-                  : getValue() === 'warning'
-                    ? 'i-heroicons-exclamation-triangle'
-                    : 'i-heroicons-arrow-path'
-              "
-              :class="[
-                'h-4 w-4',
-                getValue() === 'success'
-                  ? 'text-emerald-500'
-                  : getValue() === 'warning'
-                    ? 'text-amber-500'
-                    : 'text-gray-400',
-              ]"
-            />
-            <span class="text-sm text-gray-600 dark:text-gray-300">
-              {{
-                getValue() === "success"
-                  ? "同步正常"
-                  : getValue() === "warning"
-                    ? "待处理"
-                    : "同步中"
-              }}
-            </span>
+      <UTable :columns="columns" :data="displayedChannels" :loading="loading">
+        <template #name-cell="{ row }">
+          <div>
+            <p class="font-semibold text-gray-900 dark:text-white">{{ row.original.name }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              {{ row.original.platform }} · {{ row.original.storeId || 'Store N/A' }}
+            </p>
           </div>
         </template>
-        <template #actions-cell>
-          <div class="flex gap-2">
-            <UButton size="xs" variant="ghost">设置</UButton>
-            <UButton size="xs" variant="ghost" color="primary">检查授权</UButton>
+        <template #status-cell="{ row }">
+          <UBadge :color="statusMeta(row.original.status).color" variant="subtle">
+            {{ statusMeta(row.original.status).label }}
+          </UBadge>
+        </template>
+        <template #tags-cell="{ row }">
+          <div class="flex flex-wrap gap-1">
+            <UBadge
+              v-for="tag in row.original.tags"
+              :key="`${row.original.id}-${tag}`"
+              color="neutral"
+              variant="soft"
+              size="xs"
+            >
+              {{ tag }}
+            </UBadge>
+            <span v-if="!row.original.tags?.length" class="text-xs text-gray-400">-</span>
+          </div>
+        </template>
+        <template #actions-cell="{ row }">
+          <div class="flex flex-wrap gap-2">
+            <UButton size="xs" variant="ghost" @click="openChannelDetail(row.original.id)">
+              详情
+            </UButton>
+            <UButton size="xs" variant="ghost" @click="editChannel(row.original)">
+              编辑
+            </UButton>
+            <UButton
+              v-if="canSubmit(row.original)"
+              size="xs"
+              color="primary"
+              variant="soft"
+              @click="submitForApproval(row.original)"
+            >
+              提交审批
+            </UButton>
           </div>
         </template>
       </UTable>
+
+      <template #footer>
+        <div class="flex flex-col gap-3 text-sm text-gray-500 dark:text-gray-400 lg:flex-row lg:items-center lg:justify-between">
+          <span>共 {{ total }} 条渠道</span>
+          <UPagination v-model="page" :total="total" :page-count="pageSize" show-first show-last/>
+        </div>
+      </template>
     </UCard>
+
+    <UModal
+      v-if="modalOpen"
+      v-model:open="modalOpen"
+      :title="modalTitle"
+      :description="modalDescription"
+      :ui="{ content: 'max-w-6xl w-[90vw] mx-auto' }"
+      :prevent-close="saving"
+    >
+      <template #close>
+        <UButton
+          icon="i-heroicons-x-mark"
+          variant="ghost"
+          color="neutral"
+          square
+          :disabled="saving"
+          @click="closeModal"
+        />
+      </template>
+      <template #body>
+        <div class="p-5">
+          <ChannelForm
+            v-model="formModel"
+            :mode="formMode"
+            :loading="saving"
+            :platform-options="formPlatformOptions"
+            :channel-type-options="formChannelTypeOptions"
+            :country-options="formCountryOptions"
+            :owner-options="formOwnerOptions"
+            :owner-loading="ownersLoading"
+            @search-owner="handleOwnerSearch"
+            @submit="handleFormSubmit"
+            @cancel="closeModal"
+          />
+        </div>
+      </template>
+    </UModal>
 
     <div class="grid gap-6 lg:grid-cols-2">
       <UCard>
@@ -173,166 +234,309 @@
 </template>
 
 <script setup lang="ts">
-import type { TableColumn } from "@nuxt/ui";
+import { computed, ref, watch } from 'vue'
+import { storeToRefs } from 'pinia'
+import type { TableColumn } from '@nuxt/ui'
+import ChannelForm from '~/components/channels/ChannelForm.vue'
+import { useChannelsStore } from '~/stores/channels'
+import type { ChannelDraftPayload, ChannelSummary, ChannelStatus } from '~/types/channels'
+import { createEmptyChannelPayload } from '~/types/channels'
 
 definePageMeta({
-  name: "channels",
-});
+  name: 'channels',
+})
 
-type ChannelStatus = "active" | "pending" | "disabled";
-type SyncStatus = "success" | "warning" | "syncing";
+const router = useRouter()
+const toast = useToast()
 
-type Channel = {
-  id: string;
-  name: string;
-  platform: string;
-  region: string;
-  status: ChannelStatus;
-  owner: string;
-  syncStatus: SyncStatus;
-  updatedAt: string;
-};
+const store = useChannelsStore()
+const { items, total, loading, saving, platforms, channelTypes, countries, owners, ownersLoading } =
+  storeToRefs(store)
 
-const channels = ref<Channel[]>([
+const keyword = ref('')
+const platformFilter = ref('')
+const statusFilter = ref('')
+const page = ref(1)
+const pageSize = ref(10)
+const modalOpen = ref(false)
+const editingChannel = ref<ChannelSummary | null>(null)
+const formModel = ref<ChannelDraftPayload>(createEmptyChannelPayload())
+const modalTitle = computed(() => (editingChannel.value ? editingChannel.value.name : '渠道信息'))
+const modalDescription = computed(() =>
+  editingChannel.value ? '更新渠道资料 / Edit Channel' : '创建新渠道 / Create Channel',
+)
+
+const fallbackPlatformOptions = [
+  { label: '天猫 Tmall', value: 'tmall' },
+  { label: '京东 JD', value: 'jd' },
+  { label: '抖音 Douyin', value: 'douyin' },
+  { label: '线下 Offline', value: 'offline' },
+]
+
+const fallbackChannelTypeOptions = [
+  { label: '平台授权 / Platform OAuth', value: 'platform_oauth' },
+  { label: '手动凭证 / Manual Credential', value: 'platform_manual' },
+  { label: '线下渠道 / Offline', value: 'offline' },
+]
+
+const fallbackCountryOptions = [
   {
-    id: "TMALL-01",
-    name: "天猫旗舰店",
-    platform: "天猫",
-    region: "全国",
-    status: "active",
-    owner: "陈曦",
-    syncStatus: "success",
-    updatedAt: "2024-02-10 12:30",
+    code: 'CN',
+    label: '中国 China',
+    cities: [
+      { code: 'cn-beijing', label: '北京 Beijing' },
+      { code: 'cn-shanghai', label: '上海 Shanghai' },
+      { code: 'cn-shenzhen', label: '深圳 Shenzhen' },
+    ],
   },
   {
-    id: "JD-POP-02",
-    name: "京东自营旗舰",
-    platform: "京东",
-    region: "全国",
-    status: "active",
-    owner: "王帆",
-    syncStatus: "syncing",
-    updatedAt: "2024-02-11 09:10",
+    code: 'SG',
+    label: '新加坡 Singapore',
+    cities: [{ code: 'sg-singapore', label: '新加坡 Singapore' }],
   },
-  {
-    id: "TM-OVERSEA",
-    name: "天猫国际店",
-    platform: "天猫国际",
-    region: "跨境",
-    status: "pending",
-    owner: "李倩",
-    syncStatus: "warning",
-    updatedAt: "2024-02-09 21:40",
-  },
-  {
-    id: "DOUYIN-01",
-    name: "抖音旗舰店",
-    platform: "抖音电商",
-    region: "全国",
-    status: "disabled",
-    owner: "周杨",
-    syncStatus: "warning",
-    updatedAt: "2024-02-06 08:00",
-  },
-]);
-
-const keyword = ref("");
-const platformFilter = ref("");
-const statusFilter = ref<ChannelStatus | "">("");
-
-const platformOptions = computed(() =>
-  [{ label: "全部平台", value: "" }].concat(
-    Array.from(new Set(channels.value.map((ch) => ch.platform))).map((platform) => ({
-      label: platform,
-      value: platform,
-    })),
-  ),
-);
+]
 
 const statusOptions = [
-  { label: "全部状态", value: "" },
-  { label: "已上线", value: "active" },
-  { label: "待上线", value: "pending" },
-  { label: "暂停", value: "disabled" },
-];
+  { label: '全部状态', value: '' },
+  { label: '草稿 Draft', value: 'draft' },
+  { label: '待审核 Pending', value: 'pending_review' },
+  { label: '驳回 Rejected', value: 'rejected' },
+  { label: '未授权 Unauthorized', value: 'unauthorized' },
+  { label: '已授权 Authorized', value: 'authorized' },
+]
 
-const columns = computed<TableColumn<Channel>[]>(() => [
-  { accessorKey: "name", header: "店铺" },
-  { accessorKey: "platform", header: "平台" },
-  { accessorKey: "region", header: "区域" },
-  { accessorKey: "status", header: "状态" },
-  { accessorKey: "syncStatus", header: "同步状态" },
-  { accessorKey: "owner", header: "负责人" },
-  { accessorKey: "updatedAt", header: "最近同步" },
-  { id: "actions", header: "操作" },
-]);
+const resolvedPlatformOptions = computed(() =>
+  platforms.value.length
+    ? platforms.value.map((platform) => ({ label: platform.label, value: platform.code }))
+    : fallbackPlatformOptions,
+)
 
-const filteredChannels = computed(() =>
-  channels.value.filter((channel) => {
-    const matchesKeyword =
-      !keyword.value ||
-      channel.name.includes(keyword.value) ||
-      channel.owner.includes(keyword.value);
-    const matchesPlatform = !platformFilter.value || channel.platform === platformFilter.value;
-    const matchesStatus = !statusFilter.value || channel.status === statusFilter.value;
-    return matchesKeyword && matchesPlatform && matchesStatus;
-  }),
-);
+const resolvedChannelTypeOptions = computed(() =>
+  channelTypes.value.length
+    ? channelTypes.value.map((type) => ({ label: type.label, value: type.code }))
+    : fallbackChannelTypeOptions,
+)
 
-const statusMeta = (status: ChannelStatus | "") => {
+const resolvedCountryOptions = computed(() =>
+  countries.value.length ? countries.value : fallbackCountryOptions,
+)
+
+const platformFilterOptions = computed(() => [
+  { label: '全部平台', value: '' },
+  ...resolvedPlatformOptions.value,
+])
+
+const formPlatformOptions = resolvedPlatformOptions
+
+const formChannelTypeOptions = resolvedChannelTypeOptions
+
+const formCountryOptions = resolvedCountryOptions
+
+const formOwnerOptions = computed(() =>
+  owners.value.length
+    ? owners.value.map((owner) => ({
+        label: owner.displayName || owner.username,
+        value: owner.username || String(owner.id),
+        description: owner.email,
+      }))
+    : [],
+)
+
+const columns: TableColumn<ChannelSummary>[] = [
+  { accessorKey: 'name', header: '渠道' },
+  { accessorKey: 'region', header: '区域' },
+  { accessorKey: 'ownerUuid', header: '负责人' },
+  { accessorKey: 'status', header: '状态' },
+  { accessorKey: 'tags', header: '标签' },
+  { id: 'actions', header: '操作' },
+]
+
+const displayedChannels = computed(() => items.value ?? [])
+
+const summaryCards = computed(() => {
+  const pending = displayedChannels.value.filter((c) => c.status === 'pending_review').length
+  const unauthorized = displayedChannels.value.filter((c) => c.status === 'unauthorized').length
+  const offline = displayedChannels.value.filter((c) => c.channelType === 'offline').length
+  return [
+    { title: '渠道总数 Channels', value: total.value, helper: '含全部平台 (取自分页数据)' },
+    { title: '待审批 Pending', value: pending, helper: '当前页中等待审批的渠道' },
+    { title: '线下渠道 Offline', value: offline, helper: `未授权：${unauthorized}` },
+  ]
+})
+
+const statusMeta = (status: ChannelStatus) => {
   switch (status) {
-    case "active":
-      return { label: "已上线", color: "success" as const };
-    case "pending":
-      return { label: "待上线", color: "info" as const };
-    case "disabled":
-      return { label: "暂停", color: "neutral" as const };
+    case 'draft':
+      return { label: '草稿', color: 'neutral' }
+    case 'pending_review':
+      return { label: '待审核', color: 'warning' }
+    case 'rejected':
+      return { label: '已退回', color: 'error' }
+    case 'unauthorized':
+      return { label: '未授权', color: 'info' }
+    case 'authorized':
+      return { label: '已授权', color: 'success' }
+    case 'disabled':
+      return { label: '已停用', color: 'neutral' }
     default:
-      return { label: "未知", color: "neutral" as const };
+      return { label: status, color: 'neutral' }
   }
-};
+}
 
-const summaryCards = computed(() => [
-  {
-    title: "已上线渠道",
-    value: channels.value.filter((item) => item.status === "active").length,
-    trend: 3.1,
-  },
-  {
-    title: "待上线渠道",
-    value: channels.value.filter((item) => item.status === "pending").length,
-    trend: -1.4,
-  },
-  {
-    title: "同步健康度",
-    value:
-      Math.round(
-        (channels.value.filter((item) => item.syncStatus === "success").length /
-          channels.value.length) *
-          100,
-      ) + "%",
-    trend: 0.8,
-  },
-]);
+const loadChannels = async () => {
+  try {
+    await store.fetchList({
+      keyword: keyword.value || undefined,
+      platform: platformFilter.value || undefined,
+      status: statusFilter.value ? [statusFilter.value] : undefined,
+      page: page.value,
+      pageSize: pageSize.value,
+    })
+  } catch (error: any) {
+    toast.add({
+      title: '渠道列表加载失败',
+      description: error?.message ?? '请稍后重试',
+      color: 'error',
+    })
+  }
+}
 
-const checklist = ref([
-  { id: 1, title: "完成平台授权", desc: "天猫旗舰店授权将于 2.20 过期，请提前续约", done: true },
-  { id: 2, title: "上传商品素材", desc: "京东旗舰店需补齐 25 个 SKU 的详情图", done: false },
-  { id: 3, title: "配置营销活动", desc: "3 月新品联动渠道待配置活动页", done: false },
-]);
+const loadPlatformCatalog = async () => {
+  try {
+    await store.fetchPlatformCatalog()
+  } catch (error: any) {
+    toast.add({
+      title: '平台枚举加载失败',
+      description: error?.message ?? '请稍后重试',
+      color: 'error',
+    })
+  }
+}
 
-const alerts = ref([
-  {
-    id: "AL-1",
-    title: "京东仓低库存提醒",
-    desc: "SKU JD123 距安全库存仅剩 3 天，请提前补货。",
-    date: "今天 10:00",
+const loadOwnerOptions = async () => {
+  try {
+    await store.fetchOwners()
+  } catch (error: any) {
+    toast.add({
+      title: '负责人列表加载失败',
+      description: error?.message ?? '请稍后重试',
+      color: 'error',
+    })
+  }
+}
+
+const handleOwnerSearch = async (keyword: string) => {
+  try {
+    await store.fetchOwners(keyword)
+  } catch (error: any) {
+    toast.add({
+      title: '负责人搜索失败',
+      description: error?.message ?? '请稍后重试',
+      color: 'error',
+    })
+  }
+}
+
+await Promise.all([loadChannels(), loadPlatformCatalog(), loadOwnerOptions()])
+
+watch(
+  [keyword, platformFilter, statusFilter],
+  () => {
+    page.value = 1
+    loadChannels()
   },
-  {
-    id: "AL-2",
-    title: "抖音直播大促",
-    desc: "本周五 20:00 直播活动需要提前完成素材审核与价格锁定。",
-    date: "周三 14:30",
-  },
-]);
+  { deep: true },
+)
+
+watch(page, (val, old) => {
+  if (val === old) return
+  loadChannels()
+})
+
+const refreshChannels = () => {
+  loadChannels()
+}
+
+const goToApproval = () => router.push('/channels/approval')
+
+const formMode = computed(() => (editingChannel.value ? 'edit' : 'create'))
+
+const startChannelWizard = () => {
+  editingChannel.value = null
+  formModel.value = createEmptyChannelPayload()
+  modalOpen.value = true
+}
+
+const mapSummaryToDraft = (channel: ChannelSummary): ChannelDraftPayload => ({
+  ...createEmptyChannelPayload(),
+  name: channel.name,
+  platform: channel.platform,
+  storeId: channel.storeId || '',
+  region: channel.region,
+  ownerUuid: channel.ownerUuid,
+  channelType: channel.channelType,
+  tags: [...(channel.tags ?? [])],
+})
+
+const editChannel = (channel: ChannelSummary) => {
+  editingChannel.value = channel
+  formModel.value = mapSummaryToDraft(channel)
+  modalOpen.value = true
+}
+
+const closeModal = () => {
+  ;(document.activeElement as HTMLElement | null)?.blur?.()
+  modalOpen.value = false
+}
+
+const handleFormSubmit = async (payload: ChannelDraftPayload) => {
+  try {
+    if (editingChannel.value) {
+      await store.updateChannel(editingChannel.value.id, payload)
+      toast.add({ title: '渠道已更新', description: editingChannel.value.name })
+    } else {
+      await store.createChannel(payload)
+      toast.add({ title: '渠道已创建', description: payload.name })
+    }
+    modalOpen.value = false
+    await loadChannels()
+  } catch (error: any) {
+    toast.add({
+      title: '保存失败',
+      description: error?.message ?? '请稍后重试',
+      color: 'error',
+    })
+  }
+}
+
+const canSubmit = (channel: ChannelSummary) => channel.status === 'draft'
+
+const submitForApproval = async (channel: ChannelSummary) => {
+  try {
+    await store.submitChannel(channel.id)
+    toast.add({ title: '已提交审批', description: `${channel.name} 正在等待审批` })
+    await loadChannels()
+  } catch (error: any) {
+    toast.add({
+      title: '提交失败',
+      description: error?.message ?? '请稍后重试',
+      color: 'error',
+    })
+  }
+}
+
+const openChannelDetail = (id: string) => {
+  router.push(`/channels/${id}`)
+}
+
+const checklist = [
+  { id: 1, title: '完成资料校验', desc: '法人信息、联系人、域名已补充', done: true },
+  { id: 2, title: '上传授权凭证', desc: '等待平台授权回调', done: false },
+  { id: 3, title: '确认负责人与审批链路', desc: '运营负责人和审批人已配置', done: true },
+]
+
+const alerts = [
+  { id: 1, title: '凭证即将过期', date: '今天', desc: '京东自营旗舰凭证 7 天后过期' },
+  { id: 2, title: '渠道 GMV 下滑', date: '昨天', desc: '天猫国际 GMV 同比 -12%，请关注' },
+]
 </script>

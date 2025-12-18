@@ -2,7 +2,7 @@
   <div v-if="disableShell" class="min-h-screen">
     <slot />
   </div>
-  <div v-else class="min-h-screen bg-slate-950 text-slate-100">
+  <div v-else :class="wrapperClass">
     <!-- 顶部导航栏 - 根据环境变量控制显示 -->
     <div v-if="showNavigation" class="w-full">
       <AppNavbar />
@@ -21,7 +21,7 @@
 </template>
 
 <script setup>
-import { watch } from "vue";
+import { computed, watch } from "vue";
 import { setupHostBridgeAdapter } from "~/composables/useHostBridgeAdapter";
 import { useTheme } from "~/composables/useTheme";
 import { PLUGIN_ID, isPluginAdminPath } from "~/utils/powerx-bridge";
@@ -30,6 +30,8 @@ import { PLUGIN_ID, isPluginAdminPath } from "~/utils/powerx-bridge";
 const runtimeConfig = useRuntimeConfig();
 const route = useRoute();
 const theme = useTheme();
+const colorMode = useColorMode();
+const isDark = computed(() => colorMode.value === "dark");
 
 const disableShell = computed(() => {
   if (route.meta?.fullBleed === true) {
@@ -70,8 +72,12 @@ const showNavigation = computed(() => {
 });
 
 // 主内容区样式
+const wrapperClass = computed(() =>
+  isDark.value ? "min-h-screen bg-slate-950 text-slate-100" : "min-h-screen bg-slate-50 text-slate-900"
+);
+
 const mainContentClass = computed(() => {
-  const base = "bg-slate-950 min-h-screen";
+  const base = isDark.value ? "bg-slate-950 min-h-screen" : "bg-white min-h-screen";
   if (disableShell.value) {
     return `${base} w-full`;
   }

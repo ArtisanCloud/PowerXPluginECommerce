@@ -233,6 +233,22 @@ func seedDefaultPermissions(tx *gorm.DB, roleID uint64) error {
 		{"iam.user", "read", "Read IAM users"},
 		{"iam.role", "read", "Read IAM roles"},
 		{"iam.department", "read", "Read IAM departments"},
+		{"com.powerx.plugin.ecommerce:channel.master", "read", "Channel master read access"},
+		{"com.powerx.plugin.ecommerce:channel.master", "create", "Channel master create access"},
+		{"com.powerx.plugin.ecommerce:channel.master", "update", "Channel master update access"},
+		{"com.powerx.plugin.ecommerce:channel.master", "approve", "Channel master approval access"},
+		{"com.powerx.plugin.ecommerce:channel.credential", "read", "Channel credential read access"},
+		{"com.powerx.plugin.ecommerce:channel.credential", "manage", "Channel credential manage access"},
+		{"com.powerx.plugin.ecommerce:channel.alert", "read", "Channel alert read access"},
+		{"com.powerx.plugin.ecommerce:channel.alert", "manage", "Channel alert manage access"},
+		{"com.powerx.plugin.ecommerce:channel.strategy", "read", "Channel strategy read access"},
+		{"com.powerx.plugin.ecommerce:channel.strategy", "manage", "Channel strategy manage access"},
+		{"com.powerx.plugin.ecommerce:channel.sync", "read", "Channel sync read access"},
+		{"com.powerx.plugin.ecommerce:channel.sync", "trigger", "Channel sync trigger access"},
+		{"com.powerx.plugin.ecommerce:channel.task", "read", "Channel task read access"},
+		{"com.powerx.plugin.ecommerce:channel.task", "manage", "Channel task manage access"},
+		{"com.powerx.plugin.ecommerce:channel.note", "read", "Channel note read access"},
+		{"com.powerx.plugin.ecommerce:channel.note", "create", "Channel note create access"},
 	}
 	for _, p := range perms {
 		var perm iamm.Permission

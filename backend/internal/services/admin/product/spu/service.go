@@ -10,7 +10,7 @@ import (
 
 	productrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/domain/repository/product"
 	productmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product"
-	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/jobs/channels"
+	channelproductjobs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/jobs/channel/product"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	productmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/product"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
@@ -35,7 +35,7 @@ type Service struct {
 	planRepo     *productrepo.SubscriptionPlanRepository
 	approvalRepo *productrepo.ApprovalRepository
 	locales      *LocaleService
-	publisher    channels.Publisher
+	publisher    channelproductjobs.Publisher
 	metrics      *productmetrics.SPUMetrics
 }
 
@@ -53,7 +53,7 @@ func NewService(deps *app.Deps) *Service {
 		planRepo:     productrepo.NewSubscriptionPlanRepository(deps.DB),
 		approvalRepo: productrepo.NewApprovalRepository(deps.DB),
 		locales:      NewLocaleService([]string{"zh-CN"}),
-		publisher:    channels.NewAsyncPublisher(logger),
+		publisher:    channelproductjobs.NewAsyncPublisher(logger),
 		metrics:      resolveSPUMetrics(deps, "product-spu-service"),
 	}
 }

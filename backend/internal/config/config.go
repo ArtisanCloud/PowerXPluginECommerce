@@ -65,6 +65,9 @@ type Config struct {
 	// AdminConsole 配置。
 	AdminConsole *AdminConsoleConfig `yaml:"admin_console" json:"admin_console"`
 
+	// TaskBus 配置。
+	TaskBus *TaskBusConfig `yaml:"taskbus" json:"taskbus"`
+
 	// 向后兼容的字段（从环境变量或旧配置中填充）
 	BindAddr   string `yaml:"-" json:"bind_addr,omitempty"`
 	LogLevel   string `yaml:"-" json:"log_level,omitempty"`

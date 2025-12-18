@@ -6,7 +6,7 @@
     "dev": "node ./node_modules/nuxi/bin/nuxi.mjs dev",
     "build": "node ./node_modules/nuxi/bin/nuxi.mjs build",
     "lint": "node -e \"console.log('Lint checks pending configuration');\"",
-    "test:unit": "node ./node_modules/vitest/dist/cli.js run --dir tests/unit",
+    "test:unit": "node ./node_modules/vitest/dist/cli.js run --dir tests/unit && node ./node_modules/vitest/dist/cli.js run --dir tests/component",
     "test:e2e": "playwright test"
   },
   "dependencies": {
@@ -39,6 +39,7 @@
     "@playwright/test": "^1.48.2",
     "@tailwindcss/postcss": "^4.1.15",
     "@tailwindcss/vite": "^4.1.12",
+    "@vue/test-utils": "^2.4.6",
     "autoprefixer": "^10.4.21",
     "jsdom": "^27.2.0",
     "sass-embedded": "^1.90.0",

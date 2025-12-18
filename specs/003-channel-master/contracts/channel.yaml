@@ -1,0 +1,902 @@
+openapi: 3.0.3
+info:
+  title: Channel Master API
+  version: 0.1.0
+  description: >
+    REST contracts for channel master data, authorization lifecycle, KPI, alerts,
+    and strategy configuration inside PowerX plugin `/v1/channels/**`.
+servers:
+  - url: https://example.com/_p/{pluginId}/api/v1
+    variables:
+      pluginId:
+        default: com.powerx.plugin.ecommerce
+security:
+  - bearerAuth: []
+  - X-PowerX-Tenant: []
+paths:
+  /channels:
+    get:
+      summary: List channels with filters
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - in: query
+          name: platform
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            $ref: '#/components/schemas/ChannelStatus'
+        - in: query
+          name: owner_uuid
+          schema:
+            type: string
+            format: uuid
+        - in: query
+          name: region
+          schema:
+            type: string
+        - in: query
+          name: min_health
+          schema:
+            type: integer
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Paginated channels
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelListResponse'
+    post:
+      summary: Create channel draft
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelUpsertRequest'
+      responses:
+        '201':
+          description: Channel draft created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelDetail'
+  /channels/platforms:
+    get:
+      summary: List supported platforms and channel types
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+      responses:
+        '200':
+          description: Platform catalog
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PlatformCatalogResponse'
+  /channels/owners:
+    get:
+      summary: List channel owner candidates
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - in: query
+          name: keyword
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 20
+      responses:
+        '200':
+          description: Owner options
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  items:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/OwnerOption'
+  /channels/{channelId}:
+    get:
+      summary: Get channel detail + KPI
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/ChannelId'
+      responses:
+        '200':
+          description: Channel detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelDetail'
+    patch:
+      summary: Update channel master data
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/ChannelId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelUpsertRequest'
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelDetail'
+  /channels/{channelId}/submit:
+    post:
+      summary: Submit channel for approval
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/ChannelId'
+      responses:
+        '202':
+          description: Approval request accepted
+  /channels/{channelId}/approval:
+    post:
+      summary: Approve or reject channel
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/ChannelId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [decision]
+              properties:
+                decision:
+                  type: string
+                  enum: [approve, reject]
+                reason:
+                  type: string
+      responses:
+        '200':
+          description: Status updated
+  /channels/{channelId}/credentials:
+    get:
+      summary: Retrieve credential metadata
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/ChannelId'
+      responses:
+        '200':
+          description: Credential list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Credential'
+    post:
+      summary: Create or refresh credential
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/ChannelId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CredentialUpsertRequest'
+      responses:
+        '201':
+          description: Credential stored/tested
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Credential'
+  /channels/{channelId}/credentials/test:
+    post:
+      summary: Trigger credential test
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/ChannelId'
+      responses:
+        '202':
+          description: Test scheduled
+  /channels/{channelId}/alerts:
+    get:
+      summary: List alerts for a channel
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/ChannelId'
+      responses:
+        '200':
+          description: Alerts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Alert'
+  /channels/{channelId}/alerts/{alertId}:
+    patch:
+      summary: Update alert status or assignee
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/ChannelId'
+        - in: path
+          name: alertId
+          schema:
+            type: string
+            format: uuid
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  type: string
+                  enum: [acknowledged, resolved]
+                assignee_uuid:
+                  type: string
+                  format: uuid
+                note:
+                  type: string
+      responses:
+        '200':
+          description: Alert updated
+  /channels/{channelId}/sync:
+    post:
+      summary: Trigger data sync job
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/ChannelId'
+      responses:
+        '202':
+          description: Sync scheduled
+  /channels/{channelId}/tasks:
+    get:
+      summary: List remediation tasks attached to a channel
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/ChannelId'
+      responses:
+        '200':
+          description: Task links
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TaskLink'
+    post:
+      summary: Attach channel to an existing remediation task
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/ChannelId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskLinkPayload'
+      responses:
+        '200':
+          description: Task linked
+  /channels/{channelId}/tasks/{taskLinkId}:
+    patch:
+      summary: Update task link status or note
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/ChannelId'
+        - in: path
+          name: taskLinkId
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TaskLinkPayload'
+      responses:
+        '200':
+          description: Task updated
+    delete:
+      summary: Remove task link
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/ChannelId'
+        - in: path
+          name: taskLinkId
+          schema:
+            type: string
+          required: true
+      responses:
+        '200':
+          description: Task removed
+  /channels/{channelId}/notes:
+    get:
+      summary: List operator notes
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/ChannelId'
+      responses:
+        '200':
+          description: Notes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ChannelNote'
+    post:
+      summary: Create operator note
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/ChannelId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotePayload'
+      responses:
+        '200':
+          description: Note created
+  /channels/{channelId}/strategy:
+    get:
+      summary: Get strategy configuration & team assignments
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/ChannelId'
+      responses:
+        '200':
+          description: Strategy configuration
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  strategy:
+                    $ref: '#/components/schemas/ChannelStrategy'
+                  team:
+                    $ref: '#/components/schemas/ChannelTeam'
+    patch:
+      summary: Update strategy configuration & team assignments
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/ChannelId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelStrategyUpsertRequest'
+      responses:
+        '200':
+          description: Updated strategy snapshot
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  strategy:
+                    $ref: '#/components/schemas/ChannelStrategy'
+                  team:
+                    $ref: '#/components/schemas/ChannelTeam'
+  /channels/{channelId}/sync-history:
+    get:
+      summary: List recent sync history
+      parameters:
+        - $ref: '#/components/parameters/TenantHeader'
+        - $ref: '#/components/parameters/ChannelId'
+      responses:
+        '200':
+          description: Sync events
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SyncHistoryEntry'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    X-PowerX-Tenant:
+      type: apiKey
+      in: header
+      name: X-PowerX-Tenant
+  parameters:
+    TenantHeader:
+      in: header
+      name: X-PowerX-Tenant
+      schema:
+        type: string
+      required: true
+    ChannelId:
+      in: path
+      name: channelId
+      schema:
+        type: string
+        format: uuid
+      required: true
+  schemas:
+    ChannelStatus:
+      type: string
+      enum: [draft, pending_review, rejected, unauthorized, authorized, disabled]
+    PlatformDescriptor:
+      type: object
+      properties:
+        code:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+        channelTypes:
+          type: array
+          items:
+            type: string
+        regions:
+          type: array
+          items:
+            type: string
+        deprecated:
+          type: boolean
+    ChannelTypeDescriptor:
+      type: object
+      properties:
+        code:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+    RegionDescriptor:
+      type: object
+      properties:
+        code:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+    CityDescriptor:
+      type: object
+      properties:
+        code:
+          type: string
+        label:
+          type: string
+    CountryDescriptor:
+      type: object
+      properties:
+        code:
+          type: string
+        label:
+          type: string
+        description:
+          type: string
+        cities:
+          type: array
+          items:
+            $ref: '#/components/schemas/CityDescriptor'
+    OwnerOption:
+      type: object
+      properties:
+        id:
+          type: integer
+        username:
+          type: string
+        displayName:
+          type: string
+        email:
+          type: string
+    PlatformCatalogResponse:
+      type: object
+      properties:
+        platforms:
+          type: array
+          items:
+            $ref: '#/components/schemas/PlatformDescriptor'
+        channelTypes:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChannelTypeDescriptor'
+        regions:
+          type: array
+          items:
+            $ref: '#/components/schemas/RegionDescriptor'
+        countries:
+          type: array
+          items:
+            $ref: '#/components/schemas/CountryDescriptor'
+    ChannelSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        platform:
+          type: string
+        store_id:
+          type: string
+        name:
+          type: string
+        region:
+          type: string
+        status:
+          $ref: '#/components/schemas/ChannelStatus'
+        tags:
+          type: array
+          items:
+            type: string
+        owner_uuid:
+          type: string
+          format: uuid
+        gmv:
+          type: number
+        orders:
+          type: integer
+        health_score:
+          type: integer
+        last_sync_at:
+          type: string
+          format: date-time
+    ChannelListResponse:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChannelSummary'
+        next_cursor:
+          type: string
+          nullable: true
+    ChannelUpsertRequest:
+      type: object
+      required:
+        - platform
+        - store_id
+        - name
+        - region
+        - owner_uuid
+        - contact
+      properties:
+        platform:
+          type: string
+        store_id:
+          type: string
+        name:
+          type: string
+        domain:
+          type: string
+        region:
+          type: string
+        owner_uuid:
+          type: string
+        approver_uuid:
+          type: string
+        contact:
+          type: object
+          required: [name, phone, email]
+          properties:
+            name:
+              type: string
+            phone:
+              type: string
+            email:
+              type: string
+              format: email
+        strategy:
+          type: object
+          properties:
+            pricebook_id:
+              type: string
+            inventory_strategy_id:
+              type: string
+            logistics_strategy_id:
+              type: string
+            cs_sla_id:
+              type: string
+            fee_rate:
+              type: number
+              format: float
+            settlement_cycle:
+              type: string
+            payment_terms:
+              type: string
+        notes:
+          type: string
+    ChannelDetail:
+      allOf:
+        - $ref: '#/components/schemas/ChannelSummary'
+        - type: object
+          properties:
+            contact:
+              $ref: '#/components/schemas/Contact'
+            strategy:
+              $ref: '#/components/schemas/ChannelStrategy'
+            team:
+              $ref: '#/components/schemas/ChannelTeam'
+            metrics:
+              type: array
+              items:
+                $ref: '#/components/schemas/ChannelMetric'
+            alerts:
+              type: array
+              items:
+                $ref: '#/components/schemas/Alert'
+            health:
+              $ref: '#/components/schemas/ChannelHealth'
+            tasks:
+              type: array
+              items:
+                $ref: '#/components/schemas/TaskLink'
+            notes:
+              type: array
+              items:
+                $ref: '#/components/schemas/ChannelNote'
+            sync_history:
+              type: array
+              items:
+                $ref: '#/components/schemas/SyncHistoryEntry'
+            audit_logs:
+              type: array
+              items:
+                $ref: '#/components/schemas/AuditLog'
+    Contact:
+      type: object
+      properties:
+        name:
+          type: string
+        phone:
+          type: string
+        email:
+          type: string
+    ChannelStrategy:
+      type: object
+      properties:
+        pricebook_id:
+          type: string
+        inventory_strategy_id:
+          type: string
+        logistics_strategy_id:
+          type: string
+        cs_sla_id:
+          type: string
+        fee_rate:
+          type: number
+        settlement_cycle:
+          type: string
+        payment_terms:
+          type: string
+    ChannelTeam:
+      type: object
+      properties:
+        owner_uuid:
+          type: string
+        approver_uuid:
+          type: string
+        operators:
+          type: array
+          items:
+            type: string
+    ChannelStrategyUpsertRequest:
+      type: object
+      required:
+        - strategy
+        - team
+      properties:
+        strategy:
+          $ref: '#/components/schemas/ChannelStrategy'
+        team:
+          $ref: '#/components/schemas/ChannelTeam'
+    ChannelMetric:
+      type: object
+      properties:
+        window:
+          type: string
+          enum: [d1, d7, d30]
+        gmv:
+          type: number
+        orders:
+          type: integer
+        gmv_growth_rate:
+          type: number
+        inventory_coverage:
+          type: number
+        error_rate:
+          type: number
+        sync_success_rate:
+          type: number
+        health_score:
+          type: integer
+        source_timestamp:
+          type: string
+          format: date-time
+    ChannelHealth:
+      type: object
+      properties:
+        score:
+          type: integer
+        labels:
+          type: array
+          items:
+            type: string
+    TaskLink:
+      type: object
+      properties:
+        id:
+          type: string
+        task_id:
+          type: string
+        task_source:
+          type: string
+        status:
+          type: string
+        note:
+          type: string
+        linked_by:
+          type: string
+        linked_at:
+          type: string
+          format: date-time
+    TaskLinkPayload:
+      type: object
+      required:
+        - task_id
+      properties:
+        task_id:
+          type: string
+        task_source:
+          type: string
+        status:
+          type: string
+        note:
+          type: string
+    ChannelNote:
+      type: object
+      properties:
+        id:
+          type: string
+        author_uuid:
+          type: string
+        visibility:
+          type: string
+        body:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    NotePayload:
+      type: object
+      required:
+        - body
+      properties:
+        body:
+          type: string
+        visibility:
+          type: string
+          enum: [team, admin]
+    SyncHistoryEntry:
+      type: object
+      properties:
+        id:
+          type: string
+        trigger_type:
+          type: string
+        triggered_by:
+          type: string
+        duration_ms:
+          type: integer
+        result:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+    Credential:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+          enum: [oauth, api_key, offline]
+        scope:
+          type: array
+          items:
+            type: string
+        expires_at:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [valid, expiring, expired, revoked, test_failed]
+        last_refreshed_at:
+          type: string
+          format: date-time
+        test_result:
+          type: object
+    CredentialUpsertRequest:
+      type: object
+      required:
+        - type
+        - payload
+      properties:
+        type:
+          type: string
+        payload:
+          type: object
+          description: Token/code/credential blob depending on type
+        scope:
+          type: array
+          items:
+            type: string
+        expires_at:
+          type: string
+          format: date-time
+    Alert:
+      type: object
+      properties:
+        id:
+          type: string
+        type:
+          type: string
+        severity:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [open, acknowledged, resolved]
+        triggered_at:
+          type: string
+          format: date-time
+        resolved_at:
+          type: string
+          format: date-time
+        assignee_uuid:
+          type: string
+          format: uuid
+        task_id:
+          type: string
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: string
+        action:
+          type: string
+        actor_uuid:
+          type: string
+        actor_role:
+          type: string
+        context:
+          type: object
+        created_at:
+          type: string
+          format: date-time

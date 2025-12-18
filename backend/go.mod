@@ -73,3 +73,5 @@ require (
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250908214217-97024824d090 // indirect
 	gorm.io/driver/mysql v1.6.0 // indirect
 )
+
+replace github.com/ArtisanCloud/PowerXPlugin/framework => /private/var/www/html/ArtisanCloud/X/PowerX/Core/Plugins/PowerXPlugin/framework

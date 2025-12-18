@@ -387,7 +387,7 @@ const columns = computed<TableColumn<PaymentRow>[]>(() => [
   {
     id: "amount",
     accessorKey: "amount",
-    header: () => h("div", { class: "text-right" }, "金额"),
+    header: "金额",
     meta: { class: { td: "text-right" } },
   },
   { accessorKey: "status", header: "状态" },
@@ -395,7 +395,7 @@ const columns = computed<TableColumn<PaymentRow>[]>(() => [
   { accessorKey: "paidAt", header: "完成时间" },
   {
     id: "actions",
-    header: () => h("div", { class: "text-right" }, "操作"),
+    header: "操作",
     meta: { class: { td: "text-right" } },
   },
 ]);

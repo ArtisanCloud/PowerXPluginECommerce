@@ -66,6 +66,7 @@
 <script setup lang="ts">
 import { useToast } from '#imports'
 import { computed, reactive, ref, watch } from 'vue'
+import { useVModel } from '@vueuse/core'
 
 type LocaleEntry = {
 	locale: string
@@ -93,11 +94,13 @@ const emit = defineEmits<{
 
 const toast = useToast()
 const localeOptions = defaultLocales
-const cloneEntries = (entries: LocaleEntry[] = []) => entries.map((entry) => ({ ...entry }))
-
-const localValue = reactive<LocaleModel>({
-	defaultLocale: 'zh-CN',
-	locales: [{ locale: 'zh-CN', title: '', description: '' }],
+const localValue = useVModel(props, 'modelValue', emit, {
+	passive: true,
+	deep: true,
+	defaultValue: {
+		defaultLocale: 'zh-CN',
+		locales: [{ locale: 'zh-CN', title: '', description: '' }],
+	},
 })
 
 const pendingLocale = ref<string>('')
@@ -107,17 +110,25 @@ const errors = reactive<{ defaultLocale: string; entries: Record<number, { title
 })
 
 const availableLocaleOptions = computed(() =>
-	localeOptions.filter((option) => !localValue.locales.some((entry) => entry.locale === option.value))
+	localeOptions.filter((option) => !localValue.value.locales?.some((entry) => entry.locale === option.value))
 )
 
 watch(
-	() => props.modelValue,
-	(val) => {
-		if (!val) return
-		localValue.defaultLocale = val.defaultLocale || 'zh-CN'
-		localValue.locales = val.locales?.length ? cloneEntries(val.locales) : [{ locale: 'zh-CN', title: '', description: '' }]
-		if (!localValue.locales.find((entry) => entry.locale === localValue.defaultLocale)) {
-			localValue.locales.unshift({ locale: localValue.defaultLocale, title: '', description: '' })
+	() => [localValue.value.defaultLocale, localValue.value.locales?.length],
+	() => {
+		if (!localValue.value.defaultLocale) {
+			localValue.value.defaultLocale = 'zh-CN'
+		}
+		if (!Array.isArray(localValue.value.locales) || !localValue.value.locales.length) {
+			localValue.value.locales = [{ locale: localValue.value.defaultLocale, title: '', description: '' }]
+		}
+		const exists = localValue.value.locales.some((entry) => entry.locale === localValue.value.defaultLocale)
+		if (!exists) {
+			localValue.value.locales.unshift({
+				locale: localValue.value.defaultLocale,
+				title: '',
+				description: '',
+			})
 		}
 		pendingLocale.value = firstAvailableLocale()
 		validate()
@@ -126,12 +137,8 @@ watch(
 )
 
 watch(
-	localValue,
+	() => localValue.value.locales,
 	() => {
-		emit('update:modelValue', {
-			defaultLocale: localValue.defaultLocale,
-			locales: cloneEntries(localValue.locales),
-		})
 		validate()
 	},
 	{ deep: true }
@@ -139,27 +146,27 @@ watch(
 
 function append() {
 	const locale = pendingLocale.value || firstAvailableLocale()
-	if (!locale || localValue.locales.some((entry) => entry.locale === locale)) {
+	if (!locale || localValue.value.locales.some((entry) => entry.locale === locale)) {
 		return
 	}
-	localValue.locales.push({ locale, title: '', description: '' })
+	localValue.value.locales.push({ locale, title: '', description: '' })
 	pendingLocale.value = firstAvailableLocale()
 }
 
 function remove(index: number) {
-	if (localValue.locales.length === 1) {
+	if (localValue.value.locales.length === 1) {
 		return
 	}
-	const removed = localValue.locales[index]
-	localValue.locales.splice(index, 1)
-	if (removed?.locale === localValue.defaultLocale) {
-		localValue.defaultLocale = localValue.locales[0]?.locale || 'zh-CN'
+	const removed = localValue.value.locales[index]
+	localValue.value.locales.splice(index, 1)
+	if (removed?.locale === localValue.value.defaultLocale) {
+		localValue.value.defaultLocale = localValue.value.locales[0]?.locale || 'zh-CN'
 	}
 	pendingLocale.value = firstAvailableLocale()
 }
 
 function setAsDefault(locale: string) {
-	localValue.defaultLocale = locale
+	localValue.value.defaultLocale = locale
 }
 
 function firstAvailableLocale() {
@@ -167,12 +174,12 @@ function firstAvailableLocale() {
 }
 
 function copyFromDefault(targetIndex: number) {
-	const defaultEntry = localValue.locales.find((entry) => entry.locale === localValue.defaultLocale)
+	const defaultEntry = localValue.value.locales.find((entry) => entry.locale === localValue.value.defaultLocale)
 	if (!defaultEntry) {
 		toast.add({ title: '未设置默认语言', color: 'red' })
 		return
 	}
-	const target = localValue.locales[targetIndex]
+	const target = localValue.value.locales[targetIndex]
 	if (!target || target.locale === defaultEntry.locale) {
 		return
 	}
@@ -182,12 +189,12 @@ function copyFromDefault(targetIndex: number) {
 }
 
 function copyDefaultToAll() {
-	const defaultEntry = localValue.locales.find((entry) => entry.locale === localValue.defaultLocale)
+	const defaultEntry = localValue.value.locales.find((entry) => entry.locale === localValue.value.defaultLocale)
 	if (!defaultEntry) {
 		toast.add({ title: '未设置默认语言', color: 'red' })
 		return
 	}
-	localValue.locales.forEach((entry) => {
+	localValue.value.locales.forEach((entry) => {
 		if (entry.locale === defaultEntry.locale) return
 		entry.title = defaultEntry.title
 		entry.description = defaultEntry.description
@@ -199,11 +206,11 @@ function validate() {
 	errors.defaultLocale = ''
 	errors.entries = {}
 	let valid = true
-	if (!localValue.defaultLocale) {
+	if (!localValue.value.defaultLocale) {
 		errors.defaultLocale = '请选择默认语言'
 		valid = false
 	}
-	const defaultEntry = localValue.locales.find((entry) => entry.locale === localValue.defaultLocale)
+	const defaultEntry = localValue.value.locales.find((entry) => entry.locale === localValue.value.defaultLocale)
 	if (!defaultEntry) {
 		errors.defaultLocale = '请添加默认语言内容'
 		valid = false
@@ -212,8 +219,8 @@ function validate() {
 		errors.entries[getIndexByLocale(defaultEntry.locale)] = { title: '必填' }
 		valid = false
 	}
-	localValue.locales.forEach((entry, idx) => {
-		if (entry.locale === localValue.defaultLocale && !entry.title) {
+	localValue.value.locales.forEach((entry, idx) => {
+		if (entry.locale === localValue.value.defaultLocale && !entry.title) {
 			errors.entries[idx] = { title: '默认语言标题必填' }
 		}
 	})
@@ -222,7 +229,7 @@ function validate() {
 }
 
 function getIndexByLocale(locale: string) {
-	return localValue.locales.findIndex((entry) => entry.locale === locale)
+	return localValue.value.locales.findIndex((entry) => entry.locale === locale)
 }
 
 defineExpose({ validate })
