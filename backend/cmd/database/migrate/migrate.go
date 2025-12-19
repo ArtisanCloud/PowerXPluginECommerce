@@ -7,15 +7,13 @@ import (
 	"log"
 	"strings"
 
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/cmd/database/migrate/migrations"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/config"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models"
 	adminconsoleModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/admin_console"
-	channelmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/channel_master"
-	customermodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/customer"
 	iammodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/iam"
 	marketplaceModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/marketplace"
 	operationsModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/operations"
-	productmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product"
 	runtimeOpsModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/runtime_ops"
 	securityModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/security"
 	templateModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/template"
@@ -24,59 +22,76 @@ import (
 	"gorm.io/gorm"
 )
 
-var businessTables = []interface{}{
-	&models.PluginCredential{},
-	&models.PluginTenantExt{},
-	&customermodel.Customer{},
-	&templateModel.Template{},
-	&productmodel.SPU{},
-	&productmodel.SPUVersion{},
-	&productmodel.SPULocale{},
-	&productmodel.ChannelVisibility{},
-	&productmodel.SubscriptionPlan{},
-	&productmodel.SPUImportTask{},
-	&productmodel.SPUExportTask{},
-	&productmodel.SPUApprovalRecord{},
-	&productmodel.SPUAuditLog{},
-	&channelmodel.ChannelMaster{},
-	&channelmodel.ChannelTaskLink{},
-	&channelmodel.ChannelNote{},
-	&channelmodel.ChannelSyncHistory{},
-	&channelmodel.ChannelCredential{},
-	&channelmodel.ChannelAlert{},
-	&channelmodel.ChannelMetric{},
-	&channelmodel.ChannelConfig{},
-	&marketplaceModel.Listing{},
-	&marketplaceModel.ListingAsset{},
-	&marketplaceModel.ListingVersion{},
-	&marketplaceModel.ChecklistRun{},
-	&marketplaceModel.ChecklistItem{},
-	&marketplaceModel.PricingPlan{},
-	&marketplaceModel.PlanTier{},
-	&marketplaceModel.License{},
-	&marketplaceModel.LicenseEvent{},
-	&marketplaceModel.TaxTransaction{},
-	&runtimeOpsModel.MCPSession{},
-	&runtimeOpsModel.RuntimeAuditEvent{},
-	&runtimeOpsModel.QuotaLedger{},
-	&runtimeOpsModel.MarketplaceOverage{},
-	&operationsModel.SupportChannel{},
-	&operationsModel.SupportTicket{},
-	&operationsModel.SupportTicketEvent{},
-	&operationsModel.ReadinessChecklistItem{},
-	&operationsModel.SLAProfile{},
-	&operationsModel.SLAAdjustment{},
-	&operationsModel.Incident{},
-	&operationsModel.IncidentTimelineEntry{},
-	&operationsModel.IncidentChecklistItem{},
-	&securityModel.BaselineChecklist{},
-	&securityModel.AuditReport{},
-	&toolgrantModel.Revocation{},
-	&toolgrantModel.UsageEvent{},
-	&adminconsoleModel.AuditEvent{},
-	&adminconsoleModel.ConfigChange{},
-	&adminconsoleModel.JobRun{},
-}
+var (
+	corePluginTables = []interface{}{
+		&models.PluginCredential{},
+		&models.PluginTenantExt{},
+		&templateModel.Template{},
+	}
+
+	marketplaceTables = []interface{}{
+		&marketplaceModel.Listing{},
+		&marketplaceModel.ListingAsset{},
+		&marketplaceModel.ListingVersion{},
+		&marketplaceModel.ChecklistRun{},
+		&marketplaceModel.ChecklistItem{},
+		&marketplaceModel.PricingPlan{},
+		&marketplaceModel.PlanTier{},
+		&marketplaceModel.License{},
+		&marketplaceModel.LicenseEvent{},
+		&marketplaceModel.TaxTransaction{},
+	}
+
+	runtimeOpsTables = []interface{}{
+		&runtimeOpsModel.MCPSession{},
+		&runtimeOpsModel.RuntimeAuditEvent{},
+		&runtimeOpsModel.QuotaLedger{},
+		&runtimeOpsModel.MarketplaceOverage{},
+	}
+
+	operationsTables = []interface{}{
+		&operationsModel.SupportChannel{},
+		&operationsModel.SupportTicket{},
+		&operationsModel.SupportTicketEvent{},
+		&operationsModel.ReadinessChecklistItem{},
+		&operationsModel.SLAProfile{},
+		&operationsModel.SLAAdjustment{},
+		&operationsModel.Incident{},
+		&operationsModel.IncidentTimelineEntry{},
+		&operationsModel.IncidentChecklistItem{},
+	}
+
+	securityTables = []interface{}{
+		&securityModel.BaselineChecklist{},
+		&securityModel.AuditReport{},
+	}
+
+	toolGrantTables = []interface{}{
+		&toolgrantModel.Revocation{},
+		&toolgrantModel.UsageEvent{},
+	}
+
+	adminConsoleTables = []interface{}{
+		&adminconsoleModel.AuditEvent{},
+		&adminconsoleModel.ConfigChange{},
+		&adminconsoleModel.JobRun{},
+	}
+)
+
+var businessTables = func() []interface{} {
+	tables := append([]interface{}{}, corePluginTables...)
+	tables = append(tables, migrations.CustomerOpsCustomerTables...)
+	tables = append(tables, migrations.ProductSPUTables...)
+	tables = append(tables, migrations.ChannelMasterTables...)
+	tables = append(tables, marketplaceTables...)
+	tables = append(tables, runtimeOpsTables...)
+	tables = append(tables, operationsTables...)
+	tables = append(tables, securityTables...)
+	tables = append(tables, toolGrantTables...)
+	tables = append(tables, adminConsoleTables...)
+	tables = append(tables, migrations.ProductSkuTables...) // 002-product-sku-management
+	return tables
+}()
 
 var iamTables = []interface{}{
 	&iammodel.Tenant{},

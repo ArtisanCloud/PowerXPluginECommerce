@@ -53,6 +53,14 @@ const fallbackHostApiBase =
 const pluginApiBase = envApiBase ?? defaultPluginApiBase
 const hostApiBase = envApiBase ?? fallbackHostApiBase
 const localApiBase = envApiBase ?? defaultLocalApiBase
+const normalizeBasePath = (candidate: string) => candidate.replace(/\/+$/, '')
+const productSkuApiBase = `${normalizeBasePath(pluginApiBase)}/products/skus`
+const productSkuApi = {
+  base: productSkuApiBase,
+  bulkTasks: `${productSkuApiBase}/bulk-tasks`,
+  import: `${productSkuApiBase}/import`,
+  export: `${productSkuApiBase}/export`
+}
 const devApiProxyTarget = process.env.NUXT_DEV_API_PROXY || 'http://localhost:8078'
 const devWsProxyTarget = process.env.NUXT_DEV_WS_PROXY || 'ws://127.0.0.1:4000'
 const imgSources = ["'self'", "data:", "https://avatars.githubusercontent.com"]
@@ -240,6 +248,10 @@ export default defineNuxtConfig({
       // ide helpers: pluginApiBase 可用于客户端自行构造 `_p/.../api` 请求
       apiBaseUrl: INSIDE_POWERX ? hostApiBase : localApiBase,
       pluginApiBase,
+      productSkuApiBase: productSkuApi.base,
+      productSkuBulkTasksEndpoint: productSkuApi.bulkTasks,
+      productSkuImportEndpoint: productSkuApi.import,
+      productSkuExportEndpoint: productSkuApi.export,
       insidePowerX: INSIDE_POWERX,
       pluginAdminBase,
       bridgeDebug: BRIDGE_DEBUG,

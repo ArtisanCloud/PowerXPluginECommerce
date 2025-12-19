@@ -55,8 +55,8 @@ backend/
 ├── internal/
 │   ├── transport/http/admin/product/spu/
 │   ├── services/admin/product/spu/
-│   ├── domain/models/product/
-│   ├── domain/repository/product/
+│   ├── entity/models/product/
+│   ├── entity/repository/product/
 │   ├── jobs/channel/product/
 │   └── observability/product/
 ├── pkg/ (shared infra)

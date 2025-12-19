@@ -1,0 +1,379 @@
+openapi: 3.0.3
+info:
+  title: PowerX Plugin - Product SKU API
+  version: 1.0.0
+servers:
+  - url: /v1
+paths:
+  /products/skus:
+    get:
+      summary: List SKUs with filters
+      parameters:
+        - in: query
+          name: spu_id
+          schema:
+            type: string
+        - in: query
+          name: channel
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: inventory_range
+          schema:
+            type: string
+            example: "10-100"
+      responses:
+        '200':
+          description: SKU collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkuListResponse'
+    post:
+      summary: Create or update SKU in bulk (manual)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SkuUpsertRequest'
+      responses:
+        '202':
+          description: Accepted bulk task id
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkTaskResponse'
+  /products/spus/{spuId}/skus/generate:
+    post:
+      summary: Run SKU generator for an SPU
+      parameters:
+        - in: path
+          name: spuId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SkuGenerateRequest'
+      responses:
+        '200':
+          description: Generated SKU preview
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkuGenerateResponse'
+  /products/skus/bulk-tasks:
+    post:
+      summary: Submit bulk price/inventory adjustments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkAdjustmentRequest'
+      responses:
+        '202':
+          description: Task created + optional approval state
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkTaskResponse'
+  /products/skus/bulk-tasks/{taskId}:
+    get:
+      summary: Get bulk task status/result
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Bulk task status payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkTask'
+  /products/skus/import:
+    post:
+      summary: Import SKU fields via template
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+                mode:
+                  type: string
+                  enum: [upsert, inventory-only]
+      responses:
+        '202':
+          description: Import task accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkTaskResponse'
+  /products/skus/{skuId}/channels:
+    post:
+      summary: Configure channel mapping for SKU
+      parameters:
+        - in: path
+          name: skuId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelMappingRequest'
+      responses:
+        '200':
+          description: Mapping saved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChannelMapping'
+  /products/skus/{skuId}/channels/publish:
+    post:
+      summary: Publish SKU mapping to external channel
+      parameters:
+        - in: path
+          name: skuId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChannelPublishRequest'
+      responses:
+        '202':
+          description: Publish task accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkTaskResponse'
+  /products/skus/{skuId}/inventory:
+    get:
+      summary: Retrieve inventory snapshot for SKU
+      parameters:
+        - in: path
+          name: skuId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Inventory detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SkuInventory'
+components:
+  schemas:
+    SkuListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sku'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+    Sku:
+      type: object
+      required: [id, tenant_uuid, spu_id, sku_code, specs, status]
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenant_uuid:
+          type: string
+        spu_id:
+          type: string
+        sku_code:
+          type: string
+        specs:
+          type: array
+          items:
+            $ref: '#/components/schemas/SkuSpec'
+        barcode:
+          type: string
+        status:
+          type: string
+          enum: [draft, ready, online, offline]
+        price_refs:
+          type: array
+          items:
+            $ref: '#/components/schemas/PriceReference'
+        inventory:
+          $ref: '#/components/schemas/SkuInventory'
+        channels:
+          type: array
+          items:
+            $ref: '#/components/schemas/ChannelMapping'
+    SkuSpec:
+      type: object
+      properties:
+        spec_id: { type: string }
+        spec_name: { type: string }
+        value_id: { type: string }
+        value_name: { type: string }
+    SkuGenerateRequest:
+      type: object
+      required: [specSelections, defaults]
+      properties:
+        specSelections:
+          type: array
+          description: SPU 规格以及勾选的值
+          items:
+            type: object
+            properties:
+              spec_id: { type: string }
+              value_ids:
+                type: array
+                items: { type: string }
+        defaults:
+          $ref: '#/components/schemas/SkuDefaults'
+    SkuDefaults:
+      type: object
+      properties:
+        barcode_prefix: { type: string }
+        min_order_qty: { type: integer }
+        cost_price: { type: number }
+        weight: { type: number }
+        dimensions: { type: string }
+    SkuGenerateResponse:
+      type: object
+      properties:
+        candidates:
+          type: array
+          items:
+            type: object
+            properties:
+              specs:
+                type: array
+                items: { $ref: '#/components/schemas/SkuSpec' }
+              preview_sku_code: { type: string }
+              default_values: { $ref: '#/components/schemas/SkuDefaults' }
+    SkuUpsertRequest:
+      type: object
+      properties:
+        skus:
+          type: array
+          items:
+            $ref: '#/components/schemas/Sku'
+    BulkAdjustmentRequest:
+      type: object
+      required: [scope, operation]
+      properties:
+        scope:
+          type: object
+          properties:
+            sku_ids:
+              type: array
+              items: { type: string }
+            filters:
+              type: object
+        operation:
+          type: object
+          properties:
+            type:
+              type: string
+              enum: [price_fixed, price_percent, inventory_fixed, inventory_replace]
+            value:
+              oneOf:
+                - type: number
+                - type: object
+        approval_context:
+          type: object
+          properties:
+            threshold_amount: { type: number }
+            reason: { type: string }
+    BulkTaskResponse:
+      type: object
+      properties:
+        task_id: { type: string }
+        approval_required: { type: boolean }
+        status: { type: string }
+    BulkTask:
+      allOf:
+        - $ref: '#/components/schemas/BulkTaskResponse'
+        - type: object
+          properties:
+            stats:
+              type: object
+              properties:
+                succeeded: { type: integer }
+                failed: { type: integer }
+            error_report:
+              type: string
+              format: uri
+    ChannelMappingRequest:
+      type: object
+      required: [channel_code, channel_sku_id]
+      properties:
+        channel_code: { type: string }
+        channel_sku_id: { type: string }
+        status: { type: string }
+        publish_time: { type: string, format: date-time }
+        sync_mode: { type: string, enum: [push, pull, hybrid] }
+        price_override: { type: object }
+        media_override: { type: array, items: { $ref: '#/components/schemas/SkuMedia' } }
+    ChannelMapping:
+      allOf:
+        - $ref: '#/components/schemas/ChannelMappingRequest'
+        - type: object
+          properties:
+            id: { type: string }
+            last_error: { type: string }
+            last_published_at: { type: string, format: date-time }
+    ChannelPublishRequest:
+      type: object
+      properties:
+        channel_code: { type: string }
+        force:
+          type: boolean
+          description: Re-run publish even if already online
+    SkuInventory:
+      type: object
+      properties:
+        warehouse_id: { type: string }
+        available_qty: { type: integer }
+        locked_qty: { type: integer }
+        in_transit_qty: { type: integer }
+        safety_stock: { type: integer }
+        last_synced_at: { type: string, format: date-time }
+    PriceReference:
+      type: object
+      properties:
+        price_list_id: { type: string }
+        tier:
+          type: array
+          items:
+            type: object
+            properties:
+              min_qty: { type: integer }
+              price: { type: number }
+    Pagination:
+      type: object
+      properties:
+        page: { type: integer }
+        size: { type: integer }
+        total: { type: integer }

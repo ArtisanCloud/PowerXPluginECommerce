@@ -61,6 +61,46 @@ frontend:
         - zh-CN
         - en
     menus:
+      - id: plugins.com.powerx.plugin.ecommerce.products
+        title: 商品中心
+        title_i18n:
+          namespace: menus
+          key: menu.com.powerx.plugin.ecommerce.products
+          default: Product Center
+        icon: i-heroicons-archive-box
+        path: /product
+        route: product
+        order: 5
+        slot: group.plugins
+        required_policies:
+          - com.powerx.plugin.ecommerce:product.sku:read
+        children:
+          - id: plugins.com.powerx.plugin.ecommerce.products.skus
+            title: SKU 管理
+            title_i18n:
+              namespace: menus
+              key: menu.com.powerx.plugin.ecommerce.products.skus
+              default: SKU Management
+            icon: i-heroicons-squares-2x2
+            path: /product/skus
+            route: product/skus
+            order: 1
+            required_policies:
+              - com.powerx.plugin.ecommerce:product.sku:manage
+              - com.powerx.plugin.ecommerce:product.sku.bulk:manage
+          - id: plugins.com.powerx.plugin.ecommerce.products.inventory
+            title: 库存与变体
+            title_i18n:
+              namespace: menus
+              key: menu.com.powerx.plugin.ecommerce.products.inventory
+              default: Inventory & Variants
+            icon: i-heroicons-chart-bar-square
+            path: /product/inventory
+            route: product/inventory
+            order: 2
+            required_policies:
+              - com.powerx.plugin.ecommerce:product.sku.inventory:read
+              - com.powerx.plugin.ecommerce:product.sku.channel:manage
       - id: plugins.com.powerx.plugin.ecommerce.channels
         title: 渠道中心
         title_i18n:
@@ -106,6 +146,14 @@ routes:
 
 rbac:
   resources:
+    - resource: com.powerx.plugin.ecommerce:product.sku
+      actions: [read, manage]
+    - resource: com.powerx.plugin.ecommerce:product.sku.bulk
+      actions: [read, manage]
+    - resource: com.powerx.plugin.ecommerce:product.sku.channel
+      actions: [read, manage]
+    - resource: com.powerx.plugin.ecommerce:product.sku.inventory
+      actions: [read, manage]
     - resource: com.powerx.plugin.ecommerce:channel.master
       actions: [read, create, update, approve]
     - resource: com.powerx.plugin.ecommerce:channel.credential
@@ -122,6 +170,14 @@ rbac:
       actions: [read, create]
 
 permissions:
+  - resource: com.powerx.plugin.ecommerce:product.sku
+    actions: [read, manage]
+  - resource: com.powerx.plugin.ecommerce:product.sku.bulk
+    actions: [read, manage]
+  - resource: com.powerx.plugin.ecommerce:product.sku.channel
+    actions: [read, manage]
+  - resource: com.powerx.plugin.ecommerce:product.sku.inventory
+    actions: [read, manage]
   - resource: com.powerx.plugin.ecommerce:channel.master
     actions: [read, create, update, approve]
   - resource: com.powerx.plugin.ecommerce:channel.credential
