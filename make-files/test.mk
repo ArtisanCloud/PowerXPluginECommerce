@@ -31,7 +31,7 @@ lint: ## 运行 golangci-lint
 	@echo "安装/更新 golangci-lint..."
 	cd $(BACKEND_DIR) && go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.61.0
 	@echo "运行代码检查..."
-	cd $(BACKEND_DIR) && golangci-lint run
+	cd $(BACKEND_DIR) && golangci-lint run --timeout 5m
 
 .PHONY: fmt
 fmt: ## 使用 go fmt 格式化代码
