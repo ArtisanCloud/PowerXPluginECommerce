@@ -1,9 +1,12 @@
 # test.mk 汇总测试与代码质量相关目标
 
+GO_TOOLCHAIN ?= go1.23.0
+GO_CMD := GOTOOLCHAIN=$(GO_TOOLCHAIN) go
+
 .PHONY: test
 test: ## 执行 Go 单元测试
 	@echo "运行测试..."
-	cd $(BACKEND_DIR) && go test ./...
+	cd $(BACKEND_DIR) && $(GO_CMD) test ./...
 
 .PHONY: test-admin
 test-admin: ## 运行 web-admin 测试
@@ -23,25 +26,25 @@ build-admin: ## 构建 web-admin 产物
 .PHONY: test-coverage
 test-coverage: ## 执行测试并生成覆盖率报告
 	@echo "运行测试并生成覆盖率报告..."
-	cd $(BACKEND_DIR) && go test -coverprofile=coverage.out ./...
-	cd $(BACKEND_DIR) && go tool cover -html=coverage.out -o coverage.html
+	cd $(BACKEND_DIR) && $(GO_CMD) test -coverprofile=coverage.out ./...
+	cd $(BACKEND_DIR) && $(GO_CMD) tool cover -html=coverage.out -o coverage.html
 
 .PHONY: lint
 lint: ## 运行 golangci-lint
 	@echo "安装/更新 golangci-lint..."
-	cd $(BACKEND_DIR) && go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.61.0
+	cd $(BACKEND_DIR) && $(GO_CMD) install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.61.0
 	@echo "运行代码检查..."
-	cd $(BACKEND_DIR) && golangci-lint run --timeout 5m
+	cd $(BACKEND_DIR) && GOTOOLCHAIN=$(GO_TOOLCHAIN) golangci-lint run --timeout 5m
 
 .PHONY: fmt
 fmt: ## 使用 go fmt 格式化代码
 	@echo "格式化代码..."
-	cd $(BACKEND_DIR) && go fmt ./...
+	cd $(BACKEND_DIR) && $(GO_CMD) fmt ./...
 
 .PHONY: mod-tidy
 mod-tidy: ## 整理 Go 模块依赖
 	@echo "整理 Go 模块依赖..."
-	cd $(BACKEND_DIR) && go mod tidy
+	cd $(BACKEND_DIR) && $(GO_CMD) mod tidy
 
 .PHONY: test-all
 test-all: fmt lint lint-admin test test-admin build-admin ## 运行后端/前端全量验证
