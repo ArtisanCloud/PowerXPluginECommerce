@@ -118,23 +118,24 @@ const BRIDGE_DEBUG = rawBridgeDebug !== undefined
   : !INSIDE_POWERX
 
 // Dev-time proxy: always forward /api + ws; add /_p/.../api only in proxy mode
-const devProxy: Record<string, any> = {
-  '/api': {
+const disableDevProxy = process.env.DISABLE_DEV_PROXY === '1'
+const devProxy: Record<string, any> = {}
+if (!disableDevProxy) {
+  devProxy['/api'] = {
     target: devApiProxyTarget,
     changeOrigin: true,
     ws: true
-  },
-  '/ws': {
+  }
+  devProxy['/ws'] = {
     target: devWsProxyTarget,
     changeOrigin: true,
     ws: true
   }
-}
-
-if (INSIDE_POWERX) {
-  devProxy[`/_p/${pluginId}/api`] = {
-    target: devApiProxyTarget,
-    changeOrigin: true
+  if (INSIDE_POWERX) {
+    devProxy[`/_p/${pluginId}/api`] = {
+      target: devApiProxyTarget,
+      changeOrigin: true
+    }
   }
 }
 

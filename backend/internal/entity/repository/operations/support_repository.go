@@ -7,7 +7,7 @@ import (
 
 	opmodels "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/operations"
 	repository "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -34,7 +34,7 @@ func NewSupportRepository(db *gorm.DB) *SupportRepository {
 // UpsertChannel saves a support channel configuration.
 func (r *SupportRepository) UpsertChannel(ctx context.Context, channel *opmodels.SupportChannel) (*opmodels.SupportChannel, error) {
 	if channel.ID == "" {
-		channel.ID = uuid.NewString()
+		channel.ID = utils.NewUUID()
 	}
 	channel.UpdatedAt = time.Now().UTC()
 	if channel.CreatedAt.IsZero() {
@@ -75,7 +75,7 @@ func (r *SupportRepository) DeleteChannels(ctx context.Context, pluginID string,
 // CreateTicket creates a support ticket record.
 func (r *SupportRepository) CreateTicket(ctx context.Context, ticket *opmodels.SupportTicket) (*opmodels.SupportTicket, error) {
 	if ticket.ID == "" {
-		ticket.ID = uuid.NewString()
+		ticket.ID = utils.NewUUID()
 	}
 	if ticket.CreatedAt.IsZero() {
 		ticket.CreatedAt = time.Now().UTC()
@@ -144,7 +144,7 @@ func (r *SupportRepository) ListTickets(ctx context.Context, pluginID string) ([
 // UpsertReadinessItem inserts or updates readiness checklist item.
 func (r *SupportRepository) UpsertReadinessItem(ctx context.Context, item *opmodels.ReadinessChecklistItem) (*opmodels.ReadinessChecklistItem, error) {
 	if item.ID == "" {
-		item.ID = uuid.NewString()
+		item.ID = utils.NewUUID()
 	}
 	item.UpdatedAt = time.Now().UTC()
 	if item.CreatedAt.IsZero() {

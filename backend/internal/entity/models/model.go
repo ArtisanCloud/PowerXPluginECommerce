@@ -27,6 +27,7 @@ type BaseNoTenantModel struct {
 const (
 	TablePluginTenantExt                 = "plugin_tenant_ext"
 	TableCustomer                        = "customers"
+	TableCustomerAccount                 = "customer_accounts"
 	TableTemplate                        = "template"
 	TablePluginCredentials               = "plugin_credentials"
 	TablePrivacyDataClassifications      = "privacy_data_classifications"

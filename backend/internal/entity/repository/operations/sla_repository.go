@@ -7,7 +7,7 @@ import (
 
 	opmodels "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/operations"
 	repository "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -39,7 +39,7 @@ func (r *SLARepository) UpsertProfile(ctx context.Context, profile *opmodels.SLA
 	}
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		if profile.ID == "" {
-			profile.ID = uuid.NewString()
+			profile.ID = utils.NewUUID()
 		}
 		if profile.CreatedAt.IsZero() {
 			profile.CreatedAt = now
@@ -128,7 +128,7 @@ func (r *SLARepository) UpsertReadinessItem(ctx context.Context, item *opmodels.
 	}
 	now := time.Now().UTC()
 	if item.ID == "" {
-		item.ID = uuid.NewString()
+		item.ID = utils.NewUUID()
 	}
 	if item.CreatedAt.IsZero() {
 		item.CreatedAt = now

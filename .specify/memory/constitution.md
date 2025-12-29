@@ -20,6 +20,7 @@ rulesets:
   # 后端顶层
   - rulesets/crud_http.yaml
   - rulesets/crud_grpc.yaml
+  - rulesets/plugin_rbac.yaml
   - rulesets/sts.yaml
 
   # 前端顶层
@@ -86,6 +87,12 @@ rulesets:
 - 依赖最小化，优先模板栈（Go + Nuxt）；发布前清理死代码。
 - 交付必须更新文档/清单，并通过 `make release && make package-release`（或 CI 等价）打包。
 - 破坏性变更需 **SemVer** 升级并提供迁移指南。
+
+### VI. Unified Plugin RBAC（Delegated ↔ Standalone）
+
+- RBAC 定义遵循 docs/plan/007-standalone-iam-rbac（`plugin/resource/action` 三元组），统一由各域 `RBACEntries` 暴露并在 `/api/v1/admin/rbac`/manifest 中输出。
+- Delegated 模式由宿主颁发 Token；Standalone 模式使用本地 IAM，同一套 scope/角色在两种模式间可互转（`POWERX_RBAC_DELEGATE` / `POWERX_PROXY` 控制）。
+- 禁止发明额外 RBAC 配置文件或在 Handler 层硬编码权限判断；一切鉴权均通过中间件 + Manifest。
 
 ## Operational Constraints
 

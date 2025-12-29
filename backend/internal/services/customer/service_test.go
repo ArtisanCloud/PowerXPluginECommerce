@@ -10,7 +10,7 @@ import (
 	customermodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/customer"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -211,7 +211,7 @@ func newTestService(t *testing.T) *Service {
 func newTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 	models.ForceSchemaForTests("")
-	dsn := fmt.Sprintf("file:customer_service_%s?mode=memory&cache=shared", uuid.NewString())
+	dsn := fmt.Sprintf("file:customer_service_%s?mode=memory&cache=shared", utils.NewUUID())
 	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{DisableForeignKeyConstraintWhenMigrating: true})
 	require.NoError(t, err)
 	require.NoError(t, db.AutoMigrate(&customermodel.Customer{}))

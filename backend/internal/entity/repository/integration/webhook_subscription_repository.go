@@ -9,7 +9,7 @@ import (
 	model "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/integration"
 	repository "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -46,7 +46,7 @@ func (r *WebhookSubscriptionRepository) Upsert(ctx context.Context, sub *model.W
 		sub.Status = model.WebhookStatusActive
 	}
 	if sub.ID == "" {
-		sub.ID = uuid.NewString()
+		sub.ID = utils.NewUUID()
 	}
 
 	err := r.WithTenantTx(ctx, sub.TenantUuid, func(tx *gorm.DB) error {

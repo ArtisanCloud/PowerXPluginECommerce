@@ -12,7 +12,7 @@ import (
 	dbm "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/marketplace"
 	mrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/marketplace"
 	obs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/marketplace"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -358,7 +358,7 @@ func (s *ListingService) SubmitForReview(ctx context.Context, tenantID, listingI
 	}
 
 	version := &dbm.ListingVersion{
-		ID:          uuid.NewString(),
+		ID:          utils.NewUUID(),
 		ListingID:   listing.ID,
 		TenantUuid:  tenantID,
 		Version:     coalesce(listing.Version, "draft"),
@@ -644,7 +644,7 @@ func coalesceID(id string) string {
 	if strings.TrimSpace(id) != "" {
 		return id
 	}
-	return uuid.NewString()
+	return utils.NewUUID()
 }
 
 func coalesce(value, fallback string) string {

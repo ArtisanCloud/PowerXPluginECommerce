@@ -11,6 +11,7 @@ import (
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http"
 	middleware2 "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/middleware"
+	miniappapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/miniapp"
 	publicauth "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/public"
 
 	"github.com/gin-gonic/gin"
@@ -112,6 +113,11 @@ func (r *Router) setupRoutes() {
 	rbacCfg := r.buildRBAC()
 
 	publicauth.RegisterAuthRoutes(r.engine.Group(prefix), r.deps)
+
+	// Mini-app routes are public (tenant-scoped) and should not inherit admin JWT/RBAC requirements.
+	miniAppGroup := r.engine.Group(prefix)
+	miniAppGroup.Use(middleware2.RequestTrace())
+	miniappapi.RegisterRoutes(miniAppGroup, r.deps)
 
 	// 使用 API 注册器注册所有路由（保持你现有的注册逻辑）
 	apiRegistry := http.NewRegistry(r.engine, r.deps)

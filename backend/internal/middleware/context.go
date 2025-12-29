@@ -19,14 +19,24 @@ type TenantContext struct {
 	PolicyVersion string   `json:"policy_version"`
 }
 
+// CustomerContext 存放 mini-app 客户信息。
+type CustomerContext struct {
+	TenantUUID string   `json:"tenant_uuid"`
+	CustomerID string   `json:"customer_id"`
+	Roles      []string `json:"roles"`
+}
+
 const (
-	ctxKeyTenant = "tenant_ctx"
-	ctxKeyToken  = "raw_bearer_token"
+	ctxKeyTenant   = "tenant_ctx"
+	ctxKeyToken    = "raw_bearer_token"
+	ctxKeyCustomer = "customer_ctx"
 )
 
 type tenantUUIDContextKey struct{}
+type customerContextKey struct{}
 
 var ctxKeyTenantUUID = tenantUUIDContextKey{}
+var ctxKeyCustomerCtx = customerContextKey{}
 
 var ErrTenantMissing = errors.New("tenant context missing")
 
@@ -51,6 +61,37 @@ func GetRawBearerToken(c *gin.Context) (string, bool) {
 	}
 	s, ok := v.(string)
 	return s, ok && s != ""
+}
+
+// SetCustomerContext stores customer info on gin context.
+func SetCustomerContext(c *gin.Context, cc CustomerContext) {
+	if c == nil {
+		return
+	}
+	c.Set(ctxKeyCustomer, cc)
+	if cc.CustomerID != "" {
+		ctx := context.WithValue(c.Request.Context(), ctxKeyCustomerCtx, cc)
+		c.Request = c.Request.WithContext(ctx)
+	}
+}
+
+// GetCustomerContext retrieves customer context.
+func GetCustomerContext(c *gin.Context) (CustomerContext, bool) {
+	if v, ok := c.Get(ctxKeyCustomer); ok {
+		if cc, ok := v.(CustomerContext); ok {
+			return cc, true
+		}
+	}
+	if c.Request != nil {
+		if ctx := c.Request.Context(); ctx != nil {
+			if v := ctx.Value(ctxKeyCustomerCtx); v != nil {
+				if cc, ok := v.(CustomerContext); ok {
+					return cc, true
+				}
+			}
+		}
+	}
+	return CustomerContext{}, false
 }
 
 // ContextWithTenantUUID stores tenant UUID into a standard context.
@@ -95,6 +136,19 @@ func RequireTenantUUID(ctx context.Context) (string, error) {
 		return tenantUUID, nil
 	}
 	return "", ErrTenantMissing
+}
+
+// CustomerFromContext returns customer context if exists.
+func CustomerFromContext(ctx context.Context) (CustomerContext, bool) {
+	if ctx == nil {
+		return CustomerContext{}, false
+	}
+	if v := ctx.Value(ctxKeyCustomerCtx); v != nil {
+		if cc, ok := v.(CustomerContext); ok {
+			return cc, true
+		}
+	}
+	return CustomerContext{}, false
 }
 
 // Deprecated compatibility helpers —— convert numeric IDs into UUID strings if possible.

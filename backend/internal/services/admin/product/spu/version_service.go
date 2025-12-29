@@ -14,6 +14,7 @@ import (
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	productmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/product"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
@@ -231,7 +232,7 @@ func (s *VersionService) Rollback(ctx context.Context, spuID string, req Rollbac
 		now := time.Now().UTC()
 		sourceID := target.ID
 		newVersion := &productmodel.SPUVersion{
-			ID:                    uuidString(),
+			ID:                    utils.NewUUID(),
 			TenantUUID:            tenantID,
 			SPUID:                 spu.ID,
 			VersionNumber:         nextNumber,

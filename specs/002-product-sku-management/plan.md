@@ -76,3 +76,7 @@ web-admin/
 ## Complexity Tracking
 
 （无额外豁免需求）
+
+## Open Follow-ups
+
+- “关联 SKU”弹窗当前仍将 payload 数据直接渲染到 SPU 页面摘要，且 `listSpuSkus` API 仅返回版本 payload。需要新增真实的 `GET /admin/product/skus?spuId=` 查询并更新摘要组件只读 `product_skus` 数据源（新任务 T061）。

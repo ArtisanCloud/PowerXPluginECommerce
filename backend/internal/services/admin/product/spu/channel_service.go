@@ -12,6 +12,7 @@ import (
 	productrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/product"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
@@ -117,7 +118,7 @@ func (s *ChannelService) Upsert(ctx context.Context, spuID string, input Channel
 			First(&existing).Error
 		if err != nil {
 			if errors.Is(err, gorm.ErrRecordNotFound) {
-				payload.ID = uuidString()
+				payload.ID = utils.NewUUID()
 				payload.CreatedAt = now
 				payload.UpdatedAt = now
 				if err := tx.Create(&payload).Error; err != nil {

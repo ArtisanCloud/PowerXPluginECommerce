@@ -104,3 +104,7 @@
 - 虚拟 SKU：支持服务、数字商品等非实体 SKU。
 - BOM/组装：支持组合 SKU、BOM 结构，与生产/库存联动。
 - API Webhook：SKU 变更通知第三方系统。
+
+## 11. 实施现状备注
+- 2025-12 当前 web-admin 的 SKU 列表（`/product/skus`）与 SPU 编辑页仍使用 mock 数据，仅 SKU 生成弹窗写入真实 API。后续必须将列表、矩阵以及 SPU 内嵌区块改为调用 `/api/v1/admin/product/skus` 并展示实时结果。
+- SPU 编辑页需要展示“关联 SKU 摘要”，在保存后立即刷新，避免运营离开弹窗后无法确认结果。对应任务已在 `specs/002-product-sku-management/tasks.md` 中补充。

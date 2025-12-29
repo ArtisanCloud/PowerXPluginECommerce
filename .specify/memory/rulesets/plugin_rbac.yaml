@@ -1,0 +1,41 @@
+# Plugin RBAC Standard
+# Gate: PG-RBAC-STD-001
+kind: ruleset
+id: plugin_rbac
+version: 1.0.0
+summary: "插件必须复用 PowerX 的 plugin/resource/action RBAC 三元组，兼容宿主 Delegated 与 Standalone IAM 模式"
+requires:
+  - rulesets/crud_http.yaml
+  - rulesets/sts.yaml
+  - docs/plan/007-standalone-iam-rbac.md
+checks:
+  - id: rbac-route-map
+    desc: 所有 HTTP 域在 `backend/internal/transport/http/**/rbac.go` 中暴露 `RBACEntries`，供注册器注入统一中间件
+    assert:
+      type: grep
+      target: backend/internal/transport/http/**
+      pattern:
+        - "func RBACEntries"
+  - id: rbac-manifest-endpoint
+    desc: 管理端必须实现 `/api/v1/admin/rbac`，并由 manifest/RBAC 信息输出唯一权限源
+    assert:
+      type: grep
+      target: backend/internal/transport/http/admin/admin_handler.go
+      pattern:
+        - "GetRBACInfo"
+        - "loadRBACInfoFromFile"
+  - id: rbac-mode-switch
+    desc: 路由注册需支持 Delegated（宿主托管）与 Standalone（本地 IAM）双模式切换，依赖 `POWERX_RBAC_DELEGATE` / `POWERX_PROXY`
+    assert:
+      type: grep
+      target: backend/internal/router/router.go
+      pattern:
+        - "POWERX_RBAC_DELEGATE"
+        - "shouldDelegateToPowerX"
+        - "DelegateToPowerX"
+  - id: rbac-doc-alignment
+    desc: 仓库必须引用 Standalone IAM 规范（007-standalone-iam-rbac），确保 manifest/角色/权限对齐
+    assert:
+      type: path
+      target:
+        - docs/plan/007-standalone-iam-rbac.md

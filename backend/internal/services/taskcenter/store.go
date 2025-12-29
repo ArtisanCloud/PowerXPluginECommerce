@@ -5,7 +5,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 )
 
 // JobStatus represents a lightweight task progress snapshot returned to clients.
@@ -45,7 +45,7 @@ func (s *Store) Create(jobType string, metadata map[string]any) *JobStatus {
 	}
 	now := time.Now().UTC()
 	job := &JobStatus{
-		TaskID:    uuid.NewString(),
+		TaskID:    utils.NewUUID(),
 		Type:      jobType,
 		Status:    "queued",
 		CreatedAt: now,

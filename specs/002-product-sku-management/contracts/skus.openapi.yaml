@@ -42,12 +42,12 @@ paths:
             schema:
               $ref: '#/components/schemas/SkuUpsertRequest'
       responses:
-        '202':
-          description: Accepted bulk task id
+        '201':
+          description: Created SKUs summary
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/BulkTaskResponse'
+                $ref: '#/components/schemas/SkuUpsertResponse'
   /products/spus/{spuId}/skus/generate:
     post:
       summary: Run SKU generator for an SPU
@@ -102,6 +102,44 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/BulkTask'
+  /products/skus/bulk-tasks/{taskId}/approval:
+    post:
+      summary: Approve or reject a pending bulk task
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BulkTaskApprovalDecision'
+      responses:
+        '200':
+          description: Updated task payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkTask'
+  /products/skus/bulk-tasks/{taskId}/retry:
+    post:
+      summary: Retry a failed bulk task
+      parameters:
+        - in: path
+          name: taskId
+          required: true
+          schema:
+            type: string
+      responses:
+        '202':
+          description: Task restarted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BulkTaskResponse'
   /products/skus/import:
     post:
       summary: Import SKU fields via template
@@ -184,7 +222,150 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/SkuInventory'
+                $ref: '#/components/schemas/SkuInventorySnapshot'
+  /products/skus/{skuId}/barcodes:
+    post:
+      summary: Generate or validate barcodes for SKU
+      parameters:
+        - in: path
+          name: skuId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BarcodeGenerateRequest'
+      responses:
+        '200':
+          description: Barcode generation result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BarcodeBatchResult'
+  /products/skus/{skuId}/serials:
+    get:
+      summary: List serial or batch records
+      parameters:
+        - in: path
+          name: skuId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: batch
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: integer
+            default: 100
+      responses:
+        '200':
+          description: Serial record list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SerialRecord'
+    post:
+      summary: Create or update serial record
+      parameters:
+        - in: path
+          name: skuId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SerialRecordInput'
+      responses:
+        '201':
+          description: Serial record payload
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SerialRecord'
+  /mini-app/products:
+    get:
+      summary: List published SPUs for mini-app clients
+      parameters:
+        - in: query
+          name: keyword
+          schema:
+            type: string
+          description: Filter by SPU code or name
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [draft, reviewing, published, archived]
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [one_time, subscription, bundle]
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Lightweight SPU list for mobile clients
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MiniAppProductListResponse'
+  /mini-app/products/{spuId}/skus:
+    get:
+      summary: List SKUs for a SPU (mini-app consumption)
+      parameters:
+        - in: path
+          name: spuId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [draft, ready, online, offline]
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+      responses:
+        '200':
+          description: Tenant scoped SKU list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MiniAppSkuListResponse'
 components:
   schemas:
     SkuListResponse:
@@ -272,6 +453,11 @@ components:
                 items: { $ref: '#/components/schemas/SkuSpec' }
               preview_sku_code: { type: string }
               default_values: { $ref: '#/components/schemas/SkuDefaults' }
+              exists: { type: boolean }
+              selected: { type: boolean }
+              conflict_reasons:
+                type: array
+                items: { type: string }
     SkuUpsertRequest:
       type: object
       properties:
@@ -279,6 +465,28 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Sku'
+    SkuUpsertResponse:
+      type: object
+      properties:
+        created: { type: integer }
+        skipped:
+          type: array
+          items: { type: string }
+        summaries:
+          type: array
+          items:
+            $ref: '#/components/schemas/SkuSummary'
+    SkuSummary:
+      type: object
+      properties:
+        id: { type: string }
+        spu_id: { type: string }
+        sku_code: { type: string }
+        status: { type: string }
+        specs:
+          type: array
+          items:
+            $ref: '#/components/schemas/SkuSpec'
     BulkAdjustmentRequest:
       type: object
       required: [scope, operation]
@@ -310,8 +518,25 @@ components:
       type: object
       properties:
         task_id: { type: string }
+        task_type: { type: string }
+        scope:
+          type: object
+          additionalProperties: true
+        operation:
+          type: object
+          additionalProperties: true
         approval_required: { type: boolean }
+        approval_state: { type: string }
+        approval_reason: { type: string }
+        approval_threshold: { type: number }
         status: { type: string }
+        affected_count: { type: integer }
+        submitted_by: { type: string }
+        approved_by: { type: string }
+        error_report: { type: string, format: uri }
+        created_at: { type: string, format: date-time }
+        updated_at: { type: string, format: date-time }
+        approved_at: { type: string, format: date-time }
     BulkTask:
       allOf:
         - $ref: '#/components/schemas/BulkTaskResponse'
@@ -322,9 +547,18 @@ components:
               properties:
                 succeeded: { type: integer }
                 failed: { type: integer }
-            error_report:
-              type: string
-              format: uri
+            result:
+              type: object
+              additionalProperties: true
+    BulkTaskApprovalDecision:
+      type: object
+      required: [decision]
+      properties:
+        decision:
+          type: string
+          enum: [approve, reject]
+        note:
+          type: string
     ChannelMappingRequest:
       type: object
       required: [channel_code, channel_sku_id]
@@ -336,6 +570,7 @@ components:
         sync_mode: { type: string, enum: [push, pull, hybrid] }
         price_override: { type: object }
         media_override: { type: array, items: { $ref: '#/components/schemas/SkuMedia' } }
+        metadata: { type: object, additionalProperties: true }
     ChannelMapping:
       allOf:
         - $ref: '#/components/schemas/ChannelMappingRequest'
@@ -344,6 +579,7 @@ components:
             id: { type: string }
             last_error: { type: string }
             last_published_at: { type: string, format: date-time }
+            publish_task_id: { type: string }
     ChannelPublishRequest:
       type: object
       properties:
@@ -360,6 +596,73 @@ components:
         in_transit_qty: { type: integer }
         safety_stock: { type: integer }
         last_synced_at: { type: string, format: date-time }
+        alert_level: { type: string, enum: [alert, warning], description: "Indicates stock below threshold" }
+    SkuInventorySnapshot:
+      type: object
+      properties:
+        warehouses:
+          type: array
+          items:
+            $ref: '#/components/schemas/SkuInventory'
+        summary:
+          $ref: '#/components/schemas/SkuInventory'
+        last_synced_at: { type: string, format: date-time }
+        is_stale: { type: boolean }
+    BarcodeGenerateRequest:
+      type: object
+      properties:
+        mode:
+          type: string
+          enum: [auto, manual]
+          default: auto
+        prefix: { type: string }
+        count: { type: integer, default: 1 }
+        length: { type: integer, default: 12 }
+        codes:
+          type: array
+          items: { type: string }
+        label_template: { type: string }
+    BarcodeCheckResult:
+      type: object
+      properties:
+        barcode: { type: string }
+        unique: { type: boolean }
+        conflict_sku_id: { type: string }
+    BarcodeLabel:
+      type: object
+      properties:
+        barcode: { type: string }
+        svg: { type: string }
+    BarcodeBatchResult:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/BarcodeCheckResult'
+        labels:
+          type: array
+          items:
+            $ref: '#/components/schemas/BarcodeLabel'
+    SerialRecordInput:
+      type: object
+      required: [serial_no]
+      properties:
+        serial_no: { type: string }
+        batch_no: { type: string }
+        status: { type: string }
+        expires_at: { type: string, format: date-time }
+    SerialRecord:
+      type: object
+      properties:
+        id: { type: string }
+        sku_id: { type: string }
+        serial_no: { type: string }
+        batch_no: { type: string }
+        status: { type: string }
+        expires_at: { type: string, format: date-time }
+        audit_log_id: { type: string }
+        created_at: { type: string, format: date-time }
     PriceReference:
       type: object
       properties:
@@ -371,6 +674,45 @@ components:
             properties:
               min_qty: { type: integer }
               price: { type: number }
+    MiniAppProductListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MiniAppProductSummary'
+        page: { type: integer }
+        pageSize: { type: integer }
+        total: { type: integer }
+    MiniAppProductSummary:
+      type: object
+      properties:
+        id: { type: string }
+        code: { type: string }
+        name: { type: string }
+        type: { type: string }
+        status: { type: string }
+        updatedAt: { type: string, format: date-time }
+    MiniAppSkuListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/MiniAppSkuSummary'
+        page: { type: integer }
+        pageSize: { type: integer }
+        total: { type: integer }
+    MiniAppSkuSummary:
+      type: object
+      properties:
+        id: { type: string }
+        spuId: { type: string }
+        code: { type: string }
+        status: { type: string }
+        barcode: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
     Pagination:
       type: object
       properties:

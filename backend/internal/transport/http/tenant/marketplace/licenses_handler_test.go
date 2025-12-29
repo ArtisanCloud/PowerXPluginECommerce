@@ -14,10 +14,12 @@ import (
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models"
 	dbm "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/marketplace"
 	mrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/marketplace"
+	middleware "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	adminmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/admin_console"
 	opsmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/operations"
 	svc "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/marketplace"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
+	middleware2 "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
@@ -132,17 +134,23 @@ func TestLicenseHandler_Flow(t *testing.T) {
 	pricingRepo := mrepo.NewPricingRepository(db)
 	amount := 9.99
 	plan := &dbm.PricingPlan{
-		TenantUuid:  "1",
-		ListingID: "listing-1",
-		PlanCode:  "basic",
-		PlanType:  dbm.PricingPlanTypeSubscription,
-		Currency:  "USD",
-		Amount:    &amount,
-		Status:    "active",
+		TenantUuid: "1",
+		ListingID:  "listing-1",
+		PlanCode:   "basic",
+		PlanType:   dbm.PricingPlanTypeSubscription,
+		Currency:   "USD",
+		Amount:     &amount,
+		Status:     "active",
 	}
 	require.NoError(t, pricingRepo.CreatePlan(context.Background(), plan, nil))
 
 	router := gin.New()
+	router.Use(middleware2.DevSwitch(true, middleware.TenantContext{
+		TenantUUID:  "1",
+		UserID:      1,
+		Roles:       []string{"admin"},
+		Permissions: []string{"*"},
+	}))
 	RegisterRoutes(router.Group("/marketplace"), deps)
 
 	// Issue license

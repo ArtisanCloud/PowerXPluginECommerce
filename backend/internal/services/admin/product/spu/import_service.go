@@ -18,7 +18,7 @@ import (
 	productmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/product"
 	taskcenter "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/taskcenter"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"github.com/lib/pq"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -461,9 +461,9 @@ func (s *ImportService) emitAudit(ctx context.Context, tenantID, taskID, event s
 	}
 	body, _ := json.Marshal(payload)
 	entry := productmodel.SPUAuditLog{
-		ID:         uuid.NewString(),
+		ID:         utils.NewUUID(),
 		TenantUUID: tenantID,
-		SPUID:      uuidString(),
+		SPUID:      utils.NewUUID(),
 		EventType:  event,
 		Payload:    datatypes.JSON(body),
 		Operator:   actorFromContext(ctx),

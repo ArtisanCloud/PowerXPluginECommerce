@@ -10,7 +10,7 @@ import (
 	channelrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/channel_master"
 	channelobs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/channel/master"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -53,7 +53,7 @@ func (s *SyncHistoryService) TriggerManual(ctx context.Context, channelID string
 		triggerType = "manual"
 	}
 	history := &channelmodel.ChannelSyncHistory{
-		ID:          uuid.NewString(),
+		ID:          utils.NewUUID(),
 		ChannelID:   channelID,
 		TriggerType: triggerType,
 		TriggeredBy: actorFromContext(ctx),

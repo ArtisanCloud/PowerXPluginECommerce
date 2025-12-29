@@ -126,6 +126,9 @@ func MigratePluginModels(ctx context.Context, db *gorm.DB, includeIAM bool) erro
 	if err := ensureChannelMasterUniqueIndex(ctx, db); err != nil {
 		return err
 	}
+	if err := ensureChannelMetricUniqueIndex(ctx, db); err != nil {
+		return err
+	}
 	return ensureChannelRLSPolicies(ctx, db)
 }
 
@@ -226,6 +229,54 @@ func ensureChannelMasterUniqueIndex(ctx context.Context, db *gorm.DB) error {
 		return fmt.Errorf("create unique index %s failed: %w", idxName, err)
 	}
 	return nil
+}
+
+func ensureChannelMetricUniqueIndex(ctx context.Context, db *gorm.DB) error {
+	if db == nil {
+		return nil
+	}
+	if !strings.EqualFold(db.Dialector.Name(), "postgres") {
+		return nil
+	}
+	tableName := models.S(models.TableChannelMetrics)
+	tenantCol := quoteIdentifier("tenant_uuid")
+	channelCol := quoteIdentifier("channel_id")
+	windowCol := quoteIdentifier("window")
+	if err := dedupeChannelMetricScope(ctx, db, tableName); err != nil {
+		return fmt.Errorf("dedupe channel metrics failed: %w", err)
+	}
+	const idxName = "uniq_channel_metric_scope"
+	createSQL := fmt.Sprintf(`CREATE UNIQUE INDEX IF NOT EXISTS %s ON %s(%s, %s, %s)`,
+		quoteIdentifier(idxName), tableName, tenantCol, channelCol, windowCol)
+	if err := db.WithContext(ctx).Exec(createSQL).Error; err != nil {
+		return fmt.Errorf("create unique index %s failed: %w", idxName, err)
+	}
+	return nil
+}
+
+func dedupeChannelMetricScope(ctx context.Context, db *gorm.DB, tableName string) error {
+	tenantCol := quoteIdentifier("tenant_uuid")
+	channelCol := quoteIdentifier("channel_id")
+	windowCol := quoteIdentifier("window")
+	updatedCol := quoteIdentifier("updated_at")
+	createdCol := quoteIdentifier("created_at")
+	idCol := quoteIdentifier("id")
+	query := fmt.Sprintf(`
+DELETE FROM %s AS cm
+USING (
+	SELECT ctid
+	FROM (
+		SELECT ctid,
+			ROW_NUMBER() OVER (
+				PARTITION BY %s, %s, %s
+				ORDER BY %s DESC NULLS LAST, %s DESC NULLS LAST, %s DESC
+			) AS rn
+		FROM %s
+	) ranked
+	WHERE ranked.rn > 1
+) dup
+WHERE cm.ctid = dup.ctid`, tableName, tenantCol, channelCol, windowCol, updatedCol, createdCol, idCol, tableName)
+	return db.WithContext(ctx).Exec(query).Error
 }
 
 func resolveTableName(db *gorm.DB, table interface{}) (string, error) {

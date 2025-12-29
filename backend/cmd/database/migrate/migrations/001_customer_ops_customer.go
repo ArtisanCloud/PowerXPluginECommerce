@@ -5,4 +5,5 @@ import customermodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-pl
 // CustomerOpsCustomerTables enumerates 001-customer-ops-customer models.
 var CustomerOpsCustomerTables = []interface{}{
 	&customermodel.Customer{},
+	&customermodel.CustomerAccount{},
 }

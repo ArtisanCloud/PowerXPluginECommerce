@@ -10,7 +10,23 @@
           管理商品SKU和变体信息
         </p>
       </div>
-      <div class="flex space-x-2">
+      <div class="flex flex-wrap justify-end gap-2">
+        <UButton
+          variant="outline"
+          color="neutral"
+          icon="i-heroicons-arrow-up-tray"
+          @click="openImportModal"
+        >
+          {{ $t('product.sku.batchImport') }}
+        </UButton>
+        <UButton
+          variant="outline"
+          color="neutral"
+          icon="i-heroicons-arrow-down-tray"
+          @click="openExportModal"
+        >
+          {{ $t('product.sku.batchExport') }}
+        </UButton>
         <UButton
           color="primary"
           icon="i-heroicons-plus"
@@ -51,6 +67,14 @@
       </div>
     </UCard>
 
+    <BulkTaskStatusList
+      class="mb-6"
+      :tasks="bulkTasks"
+      :selected-task-id="highlightedTaskId || undefined"
+      @select="handleTaskSelect"
+      @review="handleReviewRequest"
+    />
+
     <!-- 批量操作栏 -->
     <div class="flex justify-between items-center mb-4">
       <div class="flex items-center space-x-2">
@@ -61,25 +85,12 @@
         <UButton
           v-if="selectedSkus.length > 0"
           color="primary"
-          variant="outline"
           size="sm"
-          @click="batchImport"
+          icon="i-heroicons-adjustments-horizontal"
+          @click="openBulkAdjustModal"
         >
-          {{ $t('product.sku.batchImport') }}
+          {{ $t('product.sku.bulkAdjust') }}
         </UButton>
-        <UButton
-          v-if="selectedSkus.length > 0"
-          color="primary"
-          variant="outline"
-          size="sm"
-          @click="batchExport"
-        >
-          {{ $t('product.sku.batchExport') }}
-        </UButton>
-      </div>
-      <div class="flex space-x-2">
-        <UButton variant="outline" icon="i-heroicons-arrow-down-tray">{{ $t('common.export') }}</UButton>
-        <UButton variant="outline" icon="i-heroicons-arrow-up-tray">{{ $t('common.import') }}</UButton>
       </div>
     </div>
 
@@ -151,19 +162,58 @@
     <!-- 分页 -->
     <div class="flex justify-between items-center mt-4">
       <div class="text-sm text-gray-600 dark:text-gray-400">
-        {{ $t('common.total') }} {{ skus.length }} {{ $t('product.sku.skus') }}
+        {{ $t('common.total') }} {{ totalSkus || skus.length }} {{ $t('product.sku.skus') }}
       </div>
       <UPagination
         v-model="page"
         :page-count="pageCount"
-        :total="filteredSkus.length"
+        :total="totalSkus || filteredSkus.length"
       />
     </div>
+
+    <!-- 批量导入模态框 -->
+    <UModal
+      v-model:open="showImportModal"
+      :title="$t('product.sku.batchImport')"
+      :close="{ onClick: () => closeImportModal() }"
+      :ui="{
+        content: 'w-full sm:max-w-4xl',
+        body: 'p-0',
+      }"
+    >
+      <template #body>
+        <div class="p-4 sm:p-5">
+          <BulkImportUploader @submitted="handleImportSubmitted" />
+        </div>
+      </template>
+    </UModal>
+
+    <!-- 批量导出模态框 -->
+    <UModal
+      v-model:open="showExportModal"
+      :title="$t('product.sku.batchExport')"
+      :close="{ onClick: () => closeExportModal() }"
+      :ui="{
+        content: 'w-full sm:max-w-3xl',
+        body: 'p-0',
+      }"
+    >
+      <template #body>
+        <div class="p-4 sm:p-5">
+          <BulkExportPanel
+            :keyword="searchQuery"
+            :status="statusFilter"
+            @exported="handleExportCompleted"
+          />
+        </div>
+      </template>
+    </UModal>
 
     <!-- 创建SKU模态框 -->
     <UModal
       v-model:open="showCreateModal"
       :title="$t('product.sku.add')"
+      :description="$t('product.sku.createDescription')"
       :close="{ onClick: () => closeCreateModal() }"
       :ui="{
         content: 'w-full sm:max-w-4xl',
@@ -188,10 +238,13 @@
               </UFormField>
 
               <UFormField :label="$t('product.sku.spu')">
-                <USelect
-                  v-model="currentSku.spu"
-                  :options="spuOptions"
+                <USelectMenu
+                  v-model="currentSku.spuId"
+                  :items="spuOptions"
+                  value-key="value"
+                  label-key="label"
                   :placeholder="$t('product.sku.selectSpu')"
+                  :portal="false"
                 />
               </UFormField>
 
@@ -318,7 +371,7 @@
       <template #footer>
         <div class="flex justify-end space-x-2">
           <UButton variant="ghost" @click="closeCreateModal">{{ $t('common.cancel') }}</UButton>
-          <UButton color="primary" @click="saveSku">{{ $t('common.save') }}</UButton>
+          <UButton color="primary" :loading="savingSku" @click="saveSku">{{ $t('common.save') }}</UButton>
         </div>
       </template>
     </UModal>
@@ -359,7 +412,9 @@
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                   {{ $t('product.sku.spu') }}
                 </label>
-                <p class="text-gray-900 dark:text-white">{{ currentSku.spu }}</p>
+                <p class="text-gray-900 dark:text-white">
+                  {{ getSpuLabel(currentSku.spuId) || currentSku.spu || "-" }}
+                </p>
               </div>
 
               <div>
@@ -483,18 +538,51 @@
         </div>
       </template>
     </UModal>
+
+    <BulkAdjustModal
+      v-model="showBulkAdjustModal"
+      :selection="bulkSelection"
+      @submitted="handleBulkTaskSubmitted"
+    />
+    <ApprovalDrawer
+      v-model="approvalDrawerOpen"
+      :task="approvalTarget"
+      :loading="approvalProcessing"
+      @approve="(note) => handleApprovalDecision('approve', note)"
+      @reject="(note) => handleApprovalDecision('reject', note)"
+    />
   </div>
 </template>
 
 <script setup lang="ts">
 import { h } from "vue";
+import { storeToRefs } from "pinia";
 import type { TableColumn } from "@nuxt/ui";
+import { useToastAlert } from "~/composables/useToastAlert";
+import BulkAdjustModal from "~/components/product/sku/BulkAdjustModal.vue";
+import BulkImportUploader from "~/components/product/sku/BulkImportUploader.vue";
+import BulkExportPanel from "~/components/product/sku/BulkExportPanel.vue";
+import BulkTaskStatusList from "~/components/product/sku/BulkTaskStatusList.vue";
+import ApprovalDrawer from "~/components/product/sku/ApprovalDrawer.vue";
+import { useSkuBulkTaskTracker } from "~/composables/useSkuBulkTaskTracker";
+import { useSkuBulkActions } from "~/composables/useSkuBulkActions";
+import { useSkuApi } from "~/composables/api/useSku";
+import { useSpuApi } from "~/composables/api/useSpu";
+import { useProductSkuStore } from "~/stores/productSku";
+import type { ProductSku, SkuBulkTask, SkuGeneratorDefaults, SkuUpsertRequest } from "~/types/product/sku";
 
 const { t } = useI18n();
 const router = useRouter();
+const toast = useToastAlert();
+const bulkActions = useSkuBulkActions();
+const { tasks: bulkTasks } = useSkuBulkTaskTracker();
+const skuApi = useSkuApi();
+const spuApi = useSpuApi();
+const skuStore = useProductSkuStore();
+const { items: storeSkus, total, loading: storeLoading } = storeToRefs(skuStore);
 
 // 状态管理
-const loading = ref(false);
+const loading = computed(() => storeLoading.value);
 const page = ref(1);
 const pageSize = ref(10);
 const searchQuery = ref("");
@@ -502,17 +590,26 @@ const statusFilter = ref("");
 const categoryFilter = ref("");
 const brandFilter = ref("");
 const selectAll = ref(false);
-const selectedSkus = ref([]);
+const selectedSkus = ref<Sku[]>([]);
 const showCreateModal = ref(false);
 const showDetailModal = ref(false);
+const showBulkAdjustModal = ref(false);
+const showImportModal = ref(false);
+const showExportModal = ref(false);
+const approvalDrawerOpen = ref(false);
+const approvalTarget = ref<SkuBulkTask | null>(null);
+const approvalProcessing = ref(false);
+const highlightedTaskId = ref<string | undefined>(undefined);
 const activeTab = ref("basic");
 const detailTab = ref("basic");
+const savingSku = ref(false);
 
 // 当前编辑的SKU
 const currentSku = ref({
   id: "",
   skuCode: "",
   barcode: "",
+  spuId: "",
   spu: "",
   specifications: "",
   description: "",
@@ -545,6 +642,17 @@ const detailTabs = [
   { label: t("product.sku.constraints"), value: "constraints" },
 ];
 
+const totalSkus = computed(() => total.value || 0);
+const spuOptions = ref<{ label: string; value: string }[]>([]);
+const spuLookup = ref<Record<string, string>>({});
+
+const getSpuLabel = (spuId?: string) => {
+  if (!spuId) {
+    return "";
+  }
+  return spuLookup.value[spuId] ?? "";
+};
+
 // 筛选选项
 const statusOptions = [
   { label: t("common.all"), value: "" },
@@ -566,17 +674,12 @@ const brandOptions = [
   { label: "Huawei", value: "Huawei" }
 ];
 
-const spuOptions = [
-  { label: "iPhone 15 Pro", value: "IP15P" },
-  { label: "MacBook Pro", value: "MBP" },
-  { label: "AirPods Pro", value: "APP" }
-];
-
 // SKU数据类型
 type Sku = {
   id: string;
   skuCode: string;
   barcode: string;
+  spuId?: string;
   spu: string;
   specifications: string;
   description: string;
@@ -593,74 +696,227 @@ type Sku = {
   purchaseLimit: number;
   status: "active" | "inactive";
   inventoryStatus: "inStock" | "lowStock";
+  entity?: ProductSku;
 };
 
 // SKU数据
-const skus = ref<Sku[]>([
-  {
-    id: "SKU001",
-    skuCode: "IP15P-128-BLK",
-    barcode: "1234567890123",
-    spu: "iPhone 15 Pro",
-    specifications: "128GB, 黑色",
-    description: "iPhone 15 Pro 128GB 黑色版本",
-    price: 8999,
-    availableStock: 20,
-    safetyStock: 5,
-    warningThreshold: 10,
-    enableSerialNumber: true,
-    enableBatchNumber: false,
-    weight: 0.195,
-    volume: 0.0001,
-    packageDimensions: "150x80x20mm",
-    moq: 1,
-    purchaseLimit: 5,
-    status: "active",
-    inventoryStatus: "inStock"
-  },
-  {
-    id: "SKU002",
-    skuCode: "IP15P-256-BLK",
-    barcode: "1234567890124",
-    spu: "iPhone 15 Pro",
-    specifications: "256GB, 黑色",
-    description: "iPhone 15 Pro 256GB 黑色版本",
-    price: 9999,
-    availableStock: 15,
-    safetyStock: 5,
-    warningThreshold: 10,
-    enableSerialNumber: true,
-    enableBatchNumber: false,
-    weight: 0.195,
-    volume: 0.0001,
-    packageDimensions: "150x80x20mm",
-    moq: 1,
-    purchaseLimit: 5,
-    status: "active",
-    inventoryStatus: "inStock"
-  },
-  {
-    id: "SKU003",
-    skuCode: "MBP-512-SLV",
-    barcode: "1234567890125",
-    spu: "MacBook Pro",
-    specifications: "512GB, 银色",
-    description: "MacBook Pro 512GB 银色版本",
-    price: 12999,
-    availableStock: 8,
-    safetyStock: 3,
-    warningThreshold: 5,
-    enableSerialNumber: true,
-    enableBatchNumber: false,
-    weight: 1.5,
-    volume: 0.001,
-    packageDimensions: "300x220x20mm",
-    moq: 1,
-    purchaseLimit: 3,
-    status: "active",
-    inventoryStatus: "lowStock"
+const skus = computed(() => storeSkus.value.map((item) => formatSkuRow(item)));
+
+const mapApiStatusToUi = (status?: string): "active" | "inactive" => {
+  if (!status) {
+    return "inactive";
   }
-]);
+  return status === "online" || status === "ready" ? "active" : "inactive";
+};
+
+const mapUiStatusToApi = (status?: string) => {
+  if (status === "active") {
+    return "online";
+  }
+  if (status === "inactive") {
+    return "offline";
+  }
+  return undefined;
+};
+
+const slugifyToken = (value: string, fallback: string) => {
+  if (!value) {
+    return fallback;
+  }
+  const slug = value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug || fallback;
+};
+
+const buildManualSpecs = (input?: string) => {
+  if (!input) {
+    return [];
+  }
+  const tokens = input
+    .split(/[\n,;\\/，、]+/)
+    .map((token) => token.trim())
+    .filter(Boolean);
+  return tokens.map((token, index) => {
+    const [rawKey, rawValue] = token.split(/[:：=]/);
+    const hasPair = typeof rawValue !== "undefined";
+    const specName = hasPair ? rawKey.trim() || `attr-${index + 1}` : `attr-${index + 1}`;
+    const valueName = hasPair ? rawValue.trim() : rawKey.trim();
+    const resolvedValue = valueName || specName;
+    const specId = slugifyToken(specName, `manual-${index + 1}`);
+    const valueId = slugifyToken(resolvedValue, `${specId}-${index + 1}`);
+    return {
+      specId,
+      specName,
+      valueId,
+      valueName: resolvedValue,
+    };
+  });
+};
+
+const buildDefaultValues = (): SkuGeneratorDefaults => {
+  const defaults: SkuGeneratorDefaults = {};
+  if (currentSku.value.moq) {
+    defaults.minOrderQty = currentSku.value.moq;
+  }
+  if (currentSku.value.weight) {
+    defaults.weight = Number(currentSku.value.weight);
+  }
+  if (currentSku.value.packageDimensions) {
+    defaults.dimensions = currentSku.value.packageDimensions;
+  }
+  return defaults;
+};
+
+const formatSpecs = (specs?: ProductSku["specs"]) => {
+  if (!specs?.length) {
+    return "";
+  }
+  return specs
+    .map((spec) => {
+      const name = spec.specName || spec.specId;
+      const value = spec.valueName || spec.valueId;
+      if (name && value) {
+        return `${name}: ${value}`;
+      }
+      return value || name || "";
+    })
+    .filter(Boolean)
+    .join(" / ");
+};
+
+const normalizeApiSku = (item: any): ProductSku => {
+  if (!item) {
+    return {
+      id: "",
+      tenantUuid: "",
+      spuId: "",
+      skuCode: "",
+      specs: [],
+      status: "draft",
+    };
+  }
+  return {
+    id: item.id ?? "",
+    tenantUuid: item.tenant_uuid ?? item.tenantUuid ?? "",
+    spuId: item.spu_id ?? item.spuId ?? "",
+    skuCode: item.sku_code ?? item.skuCode ?? "",
+    specs: item.specs ?? [],
+    barcode: item.barcode,
+    status: item.status ?? "draft",
+    minOrderQty: item.min_order_qty ?? item.minOrderQty,
+    priceRefs: item.price_refs ?? item.priceRefs,
+    logistics: item.logistics ?? item.default_values ?? item.logisticsSnapshot,
+    inventory: item.inventory ?? [],
+    createdAt: item.created_at ?? item.createdAt,
+    updatedAt: item.updated_at ?? item.updatedAt,
+  };
+};
+
+const formatSkuRow = (rawItem: ProductSku | any): Sku => {
+  const item = normalizeApiSku(rawItem);
+  const inventory = item.inventory?.[0];
+  const availableStock = inventory?.availableQty ?? 0;
+  const safetyStock = inventory?.safetyStock ?? 0;
+  const priceRef = item.priceRefs?.[0];
+  const priceTier = priceRef?.tiers?.[0];
+  const label = getSpuLabel(item.spuId) || item.spuId;
+  const weight = item.logistics?.weight ?? 0;
+  const packageDimensions = item.logistics?.dimensions ?? "";
+  return {
+    id: item.id,
+    skuCode: item.skuCode,
+    barcode: item.barcode ?? "",
+    spuId: item.spuId,
+    spu: label,
+    specifications: formatSpecs(item.specs),
+    description: "",
+    price: priceTier?.price ?? 0,
+    availableStock,
+    safetyStock,
+    warningThreshold: safetyStock,
+    enableSerialNumber: false,
+    enableBatchNumber: false,
+    weight,
+    volume: 0,
+    packageDimensions,
+    moq: item.minOrderQty ?? 1,
+    purchaseLimit: 0,
+    status: mapApiStatusToUi(item.status),
+    inventoryStatus: availableStock <= safetyStock ? "lowStock" : "inStock",
+    entity: item,
+  };
+};
+
+const loadSkus = async () => {
+  try {
+    await skuStore.fetchList({
+      status: mapUiStatusToApi(statusFilter.value) || undefined,
+      page: page.value,
+      pageSize: pageSize.value,
+    });
+    selectAll.value = false;
+    selectedSkus.value = [];
+  } catch (error: any) {
+    toast.add({
+      title: t("message.error"),
+      description: error?.message ?? "Load SKU failed",
+      color: "red",
+    });
+  }
+};
+
+const loadSpuOptions = async () => {
+  try {
+    const response = await spuApi
+      .listSpus({
+        status: "published",
+        pageSize: 100,
+      })
+      .catch(() => null);
+    const items = response?.items ?? [];
+    const options = items.map((item) => ({
+      label: item.name || item.code,
+      value: item.id,
+    }));
+    const lookup: Record<string, string> = {};
+    options.forEach((opt) => {
+      lookup[opt.value] = opt.label;
+    });
+    spuOptions.value = options;
+    spuLookup.value = lookup;
+  } catch (error: any) {
+    toast.add({
+      title: t("message.error"),
+      description: error?.message ?? "Load SPU failed",
+      color: "red",
+    });
+  }
+};
+
+onMounted(() => {
+  loadSpuOptions();
+  loadSkus();
+});
+
+watch(
+  () => [page.value, pageSize.value],
+  () => {
+    loadSkus();
+  },
+);
+
+watch(
+  () => statusFilter.value,
+  () => {
+    const changed = page.value !== 1;
+    page.value = 1;
+    if (!changed) {
+      loadSkus();
+    }
+  },
+);
 
 // 计算属性
 const filteredSkus = computed(() => {
@@ -678,9 +934,13 @@ const filteredSkus = computed(() => {
   });
 });
 
-const pageCount = computed(() =>
-  Math.ceil(filteredSkus.value.length / pageSize.value)
-);
+const pageCount = computed(() => {
+  if (!pageSize.value) {
+    return 1;
+  }
+  const total = totalSkus.value || filteredSkus.value.length || 0;
+  return Math.max(1, Math.ceil(total / pageSize.value));
+});
 
 // 列定义
 const columns = computed<TableColumn<Sku>[]>(() => [
@@ -706,9 +966,53 @@ const columns = computed<TableColumn<Sku>[]>(() => [
   { id: "actions", header: t("product.sku.actions") },
 ]);
 
+const blurActiveElement = () => {
+  if (typeof document === "undefined") {
+    return;
+  }
+  const active = document.activeElement as HTMLElement | null;
+  if (active && typeof active.blur === "function") {
+    active.blur();
+  }
+};
+
+const openImportModal = () => {
+  blurActiveElement();
+  showImportModal.value = true;
+};
+
+const closeImportModal = () => {
+  blurActiveElement();
+  showImportModal.value = false;
+};
+
+const openExportModal = () => {
+  blurActiveElement();
+  showExportModal.value = true;
+};
+
+const closeExportModal = () => {
+  blurActiveElement();
+  showExportModal.value = false;
+};
+
+const handleImportSubmitted = (taskId?: string) => {
+  highlightedTaskId.value = taskId;
+  closeImportModal();
+};
+
+const handleExportCompleted = (taskId?: string) => {
+  highlightedTaskId.value = taskId;
+  closeExportModal();
+};
+
 // 方法
 const searchSkus = () => {
-  // 搜索逻辑已在computed中实现
+  const changed = page.value !== 1;
+  page.value = 1;
+  if (!changed) {
+    loadSkus();
+  }
 };
 
 const resetFilters = () => {
@@ -716,6 +1020,11 @@ const resetFilters = () => {
   statusFilter.value = "";
   categoryFilter.value = "";
   brandFilter.value = "";
+  const changed = page.value !== 1;
+  page.value = 1;
+  if (!changed) {
+    loadSkus();
+  }
 };
 
 const toggleSelectAll = () => {
@@ -731,6 +1040,7 @@ const openCreateModal = () => {
     id: "",
     skuCode: "",
     barcode: "",
+    spuId: "",
     spu: "",
     specifications: "",
     description: "",
@@ -767,6 +1077,7 @@ const closeDetailModal = () => {
     id: "",
     skuCode: "",
     barcode: "",
+    spuId: "",
     spu: "",
     specifications: "",
     description: "",
@@ -786,6 +1097,10 @@ const closeDetailModal = () => {
 };
 
 const viewSku = (sku: Sku) => {
+  if (sku.id) {
+    router.push(`/product/skus/${sku.id}`);
+    return;
+  }
   openDetailModal(sku);
 };
 
@@ -797,32 +1112,165 @@ const editSku = (sku: Sku) => {
 
 const deleteSku = (sku: Sku) => {
   if (confirm(`${t("message.confirm.delete")} SKU: ${sku.skuCode}?`)) {
-    skus.value = skus.value.filter(s => s.id !== sku.id);
+    // TODO: 接入真实删除接口
   }
 };
 
-const saveSku = () => {
-  // 这里应该调用API保存SKU
-  if (currentSku.value.id) {
-    // 更新现有SKU
-    const index = skus.value.findIndex(s => s.id === currentSku.value.id);
-    if (index !== -1) {
-      skus.value[index] = { ...currentSku.value };
+const saveSku = async () => {
+  if (savingSku.value) {
+    return;
+  }
+  const trimmedCode = currentSku.value.skuCode.trim();
+  if (!trimmedCode) {
+    toast.add({ title: t("product.sku.toast.codeRequired"), color: "error" });
+    return;
+  }
+  if (!currentSku.value.spuId) {
+    toast.add({ title: t("product.sku.toast.spuRequired"), color: "error" });
+    return;
+  }
+  savingSku.value = true;
+  try {
+    const manualSpecs = buildManualSpecs(currentSku.value.specifications);
+    const statusForApi = mapUiStatusToApi(currentSku.value.status) || "draft";
+    const payload: SkuUpsertRequest = {
+      skus: [
+        {
+          spuId: currentSku.value.spuId,
+          skuCode: trimmedCode,
+          barcode: currentSku.value.barcode?.trim() || undefined,
+          status: statusForApi,
+          minOrderQty: currentSku.value.moq || undefined,
+          defaultValues: buildDefaultValues(),
+          specs: manualSpecs,
+        },
+      ],
+    };
+    const result = await skuStore.createSkus(payload);
+    const created = result?.created ?? 0;
+    if (created > 0) {
+      toast.add({ title: t("product.sku.toast.saveSuccess"), color: "success" });
+      closeCreateModal();
+      await loadSkus();
+    } else {
+      const skipped = result?.skipped?.[0];
+      toast.add({
+        title: t("product.sku.toast.duplicateTitle"),
+        description: skipped ? t("product.sku.toast.duplicateDesc", { code: skipped }) : t("product.sku.toast.saveFailed"),
+        color: "warning",
+      });
     }
-  } else {
-    // 创建新SKU
-    currentSku.value.id = `SKU${Date.now()}`;
-    skus.value.push({ ...currentSku.value });
+  } catch (error: any) {
+    toast.add({
+      title: t("product.sku.toast.saveFailed"),
+      description: error?.message || "",
+      color: "error",
+    });
+  } finally {
+    savingSku.value = false;
   }
-  closeCreateModal();
-  alert(t("message.success.saved"));
 };
 
-const batchImport = () => {
-  alert(t("product.sku.batchImport"));
+const mapSkuToProductSku = (sku: Sku): ProductSku => {
+  if (sku.entity) {
+    return sku.entity;
+  }
+  return {
+    id: sku.id,
+    tenantUuid: "",
+    spuId: sku.spuId || sku.spu,
+    skuCode: sku.skuCode,
+    specs: [],
+    barcode: sku.barcode,
+    status: sku.status === "inactive" ? "offline" : "online",
+    minOrderQty: sku.moq,
+    priceRefs: sku.price
+      ? [
+          {
+            priceListId: "default",
+            currency: "CNY",
+            tiers: [{ minQty: 1, price: sku.price }],
+          },
+        ]
+      : undefined,
+    inventory: [
+      {
+        warehouseId: "default",
+        availableQty: sku.availableStock ?? 0,
+        lockedQty: 0,
+        inTransitQty: 0,
+        safetyStock: sku.safetyStock ?? 0,
+      },
+    ],
+  };
 };
 
-const batchExport = () => {
-  alert(t("product.sku.batchExport"));
+const bulkSelection = computed<ProductSku[]>(() =>
+  selectedSkus.value.map(mapSkuToProductSku)
+);
+
+const openBulkAdjustModal = () => {
+  if (!selectedSkus.value.length) {
+    toast.add({ title: t("product.sku.bulkSelectHint"), color: "red" });
+    return;
+  }
+  showBulkAdjustModal.value = true;
+};
+
+const handleBulkTaskSubmitted = () => {
+  showBulkAdjustModal.value = false;
+  selectAll.value = false;
+  selectedSkus.value = [];
+};
+
+watch(
+  () => bulkTasks.value.length,
+  () => {
+    if (!bulkTasks.value.length) {
+      highlightedTaskId.value = undefined;
+    } else if (!highlightedTaskId.value) {
+      highlightedTaskId.value = bulkTasks.value[0]?.taskId;
+    }
+  },
+  { immediate: true },
+);
+
+const handleTaskSelect = (task: SkuBulkTask) => {
+  highlightedTaskId.value = task.taskId;
+};
+
+const handleReviewRequest = (task: SkuBulkTask) => {
+  highlightedTaskId.value = task.taskId;
+  approvalTarget.value = task;
+  approvalDrawerOpen.value = true;
+};
+
+const handleApprovalDecision = async (decision: "approve" | "reject", note: string) => {
+  if (!approvalTarget.value) return;
+  approvalProcessing.value = true;
+  try {
+    await bulkActions.decideApproval({
+      taskId: approvalTarget.value.taskId,
+      decision,
+      note,
+    });
+    toast.add({
+      title:
+        decision === "approve"
+          ? t("product.sku.approval.toastApproved")
+          : t("product.sku.approval.toastRejected"),
+      description: note,
+      color: decision === "approve" ? "success" : "warning",
+    });
+    approvalDrawerOpen.value = false;
+  } catch (error: any) {
+    toast.add({
+      title: t("product.sku.approval.toastFailed"),
+      description: error?.message ?? "",
+      color: "red",
+    });
+  } finally {
+    approvalProcessing.value = false;
+  }
 };
 </script>

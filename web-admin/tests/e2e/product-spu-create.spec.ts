@@ -1,4 +1,10 @@
 import { expect, test } from '@playwright/test'
+import { bootstrapAuthenticatedSession } from './utils/session'
+import { successResponse } from './utils/response'
+
+test.beforeEach(async ({ page }) => {
+	await bootstrapAuthenticatedSession(page)
+})
 
 test.describe('SPU creation wizard', () => {
 	test('fills wizard and submits draft when APIs succeed', async ({ page }) => {
@@ -34,22 +40,22 @@ async function mockSpuApis(page) {
 	}
 	await page.route('**/admin/product/spus?**', async (route) => {
 		if (route.request().method() === 'GET') {
-			await route.fulfill({ json: { items: [], meta: { total: 0, page: 1, pageSize: 20 } } })
+			await route.fulfill(successResponse({ items: [], meta: { total: 0, page: 1, pageSize: 20 } }))
 			return
 		}
 		await route.continue()
 	})
-	await page.route('**/admin/product/spus', async (route) => {
+	await page.route('**/admin/product/spus*', async (route) => {
 		if (route.request().method() === 'POST') {
-			await route.fulfill({ json: detail })
+			await route.fulfill(successResponse(detail))
 			return
 		}
-		await route.fulfill({ json: { items: [], meta: { total: 0, page: 1, pageSize: 20 } } })
+		await route.fulfill(successResponse({ items: [], meta: { total: 0, page: 1, pageSize: 20 } }))
 	})
-	await page.route('**/admin/product/spus/spu-e2e', async (route) => {
-		await route.fulfill({ json: detail })
+	await page.route('**/admin/product/spus/spu-e2e*', async (route) => {
+		await route.fulfill(successResponse(detail))
 	})
-	await page.route('**/admin/product/spus/spu-e2e/skus', async (route) => {
-		await route.fulfill({ json: { items: [] } })
+	await page.route('**/admin/product/spus/spu-e2e/skus*', async (route) => {
+		await route.fulfill(successResponse({ items: [] }))
 	})
 }

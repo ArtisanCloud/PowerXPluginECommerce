@@ -15,7 +15,7 @@ import (
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	taskcenter "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/taskcenter"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/datatypes"
 )
 
@@ -199,7 +199,7 @@ func convertEntityToCustomer(entity *customermodel.Customer) Customer {
 func copyCustomerToEntity(entity *customermodel.Customer, c Customer) {
 	entity.CustomerID = c.ID
 	if entity.CustomerID == "" {
-		entity.CustomerID = uuid.NewString()
+		entity.CustomerID = utils.NewUUID()
 	}
 	entity.Name = c.Name
 	entity.Type = c.Type

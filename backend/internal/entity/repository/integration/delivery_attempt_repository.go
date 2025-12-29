@@ -7,7 +7,7 @@ import (
 
 	model "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/integration"
 	repository "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -34,7 +34,7 @@ func (r *DeliveryAttemptRepository) Create(ctx context.Context, attempt *model.D
 	attempt.CreatedAt = time.Now().UTC()
 	attempt.UpdatedAt = attempt.CreatedAt
 	if attempt.ID == "" {
-		attempt.ID = uuid.NewString()
+		attempt.ID = utils.NewUUID()
 	}
 
 	if err := r.DB.WithContext(ctx).Create(attempt).Error; err != nil {

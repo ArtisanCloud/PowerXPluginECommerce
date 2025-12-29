@@ -92,6 +92,28 @@ func seedCustomerPermissions(db *gorm.DB) (map[string]uint64, error) {
 		{Resource: "customer.delete", Action: "delete", Description: "删除客户记录"},
 	}
 
+	productPermissions := []iammodel.Permission{
+		// SKU 基础
+		{Resource: "com.powerx.plugin.ecommerce:product.sku", Action: "read", Description: "查看 SKU 列表与详情"},
+		{Resource: "com.powerx.plugin.ecommerce:product.sku", Action: "manage", Description: "创建/编辑/删除 SKU"},
+		// SKU 批量任务
+		{Resource: "com.powerx.plugin.ecommerce:product.sku.bulk", Action: "read", Description: "查看 SKU 批量任务"},
+		{Resource: "com.powerx.plugin.ecommerce:product.sku.bulk", Action: "manage", Description: "提交/审批/重试 SKU 批量任务"},
+		// 渠道映射
+		{Resource: "com.powerx.plugin.ecommerce:product.sku.channel", Action: "read", Description: "查看 SKU 渠道映射"},
+		{Resource: "com.powerx.plugin.ecommerce:product.sku.channel", Action: "manage", Description: "维护 SKU 渠道映射与发布"},
+		// 库存
+		{Resource: "com.powerx.plugin.ecommerce:product.sku.inventory", Action: "read", Description: "查看 SKU 库存与快照"},
+		{Resource: "com.powerx.plugin.ecommerce:product.sku.inventory", Action: "manage", Description: "调整 SKU 库存策略"},
+		// 序列号与条码
+		{Resource: "com.powerx.plugin.ecommerce:product.sku.serial", Action: "read", Description: "查看 SKU 序列号/批次"},
+		{Resource: "com.powerx.plugin.ecommerce:product.sku.serial", Action: "manage", Description: "录入或导出 SKU 序列号/批次"},
+		{Resource: "com.powerx.plugin.ecommerce:product.sku.barcode", Action: "read", Description: "查看 SKU 条码"},
+		{Resource: "com.powerx.plugin.ecommerce:product.sku.barcode", Action: "manage", Description: "生成/校验 SKU 条码"},
+	}
+
+	customerPermissions = append(customerPermissions, productPermissions...)
+
 	for _, perm := range customerPermissions {
 		var existing iammodel.Permission
 		err := db.Where("resource = ? AND action = ?", perm.Resource, perm.Action).
@@ -112,7 +134,8 @@ func seedCustomerPermissions(db *gorm.DB) (map[string]uint64, error) {
 				}
 			}
 		}
-		ids[perm.Resource] = existing.ID
+		key := perm.Resource + ":" + perm.Action
+		ids[key] = existing.ID
 	}
 	return ids, nil
 }

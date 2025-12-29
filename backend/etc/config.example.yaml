@@ -70,6 +70,16 @@ context:
   audience: ""
   ttl: "5m"
 
+customer_auth:
+  mode: "local" # local / delegate / auto
+  delegate_endpoint: "https://core.powerx.dev/api/v1/customer/auth/validate"
+  service_token: "" # 默认为 POWERX_AUTH_TOKEN
+  jwt_secret: "dev-miniapp-secret"
+  jwt_issuer: "powerx-plugin-customer"
+  jwt_audience: "mini-app"
+  jwt_expires: "2h"
+  cache_ttl: "5m"
+
 security:
   enable_cors: true
   cors_origins:

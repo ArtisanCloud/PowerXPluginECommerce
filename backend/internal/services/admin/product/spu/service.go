@@ -14,7 +14,7 @@ import (
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	productmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/product"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"github.com/lib/pq"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -267,7 +267,7 @@ func (s *Service) CreateDraft(ctx context.Context, req UpsertSPURequest) (*SPUDe
 	err = s.spuRepo.WithTenantTx(ctx, tenantID, func(tx *gorm.DB) error {
 		now := time.Now().UTC()
 		spu := &productmodel.SPU{
-			ID:              uuidString(),
+			ID:              utils.NewUUID(),
 			TenantUUID:      tenantID,
 			Code:            req.Code,
 			Name:            req.Name,
@@ -287,7 +287,7 @@ func (s *Service) CreateDraft(ctx context.Context, req UpsertSPURequest) (*SPUDe
 			return err
 		}
 		version := &productmodel.SPUVersion{
-			ID:            uuidString(),
+			ID:            utils.NewUUID(),
 			TenantUUID:    tenantID,
 			SPUID:         spu.ID,
 			VersionNumber: 1,
@@ -370,7 +370,7 @@ func (s *Service) UpdateDraft(ctx context.Context, id string, req UpsertSPUReque
 		payload["version"] = "draft"
 		body := encodeVersionPayload(payload)
 		if versionID == "" {
-			versionID = uuidString()
+			versionID = utils.NewUUID()
 			version := &productmodel.SPUVersion{
 				ID:            versionID,
 				TenantUUID:    tenantID,
@@ -724,7 +724,7 @@ func (s *Service) Delete(ctx context.Context, id string, req DeleteRequest) (*SP
 			"operator": actorFromContext(ctx),
 		})
 		entry := productmodel.SPUAuditLog{
-			ID:         uuidString(),
+			ID:         utils.NewUUID(),
 			TenantUUID: tenantID,
 			SPUID:      spu.ID,
 			EventType:  "spu.deleted",
@@ -789,10 +789,6 @@ func derefString(ptr *string) string {
 	return *ptr
 }
 
-func uuidString() string {
-	return uuid.NewString()
-}
-
 func pqStringArray(items []string) pq.StringArray {
 	if len(items) == 0 {
 		return nil
@@ -839,7 +835,7 @@ func (s *Service) ensureApprovalChain(tx *gorm.DB, tenantID string, version *pro
 		}
 		due := now.Add(stage.Duration)
 		record := productmodel.SPUApprovalRecord{
-			ID:         uuidString(),
+			ID:         utils.NewUUID(),
 			TenantUUID: tenantID,
 			SPUID:      version.SPUID,
 			VersionID:  version.ID,

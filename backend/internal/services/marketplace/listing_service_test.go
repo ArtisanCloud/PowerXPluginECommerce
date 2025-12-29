@@ -7,7 +7,7 @@ import (
 
 	dbm "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/marketplace"
 	mrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/marketplace"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
@@ -24,7 +24,7 @@ func (s stubVendorGuard) VendorRevoked(ctx context.Context, vendorID string) (bo
 
 func setupServiceDB(t *testing.T) *gorm.DB {
 	t.Helper()
-	dsn := fmt.Sprintf("file:%s-%s?mode=memory&cache=private", t.Name(), uuid.NewString())
+	dsn := fmt.Sprintf("file:%s-%s?mode=memory&cache=private", t.Name(), utils.NewUUID())
 	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{})
 	require.NoError(t, err)
 
@@ -195,18 +195,18 @@ func TestCreateAndUpdateDraft(t *testing.T) {
 		Locale:     "en",
 		Categories: []string{"automation"},
 		Tags:       []string{"beta"},
-	Assets: []ListingAssetInput{
-		{
-			AssetType:  "cover",
-			StorageURI: "https://cdn.example/cover.png",
-			IsPrimary:  true,
-			Locale:     "en",
-			Metadata: map[string]any{
-				"width":  1920,
-				"height": 1080,
+		Assets: []ListingAssetInput{
+			{
+				AssetType:  "cover",
+				StorageURI: "https://cdn.example/cover.png",
+				IsPrimary:  true,
+				Locale:     "en",
+				Metadata: map[string]any{
+					"width":  1920,
+					"height": 1080,
+				},
 			},
 		},
-	},
 	}
 
 	listing, err := svc.CreateDraft(ctx, "tenant-1", input)
@@ -217,18 +217,18 @@ func TestCreateAndUpdateDraft(t *testing.T) {
 		Title:      ptr("Updated Title"),
 		Summary:    ptr("updated summary"),
 		Categories: &[]string{"automation", "analytics"},
-	Assets: []ListingAssetInput{
-		{
-			AssetType:  "cover",
-			StorageURI: "https://cdn.example/cover2.png",
-			IsPrimary:  true,
-			Locale:     "en",
-			Metadata: map[string]any{
-				"width":  1920,
-				"height": 1080,
+		Assets: []ListingAssetInput{
+			{
+				AssetType:  "cover",
+				StorageURI: "https://cdn.example/cover2.png",
+				IsPrimary:  true,
+				Locale:     "en",
+				Metadata: map[string]any{
+					"width":  1920,
+					"height": 1080,
+				},
 			},
 		},
-	},
 	})
 	require.NoError(t, err)
 	require.Equal(t, "Updated Title", updated.Title)
@@ -248,18 +248,18 @@ func TestSubmitReviewAndPublish(t *testing.T) {
 		VendorID: "vendor-1",
 		Title:    "Listing",
 		Slug:     "listing",
-	Assets: []ListingAssetInput{
-		{
-			AssetType:  "cover",
-			StorageURI: "https://cdn.example/cover.png",
-			IsPrimary:  true,
-			Locale:     "en",
-			Metadata: map[string]any{
-				"width":  1920,
-				"height": 1080,
+		Assets: []ListingAssetInput{
+			{
+				AssetType:  "cover",
+				StorageURI: "https://cdn.example/cover.png",
+				IsPrimary:  true,
+				Locale:     "en",
+				Metadata: map[string]any{
+					"width":  1920,
+					"height": 1080,
+				},
 			},
 		},
-	},
 	})
 	require.NoError(t, err)
 

@@ -5,13 +5,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strconv"
 	"strings"
+	"unicode"
 
 	productmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product"
+	productskumodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_sku"
 	productrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/product"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
+	productskuservice "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/product_sku"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
@@ -54,6 +58,7 @@ type SKULinkService struct {
 	deps        *app.Deps
 	spuRepo     *productrepo.SPURepository
 	versionRepo *productrepo.VersionRepository
+	skuService  *productskuservice.Service
 }
 
 // NewSKULinkService constructs the SKU service with shared dependencies.
@@ -65,6 +70,7 @@ func NewSKULinkService(deps *app.Deps) *SKULinkService {
 		deps:        deps,
 		spuRepo:     productrepo.NewSPURepository(deps.DB),
 		versionRepo: productrepo.NewVersionRepository(deps.DB),
+		skuService:  productskuservice.NewService(deps),
 	}
 }
 
@@ -147,7 +153,87 @@ func (s *SKULinkService) Replace(ctx context.Context, spuID string, req ReplaceS
 	if err != nil {
 		return nil, err
 	}
+	if err := s.syncProductSkus(ctx, tenantID, spuID, result); err != nil {
+		return nil, err
+	}
 	return result, nil
+}
+
+func (s *SKULinkService) syncProductSkus(ctx context.Context, tenantID, spuID string, linked []LinkedSKU) error {
+	if s.skuService == nil || !s.skuService.Ready() {
+		return nil
+	}
+	req := productskuservice.SkuUpsertRequest{
+		SKUs: make([]productskuservice.SkuUpsertPayload, 0, len(linked)),
+	}
+	keepCodes := make(map[string]struct{}, len(linked))
+	for _, item := range linked {
+		code := strings.TrimSpace(item.Code)
+		if code == "" {
+			continue
+		}
+		keepCodes[strings.ToLower(code)] = struct{}{}
+		payload := s.composeSkuPayloadFromLink(spuID, item)
+		req.SKUs = append(req.SKUs, payload)
+	}
+	if len(req.SKUs) > 0 {
+		if _, err := s.skuService.UpsertSkus(ctx, req); err != nil {
+			return err
+		}
+	}
+	return s.pruneProductSkus(ctx, tenantID, spuID, keepCodes)
+}
+
+func (s *SKULinkService) composeSkuPayloadFromLink(spuID string, item LinkedSKU) productskuservice.SkuUpsertPayload {
+	specs, defaults, minOrderQty, barcode := parseLinkedSKUMetadata(item)
+	payload := productskuservice.SkuUpsertPayload{
+		SPUID:         spuID,
+		SKUCode:       strings.TrimSpace(item.Code),
+		Barcode:       barcode,
+		Status:        "draft",
+		MinOrderQty:   minOrderQty,
+		Specs:         specs,
+		DefaultValues: defaults,
+	}
+	if payload.MinOrderQty == 0 && payload.DefaultValues.MinOrderQty > 0 {
+		payload.MinOrderQty = payload.DefaultValues.MinOrderQty
+	}
+	if payload.DefaultValues.MinOrderQty == 0 && payload.MinOrderQty > 0 {
+		payload.DefaultValues.MinOrderQty = payload.MinOrderQty
+	}
+	return payload
+}
+
+func (s *SKULinkService) pruneProductSkus(ctx context.Context, tenantID, spuID string, keep map[string]struct{}) error {
+	if s.skuService == nil || s.skuService.SKURepo == nil || s.skuService.SKURepo.DB == nil {
+		return nil
+	}
+	db := s.skuService.SKURepo.DB.WithContext(ctx)
+	var skuIDs []string
+	query := db.Model(&productskumodel.ProductSKU{}).
+		Where("tenant_uuid = ? AND spu_id = ?", tenantID, spuID)
+	if len(keep) > 0 {
+		codes := make([]string, 0, len(keep))
+		for code := range keep {
+			codes = append(codes, code)
+		}
+		query = query.Where("LOWER(sku_code) NOT IN ?", codes)
+	}
+	if err := query.Pluck("id", &skuIDs).Error; err != nil {
+		return err
+	}
+	if len(skuIDs) > 0 && s.skuService.AttributeRepo != nil && s.skuService.AttributeRepo.DB != nil {
+		if err := s.skuService.AttributeRepo.DB.WithContext(ctx).
+			Where("tenant_uuid = ? AND sku_id IN ?", tenantID, skuIDs).
+			Delete(&productskumodel.ProductSKUAttribute{}).Error; err != nil {
+			return err
+		}
+	}
+	if len(skuIDs) == 0 {
+		return nil
+	}
+	return db.Where("tenant_uuid = ? AND id IN ?", tenantID, skuIDs).
+		Delete(&productskumodel.ProductSKU{}).Error
 }
 
 func (s *SKULinkService) buildLinkedSKUs(inputs []SKULinkInput, existing []LinkedSKU) ([]LinkedSKU, error) {
@@ -185,7 +271,7 @@ func (s *SKULinkService) buildLinkedSKUs(inputs []SKULinkInput, existing []Linke
 		}
 		id := input.ID
 		if strings.TrimSpace(id) == "" {
-			id = uuid.NewString()
+			id = utils.NewUUID()
 		}
 		pricing := input.Pricing
 		if pricing.Currency == "" {
@@ -248,4 +334,358 @@ func firstNonEmpty(values ...string) string {
 		}
 	}
 	return ""
+}
+
+func parseLinkedSKUMetadata(item LinkedSKU) ([]productskuservice.SkuSpec, productskuservice.SkuGeneratorDefaults, int, string) {
+	attrs := item.Attributes
+	defaults := extractSkuDefaults(attrs)
+	if defaults.CostPrice == 0 && item.Pricing.Price > 0 {
+		defaults.CostPrice = item.Pricing.Price
+	}
+	specs := extractSkuSpecs(attrs)
+	minOrder := firstInt(attrs, "min_order_qty", "minOrderQty")
+	if minOrder == 0 {
+		if defaults.MinOrderQty > 0 {
+			minOrder = defaults.MinOrderQty
+		} else {
+			minOrder = firstInt(extractMap(attrs, "defaults", "default_values", "defaultValues"), "min_order_qty", "minOrderQty")
+		}
+	}
+	barcode := firstString(attrs, "barcode", "sku_barcode")
+	return specs, defaults, minOrder, barcode
+}
+
+func extractSkuSpecs(attrs map[string]any) []productskuservice.SkuSpec {
+	if len(attrs) == 0 {
+		return nil
+	}
+	if raw := extractSlice(attrs, "specs", "spec_values", "specValues"); len(raw) > 0 {
+		return normalizeSpecArray(raw)
+	}
+	return fallbackSpecsFromAttributes(attrs)
+}
+
+func extractSkuDefaults(attrs map[string]any) productskuservice.SkuGeneratorDefaults {
+	var defaults productskuservice.SkuGeneratorDefaults
+	if len(attrs) == 0 {
+		return defaults
+	}
+	mergeDefaults(&defaults, attrs)
+	if nested := extractMap(attrs, "defaults", "default_values", "defaultValues"); len(nested) > 0 {
+		mergeDefaults(&defaults, nested)
+	}
+	if logistics := extractMap(attrs, "logistics"); len(logistics) > 0 {
+		mergeDefaults(&defaults, logistics)
+	}
+	return defaults
+}
+
+func mergeDefaults(dst *productskuservice.SkuGeneratorDefaults, src map[string]any) {
+	if dst == nil || len(src) == 0 {
+		return
+	}
+	if prefix := firstString(src, "barcode_prefix", "barcodePrefix"); prefix != "" {
+		dst.BarcodePrefix = prefix
+	}
+	if qty := firstInt(src, "min_order_qty", "minOrderQty"); qty > 0 {
+		dst.MinOrderQty = qty
+	}
+	if cost := firstFloat(src, "cost_price", "costPrice", "price"); cost > 0 {
+		dst.CostPrice = cost
+	}
+	if weight := firstFloat(src, "weight"); weight > 0 {
+		dst.Weight = weight
+	}
+	if dims := firstString(src, "dimensions", "dimension", "size"); dims != "" {
+		dst.Dimensions = dims
+	}
+}
+
+func extractSlice(attrs map[string]any, keys ...string) []any {
+	for _, key := range keys {
+		if raw, ok := attrs[key]; ok {
+			switch val := raw.(type) {
+			case []any:
+				return val
+			case []map[string]any:
+				res := make([]any, len(val))
+				for i := range val {
+					res[i] = val[i]
+				}
+				return res
+			case []productskuservice.SkuSpec:
+				res := make([]any, len(val))
+				for i := range val {
+					res[i] = val[i]
+				}
+				return res
+			}
+		}
+	}
+	return nil
+}
+
+func normalizeSpecArray(items []any) []productskuservice.SkuSpec {
+	result := make([]productskuservice.SkuSpec, 0, len(items))
+	for idx, raw := range items {
+		var spec productskuservice.SkuSpec
+		switch val := raw.(type) {
+		case productskuservice.SkuSpec:
+			spec = val
+		case map[string]any:
+			spec = mapToSpec(val, idx)
+		case map[string]string:
+			converted := make(map[string]any, len(val))
+			for k, v := range val {
+				converted[k] = v
+			}
+			spec = mapToSpec(converted, idx)
+		default:
+			continue
+		}
+		if spec.SpecID == "" && spec.SpecName != "" {
+			spec.SpecID = slugify(spec.SpecName, fmt.Sprintf("spec-%d", idx+1))
+		}
+		if spec.ValueID == "" && spec.ValueName != "" {
+			spec.ValueID = slugify(spec.ValueName, fmt.Sprintf("%s-%d", spec.SpecID, idx+1))
+		}
+		if spec.SpecID == "" || spec.ValueID == "" {
+			continue
+		}
+		if spec.SpecName == "" {
+			spec.SpecName = spec.SpecID
+		}
+		if spec.ValueName == "" {
+			spec.ValueName = spec.ValueID
+		}
+		result = append(result, spec)
+	}
+	return result
+}
+
+var reservedAttributeKeys = map[string]struct{}{
+	"defaults":       {},
+	"default_values": {},
+	"defaultValues":  {},
+	"pricing":        {},
+	"inventoryRef":   {},
+	"inventory_ref":  {},
+	"cloneFrom":      {},
+	"clone_from":     {},
+	"min_order_qty":  {},
+	"minOrderQty":    {},
+	"logistics":      {},
+	"weight":         {},
+	"dimensions":     {},
+	"dimension":      {},
+	"size":           {},
+	"barcode":        {},
+	"sku_barcode":    {},
+}
+
+func fallbackSpecsFromAttributes(attrs map[string]any) []productskuservice.SkuSpec {
+	if len(attrs) == 0 {
+		return nil
+	}
+	idx := 0
+	result := make([]productskuservice.SkuSpec, 0, len(attrs))
+	for key, raw := range attrs {
+		if _, reserved := reservedAttributeKeys[key]; reserved {
+			continue
+		}
+		value := stringValue(raw)
+		if value == "" {
+			continue
+		}
+		idx++
+		specID := slugify(key, fmt.Sprintf("attr-%d", idx))
+		valueID := slugify(value, fmt.Sprintf("%s-%d", specID, idx))
+		result = append(result, productskuservice.SkuSpec{
+			SpecID:    specID,
+			SpecName:  key,
+			ValueID:   valueID,
+			ValueName: value,
+		})
+	}
+	return result
+}
+
+func mapToSpec(src map[string]any, idx int) productskuservice.SkuSpec {
+	spec := productskuservice.SkuSpec{}
+	spec.SpecID = firstString(src, "spec_id", "specId", "id", "code", "spec")
+	spec.SpecName = firstString(src, "spec_name", "specName", "name", "label", "title")
+	spec.ValueID = firstString(src, "value_id", "valueId", "value_code", "valueCode", "value")
+	spec.ValueName = firstString(src, "value_name", "valueName", "label", "name")
+	if spec.ValueName == "" {
+		spec.ValueName = spec.ValueID
+	}
+	if spec.ValueID == "" && spec.ValueName != "" {
+		spec.ValueID = slugify(spec.ValueName, fmt.Sprintf("val-%d", idx+1))
+	}
+	return spec
+}
+
+func extractMap(attrs map[string]any, keys ...string) map[string]any {
+	for _, key := range keys {
+		if raw, ok := attrs[key]; ok {
+			switch val := raw.(type) {
+			case map[string]any:
+				return val
+			case map[string]string:
+				converted := make(map[string]any, len(val))
+				for k, v := range val {
+					converted[k] = v
+				}
+				return converted
+			}
+		}
+	}
+	return nil
+}
+
+func firstString(attrs map[string]any, keys ...string) string {
+	if len(attrs) == 0 {
+		return ""
+	}
+	for _, key := range keys {
+		if val, ok := attrs[key]; ok {
+			if str := stringValue(val); str != "" {
+				return str
+			}
+		}
+	}
+	return ""
+}
+
+func firstInt(attrs map[string]any, keys ...string) int {
+	if len(attrs) == 0 {
+		return 0
+	}
+	for _, key := range keys {
+		if val, ok := attrs[key]; ok {
+			if parsed, ok := intValue(val); ok {
+				return parsed
+			}
+		}
+	}
+	return 0
+}
+
+func firstFloat(attrs map[string]any, keys ...string) float64 {
+	if len(attrs) == 0 {
+		return 0
+	}
+	for _, key := range keys {
+		if val, ok := attrs[key]; ok {
+			if parsed, ok := floatValue(val); ok {
+				return parsed
+			}
+		}
+	}
+	return 0
+}
+
+func stringValue(val any) string {
+	switch typed := val.(type) {
+	case string:
+		return strings.TrimSpace(typed)
+	case fmt.Stringer:
+		return strings.TrimSpace(typed.String())
+	case json.Number:
+		return strings.TrimSpace(typed.String())
+	default:
+		return strings.TrimSpace(fmt.Sprint(typed))
+	}
+}
+
+func intValue(val any) (int, bool) {
+	switch typed := val.(type) {
+	case int:
+		return typed, true
+	case int64:
+		return int(typed), true
+	case int32:
+		return int(typed), true
+	case uint:
+		return int(typed), true
+	case uint64:
+		return int(typed), true
+	case float64:
+		return int(typed), true
+	case float32:
+		return int(typed), true
+	case json.Number:
+		if iv, err := strconv.Atoi(typed.String()); err == nil {
+			return iv, true
+		}
+	case string:
+		trimmed := strings.TrimSpace(typed)
+		if trimmed == "" {
+			return 0, false
+		}
+		if strings.Contains(trimmed, ".") {
+			if fv, err := strconv.ParseFloat(trimmed, 64); err == nil {
+				return int(fv), true
+			}
+		} else if iv, err := strconv.Atoi(trimmed); err == nil {
+			return iv, true
+		}
+	}
+	return 0, false
+}
+
+func floatValue(val any) (float64, bool) {
+	switch typed := val.(type) {
+	case float64:
+		return typed, true
+	case float32:
+		return float64(typed), true
+	case int:
+		return float64(typed), true
+	case int64:
+		return float64(typed), true
+	case json.Number:
+		if fv, err := typed.Float64(); err == nil {
+			return fv, true
+		}
+	case string:
+		trimmed := strings.TrimSpace(typed)
+		if trimmed == "" {
+			return 0, false
+		}
+		if fv, err := strconv.ParseFloat(trimmed, 64); err == nil {
+			return fv, true
+		}
+	}
+	return 0, false
+}
+
+func slugify(input, fallback string) string {
+	trimmed := strings.TrimSpace(strings.ToLower(input))
+	if trimmed == "" {
+		return fallback
+	}
+	var builder strings.Builder
+	lastDash := false
+	for _, r := range trimmed {
+		if (r >= 'a' && r <= 'z') || (r >= '0' && r <= '9') {
+			builder.WriteRune(r)
+			lastDash = false
+			continue
+		}
+		if unicode.IsLetter(r) || unicode.IsDigit(r) {
+			builder.WriteRune(unicode.ToLower(r))
+			lastDash = false
+			continue
+		}
+		if !lastDash && builder.Len() > 0 {
+			builder.WriteRune('-')
+			lastDash = true
+		}
+	}
+	result := strings.Trim(builder.String(), "-")
+	if result == "" {
+		return fallback
+	}
+	return result
 }

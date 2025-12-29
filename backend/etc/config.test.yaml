@@ -1,0 +1,17 @@
+server:
+  dev_mode: true
+  log_level: debug
+
+database:
+  driver: postgres
+  dsn: "postgres://michaelhu:zz@localhost:5432/powerx_plugin_test?sslmode=disable"
+  schema: public
+  maxIdleConns: 5
+  maxOpenConns: 10
+  connMaxLifetime: 5m
+  connMaxIdleTime: 2m
+
+integration:
+  idempotency:
+    provider: redis
+    redis_url: "redis://localhost:6379/2"

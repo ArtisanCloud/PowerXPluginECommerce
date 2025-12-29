@@ -7,7 +7,7 @@ import (
 
 	dbm "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/marketplace"
 	repository "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -67,7 +67,7 @@ func (r *PricingRepository) CreatePlan(ctx context.Context, plan *dbm.PricingPla
 		return errors.New("tenant_uuid is required")
 	}
 	if strings.TrimSpace(plan.ID) == "" {
-		plan.ID = uuid.NewString()
+		plan.ID = utils.NewUUID()
 	}
 	return r.WithTenantTx(ctx, tenantID, func(tx *gorm.DB) error {
 		if err := tx.Create(plan).Error; err != nil {
@@ -78,7 +78,7 @@ func (r *PricingRepository) CreatePlan(ctx context.Context, plan *dbm.PricingPla
 		}
 		for i := range tiers {
 			if strings.TrimSpace(tiers[i].ID) == "" {
-				tiers[i].ID = uuid.NewString()
+				tiers[i].ID = utils.NewUUID()
 			}
 			tiers[i].PlanID = plan.ID
 			tiers[i].TenantUuid = tenantID
@@ -111,7 +111,7 @@ func (r *PricingRepository) UpdatePlan(ctx context.Context, plan *dbm.PricingPla
 		}
 		for i := range tiers {
 			if strings.TrimSpace(tiers[i].ID) == "" {
-				tiers[i].ID = uuid.NewString()
+				tiers[i].ID = utils.NewUUID()
 			}
 			tiers[i].PlanID = plan.ID
 			tiers[i].TenantUuid = tenantID

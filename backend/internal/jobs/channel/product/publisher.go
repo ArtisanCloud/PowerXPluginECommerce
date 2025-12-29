@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"github.com/sirupsen/logrus"
 )
 
@@ -56,7 +56,7 @@ func (p *AsyncPublisher) EnqueuePublish(ctx context.Context, tenantUUID, spuID, 
 		return nil, fmt.Errorf("channels are required for publish")
 	}
 	task := &PublishTask{
-		TaskID:     uuid.NewString(),
+		TaskID:     utils.NewUUID(),
 		TenantUUID: tenantUUID,
 		SPUID:      spuID,
 		VersionID:  versionID,
@@ -100,7 +100,7 @@ func (p *AsyncPublisher) EnqueueWithdraw(ctx context.Context, tenantUUID, spuID 
 		return nil, fmt.Errorf("channels are required for withdraw")
 	}
 	task := &WithdrawTask{
-		TaskID:     uuid.NewString(),
+		TaskID:     utils.NewUUID(),
 		TenantUUID: tenantUUID,
 		SPUID:      spuID,
 		Channels:   filtered,

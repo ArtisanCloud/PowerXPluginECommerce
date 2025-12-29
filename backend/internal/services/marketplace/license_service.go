@@ -13,7 +13,7 @@ import (
 	dbm "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/marketplace"
 	mrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/marketplace"
 	marketobs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/marketplace"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -261,7 +261,7 @@ func (s *LicenseService) IssueLicense(ctx context.Context, params IssueLicensePa
 		}
 	}
 
-	renewalToken := uuid.NewString()
+	renewalToken := utils.NewUUID()
 	if metadata == nil {
 		metadata = map[string]any{}
 	}
@@ -447,7 +447,7 @@ func (s *LicenseService) RenewLicense(ctx context.Context, params RenewLicensePa
 		}
 	}
 
-	newToken := uuid.NewString()
+	newToken := utils.NewUUID()
 	validatedAt := time.Now()
 	allowance := s.offlineAllowance()
 	offlinePtr := timePtr(minTime(expiry, validatedAt.Add(allowance)))
@@ -603,7 +603,7 @@ func statusFromTrial(trial bool) string {
 }
 
 func generateToken(tenantID, listingID, planID string) string {
-	payload := fmt.Sprintf("%s|%s|%s|%s", tenantID, listingID, planID, uuid.NewString())
+	payload := fmt.Sprintf("%s|%s|%s|%s", tenantID, listingID, planID, utils.NewUUID())
 	return base64.RawURLEncoding.EncodeToString([]byte(payload))
 }
 

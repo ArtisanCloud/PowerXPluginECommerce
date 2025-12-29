@@ -13,7 +13,7 @@ import (
 	customermodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/customer"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 )
 
 var (
@@ -100,7 +100,7 @@ func (s *Service) CreateCustomer(ctx context.Context, input CreateCustomerInput)
 	}
 	now := time.Now().UTC().Format(time.RFC3339)
 	customer := Customer{
-		ID:             uuid.NewString(),
+		ID:             utils.NewUUID(),
 		Name:           strings.TrimSpace(input.Name),
 		Type:           strings.TrimSpace(input.Type),
 		Email:          strings.TrimSpace(input.Email),

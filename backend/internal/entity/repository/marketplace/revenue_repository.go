@@ -8,7 +8,7 @@ import (
 
 	dbm "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/marketplace"
 	repository "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -35,7 +35,7 @@ func (r *RevenueRepository) UpsertReport(ctx context.Context, report *dbm.Revenu
 		return errors.New("tenant_uuid is required")
 	}
 	if strings.TrimSpace(report.ID) == "" {
-		report.ID = uuid.NewString()
+		report.ID = utils.NewUUID()
 	}
 	report.TenantUuid = tenantID
 	return r.WithTenantTx(ctx, tenantID, func(tx *gorm.DB) error {

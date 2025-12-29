@@ -14,6 +14,7 @@ import (
 	adminintegration "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/integration"
 	adminmarketplace "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/marketplace"
 	adminoperations "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/operations"
+	adminproduct "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/product"
 	adminruntime "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/runtime_ops"
 	adminsecurity "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/security"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/templates"
@@ -21,7 +22,6 @@ import (
 	customerapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/customer"
 	integrationapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/integration"
 	jobapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/jobs"
-
 	publicassets "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/public/assets"
 	publicmarketplace "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/public/marketplace"
 	tenantmarketplace "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/tenant/marketplace"
@@ -64,6 +64,7 @@ func (r *Registry) RegisterAPIRoutes(gApi *gin.RouterGroup) {
 	r.mergeRBAC(adminoperations.RBACEntries(r.apiPrefix()))
 	r.mergeRBAC(adminconsole.RBACEntries(r.apiPrefix()))
 	r.mergeRBAC(adminmarketplace.RBACEntries(r.apiPrefix()))
+	r.mergeRBAC(adminproduct.RBACEntries(r.apiPrefix()))
 	r.mergeRBAC(adminchannels.RBACEntries(r.apiPrefix()))
 	r.mergeRBAC(integrationRBACEntries(r.apiPrefix()))
 	r.mergeRBAC(marketplacePublicRBACEntries(r.apiPrefix()))

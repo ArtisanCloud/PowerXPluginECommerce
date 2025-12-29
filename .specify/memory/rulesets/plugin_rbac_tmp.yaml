@@ -1,0 +1,32 @@
+kind: ruleset
+id: plugin_rbac_tmp
+version: 0.1.0
+summary: "临时 RBAC 约束：沿用模板域（backend/internal/transport/http/admin/product/rbac.go）做法，待 Skeleton IAM 迁移后替换"
+requires:
+  - rulesets/crud_http.yaml
+docs:
+  - path: backend/internal/transport/http/admin/product/rbac.go
+    desc: 示例：SKU 域在 rbac.go 中通过 RBACEntries 声明路由→scope
+  - path: backend/internal/transport/http/admin/admin_handler.go
+    desc: manifest/rbac API 输出唯一权限清单
+strategy: |
+  1. 每个 HTTP 域（如 product、channel 等）提供 `rbac.go`，定义 `RBACEntries(prefix string) map[string]authx.Permission`，将 REST 路由映射到 `com.powerx.plugin.<domain>:<resource>.<action>` scope。当前可参考 `backend/internal/transport/http/admin/product/rbac.go` 的模板实现。
+  2. 注册器 `http.Registry` 将各模块 `RBACEntries` 合并，注入 `middleware.RBAC`；无需在 Handler 中直接判断权限。
+  3. `/api/v1/admin/manifest` 与 `/api/v1/admin/rbac` 由 `admin_handler.go` 输出 Manifest 与权限清单，宿主与 Standalone 统一读取。
+  4. Delegated/Standalone 的切换由 Router 根据 `POWERX_RBAC_DELEGATE`/`POWERX_PROXY` 控制，中间件逻辑一致。
+checks:
+  - id: tmp-rbac-route-map
+    desc: 每个模块需存在 RBACEntries 声明 route→scope，先以 product 域为模板
+    assert:
+      type: grep
+      target: backend/internal/transport/http/**
+      pattern:
+        - "func RBACEntries"
+  - id: tmp-rbac-admin-endpoints
+    desc: 管理端暴露 manifest/rbac 接口，供宿主或 Standalone 读取统一权限清单
+    assert:
+      type: grep
+      target: backend/internal/transport/http/admin/admin_handler.go
+      pattern:
+        - "GetRBACInfo"
+        - "GetManifest"

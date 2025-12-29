@@ -24,6 +24,7 @@ func RegisterRoutes(productGroup *gin.RouterGroup, deps *app.Deps) {
 	importHandler := NewImportExportHandler(service)
 	inventoryHandler := NewInventoryHandler(service)
 	serialHandler := NewSerialHandler(service)
+	barcodeHandler := NewBarcodeHandler(service)
 	generatorHandler := NewGeneratorHandler(service)
 
 	skus := productGroup.Group("/skus", httpmw.EnsureTenant())
@@ -34,6 +35,8 @@ func RegisterRoutes(productGroup *gin.RouterGroup, deps *app.Deps) {
 		skus.DELETE("/:id", skuHandler.Delete)
 		skus.POST("/bulk-tasks", bulkHandler.Submit)
 		skus.GET("/bulk-tasks/:taskId", bulkHandler.Get)
+		skus.POST("/bulk-tasks/:taskId/approval", bulkHandler.DecideApproval)
+		skus.POST("/bulk-tasks/:taskId/retry", bulkHandler.Retry)
 		skus.POST("/import", importHandler.Import)
 		skus.POST("/export", importHandler.Export)
 		skus.GET("/:id/inventory", inventoryHandler.Get)
@@ -42,6 +45,7 @@ func RegisterRoutes(productGroup *gin.RouterGroup, deps *app.Deps) {
 		skus.POST("/:id/channels/publish", channelHandler.Publish)
 		skus.GET("/:id/serials", serialHandler.List)
 		skus.POST("/:id/serials", serialHandler.Create)
+		skus.POST("/:id/barcodes", barcodeHandler.Generate)
 	}
 
 	// SKU generator endpoint lives under the SPU scope per contract.

@@ -8,7 +8,7 @@ import (
 
 	dbm "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/marketplace"
 	repository "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -34,7 +34,7 @@ func (r *NotificationRepository) QueueNotification(ctx context.Context, notifica
 		return errors.New("tenant_uuid is required")
 	}
 	if strings.TrimSpace(notification.ID) == "" {
-		notification.ID = uuid.NewString()
+		notification.ID = utils.NewUUID()
 	}
 	if notification.Status == "" {
 		notification.Status = dbm.NotificationStatusPending

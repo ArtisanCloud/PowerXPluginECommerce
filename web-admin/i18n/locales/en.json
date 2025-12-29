@@ -229,6 +229,332 @@
     "networkError": "Network error, please check your connection",
     "templateCreated": "Template created successfully"
   },
+  "product": {
+    "category": "Category",
+    "brand": "Brand",
+    "sku": {
+      "title": "SKU Management",
+      "basicInfo": "Basic Info",
+      "inventory": "Inventory",
+      "logistics": "Logistics",
+      "constraints": "Constraints",
+      "skus": "SKU List",
+      "add": "Add SKU",
+      "createDescription": "Fill in the basic information to create a SKU record.",
+      "detail": "SKU Detail",
+      "search": "Search SKU, code or spec",
+      "status": "Status",
+      "category": "Category",
+      "brand": "Brand",
+      "skuCode": "SKU Code",
+      "barcode": "Barcode",
+      "description": "Description",
+      "selectSpu": "Select an SPU",
+      "spu": "SPU",
+      "specifications": "Specifications",
+      "price": "Price",
+      "availableStock": "Available Stock",
+      "safetyStock": "Safety Stock",
+      "warningThreshold": "Warning Threshold",
+      "serialBatchManagement": "Serial & Batch",
+      "enableSerialNumber": "Enable serial tracking",
+      "enableBatchNumber": "Enable batch tracking",
+      "weight": "Weight (kg)",
+      "volume": "Volume (m³)",
+      "packageDimensions": "Package dimensions",
+      "moq": "Minimum order qty",
+      "purchaseLimit": "Purchase limit",
+      "inventoryStatus": "Inventory Status",
+      "actions": "Actions",
+      "inStock": "In Stock",
+      "lowStock": "Low Stock",
+      "batchImport": "Batch import",
+      "batchExport": "Batch export",
+      "bulkAdjust": "Bulk adjust",
+      "bulkSelectHint": "Select at least one SKU first",
+      "toast": {
+        "codeRequired": "Please enter the SKU code",
+        "spuRequired": "Select an SPU before saving",
+        "saveSuccess": "SKU saved successfully",
+        "saveFailed": "Failed to save SKU",
+        "duplicateTitle": "SKU already exists",
+        "duplicateDesc": "SKU {code} already exists for this SPU"
+      },
+      "import": {
+        "title": "Bulk import template",
+        "subtitle": "Download the template, fill in SKU price or inventory data, then upload to create an async task.",
+        "steps": {
+          "title": "How it works",
+          "download": "Download the latest template",
+          "fill": "Fill and validate SKU data locally",
+          "upload": "Upload the file and submit the task"
+        },
+        "mode": {
+          "label": "Import mode",
+          "upsert": "SKU upsert",
+          "inventoryOnly": "Inventory only"
+        },
+        "downloadTemplate": "Download template",
+        "downloadError": "Download error report",
+        "errorReport": {
+          "hint": "The last import produced an error report. Click to download."
+        },
+        "dropzone": {
+          "title": "Click or drag file here to upload",
+          "hint": "Supports .csv / .xlsx / .xls up to 10 MB"
+        },
+        "fileSelected": "Selected: {name}",
+        "emptyUpload": "No file selected",
+        "clear": "Clear file",
+        "submit": "Submit import task",
+        "failed": "Import failed. Please try again later.",
+        "taskCreated": "Import task {id} created",
+        "taskDesc": "Track progress and reports in the task center."
+      },
+      "export": {
+        "title": "Bulk export",
+        "subtitle": "Export a CSV snapshot based on filters. A download link will be generated or you can check the task center.",
+        "format": "Format",
+        "limit": "Max rows",
+        "limitPlaceholder": "Defaults to 1000 rows, max 5000",
+        "status": "Status filter",
+        "keyword": "Keyword",
+        "keywordPlaceholder": "Code, name or tags",
+        "hint": "Without filters the first {limit} SKUs will be included.",
+        "submit": "Create export task",
+        "readyTitle": "Export ready",
+        "readyDesc": "File {file} is ready. Download now or share the link.",
+        "downloadNow": "Download",
+        "taskCreated": "Export task created",
+        "failed": "Export failed. Please try again later."
+      },
+      "tasks": {
+        "title": "Bulk tasks",
+        "subtitle": "Track the latest bulk adjustments, imports or exports.",
+        "count": "{count} tasks",
+        "empty": "No tasks yet. Submit a bulk action to start tracking progress.",
+        "stats": "Succeeded {ok} / Failed {fail}",
+        "submittedBy": "Submitted by {user}",
+        "download": "Download result",
+        "errorReport": "Error report",
+        "review": "Review",
+        "types": {
+          "price": "Price adjustment",
+          "inventory": "Inventory adjustment",
+          "import": "Import",
+          "export": "Export",
+          "generic": "Bulk task"
+        },
+        "status": {
+          "pending": "Waiting",
+          "approved": "Approved",
+          "running": "Running",
+          "succeeded": "Completed",
+          "failed": "Failed",
+          "cancelled": "Cancelled",
+          "ready": "Ready to download"
+        },
+        "approval": {
+          "pending": "Approval required",
+          "approved": "Approved",
+          "rejected": "Rejected"
+        }
+      },
+      "matrix": {
+        "placeholder": "Matrix view coming soon for side-by-side SKU comparison."
+      },
+      "detailPage": {
+        "back": "Back to SKU list",
+        "kicker": "sku detail",
+        "title": "SKU #{id}",
+        "subtitle": "Review channel mappings, inventory and operational state.",
+        "channelTab": "Channel mapping",
+        "inventoryTab": "Inventory",
+        "barcodeTab": "Barcode management",
+        "serialTab": "Serial numbers"
+      },
+      "channel": {
+        "kicker": "channel mapping",
+        "title": "Channel Mapping",
+        "subtitle": "Maintain channel SKU IDs, sync mode and publish state.",
+        "listTitle": "Mappings",
+        "countUnit": "mappings",
+        "empty": "No channel mappings yet. Use the form below to add one.",
+        "formTitle": "Create or update mapping",
+        "fields": {
+          "channelCode": "Channel code",
+          "channelSkuId": "Channel SKU ID",
+          "syncMode": "Sync mode",
+          "status": "Status"
+        },
+        "status": {
+          "pending": "Pending",
+          "published": "Published",
+          "failed": "Failed",
+          "offline": "Offline"
+        },
+        "table": {
+          "channel": "Channel",
+          "skuId": "Channel SKU",
+          "status": "Status",
+          "publishTime": "Published at",
+          "lastError": "Last error"
+        },
+        "publishAction": "Publish",
+        "saveAction": "Save mapping",
+        "toastSaved": "Channel mapping saved",
+        "toastPublished": "Publish triggered for {channel}"
+      },
+      "inventoryPanel": {
+        "kicker": "inventory",
+        "title": "Inventory Snapshot",
+        "subtitle": "Monitor available, locked and in-transit stock across warehouses.",
+        "available": "Available",
+        "locked": "Locked",
+        "transit": "In transit",
+        "staleTitle": "Snapshot might be stale",
+        "staleDesc": "Last sync exceeded SLA. Check inventory sync.",
+        "tableTitle": "Warehouses",
+        "columns": {
+          "warehouse": "Warehouse",
+          "available": "Available",
+          "locked": "Locked",
+          "transit": "In transit",
+          "syncedAt": "Last synced"
+        },
+        "alert": "Below threshold",
+        "warning": "Near threshold",
+        "empty": "Inventory snapshot is not available yet."
+      },
+      "barcodePanel": {
+        "kicker": "barcode",
+        "title": "Barcode Management",
+        "subtitle": "Auto-generate or validate barcodes and export printable labels.",
+        "fields": {
+          "prefix": "Barcode prefix",
+          "count": "Quantity",
+          "length": "Length",
+          "codesPlaceholder": "Enter existing barcodes separated by newline or comma",
+          "codesHint": "{count} codes provided"
+        },
+        "actions": {
+          "generate": "Generate",
+          "validate": "Validate",
+          "download": "Download",
+          "downloadAll": "Export all",
+          "copy": "Copy"
+        },
+        "status": {
+          "unique": "Unique",
+          "duplicate": "Duplicate"
+        },
+        "table": {
+          "barcode": "Barcode",
+          "status": "Status",
+          "conflict": "Conflicting SKU"
+        },
+        "resultsTitle": "{count} results",
+        "empty": "No barcode results yet.",
+        "errors": {
+          "noCodes": "Please enter at least one barcode to validate",
+          "copy": "Copy failed, please select text manually"
+        },
+        "toastSuccess": "Barcode request completed",
+        "toastCopied": "Copied to clipboard"
+      },
+      "serialPanel": {
+        "kicker": "serial",
+        "title": "Serial & Batch Records",
+        "subtitle": "Track serial numbers for compliance and after-sales.",
+        "filters": {
+          "status": "Filter status"
+        },
+        "table": {
+          "title": "{count} records",
+          "hint": "Newest records appear first",
+          "serial": "Serial no.",
+          "batch": "Batch",
+          "status": "Status",
+          "expires": "Expires",
+          "created": "Created"
+        },
+        "status": {
+          "available": "Available",
+          "allocated": "Allocated",
+          "consumed": "Consumed"
+        },
+        "form": {
+          "title": "Add / update serial",
+          "serial": "Serial number",
+          "batch": "Batch number",
+          "status": "Status",
+          "expires": "Expiration",
+          "submit": "Save record"
+        },
+        "empty": "No serial records yet.",
+        "errors": {
+          "serialRequired": "Serial number is required"
+        },
+        "toastSaved": "Serial record saved"
+      },
+      "inventoryPage": {
+        "kicker": "inventory board",
+        "title": "SKU Inventory Board",
+        "subtitle": "Enter a SKU ID to inspect warehouse stock and alerts.",
+        "skuLabel": "SKU ID",
+        "skuPlaceholder": "e.g. SKU001",
+        "lookup": "Lookup inventory",
+        "empty": "Enter a SKU ID to start exploring inventory data."
+      },
+      "approval": {
+        "title": "Approval details",
+        "subtitle": "Review the impacted scope and reason before making a decision.",
+        "empty": "Nothing to review yet",
+        "status": "Status",
+        "requestedBy": "Submitted by",
+        "unknown": "system",
+        "affected": "Affected SKUs",
+        "threshold": "Trigger threshold",
+        "reason": "Trigger reason",
+        "operation": "Operation",
+        "scope": "Scopes / filters",
+        "noteLabel": "Approval notes",
+        "notePlaceholder": "Add context for the requester (required when rejecting)",
+        "rejectHint": "Please add a reason when rejecting the task.",
+        "pendingTip": "Once approved the task will run immediately. Rejections notify the requester with your note.",
+        "actions": {
+          "approve": "Approve",
+          "reject": "Reject",
+          "cancel": "Close"
+        },
+        "notProvided": "Not provided",
+        "toastApproved": "Task approved",
+        "toastRejected": "Task rejected",
+        "toastFailed": "Approval action failed. Try again later."
+      },
+      "taskPage": {
+        "kicker": "bulk tasks",
+        "title": "Task Center",
+        "subtitle": "Search bulk tasks, approvals and failure logs.",
+        "searchLabel": "Search by task ID",
+        "searchPlaceholder": "Enter task id e.g. tsk_xxx",
+        "searchButton": "Lookup",
+        "refresh": "Refresh status",
+        "retry": "Retry task",
+        "emptyTitle": "Select a task",
+        "emptySubtitle": "Recent tasks appear on the left.",
+        "emptyBody": "Pick a task from the list or search by ID to see logs.",
+        "detailSub": "Latest status and payload details.",
+        "status": "Status",
+        "type": "Type",
+        "affected": "Affected count",
+        "submittedBy": "Submitted by",
+        "resultTitle": "Task result / payload",
+        "lookupSuccess": "Task updated",
+        "lookupFailed": "Lookup failed"
+      }
+    }
+  },
   "customer": {
     "directory": {
       "title": "Customer Directory",

@@ -15,7 +15,7 @@ import (
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	channelobs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/channel/master"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"gorm.io/datatypes"
@@ -326,7 +326,7 @@ func (s *Service) CreateDraft(ctx context.Context, input CreateChannelInput) (*C
 	}
 	actor := actorFromContext(ctx)
 	entity := &channelmodel.ChannelMaster{
-		ID:        uuidString(),
+		ID:        utils.NewUUID(),
 		Status:    StatusDraft,
 		CreatedBy: actor,
 		UpdatedBy: actor,
@@ -635,10 +635,6 @@ func metadataTime(meta datatypes.JSON, key string) (time.Time, bool) {
 func ptrString(val string) *string {
 	v := val
 	return &v
-}
-
-func uuidString() string {
-	return uuid.NewString()
 }
 
 func (s *Service) emitAudit(ctx context.Context, action, channelID string, payload map[string]any) {

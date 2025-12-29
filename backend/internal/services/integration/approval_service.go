@@ -9,7 +9,7 @@ import (
 
 	model "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/integration"
 	repo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/integration"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"github.com/sirupsen/logrus"
 	"gorm.io/datatypes"
 )
@@ -82,7 +82,7 @@ func (s *ApprovalService) SubmitChange(ctx context.Context, req SubmitChangeRequ
 	}
 
 	approval := &model.ChangeApproval{
-		ID:          uuid.NewString(),
+		ID:          utils.NewUUID(),
 		TargetType:  req.TargetType,
 		TargetID:    req.TargetID,
 		Payload:     datatypes.JSON(payloadBytes),

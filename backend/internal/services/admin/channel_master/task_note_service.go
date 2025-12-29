@@ -10,7 +10,7 @@ import (
 	channelrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/channel_master"
 	channelobs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/channel/master"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
@@ -60,7 +60,7 @@ func (s *TaskNoteService) LinkTask(ctx context.Context, channelID string, input 
 		return nil, err
 	}
 	link := &channelmodel.ChannelTaskLink{
-		ID:         uuid.NewString(),
+		ID:         utils.NewUUID(),
 		ChannelID:  strings.TrimSpace(channelID),
 		TaskID:     input.TaskID,
 		TaskSource: strings.ToLower(strings.TrimSpace(input.TaskSource)),
@@ -124,7 +124,7 @@ func (s *TaskNoteService) AddNote(ctx context.Context, channelID string, input N
 		return nil, err
 	}
 	note := &channelmodel.ChannelNote{
-		ID:         uuid.NewString(),
+		ID:         utils.NewUUID(),
 		ChannelID:  channelID,
 		AuthorUUID: actorFromContext(ctx),
 		Visibility: strings.ToLower(strings.TrimSpace(input.Visibility)),

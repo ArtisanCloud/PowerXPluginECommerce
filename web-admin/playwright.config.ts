@@ -1,6 +1,6 @@
 import { defineConfig, devices } from '@playwright/test'
 
-const baseURL = process.env.E2E_BASE_URL || 'http://localhost:3000'
+const baseURL = process.env.E2E_BASE_URL || 'http://127.0.0.1:3001'
 
 export default defineConfig({
 	testDir: './tests/e2e',
@@ -22,4 +22,11 @@ export default defineConfig({
 			use: { ...devices['Desktop Chrome'] },
 		},
 	],
+	webServer: {
+		command:
+			'NUXT_PUBLIC_API_BASE=http://127.0.0.1:3001/api/v1 DISABLE_DEV_PROXY=1 npm run dev -- --port 3001',
+		port: 3001,
+		reuseExistingServer: !process.env.CI,
+		timeout: 120 * 1000,
+	},
 })

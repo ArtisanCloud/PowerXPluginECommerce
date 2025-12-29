@@ -14,7 +14,7 @@ import (
 	consolerepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/admin_console"
 	adminmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/admin_console"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
@@ -204,7 +204,7 @@ func (s *ConfigService) UpdateSection(ctx context.Context, input UpdateSectionIn
 			Summary:        strPtr(fmt.Sprintf("Updated %s", def.Title)),
 			Diff:           datatypes.JSON(diffJSON),
 		}
-		audit.ID = uuid.NewString()
+		audit.ID = utils.NewUUID()
 		if err := auditRepo.Create(ctx, audit); err != nil {
 			return err
 		}
@@ -218,7 +218,7 @@ func (s *ConfigService) UpdateSection(ctx context.Context, input UpdateSectionIn
 			NextSnapshot:     mapToJSON(sanitized),
 			AuditEventID:     audit.ID,
 		}
-		change.ID = uuid.NewString()
+		change.ID = utils.NewUUID()
 		if err := changeRepo.Create(ctx, change); err != nil {
 			return err
 		}

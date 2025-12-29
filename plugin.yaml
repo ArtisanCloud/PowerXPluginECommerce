@@ -154,6 +154,10 @@ rbac:
       actions: [read, manage]
     - resource: com.powerx.plugin.ecommerce:product.sku.inventory
       actions: [read, manage]
+    - resource: com.powerx.plugin.ecommerce:product.sku.serial
+      actions: [read, manage]
+    - resource: com.powerx.plugin.ecommerce:product.sku.barcode
+      actions: [read, manage]
     - resource: com.powerx.plugin.ecommerce:channel.master
       actions: [read, create, update, approve]
     - resource: com.powerx.plugin.ecommerce:channel.credential
@@ -177,6 +181,10 @@ permissions:
   - resource: com.powerx.plugin.ecommerce:product.sku.channel
     actions: [read, manage]
   - resource: com.powerx.plugin.ecommerce:product.sku.inventory
+    actions: [read, manage]
+  - resource: com.powerx.plugin.ecommerce:product.sku.serial
+    actions: [read, manage]
+  - resource: com.powerx.plugin.ecommerce:product.sku.barcode
     actions: [read, manage]
   - resource: com.powerx.plugin.ecommerce:channel.master
     actions: [read, create, update, approve]

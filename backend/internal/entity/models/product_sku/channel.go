@@ -19,6 +19,8 @@ type ProductSKUChannel struct {
 	PublishTime   *time.Time     `json:"publish_time,omitempty"`
 	PublishTaskID *string        `gorm:"type:varchar(64);comment:任务 ID" json:"publish_task_id,omitempty"`
 	LastError     string         `gorm:"type:text" json:"last_error,omitempty"`
+	PriceOverride datatypes.JSON `gorm:"type:jsonb" json:"price_override,omitempty"`
+	MediaOverride datatypes.JSON `gorm:"type:jsonb" json:"media_override,omitempty"`
 	Metadata      datatypes.JSON `gorm:"type:jsonb" json:"metadata,omitempty"`
 	CreatedAt     time.Time      `gorm:"autoCreateTime" json:"created_at"`
 	UpdatedAt     time.Time      `gorm:"autoUpdateTime" json:"updated_at"`

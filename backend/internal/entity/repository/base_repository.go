@@ -54,7 +54,7 @@ func (r *BaseRepository[T]) BeginTenantTx(ctx context.Context, tenantID any) (*g
 		return nil, tx.Error
 	}
 	if tx.Dialector != nil && tx.Dialector.Name() != "sqlite" {
-		if err := tx.Exec("SET LOCAL app.tenant_uuid = ?", id).Error; err != nil {
+		if err := tx.Exec("SELECT set_config('app.tenant_uuid', ?, true)", id).Error; err != nil {
 			_ = tx.Rollback()
 			return nil, err
 		}

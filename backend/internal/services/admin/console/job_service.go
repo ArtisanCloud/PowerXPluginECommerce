@@ -14,7 +14,7 @@ import (
 	consolerepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/admin_console"
 	adminmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/admin_console"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/datatypes"
 )
 
@@ -415,7 +415,7 @@ func (s *JobService) checkActiveRun(ctx context.Context, input ScheduleSafeOpInp
 
 func (s *JobService) buildRun(input ScheduleSafeOpInput, retryOf *string) *model.JobRun {
 	now := s.now()
-	runID := uuid.NewString()
+	runID := utils.NewUUID()
 	scopeRef := strings.TrimSpace(input.ScopeRef)
 	var tenantID *string
 	if input.TenantUuid != nil && strings.TrimSpace(*input.TenantUuid) != "" {

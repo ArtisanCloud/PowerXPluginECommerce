@@ -1,6 +1,8 @@
 package product_sku
 
 import (
+	"net/http"
+
 	productskuservice "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/product_sku"
 	"github.com/gin-gonic/gin"
 )
@@ -15,5 +17,14 @@ func NewInventoryHandler(service *productskuservice.Service) *InventoryHandler {
 }
 
 func (h *InventoryHandler) Get(c *gin.Context) {
-	respondStub(c, "SKU inventory view not implemented")
+	if h.service == nil {
+		respondError(c, ErrServiceUnavailable)
+		return
+	}
+	snapshot, err := h.service.SnapshotInventory(c.Request.Context(), c.Param("id"))
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, snapshot)
 }
