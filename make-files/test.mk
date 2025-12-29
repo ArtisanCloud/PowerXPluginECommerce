@@ -28,6 +28,8 @@ test-coverage: ## 执行测试并生成覆盖率报告
 
 .PHONY: lint
 lint: ## 运行 golangci-lint
+	@echo "安装/更新 golangci-lint..."
+	cd $(BACKEND_DIR) && go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.61.0
 	@echo "运行代码检查..."
 	cd $(BACKEND_DIR) && golangci-lint run
 
