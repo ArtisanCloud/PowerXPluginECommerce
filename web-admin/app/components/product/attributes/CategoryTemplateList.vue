@@ -62,8 +62,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
 import type { DropdownItem } from '@nuxt/ui/dist/runtime/types'
-import CreateCategoryTemplateModal from '~/components/Modals/CreateCategoryTemplateModal.vue'
-import EditCategoryTemplateModal from '~/components/Modals/EditCategoryTemplateModal.vue'
+import CreateCategoryTemplateModal from '~/components/modals/CreateCategoryTemplateModal.vue'
+import EditCategoryTemplateModal from '~/components/modals/EditCategoryTemplateModal.vue'
 
 const pending = ref(false)
 const isCreateModalOpen = ref(false)

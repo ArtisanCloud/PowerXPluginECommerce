@@ -98,8 +98,8 @@
 </template>
 
 <script setup lang="ts">
-import UploadMediaModal from '~/components/Modals/UploadMediaModal.vue';
-import EditMediaModal from '~/components/Modals/EditMediaModal.vue';
+import UploadMediaModal from '~/components/modals/UploadMediaModal.vue';
+import EditMediaModal from '~/components/modals/EditMediaModal.vue';
 
 const emit = defineEmits(['selection-changed']);
 
