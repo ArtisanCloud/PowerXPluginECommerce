@@ -291,7 +291,7 @@
 
 <script setup lang="ts">
 // 导入模态框组件
-import BatchAdjustGrowthValueModal from "~/components/modals/BatchAdjustGrowthValueModal.vue";
+import BatchAdjustGrowthValueModal from "~/components/Modals/BatchAdjustGrowthValueModal.vue";
 
 // 模态框状态
 const showBatchAdjustModal = ref(false);

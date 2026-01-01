@@ -265,8 +265,8 @@
 </template>
 
 <script setup lang="ts">
-import ViewInvitationModal from "~/components/modals/ViewInvitationModal.vue";
-import ViewRewardModal from "~/components/modals/ViewRewardModal.vue";
+import ViewInvitationModal from "~/components/Modals/ViewInvitationModal.vue";
+import ViewRewardModal from "~/components/Modals/ViewRewardModal.vue";
 
 const avatarPlaceholder = "https://api.dicebear.com/7.x/miniavs/svg?seed=placeholder";
 

@@ -321,7 +321,7 @@
 import { ref, computed } from "vue";
 // Nuxt3 如已开启 components: true，可不手动 import 子组件，直接模板里写 <ViewDistributorModal />
 // 若不是 Nuxt，请把 ~/ 改成 @/ ，或用相对路径。
-// import ViewDistributorModal from "~/components/modals/ViewDistributorModal.vue";
+// import ViewDistributorModal from "~/components/Modals/ViewDistributorModal.vue";
 
 /* 搜索 & 筛选 */
 const searchQuery = ref("");

@@ -422,7 +422,7 @@
 </template>
 
 <script setup lang="ts">
-import ViewWithdrawalModal from "~/components/modals/ViewWithdrawalModal.vue";
+import ViewWithdrawalModal from "~/components/Modals/ViewWithdrawalModal.vue";
 
 const avatarPlaceholder = "https://api.dicebear.com/7.x/miniavs/svg?seed=placeholder";
 

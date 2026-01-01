@@ -110,7 +110,7 @@ import CustomerExportDialog from "~/components/customer/CustomerExportDialog.vue
 import { useCustomerStore } from "~/stores/customer";
 import { usePermissions } from "~/composables/usePermissions";
 import { useCustomerMetrics } from "~/composables/useCustomerMetrics";
-import EditCustomerModal from "~/components/modals/EditCustomerModal.vue";
+import EditCustomerModal from "~/components/Modals/EditCustomerModal.vue";
 import CustomerDeleteConfirm from "~/components/customer/CustomerDeleteConfirm.vue";
 import type { Customer } from "~/types/customer";
 

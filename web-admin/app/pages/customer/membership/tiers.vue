@@ -255,9 +255,9 @@
 
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
-import ViewTierModal from "~/components/modals/ViewTierModal.vue";
-import CreateTierModal from "~/components/modals/CreateTierModal.vue";
-import EditTierModal from "~/components/modals/EditTierModal.vue";
+import ViewTierModal from "~/components/Modals/ViewTierModal.vue";
+import CreateTierModal from "~/components/Modals/CreateTierModal.vue";
+import EditTierModal from "~/components/Modals/EditTierModal.vue";
 
 // 等级数据类型
 type MembershipTier = {
