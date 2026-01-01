@@ -117,6 +117,8 @@ const BRIDGE_DEBUG = rawBridgeDebug !== undefined
   ? /^(1|true)$/i.test(String(rawBridgeDebug))
   : !INSIDE_POWERX
 
+const DISABLE_VITE_HMR_OVERLAY = process.env.NUXT_PUBLIC_E2E_HARNESS === '1'
+
 // Dev-time proxy: always forward /api + ws; add /_p/.../api only in proxy mode
 const disableDevProxy = process.env.DISABLE_DEV_PROXY === '1'
 const devProxy: Record<string, any> = {}
@@ -294,6 +296,7 @@ export default defineNuxtConfig({
   vite: {
     server: {
       hmr: {
+        overlay: !DISABLE_VITE_HMR_OVERLAY,
         protocol: 'ws',
         host: 'localhost',
         port: 24731
