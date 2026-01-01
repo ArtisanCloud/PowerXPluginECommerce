@@ -8,7 +8,7 @@ import (
 
 	opmodels "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/operations"
 	repository "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -42,7 +42,7 @@ func (r *IncidentRepository) CreateIncident(ctx context.Context, incident *opmod
 	}
 	now := time.Now().UTC()
 	if incident.ID == "" {
-		incident.ID = uuid.NewString()
+		incident.ID = utils.NewUUID()
 	}
 	if incident.DetectedAt.IsZero() {
 		incident.DetectedAt = now
@@ -135,7 +135,7 @@ func (r *IncidentRepository) AppendTimelineEntry(ctx context.Context, entry *opm
 	}
 	now := time.Now().UTC()
 	if entry.ID == "" {
-		entry.ID = uuid.NewString()
+		entry.ID = utils.NewUUID()
 	}
 	if entry.PostedAt.IsZero() {
 		entry.PostedAt = now
@@ -172,7 +172,7 @@ func (r *IncidentRepository) UpsertChecklistItem(ctx context.Context, item *opmo
 	}
 	now := time.Now().UTC()
 	if item.ID == "" {
-		item.ID = uuid.NewString()
+		item.ID = utils.NewUUID()
 	}
 	if item.CreatedAt.IsZero() {
 		item.CreatedAt = now
@@ -215,7 +215,7 @@ func (r *IncidentRepository) UpsertReadinessItem(ctx context.Context, item *opmo
 	}
 	now := time.Now().UTC()
 	if item.ID == "" {
-		item.ID = uuid.NewString()
+		item.ID = utils.NewUUID()
 	}
 	if item.CreatedAt.IsZero() {
 		item.CreatedAt = now

@@ -337,20 +337,319 @@
       "constraints": "约束规则",
       "skus": "SKU 列表",
       "add": "新增 SKU",
+      "createDescription": "填写基础信息以创建 SKU",
       "detail": "SKU 详情",
       "search": "搜索 SKU、编码或规格",
       "status": "状态",
       "category": "分类",
       "brand": "品牌",
       "skuCode": "SKU 编码",
+      "barcode": "条码",
+      "description": "描述",
+      "selectSpu": "请选择所属 SPU",
       "spu": "所属 SPU",
       "specifications": "规格参数",
       "price": "售卖价格",
       "availableStock": "可用库存",
+      "safetyStock": "安全库存",
+      "warningThreshold": "预警阈值",
+      "serialBatchManagement": "序列号与批次管理",
+      "enableSerialNumber": "启用序列号管理",
+      "enableBatchNumber": "启用批次管理",
+      "weight": "重量 (kg)",
+      "volume": "体积 (m³)",
+      "packageDimensions": "包装尺寸",
+      "moq": "起订量",
+      "purchaseLimit": "限购数量",
       "inventoryStatus": "库存状态",
       "actions": "操作",
       "inStock": "现货",
-      "lowStock": "低库存"
+      "lowStock": "低库存",
+      "batchImport": "批量导入",
+      "batchExport": "批量导出",
+      "bulkAdjust": "批量调整",
+      "bulkSelectHint": "请先选择需要调整的 SKU",
+      "toast": {
+        "codeRequired": "请填写 SKU 编码",
+        "spuRequired": "请选择所属 SPU",
+        "saveSuccess": "SKU 已保存",
+        "saveFailed": "SKU 保存失败",
+        "duplicateTitle": "SKU 已存在",
+        "duplicateDesc": "SKU {code} 已存在，请检查规格或编码"
+      },
+      "import": {
+        "title": "批量导入模板",
+        "subtitle": "下载模板、填写 SKU 价格或库存后上传，系统会创建异步任务处理。",
+        "steps": {
+          "title": "导入步骤",
+          "download": "下载最新模板",
+          "fill": "填写并校验 SKU 数据",
+          "upload": "上传文件并提交任务"
+        },
+        "mode": {
+          "label": "导入模式",
+          "upsert": "SKU 全量更新",
+          "inventoryOnly": "仅更新库存"
+        },
+        "downloadTemplate": "下载模板",
+        "downloadError": "下载错误报告",
+        "errorReport": {
+          "hint": "最近一次导入包含错误，可点击下载报告"
+        },
+        "dropzone": {
+          "title": "点击或拖拽文件到此处上传",
+          "hint": "支持 .csv / .xlsx / .xls，最大 10 MB"
+        },
+        "fileSelected": "已选择：{name}",
+        "emptyUpload": "尚未选择文件",
+        "clear": "清除文件",
+        "submit": "提交导入任务",
+        "failed": "导入失败，请稍后重试",
+        "taskCreated": "导入任务 {id} 已创建",
+        "taskDesc": "可在任务中心查看进度与错误报告。"
+      },
+      "export": {
+        "title": "批量导出",
+        "subtitle": "根据筛选条件导出 CSV，生成下载链接或在任务中心查看。",
+        "format": "导出格式",
+        "limit": "最多导出条数",
+        "limitPlaceholder": "默认 1000 条，最高 5000",
+        "status": "状态筛选",
+        "keyword": "关键字",
+        "keywordPlaceholder": "编码、名称或标签",
+        "hint": "若未设置筛选，将导出前 {limit} 条 SKU。",
+        "submit": "创建导出任务",
+        "readyTitle": "导出就绪",
+        "readyDesc": "文件 {file} 已生成，可立即下载。",
+        "downloadNow": "立即下载",
+        "taskCreated": "导出任务已创建",
+        "failed": "导出失败，请稍后重试"
+      },
+      "tasks": {
+        "title": "批量任务",
+        "subtitle": "查看最近的批量调整、导入或导出任务状态。",
+        "count": "{count} 个任务",
+        "empty": "还没有批量任务记录，提交批量操作后可在此追踪状态。",
+        "stats": "成功 {ok} 条 / 失败 {fail} 条",
+        "submittedBy": "提交人：{user}",
+        "download": "下载结果",
+        "errorReport": "错误报告",
+        "review": "审批处理",
+        "types": {
+          "price": "价格调整",
+          "inventory": "库存调整",
+          "import": "批量导入",
+          "export": "批量导出",
+          "generic": "批量任务"
+        },
+        "status": {
+          "pending": "等待处理",
+          "approved": "已审批",
+          "running": "执行中",
+          "succeeded": "已完成",
+          "failed": "执行失败",
+          "cancelled": "已取消",
+          "ready": "可下载"
+        },
+        "approval": {
+          "pending": "等待审批",
+          "approved": "审批通过",
+          "rejected": "审批驳回"
+        }
+      },
+      "matrix": {
+        "placeholder": "矩阵视图开发中，后续可在此可视化对比 SKU 组合。"
+      },
+      "detailPage": {
+        "back": "返回 SKU 列表",
+        "kicker": "sku detail",
+        "title": "SKU #{id}",
+        "subtitle": "查看渠道映射、库存与运行状态。",
+        "channelTab": "渠道映射",
+        "inventoryTab": "库存快照",
+        "barcodeTab": "条码管理",
+        "serialTab": "序列号"
+      },
+      "channel": {
+        "kicker": "channel mapping",
+        "title": "渠道映射",
+        "subtitle": "维护渠道 SKU、同步方式与发布状态。",
+        "listTitle": "渠道列表",
+        "countUnit": "条映射",
+        "empty": "暂无渠道映射，可在下方维护。",
+        "formTitle": "新增 / 更新映射",
+        "fields": {
+          "channelCode": "渠道编码",
+          "channelSkuId": "渠道 SKU ID",
+          "syncMode": "同步模式",
+          "status": "状态"
+        },
+        "status": {
+          "pending": "待推送",
+          "published": "已上线",
+          "failed": "发布失败",
+          "offline": "已下线"
+        },
+        "table": {
+          "channel": "渠道",
+          "skuId": "渠道 SKU",
+          "status": "状态",
+          "publishTime": "发布时间",
+          "lastError": "最后错误"
+        },
+        "publishAction": "推送发布",
+        "saveAction": "保存映射",
+        "toastSaved": "渠道映射已保存",
+        "toastPublished": "{channel} 发布已触发"
+      },
+      "inventoryPanel": {
+        "kicker": "inventory",
+        "title": "库存快照",
+        "subtitle": "查看各仓库存、锁定量与同步状态。",
+        "available": "可售库存",
+        "locked": "锁定库存",
+        "transit": "在途数量",
+        "staleTitle": "库存可能已过期",
+        "staleDesc": "最后同步时间超过 SLA，请检查库存同步任务。",
+        "tableTitle": "分仓库存",
+        "columns": {
+          "warehouse": "仓库",
+          "available": "可售",
+          "locked": "锁定",
+          "transit": "在途",
+          "syncedAt": "同步时间"
+        },
+        "alert": "低于阈值",
+        "warning": "接近阈值",
+        "empty": "暂无库存数据，可稍后刷新。"
+      },
+      "barcodePanel": {
+        "kicker": "barcode",
+        "title": "条码管理",
+        "subtitle": "自动生成或手动校验条码，并输出批量打印标签。",
+        "fields": {
+          "prefix": "条码前缀",
+          "count": "生成数量",
+          "length": "条码长度",
+          "codesPlaceholder": "逐行输入已有条码，或使用逗号分隔",
+          "codesHint": "已输入 {count} 个条码"
+        },
+        "actions": {
+          "generate": "生成条码",
+          "validate": "校验条码",
+          "download": "下载标签",
+          "downloadAll": "导出全部",
+          "copy": "复制"
+        },
+        "status": {
+          "unique": "可用",
+          "duplicate": "重复"
+        },
+        "table": {
+          "barcode": "条码",
+          "status": "状态",
+          "conflict": "冲突 SKU"
+        },
+        "resultsTitle": "已生成 {count} 条",
+        "empty": "尚未生成任何条码结果。",
+        "errors": {
+          "noCodes": "请至少输入一个条码再进行校验",
+          "copy": "复制失败，请手动选择文本"
+        },
+        "toastSuccess": "条码处理完成",
+        "toastCopied": "已复制到剪贴板"
+      },
+      "serialPanel": {
+        "kicker": "serial",
+        "title": "序列号 / 批次",
+        "subtitle": "记录序列号流转与状态，支持审计追踪。",
+        "filters": {
+          "status": "筛选状态"
+        },
+        "table": {
+          "title": "共 {count} 条记录",
+          "hint": "最新创建的记录会显示在最前",
+          "serial": "序列号",
+          "batch": "批次号",
+          "status": "状态",
+          "expires": "到期时间",
+          "created": "创建时间"
+        },
+        "status": {
+          "available": "可用",
+          "allocated": "已分配",
+          "consumed": "已使用"
+        },
+        "form": {
+          "title": "新增 / 更新序列号",
+          "serial": "序列号",
+          "batch": "批次号",
+          "status": "状态",
+          "expires": "到期日",
+          "submit": "保存记录"
+        },
+        "empty": "还没有序列号记录，提交后会展示在此处。",
+        "errors": {
+          "serialRequired": "请填写序列号"
+        },
+        "toastSaved": "序列号已保存"
+      },
+      "inventoryPage": {
+        "kicker": "inventory board",
+        "title": "SKU 库存看板",
+        "subtitle": "输入 SKU ID 查看各仓库存与预警状态。",
+        "skuLabel": "SKU ID",
+        "skuPlaceholder": "例如 SKU001",
+        "lookup": "查询库存",
+        "empty": "请输入 SKU ID 后再查询。"
+      },
+      "approval": {
+        "title": "审批详情",
+        "subtitle": "请确认调整范围与触发原因后再决定是否执行。",
+        "empty": "暂无审批内容",
+        "status": "当前状态",
+        "requestedBy": "提交人",
+        "unknown": "system",
+        "affected": "影响 SKU 数",
+        "threshold": "触发阈值",
+        "reason": "触发原因",
+        "operation": "操作类型",
+        "scope": "影响范围",
+        "noteLabel": "审批备注",
+        "notePlaceholder": "填写审批意见或补充说明",
+        "rejectHint": "驳回时必须填写原因",
+        "pendingTip": "审批通过后将立即执行任务；驳回会通知提交人查看原因。",
+        "actions": {
+          "approve": "通过执行",
+          "reject": "驳回任务",
+          "cancel": "关闭"
+        },
+        "notProvided": "未提供",
+        "toastApproved": "任务审批通过",
+        "toastRejected": "任务已驳回",
+        "toastFailed": "操作失败，请稍后再试"
+      },
+      "taskPage": {
+        "kicker": "bulk tasks",
+        "title": "任务中心",
+        "subtitle": "查询批量任务状态、审批记录与错误日志。",
+        "searchLabel": "根据任务 ID 查询",
+        "searchPlaceholder": "输入任务 ID（例如：tsk_xxx）",
+        "searchButton": "查询任务",
+        "refresh": "刷新状态",
+        "retry": "重新执行",
+        "emptyTitle": "选择任务",
+        "emptySubtitle": "左侧列表会展示最近创建的任务。",
+        "emptyBody": "在左侧选择一个任务或直接输入任务 ID 进行查询。",
+        "detailSub": "最新状态与返回结果",
+        "status": "状态",
+        "type": "类型",
+        "affected": "影响数量",
+        "submittedBy": "提交人",
+        "resultTitle": "任务结果 / 详情",
+        "lookupSuccess": "任务已更新",
+        "lookupFailed": "查询失败"
+      }
     }
   },
   "tenant": {
@@ -958,6 +1257,242 @@
       "name": "模板名称",
       "description": "描述",
       "content": "内容"
+    }
+  },
+  "customer": {
+    "directory": {
+      "title": "客户目录",
+      "subtitle": "搜索、分群并对客户执行操作",
+      "filters": {
+        "keyword": "关键字",
+        "keywordPlaceholder": "姓名、电话或邮箱",
+        "tier": "会员等级",
+        "type": "客户类型",
+        "risk": "风险等级",
+        "source": "来源",
+        "region": "地区",
+        "tags": "标签",
+        "tagsPlaceholder": "按回车添加标签",
+        "any": "全部",
+        "tierOptions": {
+          "gold": "金卡",
+          "silver": "银卡",
+          "platinum": "白金"
+        },
+        "typeOptions": {
+          "individual": "个人",
+          "enterprise": "企业"
+        },
+        "riskOptions": {
+          "low": "低",
+          "medium": "中",
+          "high": "高"
+        },
+        "sourceOptions": {
+          "website": "官网",
+          "offline": "线下",
+          "referral": "转介绍",
+          "miniapp": "小程序"
+        }
+      },
+      "actions": {
+        "apply": "应用",
+        "reset": "重置",
+        "save": "保存",
+        "cancel": "取消",
+        "confirm": "确认",
+        "refresh": "刷新",
+        "retry": "重试",
+        "view": "查看",
+        "pin": "钉住",
+        "import": "导入客户",
+        "export": "导出客户",
+        "create": "新增客户",
+        "editRecord": "编辑",
+        "deleteRecord": "删除"
+      },
+      "write": {
+        "disabledTitle": "客户写入权限已禁用",
+        "disabledDesc": "宿主 CRM 暂未开放创建/更新/删除，当前仅可查看。",
+        "retry": "重新检查"
+      },
+      "savedViews": {
+        "save": "保存视图",
+        "title": "保存当前筛选",
+        "name": "视图名称",
+        "delete": "删除视图"
+      },
+      "status": {
+        "total": "总计：{total}",
+        "selected": "已选 {count} 条",
+        "lastSynced": "最近同步",
+        "never": "从未"
+      },
+      "bulk": {
+        "selected": "已选 {count} 位客户",
+        "assignOwner": "分配负责人",
+        "ownerInput": "负责人账号",
+        "addTags": "添加标签",
+        "removeTags": "移除标签",
+        "tagsInput": "输入标签（回车确认）",
+        "disable": "禁用",
+        "failed": "批量操作失败",
+        "unknownError": "发生未知错误",
+        "ownerRequired": "请填写负责人账号",
+        "tagsRequired": "请至少添加一个标签"
+      },
+      "table": {
+        "name": "客户",
+        "contact": "联系方式",
+        "tier": "等级",
+        "source": "来源",
+        "tags": "标签",
+        "lastOrder": "最近订单",
+        "status": "状态",
+        "actions": "操作",
+        "masked": "隐藏",
+        "statusActive": "启用",
+        "statusInactive": "停用",
+        "statusBlocked": "已冻结"
+      },
+      "drawer": {
+        "title": "客户 360",
+        "unknown": "未知",
+        "unknownSource": "来源未知",
+        "accountManager": "客户负责人",
+        "unassigned": "未分配",
+        "tabs": {
+          "overview": "概览",
+          "orders": "订单",
+          "afterSales": "售后",
+          "points": "积分成长",
+          "notes": "备注",
+          "audit": "审计"
+        },
+        "empty": "选择客户以查看详情",
+        "lastOrder": "最近下单时间",
+        "lastOrderAmount": "最近订单金额：¥{amount}",
+        "growthValue": "成长值：{value}",
+        "points": "积分：{value}",
+        "retentionStatus": "留存状态",
+        "createdAt": "创建时间",
+        "notesPlaceholder": "暂无备注",
+        "afterSalesPlaceholder": "售后时间轴接入后显示。",
+        "auditPlaceholder": "接入后将展示 {id} 的审计记录。"
+      },
+      "errors": {
+        "title": "加载客户失败",
+        "toastTitle": "客户目录错误",
+        "generic": "出现问题，请稍后重试。"
+      },
+      "modals": {
+        "create": {
+          "title": "新增客户",
+          "description": "创建新的客户档案",
+          "success": "客户创建成功",
+          "failed": "客户创建失败",
+          "missing": "请填写必填项"
+        },
+        "edit": {
+          "title": "编辑客户",
+          "description": "更新客户基础信息与会员设置",
+          "success": "客户更新成功",
+          "failed": "客户更新失败",
+          "missing": "请检查必填项",
+          "submit": "保存修改"
+        },
+        "delete": {
+          "title": "删除客户",
+          "desc": "该操作会永久删除客户并记录审计。",
+          "target": "将删除：{name}",
+          "reason": "删除原因",
+          "placeholder": "请输入删除原因...",
+          "hint": "系统会记录删除行为以便审计。",
+          "confirm": "删除",
+          "success": "客户已删除",
+          "failed": "删除客户失败"
+        }
+      },
+      "import": {
+        "title": "导入客户",
+        "membersTitle": "导入会员更新",
+        "subtitle": "下载官方模板填写数据，上传后系统将创建异步任务并记录审计。",
+        "downloadTemplate": "下载模板",
+        "templateHint": "模板包含字段说明与校验提示。",
+        "uploadLabel": "上传完成的文件",
+        "emptyUpload": "尚未选择文件",
+        "steps": {
+          "title": "导入步骤",
+          "download": "下载最新模板",
+          "fill": "填写客户数据并在本地校验",
+          "upload": "上传文件创建异步任务"
+        },
+        "submit": "提交导入任务",
+        "failed": "创建导入任务失败",
+        "taskCreated": "已创建任务 {id}",
+        "taskDesc": "可在任务中心跟踪进度与失败报告。",
+        "noFile": "请先选择需要上传的文件"
+      },
+      "export": {
+        "title": "导出客户",
+        "membersTitle": "导出会员列表",
+        "subtitle": "基于当前筛选条件导出数据，完成后会通过通知发送下载链接。",
+        "summaryTitle": "筛选条件",
+        "noFilters": "将导出全部客户",
+        "fieldLabel": "选择需要导出的字段",
+        "fieldPlaceholder": "选择字段",
+        "fieldHint": "建议保留 ID、联系方式与等级以便排查。",
+        "fields": {
+          "id": "客户 ID",
+          "name": "姓名",
+          "email": "邮箱",
+          "phone": "手机号",
+          "membershipTier": "会员等级",
+          "status": "状态",
+          "source": "来源",
+          "createdAt": "创建时间",
+          "growthValue": "成长值",
+          "points": "积分",
+          "retentionStatus": "留存状态",
+          "lastBenefitUsedAt": "最近权益"
+        },
+        "failed": "创建导出任务失败",
+        "taskCreated": "已创建任务 {id}",
+        "taskDesc": "任务完成后会推送下载链接。",
+        "submit": "创建导出任务",
+        "noFields": "请至少选择一个字段"
+      },
+      "form": {
+        "name": "姓名",
+        "namePlaceholder": "请输入客户姓名",
+        "type": "客户类型",
+        "typePlaceholder": "请选择客户类型",
+        "phone": "手机号",
+        "phonePlaceholder": "请输入手机号",
+        "email": "邮箱",
+        "emailPlaceholder": "请输入邮箱",
+        "gender": "性别",
+        "genderPlaceholder": "请选择性别",
+        "birthDate": "生日",
+        "birthPlaceholder": "请选择生日",
+        "address": "地址",
+        "addressPlaceholder": "请输入地址",
+        "tier": "会员等级",
+        "tierPlaceholder": "请选择等级",
+        "source": "来源",
+        "sourcePlaceholder": "请选择来源",
+        "status": "状态",
+        "statusPlaceholder": "请选择状态",
+        "tags": "标签",
+        "tagsPlaceholder": "输入标签并回车",
+        "addTag": "添加",
+        "notes": "备注",
+        "notesPlaceholder": "请输入备注",
+        "registeredAt": "注册时间",
+        "currentStatus": "当前状态",
+        "totalOrders": "订单总数",
+        "totalSpent": "总消费"
+      }
     }
   },
   "message": {

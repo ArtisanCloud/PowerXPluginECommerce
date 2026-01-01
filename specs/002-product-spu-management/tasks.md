@@ -19,8 +19,8 @@
 
 - [x] T004 增加 product_spus、product_spu_versions、product_spu_locales 的迁移脚本（backend/cmd/database/migrate/migrations/*_create_spu_tables.go）。
 - [x] T005 增加 product_spu_channels、product_spu_subscription_plans、product_spu_approvals、product_spu_audit_logs、product_spu_import_tasks、product_spu_export_tasks 的迁移脚本（同目录）。
-- [x] T006 实现数据模型结构体及 TableName 常量（backend/internal/domain/models/product/{spu.go,version.go,locale.go,channel.go,subscription_plan.go,approval.go,audit_log.go}）。
-- [x] T007 实现仓储层并内嵌 BaseRepository，统一 Tenant 过滤（backend/internal/domain/repository/product/{spu_repository.go,version_repository.go,channel_repository.go,subscription_plan_repository.go}）。
+- [x] T006 实现数据模型结构体及 TableName 常量（backend/internal/entity/models/product/{spu.go,version.go,locale.go,channel.go,subscription_plan.go,approval.go,audit_log.go}）。
+- [x] T007 实现仓储层并内嵌 BaseRepository，统一 Tenant 过滤（backend/internal/entity/repository/product/{spu_repository.go,version_repository.go,channel_repository.go,subscription_plan_repository.go}）。
 - [x] T008 定义 SPU 服务接口、DTO 与通用校验逻辑（backend/internal/services/admin/product/spu/service.go）。
 - [x] T009 注册 HTTP 路由与基础 Handler 入口（backend/internal/transport/http/admin/product/spu/router.go）。
 - [x] T010 实现多语言字段验证与默认语言复制工具（backend/internal/services/admin/product/spu/locale_service.go），确保 FR-002 后端校验。

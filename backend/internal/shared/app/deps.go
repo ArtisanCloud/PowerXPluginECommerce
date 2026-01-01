@@ -11,6 +11,7 @@ import (
 	opsmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/operations"
 	productmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/product"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/authproxy"
+	customerauth "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/customer/auth"
 	iamservice "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/iam"
 	marketplacesvc "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/marketplace"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/taskbus"
@@ -27,22 +28,25 @@ type DelegatedAuthProxy interface {
 
 // Deps bundles shared infrastructure dependencies for handlers and services.
 type Deps struct {
-	DB                  *gorm.DB
-	Ctx                 context.Context
-	PowerXClient        *client.PowerXServiceClient
-	Config              *config.Config
-	TaxProviderClient   *marketplacesvc.TaxProviderClient
-	MarketplaceBilling  marketplacesvc.BillingClient
-	LicenseAuthority    marketplacesvc.LicenseAuthority
-	LicenseCache        marketplacesvc.LicenseCache
-	OperationsMetrics   *opsmetrics.Metrics
-	AdminConsoleMetrics *adminmetrics.Metrics
-	ProductMetrics      *productmetrics.Metrics
-	IAMMode             iamservice.IAMMode
-	IAMModeSource       string
-	AuthProxy           DelegatedAuthProxy
-	IAMDirectory        iamservice.IAMDirectory
-	TaskBus             taskbus.Client
+	DB                    *gorm.DB
+	Ctx                   context.Context
+	PowerXClient          *client.PowerXServiceClient
+	Config                *config.Config
+	TaxProviderClient     *marketplacesvc.TaxProviderClient
+	MarketplaceBilling    marketplacesvc.BillingClient
+	LicenseAuthority      marketplacesvc.LicenseAuthority
+	LicenseCache          marketplacesvc.LicenseCache
+	OperationsMetrics     *opsmetrics.Metrics
+	AdminConsoleMetrics   *adminmetrics.Metrics
+	ProductMetrics        *productmetrics.Metrics
+	IAMMode               iamservice.IAMMode
+	IAMModeSource         string
+	AuthProxy             DelegatedAuthProxy
+	IAMDirectory          iamservice.IAMDirectory
+	TaskBus               taskbus.Client
+	CustomerAuthMode      config.CustomerAuthMode
+	CustomerAuthenticator customerauth.Authenticator
+	LocalCustomerAuth     customerauth.LocalAuthService
 }
 
 // RuntimeDefaults returns the configured runtime ops defaults (if any).

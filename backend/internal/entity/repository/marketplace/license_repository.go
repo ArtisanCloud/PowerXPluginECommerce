@@ -8,7 +8,7 @@ import (
 
 	dbm "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/marketplace"
 	repository "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -34,7 +34,7 @@ func (r *LicenseRepository) CreateLicense(ctx context.Context, license *dbm.Lice
 		return errors.New("tenant_uuid is required")
 	}
 	if strings.TrimSpace(license.ID) == "" {
-		license.ID = uuid.NewString()
+		license.ID = utils.NewUUID()
 	}
 	return r.WithTenantTx(ctx, tenantID, func(tx *gorm.DB) error {
 		if err := tx.Create(license).Error; err != nil {
@@ -42,7 +42,7 @@ func (r *LicenseRepository) CreateLicense(ctx context.Context, license *dbm.Lice
 		}
 		if event != nil {
 			if strings.TrimSpace(event.ID) == "" {
-				event.ID = uuid.NewString()
+				event.ID = utils.NewUUID()
 			}
 			event.LicenseID = license.ID
 			event.TenantUuid = tenantID
@@ -126,7 +126,7 @@ func (r *LicenseRepository) CreateEvent(ctx context.Context, event *dbm.LicenseE
 		return errors.New("tenant_uuid is required")
 	}
 	if strings.TrimSpace(event.ID) == "" {
-		event.ID = uuid.NewString()
+		event.ID = utils.NewUUID()
 	}
 	if event.EmittedAt.IsZero() {
 		event.EmittedAt = time.Now()
@@ -172,7 +172,7 @@ func (r *LicenseRepository) RecordTaxTransaction(ctx context.Context, txn *dbm.T
 		return errors.New("tenant_uuid is required")
 	}
 	if strings.TrimSpace(txn.ID) == "" {
-		txn.ID = uuid.NewString()
+		txn.ID = utils.NewUUID()
 	}
 	return r.WithTenantTx(ctx, tenantID, func(tx *gorm.DB) error {
 		return tx.Create(txn).Error

@@ -215,12 +215,12 @@ func TestLicenseService_IssueLicenseSuccess(t *testing.T) {
 
 	amount := 29.99
 	plan := &dbm.PricingPlan{
-		TenantUuid:  "tenant-1",
-		ListingID: "listing-1",
-		PlanCode:  "pro",
-		PlanType:  dbm.PricingPlanTypeSubscription,
-		Currency:  "USD",
-		Amount:    &amount,
+		TenantUuid: "tenant-1",
+		ListingID:  "listing-1",
+		PlanCode:   "pro",
+		PlanType:   dbm.PricingPlanTypeSubscription,
+		Currency:   "USD",
+		Amount:     &amount,
 	}
 	require.NoError(t, pricingRepo.CreatePlan(ctx, plan, nil))
 	require.NotEmpty(t, plan.ID)
@@ -256,12 +256,12 @@ func TestLicenseService_IssueLicenseSuccess(t *testing.T) {
 
 	expiresAt := time.Now().Add(24 * time.Hour)
 	license, err := svc.IssueLicense(ctx, IssueLicenseParams{
-		TenantUuid:  "tenant-1",
-		ListingID: "listing-1",
-		PlanID:    plan.ID,
-		IssuedBy:  "tester",
-		Metadata:  map[string]any{"source": "unit-test"},
-		ExpiresAt: expiresAt,
+		TenantUuid: "tenant-1",
+		ListingID:  "listing-1",
+		PlanID:     plan.ID,
+		IssuedBy:   "tester",
+		Metadata:   map[string]any{"source": "unit-test"},
+		ExpiresAt:  expiresAt,
 	})
 	require.NoError(t, err)
 	require.NotNil(t, license)
@@ -322,13 +322,13 @@ func TestLicenseService_IssueLicenseSkipBilling(t *testing.T) {
 
 	amount := 49.0
 	plan := &dbm.PricingPlan{
-		TenantUuid:  "tenant-1",
-		ListingID: "listing-1",
-		PlanCode:  "enterprise",
-		PlanType:  dbm.PricingPlanTypeSubscription,
-		Currency:  "USD",
-		Amount:    &amount,
-		Status:    "active",
+		TenantUuid: "tenant-1",
+		ListingID:  "listing-1",
+		PlanCode:   "enterprise",
+		PlanType:   dbm.PricingPlanTypeSubscription,
+		Currency:   "USD",
+		Amount:     &amount,
+		Status:     "active",
 	}
 	require.NoError(t, pricingRepo.CreatePlan(ctx, plan, nil))
 
@@ -346,7 +346,7 @@ func TestLicenseService_IssueLicenseSkipBilling(t *testing.T) {
 	meta := map[string]any{"billing_id": "existing-billing-1"}
 
 	license, err := service.IssueLicense(ctx, IssueLicenseParams{
-		TenantUuid:    "tenant-1",
+		TenantUuid:  "tenant-1",
 		ListingID:   "listing-1",
 		PlanID:      plan.ID,
 		IssuedBy:    "recovery-bot",
@@ -378,16 +378,16 @@ func TestLicenseService_RenewLicenseUpdatesExpiry(t *testing.T) {
 	ctx := context.Background()
 
 	plan := &dbm.PricingPlan{
-		TenantUuid:  "tenant-1",
-		ListingID: "listing-1",
-		PlanCode:  "pro",
-		PlanType:  dbm.PricingPlanTypeSubscription,
-		Currency:  "USD",
+		TenantUuid: "tenant-1",
+		ListingID:  "listing-1",
+		PlanCode:   "pro",
+		PlanType:   dbm.PricingPlanTypeSubscription,
+		Currency:   "USD",
 	}
 	require.NoError(t, pricingRepo.CreatePlan(ctx, plan, nil))
 
 	license := &dbm.License{
-		TenantUuid:     "tenant-1",
+		TenantUuid:   "tenant-1",
 		ListingID:    "listing-1",
 		PlanID:       plan.ID,
 		LicenseToken: "initial-token",
@@ -408,10 +408,10 @@ func TestLicenseService_RenewLicenseUpdatesExpiry(t *testing.T) {
 	svc := NewLicenseService(&config.Config{}, pricingRepo, licenseRepo, nil, nil, authority, cache, testLogger())
 
 	updated, err := svc.RenewLicense(ctx, RenewLicenseParams{
-		LicenseID: license.ID,
-		TenantUuid:  "tenant-1",
-		IssuedBy:  "tester",
-		Metadata:  map[string]any{"initiator": "unit-test"},
+		LicenseID:  license.ID,
+		TenantUuid: "tenant-1",
+		IssuedBy:   "tester",
+		Metadata:   map[string]any{"initiator": "unit-test"},
 	})
 	require.NoError(t, err)
 	require.Equal(t, "renewed-token", updated.LicenseToken)
@@ -433,16 +433,16 @@ func TestLicenseService_ExtendOfflineClampsTo72Hours(t *testing.T) {
 	ctx := context.Background()
 
 	plan := &dbm.PricingPlan{
-		TenantUuid:  "tenant-1",
-		ListingID: "listing-1",
-		PlanCode:  "pro",
-		PlanType:  dbm.PricingPlanTypeSubscription,
-		Currency:  "USD",
+		TenantUuid: "tenant-1",
+		ListingID:  "listing-1",
+		PlanCode:   "pro",
+		PlanType:   dbm.PricingPlanTypeSubscription,
+		Currency:   "USD",
 	}
 	require.NoError(t, pricingRepo.CreatePlan(ctx, plan, nil))
 
 	license := &dbm.License{
-		TenantUuid:     "tenant-1",
+		TenantUuid:   "tenant-1",
 		ListingID:    "listing-1",
 		PlanID:       plan.ID,
 		LicenseToken: "token",
@@ -477,12 +477,12 @@ func TestLicenseService_IssueLicensePlanMismatch(t *testing.T) {
 
 	amount := 9.99
 	plan := &dbm.PricingPlan{
-		TenantUuid:  "tenant-1",
-		ListingID: "listing-other",
-		PlanCode:  "basic",
-		PlanType:  dbm.PricingPlanTypeSubscription,
-		Currency:  "USD",
-		Amount:    &amount,
+		TenantUuid: "tenant-1",
+		ListingID:  "listing-other",
+		PlanCode:   "basic",
+		PlanType:   dbm.PricingPlanTypeSubscription,
+		Currency:   "USD",
+		Amount:     &amount,
 	}
 	require.NoError(t, pricingRepo.CreatePlan(ctx, plan, nil))
 
@@ -490,9 +490,9 @@ func TestLicenseService_IssueLicensePlanMismatch(t *testing.T) {
 	svc := NewLicenseService(&config.Config{}, pricingRepo, licenseRepo, nil, billing, nil, nil, testLogger())
 
 	_, err := svc.IssueLicense(ctx, IssueLicenseParams{
-		TenantUuid:  "tenant-1",
-		ListingID: "listing-1",
-		PlanID:    plan.ID,
+		TenantUuid: "tenant-1",
+		ListingID:  "listing-1",
+		PlanID:     plan.ID,
 	})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "does not belong")
@@ -507,13 +507,13 @@ func TestLicenseService_IssueLicenseInactivePlan(t *testing.T) {
 
 	amount := 9.99
 	plan := &dbm.PricingPlan{
-		TenantUuid:  "tenant-1",
-		ListingID: "listing-1",
-		PlanCode:  "basic",
-		PlanType:  dbm.PricingPlanTypeSubscription,
-		Currency:  "USD",
-		Amount:    &amount,
-		Status:    "inactive",
+		TenantUuid: "tenant-1",
+		ListingID:  "listing-1",
+		PlanCode:   "basic",
+		PlanType:   dbm.PricingPlanTypeSubscription,
+		Currency:   "USD",
+		Amount:     &amount,
+		Status:     "inactive",
 	}
 	require.NoError(t, pricingRepo.CreatePlan(ctx, plan, nil))
 
@@ -521,9 +521,9 @@ func TestLicenseService_IssueLicenseInactivePlan(t *testing.T) {
 	svc := NewLicenseService(&config.Config{}, pricingRepo, licenseRepo, nil, billing, nil, nil, testLogger())
 
 	_, err := svc.IssueLicense(ctx, IssueLicenseParams{
-		TenantUuid:  "tenant-1",
-		ListingID: "listing-1",
-		PlanID:    plan.ID,
+		TenantUuid: "tenant-1",
+		ListingID:  "listing-1",
+		PlanID:     plan.ID,
 	})
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "not active")
@@ -537,11 +537,11 @@ func TestLicenseService_IssueLicenseSkipsBillingForFreePlan(t *testing.T) {
 	ctx := context.Background()
 
 	plan := &dbm.PricingPlan{
-		TenantUuid:  "tenant-1",
-		ListingID: "listing-1",
-		PlanCode:  "free",
-		PlanType:  dbm.PricingPlanTypeFree,
-		Currency:  "USD",
+		TenantUuid: "tenant-1",
+		ListingID:  "listing-1",
+		PlanCode:   "free",
+		PlanType:   dbm.PricingPlanTypeFree,
+		Currency:   "USD",
 	}
 	require.NoError(t, pricingRepo.CreatePlan(ctx, plan, nil))
 
@@ -550,11 +550,11 @@ func TestLicenseService_IssueLicenseSkipsBillingForFreePlan(t *testing.T) {
 	svc := NewLicenseService(&config.Config{}, pricingRepo, licenseRepo, nil, billing, nil, cache, testLogger())
 
 	license, err := svc.IssueLicense(ctx, IssueLicenseParams{
-		TenantUuid:  "tenant-1",
-		ListingID: "listing-1",
-		PlanID:    plan.ID,
-		IssuedBy:  "tester",
-		Trial:     true,
+		TenantUuid: "tenant-1",
+		ListingID:  "listing-1",
+		PlanID:     plan.ID,
+		IssuedBy:   "tester",
+		Trial:      true,
 	})
 	require.NoError(t, err)
 	require.NotNil(t, license)
@@ -571,12 +571,12 @@ func TestLicenseService_TaxFailureRecordsTransaction(t *testing.T) {
 
 	amount := 15.0
 	plan := &dbm.PricingPlan{
-		TenantUuid:  "tenant-1",
-		ListingID: "listing-1",
-		PlanCode:  "std",
-		PlanType:  dbm.PricingPlanTypeSubscription,
-		Currency:  "USD",
-		Amount:    &amount,
+		TenantUuid: "tenant-1",
+		ListingID:  "listing-1",
+		PlanCode:   "std",
+		PlanType:   dbm.PricingPlanTypeSubscription,
+		Currency:   "USD",
+		Amount:     &amount,
 	}
 	require.NoError(t, pricingRepo.CreatePlan(ctx, plan, nil))
 
@@ -592,10 +592,10 @@ func TestLicenseService_TaxFailureRecordsTransaction(t *testing.T) {
 	svc := NewLicenseService(&config.Config{}, pricingRepo, licenseRepo, taxClient, billing, nil, cache, testLogger())
 
 	license, err := svc.IssueLicense(ctx, IssueLicenseParams{
-		TenantUuid:  "tenant-1",
-		ListingID: "listing-1",
-		PlanID:    plan.ID,
-		IssuedBy:  "tester",
+		TenantUuid: "tenant-1",
+		ListingID:  "listing-1",
+		PlanID:     plan.ID,
+		IssuedBy:   "tester",
 	})
 	require.NoError(t, err)
 	require.NotNil(t, license)

@@ -7,15 +7,13 @@ import (
 	"log"
 	"strings"
 
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/cmd/database/migrate/migrations"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/config"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models"
 	adminconsoleModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/admin_console"
-	channelmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/channel_master"
-	customermodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/customer"
 	iammodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/iam"
 	marketplaceModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/marketplace"
 	operationsModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/operations"
-	productmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product"
 	runtimeOpsModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/runtime_ops"
 	securityModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/security"
 	templateModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/template"
@@ -24,59 +22,76 @@ import (
 	"gorm.io/gorm"
 )
 
-var businessTables = []interface{}{
-	&models.PluginCredential{},
-	&models.PluginTenantExt{},
-	&customermodel.Customer{},
-	&templateModel.Template{},
-	&productmodel.SPU{},
-	&productmodel.SPUVersion{},
-	&productmodel.SPULocale{},
-	&productmodel.ChannelVisibility{},
-	&productmodel.SubscriptionPlan{},
-	&productmodel.SPUImportTask{},
-	&productmodel.SPUExportTask{},
-	&productmodel.SPUApprovalRecord{},
-	&productmodel.SPUAuditLog{},
-	&channelmodel.ChannelMaster{},
-	&channelmodel.ChannelTaskLink{},
-	&channelmodel.ChannelNote{},
-	&channelmodel.ChannelSyncHistory{},
-	&channelmodel.ChannelCredential{},
-	&channelmodel.ChannelAlert{},
-	&channelmodel.ChannelMetric{},
-	&channelmodel.ChannelConfig{},
-	&marketplaceModel.Listing{},
-	&marketplaceModel.ListingAsset{},
-	&marketplaceModel.ListingVersion{},
-	&marketplaceModel.ChecklistRun{},
-	&marketplaceModel.ChecklistItem{},
-	&marketplaceModel.PricingPlan{},
-	&marketplaceModel.PlanTier{},
-	&marketplaceModel.License{},
-	&marketplaceModel.LicenseEvent{},
-	&marketplaceModel.TaxTransaction{},
-	&runtimeOpsModel.MCPSession{},
-	&runtimeOpsModel.RuntimeAuditEvent{},
-	&runtimeOpsModel.QuotaLedger{},
-	&runtimeOpsModel.MarketplaceOverage{},
-	&operationsModel.SupportChannel{},
-	&operationsModel.SupportTicket{},
-	&operationsModel.SupportTicketEvent{},
-	&operationsModel.ReadinessChecklistItem{},
-	&operationsModel.SLAProfile{},
-	&operationsModel.SLAAdjustment{},
-	&operationsModel.Incident{},
-	&operationsModel.IncidentTimelineEntry{},
-	&operationsModel.IncidentChecklistItem{},
-	&securityModel.BaselineChecklist{},
-	&securityModel.AuditReport{},
-	&toolgrantModel.Revocation{},
-	&toolgrantModel.UsageEvent{},
-	&adminconsoleModel.AuditEvent{},
-	&adminconsoleModel.ConfigChange{},
-	&adminconsoleModel.JobRun{},
-}
+var (
+	corePluginTables = []interface{}{
+		&models.PluginCredential{},
+		&models.PluginTenantExt{},
+		&templateModel.Template{},
+	}
+
+	marketplaceTables = []interface{}{
+		&marketplaceModel.Listing{},
+		&marketplaceModel.ListingAsset{},
+		&marketplaceModel.ListingVersion{},
+		&marketplaceModel.ChecklistRun{},
+		&marketplaceModel.ChecklistItem{},
+		&marketplaceModel.PricingPlan{},
+		&marketplaceModel.PlanTier{},
+		&marketplaceModel.License{},
+		&marketplaceModel.LicenseEvent{},
+		&marketplaceModel.TaxTransaction{},
+	}
+
+	runtimeOpsTables = []interface{}{
+		&runtimeOpsModel.MCPSession{},
+		&runtimeOpsModel.RuntimeAuditEvent{},
+		&runtimeOpsModel.QuotaLedger{},
+		&runtimeOpsModel.MarketplaceOverage{},
+	}
+
+	operationsTables = []interface{}{
+		&operationsModel.SupportChannel{},
+		&operationsModel.SupportTicket{},
+		&operationsModel.SupportTicketEvent{},
+		&operationsModel.ReadinessChecklistItem{},
+		&operationsModel.SLAProfile{},
+		&operationsModel.SLAAdjustment{},
+		&operationsModel.Incident{},
+		&operationsModel.IncidentTimelineEntry{},
+		&operationsModel.IncidentChecklistItem{},
+	}
+
+	securityTables = []interface{}{
+		&securityModel.BaselineChecklist{},
+		&securityModel.AuditReport{},
+	}
+
+	toolGrantTables = []interface{}{
+		&toolgrantModel.Revocation{},
+		&toolgrantModel.UsageEvent{},
+	}
+
+	adminConsoleTables = []interface{}{
+		&adminconsoleModel.AuditEvent{},
+		&adminconsoleModel.ConfigChange{},
+		&adminconsoleModel.JobRun{},
+	}
+)
+
+var businessTables = func() []interface{} {
+	tables := append([]interface{}{}, corePluginTables...)
+	tables = append(tables, migrations.CustomerOpsCustomerTables...)
+	tables = append(tables, migrations.ProductSPUTables...)
+	tables = append(tables, migrations.ChannelMasterTables...)
+	tables = append(tables, marketplaceTables...)
+	tables = append(tables, runtimeOpsTables...)
+	tables = append(tables, operationsTables...)
+	tables = append(tables, securityTables...)
+	tables = append(tables, toolGrantTables...)
+	tables = append(tables, adminConsoleTables...)
+	tables = append(tables, migrations.ProductSkuTables...) // 002-product-sku-management
+	return tables
+}()
 
 var iamTables = []interface{}{
 	&iammodel.Tenant{},
@@ -109,6 +124,9 @@ func MigratePluginModels(ctx context.Context, db *gorm.DB, includeIAM bool) erro
 		return err
 	}
 	if err := ensureChannelMasterUniqueIndex(ctx, db); err != nil {
+		return err
+	}
+	if err := ensureChannelMetricUniqueIndex(ctx, db); err != nil {
 		return err
 	}
 	return ensureChannelRLSPolicies(ctx, db)
@@ -211,6 +229,54 @@ func ensureChannelMasterUniqueIndex(ctx context.Context, db *gorm.DB) error {
 		return fmt.Errorf("create unique index %s failed: %w", idxName, err)
 	}
 	return nil
+}
+
+func ensureChannelMetricUniqueIndex(ctx context.Context, db *gorm.DB) error {
+	if db == nil {
+		return nil
+	}
+	if !strings.EqualFold(db.Dialector.Name(), "postgres") {
+		return nil
+	}
+	tableName := models.S(models.TableChannelMetrics)
+	tenantCol := quoteIdentifier("tenant_uuid")
+	channelCol := quoteIdentifier("channel_id")
+	windowCol := quoteIdentifier("window")
+	if err := dedupeChannelMetricScope(ctx, db, tableName); err != nil {
+		return fmt.Errorf("dedupe channel metrics failed: %w", err)
+	}
+	const idxName = "uniq_channel_metric_scope"
+	createSQL := fmt.Sprintf(`CREATE UNIQUE INDEX IF NOT EXISTS %s ON %s(%s, %s, %s)`,
+		quoteIdentifier(idxName), tableName, tenantCol, channelCol, windowCol)
+	if err := db.WithContext(ctx).Exec(createSQL).Error; err != nil {
+		return fmt.Errorf("create unique index %s failed: %w", idxName, err)
+	}
+	return nil
+}
+
+func dedupeChannelMetricScope(ctx context.Context, db *gorm.DB, tableName string) error {
+	tenantCol := quoteIdentifier("tenant_uuid")
+	channelCol := quoteIdentifier("channel_id")
+	windowCol := quoteIdentifier("window")
+	updatedCol := quoteIdentifier("updated_at")
+	createdCol := quoteIdentifier("created_at")
+	idCol := quoteIdentifier("id")
+	query := fmt.Sprintf(`
+DELETE FROM %s AS cm
+USING (
+	SELECT ctid
+	FROM (
+		SELECT ctid,
+			ROW_NUMBER() OVER (
+				PARTITION BY %s, %s, %s
+				ORDER BY %s DESC NULLS LAST, %s DESC NULLS LAST, %s DESC
+			) AS rn
+		FROM %s
+	) ranked
+	WHERE ranked.rn > 1
+) dup
+WHERE cm.ctid = dup.ctid`, tableName, tenantCol, channelCol, windowCol, updatedCol, createdCol, idCol, tableName)
+	return db.WithContext(ctx).Exec(query).Error
 }
 
 func resolveTableName(db *gorm.DB, table interface{}) (string, error) {
@@ -316,9 +382,7 @@ func rlsPolicyExists(ctx context.Context, db *gorm.DB, tableName, policyName str
 	cleanTable := tableName
 	if schema != "" {
 		prefix := fmt.Sprintf(`"%s".`, schema)
-		if strings.HasPrefix(cleanTable, prefix) {
-			cleanTable = strings.TrimPrefix(cleanTable, prefix)
-		}
+		cleanTable = strings.TrimPrefix(cleanTable, prefix)
 	}
 	query := `SELECT COUNT(*) FROM pg_policies WHERE schemaname = current_schema() AND tablename = ? AND policyname = ?`
 	args := []any{cleanTable, policyName}

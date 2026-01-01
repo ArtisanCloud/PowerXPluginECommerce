@@ -187,7 +187,7 @@ func TestListingRepository_CreateAndFind(t *testing.T) {
 
 	listing := &dbm.Listing{
 		ID:         "listing-create",
-		TenantUuid:   "1",
+		TenantUuid: "1",
 		PluginID:   "com.example.plugin",
 		VendorID:   "vendor-1",
 		Title:      "Test Listing",
@@ -212,12 +212,12 @@ func TestListingRepository_ReplaceAssets(t *testing.T) {
 	ctx := context.Background()
 
 	listing := &dbm.Listing{
-		ID:       "listing-asset",
+		ID:         "listing-asset",
 		TenantUuid: "1",
-		PluginID: "com.example.plugin",
-		VendorID: "vendor-1",
-		Title:    "Listing",
-		Slug:     "listing",
+		PluginID:   "com.example.plugin",
+		VendorID:   "vendor-1",
+		Title:      "Listing",
+		Slug:       "listing",
 	}
 	require.NoError(t, repo.Create(ctx, listing))
 
@@ -271,12 +271,12 @@ func TestListingRepository_ReplacePricingPlans(t *testing.T) {
 	ctx := context.Background()
 
 	listing := &dbm.Listing{
-		ID:       "listing-pricing",
+		ID:         "listing-pricing",
 		TenantUuid: "1",
-		PluginID: "plugin",
-		VendorID: "vendor",
-		Title:    "Pricing Test",
-		Slug:     "pricing-test",
+		PluginID:   "plugin",
+		VendorID:   "vendor",
+		Title:      "Pricing Test",
+		Slug:       "pricing-test",
 	}
 	require.NoError(t, repo.Create(ctx, listing))
 

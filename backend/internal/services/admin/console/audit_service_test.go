@@ -12,7 +12,7 @@ import (
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/admin_console"
 	consolesvc "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/console"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"github.com/stretchr/testify/require"
 	"gorm.io/datatypes"
 	"gorm.io/driver/sqlite"
@@ -94,7 +94,7 @@ func TestAuditService_ExportEventsCSV(t *testing.T) {
 func seedAuditEvent(t *testing.T, repo *consolerepo.AuditRepository, evt model.AuditEvent) {
 	t.Helper()
 	if evt.ID == "" {
-		evt.ID = uuid.NewString()
+		evt.ID = utils.NewUUID()
 	}
 	if evt.OccurredAt.IsZero() {
 		evt.OccurredAt = time.Now().UTC()

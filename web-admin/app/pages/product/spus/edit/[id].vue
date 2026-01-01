@@ -68,6 +68,75 @@
 					</div>
 				</dl>
 			</UCard>
+			<UCard>
+				<template #header>
+					<div class="flex flex-wrap items-center justify-between gap-4">
+						<div>
+							<h3 class="text-lg font-semibold text-gray-900 dark:text-white">关联 SKU 摘要</h3>
+							<p class="text-sm text-gray-500 dark:text-gray-400">最近关联/生成的 SKU 概览，保存后自动刷新。</p>
+						</div>
+						<div class="flex items-center gap-3">
+							<UBadge variant="soft" color="primary">共 {{ totalSkuCount }} 条</UBadge>
+							<UButton size="sm" variant="outline" color="primary" @click="openSkuModal">管理关联</UButton>
+						</div>
+					</div>
+				</template>
+				<div v-if="skuSummaryLoading">
+					<USkeleton class="h-28" />
+				</div>
+				<div v-else-if="skuSummaryPreview.length" class="space-y-3">
+					<div class="-mx-2 overflow-x-auto sm:mx-0">
+						<table class="min-w-full divide-y divide-gray-200 dark:divide-gray-700 text-sm">
+							<thead class="bg-gray-50 dark:bg-gray-800/50 text-xs uppercase text-gray-500">
+								<tr>
+									<th scope="col" class="px-3 py-2 text-left font-medium">SKU 编码</th>
+									<th scope="col" class="px-3 py-2 text-left font-medium">名称</th>
+									<th scope="col" class="px-3 py-2 text-left font-medium">价格</th>
+									<th scope="col" class="px-3 py-2 text-left font-medium">库存引用</th>
+									<th scope="col" class="px-3 py-2 text-left font-medium">属性</th>
+								</tr>
+							</thead>
+							<tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900/30">
+								<tr v-for="sku in skuSummaryPreview" :key="sku.id || sku.code">
+									<td class="px-3 py-2 font-medium text-gray-900 dark:text-white">
+										{{ sku.code || '—' }}
+									</td>
+									<td class="px-3 py-2 text-gray-600 dark:text-gray-300">
+										<div class="line-clamp-2">
+											{{ sku.name || '—' }}
+										</div>
+									</td>
+									<td class="px-3 py-2 font-mono text-sm text-gray-900 dark:text-gray-100">
+										{{ formatSkuPrice(sku.pricing) }}
+									</td>
+									<td class="px-3 py-2 text-gray-600 dark:text-gray-300">
+										{{ sku.inventoryRef || '—' }}
+									</td>
+									<td class="px-3 py-2">
+										<div v-if="extractAttributePairs(sku.attributes).length" class="flex flex-wrap gap-1">
+											<UBadge
+												v-for="(pair, idx) in extractAttributePairs(sku.attributes)"
+												:key="`${sku.code}-attr-${idx}`"
+												variant="soft"
+												color="neutral"
+											>
+												{{ pair[0] }}：{{ pair[1] }}
+											</UBadge>
+										</div>
+										<span v-else class="text-xs text-gray-400">—</span>
+									</td>
+								</tr>
+							</tbody>
+						</table>
+					</div>
+					<p class="text-xs text-gray-500 dark:text-gray-400">
+						展示最近 {{ skuSummaryPreview.length }} 条，点击“管理关联”可查看全部。
+					</p>
+				</div>
+				<div v-else class="rounded border border-dashed border-gray-200 dark:border-gray-700 p-4 text-sm text-gray-500 dark:text-gray-400">
+					暂无关联 SKU，点击“关联 SKU”可批量生成或手动新增。
+				</div>
+			</UCard>
 			<!-- 业务配置通过按钮触发弹框 -->
 		</div>
 		<div v-else>
@@ -180,7 +249,7 @@
 		:ui="panelModalUi"
 	>
 		<template #body>
-			<SpuSkuLinker v-if="spu" :spu-id="spu.id" />
+			<SpuSkuLinker v-if="spu" :spu-id="spu.id" :specs="spuSpecs" @saved="handleSkuLinksUpdated" />
 		</template>
 	</UModal>
 	<UModal
@@ -235,8 +304,9 @@
 <script setup lang="ts">
 import { useToast } from '#imports'
 import { useRoute, useRouter } from 'vue-router'
-import type { SpuDetail } from '~/composables/api/useSpu'
+import type { SpuDetail, SpuSkuLink } from '~/composables/api/useSpu'
 import { useSpuApi } from '~/composables/api/useSpu'
+import { useSkuApi } from '~/composables/api/useSku'
 import SpuSkuLinker from '~/pages/product/spus/components/SpuSkuLinker.vue'
 import VersionDiff from '~/pages/product/spus/components/VersionDiff.vue'
 import SpuAuditTimeline from '~/components/product/SpuAuditTimeline.vue'
@@ -244,13 +314,30 @@ import ChannelVisibilityForm from '~/components/product/ChannelVisibilityForm.vu
 import SubscriptionPlanPanel from '~/components/product/SubscriptionPlanPanel.vue'
 import { useSpuStore } from '~/stores/product/spu'
 
+interface SkuSummaryRow {
+	id?: string
+	code: string
+	status?: string
+	name?: string
+	inventoryRef?: string
+	pricing?: { price: number; currency: string }
+	attributes?: Record<string, any>
+}
+
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
 const api = useSpuApi()
+const skuApi = useSkuApi()
 const store = useSpuStore()
 const spu = ref<SpuDetail | null>(null)
 const loading = computed(() => store.detailLoading)
+const skuSummaryLimit = 5
+const skuSummaryItems = ref<SkuSummaryRow[]>([])
+const skuSummaryPreview = computed(() => skuSummaryItems.value.slice(0, skuSummaryLimit))
+const skuSummaryTotal = ref(0)
+const totalSkuCount = computed(() => skuSummaryTotal.value)
+const skuSummaryLoading = ref(false)
 const submitLoading = ref(false)
 const publishLoading = ref(false)
 const withdrawLoading = ref(false)
@@ -318,6 +405,25 @@ const auditEvents = computed(() => {
 	return events
 })
 
+const spuSpecs = computed(() => {
+	const detail = spu.value as any
+	const specs = detail?.specs || detail?.attributes?.specs
+	if (!Array.isArray(specs)) {
+		return []
+	}
+	return specs
+		.map((spec: any, index: number) => ({
+			id: spec.id || spec.specId || spec.code || `spec-${index}`,
+			name: spec.name || spec.label || spec.specName || `规格 ${index + 1}`,
+			values: (spec.values || spec.options || []).map((val: any, idx: number) => ({
+				id: val.id || val.valueId || val.code || `value-${idx}`,
+				name: val.name || val.label || val.valueName || val.id,
+				code: val.code || val.valueCode,
+			})),
+		}))
+		.filter((spec: any) => spec.values.length)
+})
+
 type BadgeColor = 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral'
 
 const approvalStatusColor = (status?: string): BadgeColor => {
@@ -358,6 +464,9 @@ const load = async () => {
 		selectedVersionId.value = versions.value[0].id
 		await store.fetchVersionDetail(currentId, selectedVersionId.value)
 	}
+	if (detail?.id) {
+		await loadSkuSummary(detail.id)
+	}
 }
 
 const refreshSpuDetail = async () => {
@@ -365,6 +474,29 @@ const refreshSpuDetail = async () => {
 	const detail = await store.fetchDetail(spu.value.id)
 	if (detail) {
 		spu.value = detail
+	}
+}
+
+async function loadSkuSummary(targetId?: string) {
+	const id = targetId || spu.value?.id
+	if (!id) return
+	skuSummaryLoading.value = true
+	const linkedPromise = store.fetchSkus(id).catch((error) => {
+		console.warn('加载 SKU payload 失败', error)
+		return []
+	})
+	try {
+		const response = await skuApi.listBySpu(id, { pageSize: 50 })
+		const linked = await linkedPromise
+		const rows = buildSkuSummaryRows(response?.items ?? [], linked ?? [])
+		skuSummaryItems.value = rows
+		const totalFromServer = response?.pagination?.total
+		skuSummaryTotal.value = typeof totalFromServer === 'number' ? totalFromServer : rows.length
+	} catch (error) {
+		console.error(error)
+		toast.add({ title: '加载 SKU 摘要失败', color: 'error' })
+	} finally {
+		skuSummaryLoading.value = false
 	}
 }
 
@@ -445,6 +577,36 @@ const closeSubscriptionModal = () => {
 const closeSkuModal = () => {
 	blurActiveElement()
 	skuModalOpen.value = false
+}
+
+const buildSkuSummaryRows = (officialItems: any[], linkedItems: SpuSkuLink[]): SkuSummaryRow[] => {
+	const linkedMap = new Map<string, SpuSkuLink>()
+	for (const item of linkedItems ?? []) {
+		const key = item?.code?.toLowerCase()
+		if (key) {
+			linkedMap.set(key, item)
+		}
+	}
+	return (officialItems ?? [])
+		.map((item) => normalizeSkuSummaryRow(item, linkedMap))
+		.filter((row): row is SkuSummaryRow => Boolean(row))
+}
+
+const normalizeSkuSummaryRow = (item: any, linkedMap: Map<string, SpuSkuLink>): SkuSummaryRow | null => {
+	const code = (item?.skuCode ?? item?.sku_code ?? '').trim()
+	if (!code) {
+		return null
+	}
+	const fallback = linkedMap.get(code.toLowerCase())
+	return {
+		id: item?.id,
+		code,
+		status: item?.status,
+		name: fallback?.name ?? code,
+		inventoryRef: fallback?.inventoryRef,
+		pricing: fallback?.pricing,
+		attributes: fallback?.attributes,
+	}
 }
 
 const openWithdrawModal = async () => {
@@ -586,5 +748,50 @@ const submitApproval = async (action: 'approve' | 'reject') => {
 const formatDate = (value?: string) => {
 	if (!value) return '—'
 	return new Date(value).toLocaleString()
+}
+
+const formatSkuPrice = (pricing?: { price: number; currency: string }) => {
+	if (!pricing || typeof pricing.price === 'undefined' || pricing.price === null) {
+		return '—'
+	}
+	const rawAmount = Number(pricing.price)
+	if (!Number.isFinite(rawAmount)) {
+		return '—'
+	}
+	const currency = (pricing.currency || 'CNY').toUpperCase()
+	try {
+		return new Intl.NumberFormat('zh-CN', {
+			style: 'currency',
+			currency,
+		}).format(rawAmount)
+	} catch {
+		return `${currency} ${rawAmount.toFixed(2)}`
+	}
+}
+
+const extractAttributePairs = (attrs?: Record<string, any>) => {
+	if (!attrs) return []
+	return Object.entries(attrs)
+		.map(([key, value]) => [key, normalizeAttributeValue(value)] as [string, string])
+		.slice(0, 3)
+}
+
+const normalizeAttributeValue = (value: any) => {
+	if (value === null || typeof value === 'undefined') {
+		return ''
+	}
+	if (typeof value === 'object') {
+		try {
+			return JSON.stringify(value)
+		} catch {
+			return '[object]'
+		}
+	}
+	return String(value)
+}
+
+const handleSkuLinksUpdated = async () => {
+	if (!spu.value?.id) return
+	await loadSkuSummary(spu.value.id)
 }
 </script>

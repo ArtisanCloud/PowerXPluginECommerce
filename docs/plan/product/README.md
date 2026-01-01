@@ -12,7 +12,7 @@
 | --- | --- | --- |
 | 商品总览 | `product/index.vue` | KPI 卡、快捷入口，需接入真实指标 |
 | SPU 管理 | `product/spus/**` | CRUD 表单与草稿/发布流程示例，缺少批量导入、多语描述 |
-| SKU/库存 | `product/skus/index.vue`、`product/inventory.vue` | SKU 表格 & 库存占位；需与 `inventory/**` 接口打通 |
+| SKU/库存 | `product/skus/index.vue`、`product/inventory.vue`、`product/skus/[id].vue` | SKU 生成器、批量操作、渠道映射、库存、条码/序列号等核心功能已贯通；后续持续扩充报表与多租户指标 |
 | 类目 & 模板 | `product/categories.vue`、`product/category-templates/**` | 树形类目、模板继承示例，需支持渠道映射和多语 |
 | 属性 & 规格 | `product/attributes/**`、`product/specifications/**` | 属性组、规格模板 UI 完整，需要规则校验、依赖配置 |
 | 品牌 | `product/brands.vue` | 基础信息表单，需要资质审核、上下架规则 |
@@ -34,9 +34,10 @@
    - 支持：草稿/审批、版本管理、批量导入导出（CSV/Excel）、多语言。
    - 与渠道联动：推送到 `channels/publishing`、SKU 映射。
 2. **SKU 管理与变体生成**
-   - 维度：规格组合、条码、重量尺寸、库存上限、价格引用。
-   - 需提供 SKU 生成器，根据属性组合自动生成；支持局部编辑、批量调整。
-   - 与库存联动：展示实时库存、在途、锁定；支持库存预警。
+   - 维度：规格组合、条码、重量尺寸、库存上限、价格引用、序列号/批次属性。
+   - 已上线 SKU 生成器（笛卡尔组合 + 默认值模板）与 Pinia store 同步，支持局部编辑、复制、冲突提示。
+   - 批量任务（价格/库存/导入导出）复用 `product_sku_bulk_tasks`，含审批策略、错误报告与任务列表 UI。
+   - 与库存/条码/渠道联动：实时展示库存（含 SLA 告警）、条码唯一性校验、标签打印、序列号录入，以及渠道映射与发布日志。
 3. **类目与模板**
    - 类目树支持多层结构、权限控制、市场/国家维度。
    - 类目模板定义强制字段、校验规则、上下游映射（如 Amazon/B2B 渠道）。
@@ -83,3 +84,9 @@
 - 对齐 API Schema，补充 `backend/internal` 目录下的服务设计文档。
 - 评估批量工具（导入导出、模板复制）的技术方案。
 - 明确与 PowerX 底座（模板、Bridge、Dev Console）复用的组件。
+
+## 9. SKU 变体管理迭代（002-product-sku-management）
+- **交付范围**：完成 US1（SKU 生成）、US2（批量调价/库存 + 导入导出 + 审批 + 任务日志）、US3（渠道映射、库存可视、条码与序列管理）以及 Phase 6 可观测性/文档工作。  
+- **后端落点**：`backend/internal/services/admin/product_sku/**`、`transport/http/admin/product_sku/**`、`entity/models/product_sku/**`、`observability/product_sku/logger.go`，所有接口都在 `/v1/products/skus/**`。  
+- **前端落点**：`web-admin/app/pages/product/skus/**`、`components/product/sku/**`、`stores/productSku.ts`，并提供 `web-admin/tests/e2e/product-sku.spec.ts` 冒烟用例。  
+- **运维与文档**：Quickstart、Plan README、`reports/sku-release.md` checklist 统一描述 SKU 生成→批量任务→渠道/库存→条码/序列闭环，配合 `make test` / `make test-admin` / `make integration-smoke` 进行回归。

@@ -180,13 +180,13 @@
     />
     <CustomerImportDialog
       v-if="canManageCustomers"
-      v-model="importModalOpen"
+      v-model:open="importModalOpen"
       context="members"
       @submitted="handleImportSubmitted"
     />
     <CustomerExportDialog
       v-if="canExportCustomers"
-      v-model="exportModalOpen"
+      v-model:open="exportModalOpen"
       :filters="membershipFilters"
       context="members"
       @submitted="handleExportSubmitted"

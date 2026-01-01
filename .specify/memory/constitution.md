@@ -20,6 +20,7 @@ rulesets:
   # 后端顶层
   - rulesets/crud_http.yaml
   - rulesets/crud_grpc.yaml
+  - rulesets/plugin_rbac.yaml
   - rulesets/sts.yaml
 
   # 前端顶层
@@ -72,7 +73,7 @@ rulesets:
 - Handler 保持**薄**：校验→鉴权→调用 Service→序列化；业务编排**仅在** `internal/services`。
 - Repo 封装数据访问细节；HTTP 与 gRPC **复用同一** Service。
 - 依赖通过容器注入（配置、日志、客户端），保证可测试与可重放构造。
-- 新增子域须沿用目录分层：`internal/transport/http/{admin,agent,...}/<domain>` → `internal/services/{admin,agent,...}/<domain>` → `internal/domain/{models,repository}/<domain>`，目录名使用 lower_snake_case，避免自定义层级。
+- 新增子域须沿用目录分层：`internal/transport/http/{admin,agent,...}/<domain>` → `internal/services/{admin,agent,...}/<domain>` → `internal/entity/models/<domain>` 与 `internal/entity/repository/<domain>`，目录名使用 lower_snake_case，避免自定义层级。
  - Repository 必须内嵌 `*repository.BaseRepository[T]` 并提供 `NewXXXRepository` 构造函数；禁止直接暴露裸 `*gorm.DB` 字段以维持一致的读写封装。
 
 ### IV. Observable & Testable Delivery（可观测与可测试）
@@ -87,13 +88,20 @@ rulesets:
 - 交付必须更新文档/清单，并通过 `make release && make package-release`（或 CI 等价）打包。
 - 破坏性变更需 **SemVer** 升级并提供迁移指南。
 
+### VI. Unified Plugin RBAC（Delegated ↔ Standalone）
+
+- RBAC 定义遵循 docs/plan/007-standalone-iam-rbac（`plugin/resource/action` 三元组），统一由各域 `RBACEntries` 暴露并在 `/api/v1/admin/rbac`/manifest 中输出。
+- Delegated 模式由宿主颁发 Token；Standalone 模式使用本地 IAM，同一套 scope/角色在两种模式间可互转（`POWERX_RBAC_DELEGATE` / `POWERX_PROXY` 控制）。
+- 禁止发明额外 RBAC 配置文件或在 Handler 层硬编码权限判断；一切鉴权均通过中间件 + Manifest。
+
 ## Operational Constraints
 
 - **Language Versions**: Backend services MUST target Go 1.24; frontend/admin stacks MUST use Node 20 with TypeScript 4.x plus Nuxt 4 presets.
 - **Database Schema**: Plugin-managed tables deploy under the `powerx_plugin_base` schema defined in `plugin.yaml`; only local, isolated development may fall back to `public`.
 - **Database**：Postgres ≥ 13；插件使用 `plugin.yaml` 中声明的单一 schema（默认 `powerx_plugin_base`）；RLS 强制；迁移使用项目提供工具链。
-- **Model Declaration**：所有需要持久化的领域模型必须显式声明 `gorm` 列定义与 `json` 标签，并在 `backend/cmd/database/migrate/migrate.go` 中注册，确保 `AutoMigrate` 同步表结构。
-  - 表名常量统一集中在 `backend/internal/domain/models/model.go`；`TableName()` 必须通过 `models.S(<TABLE_CONSTANT>)` 返回，禁止直接使用硬编码字符串。
+- **Model Declaration**：所有需要持久化的领域模型必须放在 `backend/internal/entity/models/<domain>` 下，显式声明 `gorm` 列定义与 `json` 标签，并在 `backend/cmd/database/migrate/migrate.go` 中注册，确保 `AutoMigrate` 同步表结构。
+  - 表名常量统一集中在 `backend/internal/entity/models/model.go`；`TableName()` 必须通过 `models.S(<TABLE_CONSTANT>)` 返回，禁止直接使用硬编码字符串。
+- **Repository Layout**：数据访问实现位于 `backend/internal/entity/repository/<domain>`，每个仓储结构体内嵌 `*repository.BaseRepository[T]` 并通过 `NewXXXRepository` 构造函数暴露，所有读写需通过 `BeginTenantTx/WithTenantTx` 注入 `app.tenant_uuid`。
 - **Configuration Layout**：后端运行配置统一存放 `backend/etc/`（含 manifest runtime overrides）；禁止在仓库其他目录自定义配置副本。
 - **Runtime**：生产禁用 `POWERX_DEV_MODE`；配置 `POWERX_CTX_*`（issuer/audience）；服务监听 `POWERX_BIND_ADDR`。
 - **Networking（反代）**：宿主路由  

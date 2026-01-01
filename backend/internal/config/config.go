@@ -37,6 +37,9 @@ type Config struct {
 	// PowerX 上下文配置
 	Context *ContextConfig `yaml:"context" json:"context"`
 
+	// CustomerAuth 配置迷你应用客户鉴权模式。
+	CustomerAuth *CustomerAuthConfig `yaml:"customer_auth" json:"customer_auth"`
+
 	// 安全配置
 	Security *SecurityConfig `yaml:"security" json:"security"`
 
@@ -75,6 +78,26 @@ type Config struct {
 	DBDSN      string `yaml:"-" json:"db_dsn,omitempty"`
 	DBSchema   string `yaml:"-" json:"db_schema,omitempty"`
 	RunMigrate bool   `yaml:"-" json:"run_migrate,omitempty"`
+}
+
+// CustomerAuthMode 表示 Customer 鉴权模式。
+type CustomerAuthMode string
+
+const (
+	CustomerAuthModeDelegate CustomerAuthMode = "delegate"
+	CustomerAuthModeLocal    CustomerAuthMode = "local"
+)
+
+// CustomerAuthConfig 控制 mini-app 客户鉴权。
+type CustomerAuthConfig struct {
+	Mode             string        `yaml:"mode" json:"mode"`
+	DelegateEndpoint string        `yaml:"delegate_endpoint" json:"delegate_endpoint"`
+	ServiceToken     string        `yaml:"service_token" json:"service_token"`
+	JWTSecret        string        `yaml:"jwt_secret" json:"jwt_secret"`
+	JWTIssuer        string        `yaml:"jwt_issuer" json:"jwt_issuer"`
+	JWTAudience      string        `yaml:"jwt_audience" json:"jwt_audience"`
+	JWTExpires       time.Duration `yaml:"jwt_expires" json:"jwt_expires"`
+	CacheTTL         time.Duration `yaml:"cache_ttl" json:"cache_ttl"`
 }
 
 // ServerConfig 服务配置
@@ -361,6 +384,13 @@ func getDefaultConfig() *Config {
 			BindAddr: ":8078",
 			LogLevel: "info",
 			DevMode:  false,
+		},
+		CustomerAuth: &CustomerAuthConfig{
+			Mode:        "auto",
+			JWTIssuer:   "powerx-plugin-customer",
+			JWTAudience: "mini-app",
+			JWTExpires:  2 * time.Hour,
+			CacheTTL:    5 * time.Minute,
 		},
 		Integration: &IntegrationConfig{
 			Idempotency: IntegrationIdempotencyConfig{
@@ -762,6 +792,36 @@ func loadEnvConfig(cfg *Config) {
 		}
 	}
 
+	// Customer auth 配置
+	if mode := resolveConfigValue(os.Getenv("POWERX_CUSTOMER_AUTH_MODE")); mode != "" {
+		cfg.CustomerAuthConfigOrDefault().Mode = mode
+	}
+	if delegateEndpoint := resolveConfigValue(os.Getenv("POWERX_CUSTOMER_DELEGATE_ENDPOINT")); delegateEndpoint != "" {
+		cfg.CustomerAuthConfigOrDefault().DelegateEndpoint = delegateEndpoint
+	}
+	if delegateToken := resolveConfigValue(os.Getenv("POWERX_CUSTOMER_DELEGATE_TOKEN")); delegateToken != "" {
+		cfg.CustomerAuthConfigOrDefault().ServiceToken = delegateToken
+	}
+	if jwtSecret := resolveConfigValue(os.Getenv("POWERX_CUSTOMER_JWT_SECRET")); jwtSecret != "" {
+		cfg.CustomerAuthConfigOrDefault().JWTSecret = jwtSecret
+	}
+	if jwtIssuer := resolveConfigValue(os.Getenv("POWERX_CUSTOMER_JWT_ISSUER")); jwtIssuer != "" {
+		cfg.CustomerAuthConfigOrDefault().JWTIssuer = jwtIssuer
+	}
+	if jwtAudience := resolveConfigValue(os.Getenv("POWERX_CUSTOMER_JWT_AUDIENCE")); jwtAudience != "" {
+		cfg.CustomerAuthConfigOrDefault().JWTAudience = jwtAudience
+	}
+	if jwtExpires := resolveConfigValue(os.Getenv("POWERX_CUSTOMER_JWT_EXPIRES")); jwtExpires != "" {
+		if d, err := time.ParseDuration(jwtExpires); err == nil {
+			cfg.CustomerAuthConfigOrDefault().JWTExpires = d
+		}
+	}
+	if cacheTTL := resolveConfigValue(os.Getenv("POWERX_CUSTOMER_AUTH_CACHE_TTL")); cacheTTL != "" {
+		if d, err := time.ParseDuration(cacheTTL); err == nil {
+			cfg.CustomerAuthConfigOrDefault().CacheTTL = d
+		}
+	}
+
 	// gRPC 上游配置
 	if grpcAddr := resolveConfigValue(os.Getenv("POWERX_GRPC_UPSTREAM_ADDRESS")); grpcAddr != "" {
 		cfg.GRPCUpstream.Address = grpcAddr
@@ -916,6 +976,59 @@ func normalizeGRPCServerConfig(server *GRPCServer) {
 	}
 }
 
+// CustomerAuthConfigOrDefault ensures customer auth config is always non-nil with sane defaults.
+func (c *Config) CustomerAuthConfigOrDefault() *CustomerAuthConfig {
+	if c == nil {
+		return &CustomerAuthConfig{
+			Mode:        "auto",
+			JWTIssuer:   "powerx-plugin-customer",
+			JWTAudience: "mini-app",
+			JWTExpires:  2 * time.Hour,
+			CacheTTL:    5 * time.Minute,
+		}
+	}
+	if c.CustomerAuth == nil {
+		c.CustomerAuth = &CustomerAuthConfig{
+			Mode:        "auto",
+			JWTIssuer:   "powerx-plugin-customer",
+			JWTAudience: "mini-app",
+			JWTExpires:  2 * time.Hour,
+			CacheTTL:    5 * time.Minute,
+		}
+	}
+	if c.CustomerAuth.JWTExpires <= 0 {
+		c.CustomerAuth.JWTExpires = 2 * time.Hour
+	}
+	if c.CustomerAuth.CacheTTL <= 0 {
+		c.CustomerAuth.CacheTTL = 5 * time.Minute
+	}
+	return c.CustomerAuth
+}
+
+// ResolveCustomerAuthMode 返回最终客户鉴权模式。
+func (c *Config) ResolveCustomerAuthMode() CustomerAuthMode {
+	if c == nil {
+		if truthyEnv(os.Getenv("POWERX_CUSTOMER_DELEGATE")) || strings.TrimSpace(os.Getenv("POWERX_PROXY")) == "1" {
+			return CustomerAuthModeDelegate
+		}
+		return CustomerAuthModeLocal
+	}
+	cfg := c.CustomerAuthConfigOrDefault()
+	switch strings.ToLower(strings.TrimSpace(cfg.Mode)) {
+	case "delegate":
+		return CustomerAuthModeDelegate
+	case "local":
+		return CustomerAuthModeLocal
+	}
+	if truthyEnv(os.Getenv("POWERX_CUSTOMER_DELEGATE")) {
+		return CustomerAuthModeDelegate
+	}
+	if strings.TrimSpace(os.Getenv("POWERX_PROXY")) == "1" {
+		return CustomerAuthModeDelegate
+	}
+	return CustomerAuthModeLocal
+}
+
 func extractPort(addr string) int {
 	addr = strings.TrimSpace(addr)
 	if addr == "" {
@@ -982,6 +1095,15 @@ func resolveConfigValueWithDepth(value string, depth, maxDepth int) string {
 	}
 	resolved, _ := resolvePlaceholder(trimmed, depth, maxDepth)
 	return resolved
+}
+
+func truthyEnv(value string) bool {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "1", "true", "yes", "on":
+		return true
+	default:
+		return false
+	}
 }
 
 // GetString 获取字符串配置，支持默认值
@@ -1107,6 +1229,17 @@ func (c *Config) Validate() error {
 		}
 		if c.GRPCServer.PortMaxRetries < 1 {
 			return NewConfigError("grpc_server.port_max_retries must be positive")
+		}
+	}
+
+	switch c.ResolveCustomerAuthMode() {
+	case CustomerAuthModeLocal:
+		if cfg := c.CustomerAuthConfigOrDefault(); strings.TrimSpace(cfg.JWTSecret) == "" {
+			return NewConfigError("customer_auth.jwt_secret is required for local customer auth mode")
+		}
+	case CustomerAuthModeDelegate:
+		if cfg := c.CustomerAuthConfigOrDefault(); strings.TrimSpace(cfg.DelegateEndpoint) == "" {
+			return NewConfigError("customer_auth.delegate_endpoint is required for delegate customer auth mode")
 		}
 	}
 

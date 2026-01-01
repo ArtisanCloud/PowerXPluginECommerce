@@ -9,11 +9,12 @@ import (
 	"strings"
 	"time"
 
-	productrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/domain/repository/product"
 	productmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product"
+	productrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/product"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	productmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/product"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
@@ -231,7 +232,7 @@ func (s *VersionService) Rollback(ctx context.Context, spuID string, req Rollbac
 		now := time.Now().UTC()
 		sourceID := target.ID
 		newVersion := &productmodel.SPUVersion{
-			ID:                    uuidString(),
+			ID:                    utils.NewUUID(),
 			TenantUUID:            tenantID,
 			SPUID:                 spu.ID,
 			VersionNumber:         nextNumber,
@@ -502,7 +503,7 @@ func actorFromContext(ctx context.Context) string {
 	if ctx == nil {
 		return "system"
 	}
-	if tc, ok := ctx.Value("tenant_ctx").(authx.TenantContext); ok {
+	if tc, ok := authx.TenantContextFromContext(ctx); ok {
 		if tc.UserID > 0 {
 			return fmt.Sprintf("user:%d", tc.UserID)
 		}

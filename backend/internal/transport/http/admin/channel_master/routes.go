@@ -1,6 +1,8 @@
 package channel_master
 
 import (
+	"context"
+
 	channelobs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/channel/master"
 	channelservice "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/channel_master"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
@@ -23,12 +25,12 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) {
 	var strategyHandler *StrategyHandler
 	var metricsCollector *channelobs.Metrics
 	if deps != nil && deps.DB != nil {
-		audit := channelobs.NewAuditEmitter(deps.RuntimeLogger(nil, "channel-master-audit", nil))
-		metricsCollector = channelobs.NewMetrics(deps.RuntimeLogger(nil, "channel-master-metrics", nil))
+		audit := channelobs.NewAuditEmitter(deps.RuntimeLogger(context.TODO(), "channel-master-audit", nil))
+		metricsCollector = channelobs.NewMetrics(deps.RuntimeLogger(context.TODO(), "channel-master-metrics", nil))
 		service := channelservice.NewService(deps, nil, audit, metricsCollector)
 		ownerDirectory := channelservice.NewOwnerDirectory(deps)
 		handler = NewHandler(service, ownerDirectory)
-		alertEmitter := channelobs.NewAlertEmitter(deps.RuntimeLogger(nil, "channel-master-alert", nil))
+		alertEmitter := channelobs.NewAlertEmitter(deps.RuntimeLogger(context.TODO(), "channel-master-alert", nil))
 		credSvc := channelservice.NewCredentialService(deps, alertEmitter, metricsCollector)
 		credentialHandler = NewCredentialHandler(credSvc)
 		metricsSvc := channelservice.NewMetricsService(deps, metricsCollector)

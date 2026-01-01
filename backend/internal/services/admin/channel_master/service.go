@@ -15,7 +15,7 @@ import (
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	channelobs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/channel/master"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"gorm.io/datatypes"
@@ -282,7 +282,7 @@ func NewService(deps *app.Deps, mapper DTOMapper, audit AuditEmitter, metrics *c
 	if mapper == nil {
 		mapper = defaultMapper{}
 	}
-	logger := deps.RuntimeLogger(nil, "channel-master-service", nil)
+	logger := deps.RuntimeLogger(context.TODO(), "channel-master-service", nil)
 	if metrics == nil {
 		metrics = channelobs.NewMetrics(logger)
 	}
@@ -326,7 +326,7 @@ func (s *Service) CreateDraft(ctx context.Context, input CreateChannelInput) (*C
 	}
 	actor := actorFromContext(ctx)
 	entity := &channelmodel.ChannelMaster{
-		ID:        uuidString(),
+		ID:        utils.NewUUID(),
 		Status:    StatusDraft,
 		CreatedBy: actor,
 		UpdatedBy: actor,
@@ -637,10 +637,6 @@ func ptrString(val string) *string {
 	return &v
 }
 
-func uuidString() string {
-	return uuid.NewString()
-}
-
 func (s *Service) emitAudit(ctx context.Context, action, channelID string, payload map[string]any) {
 	if s.audit == nil {
 		return
@@ -658,7 +654,7 @@ func actorFromContext(ctx context.Context) string {
 	if ctx == nil {
 		return "system"
 	}
-	if tc, ok := ctx.Value("tenant_ctx").(authx.TenantContext); ok {
+	if tc, ok := authx.TenantContextFromContext(ctx); ok {
 		if tc.UserID > 0 {
 			return fmt.Sprintf("user:%d", tc.UserID)
 		}

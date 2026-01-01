@@ -16,6 +16,8 @@ func TestLoadAppliesEnvOverrides(t *testing.T) {
 	t.Setenv("POWERX_DB_SCHEMA", schema)
 	t.Setenv("POWERX_DEV_MODE", "true")
 	t.Setenv("POWERX_LOG_LEVEL", "INFO")
+	t.Setenv("POWERX_CUSTOMER_AUTH_MODE", "local")
+	t.Setenv("POWERX_CUSTOMER_JWT_SECRET", "test-secret")
 
 	tempDir := t.TempDir()
 	configFile := filepath.Join(tempDir, "config.yaml")
@@ -58,6 +60,8 @@ func TestLoadNormalizesLoggingFromYAML(t *testing.T) {
 	t.Setenv("POWERX_DEV_MODE", "true")
 	t.Setenv("POWERX_DB_DSN", "postgres://user:pass@127.0.0.1:5432/test?sslmode=disable")
 	t.Setenv("POWERX_DB_SCHEMA", "px_test")
+	t.Setenv("POWERX_CUSTOMER_AUTH_MODE", "local")
+	t.Setenv("POWERX_CUSTOMER_JWT_SECRET", "test-secret")
 
 	cfg, err := Load()
 	if err != nil {
@@ -79,6 +83,8 @@ func TestLoadResolvesPlaceholderDefaults(t *testing.T) {
 	t.Setenv("POWERX_DEV_MODE", "true")
 	t.Setenv("POWERX_DB_DSN", "postgres://user:pass@127.0.0.1:5432/test?sslmode=disable")
 	t.Setenv("POWERX_DB_SCHEMA", "px_test")
+	t.Setenv("POWERX_CUSTOMER_AUTH_MODE", "local")
+	t.Setenv("POWERX_CUSTOMER_JWT_SECRET", "test-secret")
 
 	cfg, err := Load()
 	if err != nil {
@@ -109,6 +115,8 @@ func TestLoadUsesConfigPathPlaceholder(t *testing.T) {
 	t.Setenv("POWERX_PLUGIN_CONFIG_DIR", configDir)
 	t.Setenv("CONFIG_PATH", "${POWERX_PLUGIN_CONFIG_DIR:-./backend/etc}")
 	t.Setenv("POWERX_DEV_MODE", "true")
+	t.Setenv("POWERX_CUSTOMER_AUTH_MODE", "local")
+	t.Setenv("POWERX_CUSTOMER_JWT_SECRET", "test-secret")
 
 	cfg, err := Load()
 	if err != nil {

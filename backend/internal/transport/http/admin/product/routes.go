@@ -4,6 +4,7 @@ import (
 	spuservice "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/product/spu"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/product/spu"
+	productsku "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/product_sku"
 	httpmw "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
 )
@@ -72,4 +73,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) {
 		spus.POST("/import", importExportHandler.Import)
 		spus.POST("/export", importExportHandler.Export)
 	}
+
+	// SKU routes are registered independently to keep handler boundaries clear.
+	productsku.RegisterRoutes(productGroup, deps)
 }

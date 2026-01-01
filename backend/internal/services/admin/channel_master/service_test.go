@@ -20,7 +20,7 @@ func TestChannelLifecycleCreateSubmitApprove(t *testing.T) {
 	deps := &app.Deps{DB: db}
 	svc := NewService(deps, nil, &stubAudit{}, nil)
 	ctx := authx.ContextWithTenantUUID(context.Background(), "tenant-test")
-	ctx = context.WithValue(ctx, "tenant_ctx", authx.TenantContext{TenantUUID: "tenant-test", UserID: 42})
+	ctx = authx.ContextWithTenantContext(ctx, authx.TenantContext{TenantUUID: "tenant-test", UserID: 42})
 
 	input := CreateChannelInput{
 		Name:         "旗舰店",

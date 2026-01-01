@@ -16,7 +16,7 @@ func TestLicenseRepository_CreateLicenseAndEvent(t *testing.T) {
 	ctx := context.Background()
 
 	license := &dbm.License{
-		TenantUuid:     "tenant-1",
+		TenantUuid:   "tenant-1",
 		ListingID:    "listing-1",
 		PlanID:       "plan-1",
 		LicenseToken: "token-abc",
@@ -25,8 +25,8 @@ func TestLicenseRepository_CreateLicenseAndEvent(t *testing.T) {
 		ExpiresAt:    time.Now().Add(24 * time.Hour),
 	}
 	event := &dbm.LicenseEvent{
-		TenantUuid:  "tenant-1",
-		EventType: dbm.LicenseEventIssued,
+		TenantUuid: "tenant-1",
+		EventType:  dbm.LicenseEventIssued,
 	}
 
 	require.NoError(t, repo.CreateLicense(ctx, license, event))
@@ -49,7 +49,7 @@ func TestLicenseRepository_UpdateAndOfflineWindow(t *testing.T) {
 	ctx := context.Background()
 
 	license := &dbm.License{
-		TenantUuid:     "tenant-1",
+		TenantUuid:   "tenant-1",
 		ListingID:    "listing-1",
 		PlanID:       "plan-1",
 		LicenseToken: "initial",
@@ -87,7 +87,7 @@ func TestLicenseRepository_RecordTaxTransaction(t *testing.T) {
 	exRate := 1.25
 	settled := 15.625
 	txn := &dbm.TaxTransaction{
-		TenantUuid:            "tenant-1",
+		TenantUuid:          "tenant-1",
 		BillingID:           "billing-123",
 		ExternalProvider:    "stripe_tax",
 		TaxAmount:           12.50,
@@ -124,7 +124,7 @@ func TestLicenseRepository_FindByBillingID(t *testing.T) {
 	ctx := context.Background()
 
 	first := &dbm.License{
-		TenantUuid:     "tenant-1",
+		TenantUuid:   "tenant-1",
 		ListingID:    "listing-1",
 		PlanID:       "plan-1",
 		LicenseToken: "token-a",
@@ -138,7 +138,7 @@ func TestLicenseRepository_FindByBillingID(t *testing.T) {
 	require.NoError(t, repo.CreateLicense(ctx, first, nil))
 
 	second := &dbm.License{
-		TenantUuid:     "tenant-1",
+		TenantUuid:   "tenant-1",
 		ListingID:    "listing-2",
 		PlanID:       "plan-2",
 		LicenseToken: "token-b",
@@ -169,7 +169,7 @@ func TestLicenseRepository_ListExpiringWithin(t *testing.T) {
 
 	now := time.Now()
 	soon := &dbm.License{
-		TenantUuid:     "tenant-1",
+		TenantUuid:   "tenant-1",
 		ListingID:    "listing-1",
 		PlanID:       "plan-1",
 		LicenseToken: "soon",
@@ -180,7 +180,7 @@ func TestLicenseRepository_ListExpiringWithin(t *testing.T) {
 	require.NoError(t, repo.CreateLicense(ctx, soon, nil))
 
 	later := &dbm.License{
-		TenantUuid:     "tenant-1",
+		TenantUuid:   "tenant-1",
 		ListingID:    "listing-2",
 		PlanID:       "plan-2",
 		LicenseToken: "later",
@@ -191,7 +191,7 @@ func TestLicenseRepository_ListExpiringWithin(t *testing.T) {
 	require.NoError(t, repo.CreateLicense(ctx, later, nil))
 
 	offline := &dbm.License{
-		TenantUuid:     "tenant-1",
+		TenantUuid:   "tenant-1",
 		ListingID:    "listing-3",
 		PlanID:       "plan-3",
 		LicenseToken: "offline",

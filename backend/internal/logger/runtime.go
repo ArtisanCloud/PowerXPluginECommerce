@@ -13,10 +13,10 @@ func RegisterRuntimeMasker(masker func(Fields) Fields) {
 // WithRuntimeFields enriches the log entry with standard runtime metadata.
 func WithRuntimeFields(pluginID, tenantID, traceID, component string, extra Fields) *logrus.Entry {
 	fields := Fields{
-		"plugin_id": pluginID,
+		"plugin_id":   pluginID,
 		"tenant_uuid": tenantID,
-		"trace_id":  traceID,
-		"component": component,
+		"trace_id":    traceID,
+		"component":   component,
 	}
 	for k, v := range extra {
 		fields[k] = v

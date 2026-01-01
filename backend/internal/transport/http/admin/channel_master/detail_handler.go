@@ -1,6 +1,7 @@
 package channel_master
 
 import (
+	"encoding/json"
 	"net/http"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	channelservice "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/channel_master"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/gin-gonic/gin"
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
@@ -263,6 +265,29 @@ func mapTaskDTO(tasks []*channelmodel.ChannelTaskLink) []TaskLinkDTO {
 		})
 	}
 	return out
+}
+
+func metadataApprovalHistory(meta datatypes.JSON) []channelservice.ApprovalHistoryEntry {
+	if len(meta) == 0 {
+		return nil
+	}
+	var data map[string]any
+	if err := json.Unmarshal(meta, &data); err != nil {
+		return nil
+	}
+	raw, ok := data["approval_history"]
+	if !ok {
+		return nil
+	}
+	bytes, err := json.Marshal(raw)
+	if err != nil {
+		return nil
+	}
+	var history []channelservice.ApprovalHistoryEntry
+	if err := json.Unmarshal(bytes, &history); err != nil {
+		return nil
+	}
+	return history
 }
 
 func mapNoteDTO(notes []*channelmodel.ChannelNote) []ChannelNoteDTO {

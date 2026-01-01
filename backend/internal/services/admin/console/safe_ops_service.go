@@ -12,7 +12,7 @@ import (
 	consolerepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/admin_console"
 	adminmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/admin_console"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
@@ -133,7 +133,7 @@ func (s *SafeOpsService) createAuditEvent(ctx context.Context, request SafeOpReq
 	now := s.now()
 	resourceRef := run.ID
 	audit := &model.AuditEvent{
-		ID:             uuid.NewString(),
+		ID:             utils.NewUUID(),
 		PluginID:       app.PluginID,
 		ActorID:        request.Actor.ID,
 		PermissionCode: request.Actor.PermissionCode,

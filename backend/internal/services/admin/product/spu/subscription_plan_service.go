@@ -7,10 +7,11 @@ import (
 	"strings"
 	"time"
 
-	productrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/domain/repository/product"
 	productmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product"
+	productrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/product"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/gorm"
 )
 
@@ -110,7 +111,7 @@ func (s *SubscriptionPlanService) Create(ctx context.Context, spuID string, inpu
 		}
 		now := time.Now().UTC()
 		record := productmodel.SubscriptionPlan{
-			ID:           uuidString(),
+			ID:           utils.NewUUID(),
 			TenantUUID:   tenantID,
 			SPUID:        spu.ID,
 			PlanCode:     strings.TrimSpace(input.PlanCode),

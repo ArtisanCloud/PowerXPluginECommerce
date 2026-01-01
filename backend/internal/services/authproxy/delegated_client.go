@@ -228,7 +228,9 @@ func (c *DelegatedClient) do(req *http.Request, out any) error {
 	}
 
 	if out == nil {
-		io.Copy(io.Discard, resp.Body)
+		if _, err := io.Copy(io.Discard, resp.Body); err != nil {
+			return fmt.Errorf("authproxy: drain response: %w", err)
+		}
 		return nil
 	}
 

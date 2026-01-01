@@ -32,7 +32,7 @@ func NewMetricsService(deps *app.Deps, metrics *channelobs.Metrics) *MetricsServ
 	if deps == nil || deps.DB == nil {
 		panic("metrics service requires database dependency")
 	}
-	logger := deps.RuntimeLogger(nil, "channel-metrics-service", nil)
+	logger := deps.RuntimeLogger(context.TODO(), "channel-metrics-service", nil)
 	if metrics == nil {
 		metrics = channelobs.NewMetrics(logger)
 	}

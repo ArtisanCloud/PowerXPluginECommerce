@@ -207,7 +207,6 @@ func buildOrderClause(raw string) clause.OrderByColumn {
 	}
 	if strings.HasPrefix(field, "-") {
 		field = strings.TrimPrefix(field, "-")
-		descending = true
 	} else {
 		descending = false
 	}

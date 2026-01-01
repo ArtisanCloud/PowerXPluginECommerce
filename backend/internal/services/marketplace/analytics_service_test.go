@@ -113,7 +113,7 @@ func TestAnalyticsService_BuildDashboardAlerts(t *testing.T) {
 	usageStub := &usageRepoStub{
 		aggregates: []*dbm.UsageAggregate{
 			{
-				TenantUuid:   "tenant-1",
+				TenantUuid: "tenant-1",
 				LicenseID:  "license-1",
 				Metric:     "calls",
 				Window:     dbm.AggregationWindowDay,
@@ -122,7 +122,7 @@ func TestAnalyticsService_BuildDashboardAlerts(t *testing.T) {
 				Delta:      120,
 			},
 			{
-				TenantUuid:   "tenant-1",
+				TenantUuid: "tenant-1",
 				LicenseID:  "license-1",
 				Metric:     "calls",
 				Window:     dbm.AggregationWindowDay,

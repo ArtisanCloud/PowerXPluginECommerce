@@ -80,7 +80,7 @@ func (j *SyncJob) execute(ctx context.Context) {
 			continue
 		}
 		j.logger.WithFields(logrus.Fields{
-			"tenant_uuid":         tenantID,
+			"tenant_uuid":       tenantID,
 			"updated":           result.UpdatedCount,
 			"average_weight":    result.AverageWeight,
 			"exploration_share": result.ExplorationShare,

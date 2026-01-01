@@ -1,4 +1,10 @@
 import { expect, test } from '@playwright/test'
+import { bootstrapAuthenticatedSession } from './utils/session'
+import { successResponse } from './utils/response'
+
+test.beforeEach(async ({ page }) => {
+	await bootstrapAuthenticatedSession(page)
+})
 
 test.describe('SPU withdraw flow', () => {
 	test('submits withdraw request with reason', async ({ page }) => {
@@ -25,38 +31,38 @@ async function mockWithdrawApis(page) {
 		createdAt: new Date().toISOString(),
 		updatedAt: new Date().toISOString(),
 	}
-	await page.route('**/admin/product/spus/spu-e2e', async (route) => {
+	await page.route('**/admin/product/spus/spu-e2e*', async (route) => {
 		if (route.request().method() === 'GET') {
-			await route.fulfill({ json: detail })
+			await route.fulfill(successResponse(detail))
 			return
 		}
 		await route.continue()
 	})
-	await page.route('**/admin/product/spus/spu-e2e/channels', async (route) => {
-		await route.fulfill({
-			json: {
+	await page.route('**/admin/product/spus/spu-e2e/channels*', async (route) => {
+		await route.fulfill(
+			successResponse({
 				items: [
 					{ id: 'ch1', channel: 'official', availability: 'published', updatedAt: new Date().toISOString() },
 				],
-			},
-		})
+			}),
+		)
 	})
-	await page.route('**/admin/product/spus/spu-e2e/skus', async (route) => {
-		await route.fulfill({ json: { items: [] } })
+	await page.route('**/admin/product/spus/spu-e2e/skus*', async (route) => {
+		await route.fulfill(successResponse({ items: [] }))
 	})
-	await page.route('**/admin/product/spus/spu-e2e/withdraw', async (route) => {
-		await route.fulfill({
-			json: { ...detail, status: 'offboarded', updatedAt: new Date().toISOString() },
-		})
+	await page.route('**/admin/product/spus/spu-e2e/withdraw*', async (route) => {
+		await route.fulfill(successResponse({ ...detail, status: 'offboarded', updatedAt: new Date().toISOString() }))
 	})
-	await page.route('**/admin/product/spus/spu-e2e/versions', async (route) => {
-		await route.fulfill({
-			json: { items: [{ id: 'ver-e2e', versionNumber: 1, status: 'published', createdAt: new Date().toISOString() }] },
-		})
+	await page.route('**/admin/product/spus/spu-e2e/versions*', async (route) => {
+		await route.fulfill(
+			successResponse({
+				items: [{ id: 'ver-e2e', versionNumber: 1, status: 'published', createdAt: new Date().toISOString() }],
+			}),
+		)
 	})
-	await page.route('**/admin/product/spus/spu-e2e/versions/ver-e2e', async (route) => {
-		await route.fulfill({
-			json: {
+	await page.route('**/admin/product/spus/spu-e2e/versions/ver-e2e*', async (route) => {
+		await route.fulfill(
+			successResponse({
 				id: 'ver-e2e',
 				spuId: 'spu-e2e',
 				versionNumber: 1,
@@ -64,13 +70,13 @@ async function mockWithdrawApis(page) {
 				diff: [],
 				approvals: [],
 				payload: {},
-			},
-		})
+			}),
+		)
 	})
-	await page.route('**/admin/product/spus/spu-e2e/submit', async (route) => {
-		await route.fulfill({ json: detail })
+	await page.route('**/admin/product/spus/spu-e2e/submit*', async (route) => {
+		await route.fulfill(successResponse(detail))
 	})
-	await page.route('**/admin/product/spus/spu-e2e/publish', async (route) => {
-		await route.fulfill({ json: detail })
+	await page.route('**/admin/product/spus/spu-e2e/publish*', async (route) => {
+		await route.fulfill(successResponse(detail))
 	})
 }

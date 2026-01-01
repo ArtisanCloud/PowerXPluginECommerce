@@ -41,11 +41,10 @@ func TestMetricsHealthScore_FlagsErrorRate(t *testing.T) {
 		(id, tenant_uuid, channel_id, window, gmv, orders, gmv_growth_rate, inventory_coverage, error_rate, sync_success_rate, health_score, source_timestamp)
 		VALUES ('metric-2', 'tenant-health', 'channel-b', 'd7', 1000, 20, -0.10, 0.70, 0.3, 0.80, 60, ?)`, ts).Error)
 
-	health := svc.ComputeHealthScore(ctx, "channel-b", nil)
 	// Without metrics slice defaults to placeholder; pass loaded metrics to exercise logic.
 	metrics, err := svc.LoadMetrics(ctx, "channel-b")
 	require.NoError(t, err)
-	health = svc.ComputeHealthScore(ctx, "channel-b", metrics)
+	health := svc.ComputeHealthScore(ctx, "channel-b", metrics)
 	require.Contains(t, health.Labels, "error_rate_high")
 	require.Contains(t, health.Labels, "sync_unstable")
 	require.Less(t, health.Score, 60)

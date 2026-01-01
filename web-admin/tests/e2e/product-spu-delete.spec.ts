@@ -1,4 +1,10 @@
 import { expect, test } from '@playwright/test'
+import { bootstrapAuthenticatedSession } from './utils/session'
+import { successResponse } from './utils/response'
+
+test.beforeEach(async ({ page }) => {
+	await bootstrapAuthenticatedSession(page)
+})
 
 test.describe('SPU delete flow', () => {
 	test('deletes draft spu with reason', async ({ page }) => {
@@ -25,26 +31,22 @@ async function mockDeleteApis(page) {
 		createdAt: new Date().toISOString(),
 		updatedAt: new Date().toISOString(),
 	}
-	await page.route('**/admin/product/spus/spu-delete', async (route) => {
-		if (route.request().method() === 'GET') {
-			await route.fulfill({ json: detail })
-			return
-		}
-		await route.fulfill({ json: detail })
+	await page.route('**/admin/product/spus/spu-delete*', async (route) => {
+		await route.fulfill(successResponse(detail))
 	})
-	await page.route('**/admin/product/spus/spu-delete/skus', async (route) => {
-		await route.fulfill({ json: { items: [] } })
+	await page.route('**/admin/product/spus/spu-delete/skus*', async (route) => {
+		await route.fulfill(successResponse({ items: [] }))
 	})
-	await page.route('**/admin/product/spus/spu-delete/channels', async (route) => {
-		await route.fulfill({ json: { items: [] } })
+	await page.route('**/admin/product/spus/spu-delete/channels*', async (route) => {
+		await route.fulfill(successResponse({ items: [] }))
 	})
-	await page.route('**/admin/product/spus/spu-delete/versions', async (route) => {
-		await route.fulfill({ json: { items: [] } })
+	await page.route('**/admin/product/spus/spu-delete/versions*', async (route) => {
+		await route.fulfill(successResponse({ items: [] }))
 	})
-	await page.route('**/admin/product/spus/spu-delete/delete', async (route) => {
-		await route.fulfill({ json: detail })
+	await page.route('**/admin/product/spus/spu-delete/delete*', async (route) => {
+		await route.fulfill(successResponse(detail))
 	})
 	await page.route('**/admin/product/spus?**', async (route) => {
-		await route.fulfill({ json: { items: [], meta: { total: 0, page: 1, pageSize: 20 } } })
+		await route.fulfill(successResponse({ items: [], meta: { total: 0, page: 1, pageSize: 20 } }))
 	})
 }

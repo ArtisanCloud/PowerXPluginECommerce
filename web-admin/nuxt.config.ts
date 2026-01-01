@@ -53,6 +53,14 @@ const fallbackHostApiBase =
 const pluginApiBase = envApiBase ?? defaultPluginApiBase
 const hostApiBase = envApiBase ?? fallbackHostApiBase
 const localApiBase = envApiBase ?? defaultLocalApiBase
+const normalizeBasePath = (candidate: string) => candidate.replace(/\/+$/, '')
+const productSkuApiBase = `${normalizeBasePath(pluginApiBase)}/products/skus`
+const productSkuApi = {
+  base: productSkuApiBase,
+  bulkTasks: `${productSkuApiBase}/bulk-tasks`,
+  import: `${productSkuApiBase}/import`,
+  export: `${productSkuApiBase}/export`
+}
 const devApiProxyTarget = process.env.NUXT_DEV_API_PROXY || 'http://localhost:8078'
 const devWsProxyTarget = process.env.NUXT_DEV_WS_PROXY || 'ws://127.0.0.1:4000'
 const imgSources = ["'self'", "data:", "https://avatars.githubusercontent.com"]
@@ -109,24 +117,27 @@ const BRIDGE_DEBUG = rawBridgeDebug !== undefined
   ? /^(1|true)$/i.test(String(rawBridgeDebug))
   : !INSIDE_POWERX
 
+const DISABLE_VITE_HMR_OVERLAY = process.env.NUXT_PUBLIC_E2E_HARNESS === '1'
+
 // Dev-time proxy: always forward /api + ws; add /_p/.../api only in proxy mode
-const devProxy: Record<string, any> = {
-  '/api': {
+const disableDevProxy = process.env.DISABLE_DEV_PROXY === '1'
+const devProxy: Record<string, any> = {}
+if (!disableDevProxy) {
+  devProxy['/api'] = {
     target: devApiProxyTarget,
     changeOrigin: true,
     ws: true
-  },
-  '/ws': {
+  }
+  devProxy['/ws'] = {
     target: devWsProxyTarget,
     changeOrigin: true,
     ws: true
   }
-}
-
-if (INSIDE_POWERX) {
-  devProxy[`/_p/${pluginId}/api`] = {
-    target: devApiProxyTarget,
-    changeOrigin: true
+  if (INSIDE_POWERX) {
+    devProxy[`/_p/${pluginId}/api`] = {
+      target: devApiProxyTarget,
+      changeOrigin: true
+    }
   }
 }
 
@@ -240,10 +251,15 @@ export default defineNuxtConfig({
       // ide helpers: pluginApiBase 可用于客户端自行构造 `_p/.../api` 请求
       apiBaseUrl: INSIDE_POWERX ? hostApiBase : localApiBase,
       pluginApiBase,
+      productSkuApiBase: productSkuApi.base,
+      productSkuBulkTasksEndpoint: productSkuApi.bulkTasks,
+      productSkuImportEndpoint: productSkuApi.import,
+      productSkuExportEndpoint: productSkuApi.export,
       insidePowerX: INSIDE_POWERX,
       pluginAdminBase,
       bridgeDebug: BRIDGE_DEBUG,
-      powerxCoreBase
+      powerxCoreBase,
+      e2eHarness: process.env.NUXT_PUBLIC_E2E_HARNESS === '1'
     }
   },
   nitro: {
@@ -280,6 +296,7 @@ export default defineNuxtConfig({
   vite: {
     server: {
       hmr: {
+        overlay: !DISABLE_VITE_HMR_OVERLAY,
         protocol: 'ws',
         host: 'localhost',
         port: 24731

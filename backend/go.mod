@@ -2,6 +2,8 @@ module github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/
 
 go 1.24.0
 
+toolchain go1.24.2
+
 require (
 	github.com/ArtisanCloud/PowerXPlugin/framework v0.0.1-alpha
 	github.com/gin-gonic/gin v1.10.1
@@ -54,7 +56,7 @@ require (
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.3.0 // indirect
-	github.com/kr/text v0.2.0 // indirect
+	github.com/kr/pretty v0.3.1 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
 	github.com/mattn/go-isatty v0.0.20 // indirect
 	github.com/mattn/go-sqlite3 v1.14.22 // indirect
@@ -62,7 +64,7 @@ require (
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/pelletier/go-toml/v2 v2.2.4 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/rogpeppe/go-internal v1.6.1 // indirect
+	github.com/rogpeppe/go-internal v1.10.0 // indirect
 	github.com/santhosh-tekuri/jsonschema/v5 v5.3.0 // indirect
 	github.com/twitchyliquid64/golang-asm v0.15.1 // indirect
 	github.com/ugorji/go/codec v1.3.0 // indirect
@@ -74,4 +76,4 @@ require (
 	gorm.io/driver/mysql v1.6.0 // indirect
 )
 
-replace github.com/ArtisanCloud/PowerXPlugin/framework => /private/var/www/html/ArtisanCloud/X/PowerX/Core/Plugins/PowerXPlugin/framework
+// 使用版本化框架模块，避免因本地绝对路径导致 CI 构建失败。

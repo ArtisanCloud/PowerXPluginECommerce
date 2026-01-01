@@ -82,8 +82,9 @@
 ```
 backend/
 └── internal/
+    ├── entity/models/template/        # gorm 模型 + TableName
+    ├── entity/repository/template/    # BaseRepository 派生仓储
     ├── services/template/
-    ├── domain/repository/template/
     └── transport/http/template/
         ├── routes.go         # 注册 /api/v1/templates...（随前缀配置）
         ├── handler_list.go

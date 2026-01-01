@@ -169,6 +169,14 @@ func main() {
 		TaskBus:             taskBusClient,
 	}
 
+	customerAuthenticator, localCustomerAuth, err := pluginbootstrap.BuildCustomerAuthenticator(cfg, deps)
+	if err != nil {
+		logger.WithError(err).Fatal("Failed to initialize customer authenticator")
+	}
+	deps.CustomerAuthMode = cfg.ResolveCustomerAuthMode()
+	deps.CustomerAuthenticator = customerAuthenticator
+	deps.LocalCustomerAuth = localCustomerAuth
+
 	listingRepo := marketplacerepo.NewListingRepository(queryDB)
 	licenseRepoGlobal := marketplacerepo.NewLicenseRepository(queryDB)
 	metricsProvider := recommendation.NewListingMetricsProvider(listingRepo)

@@ -269,50 +269,10 @@ func (h *AdminHandler) GetManifest(c *gin.Context) {
 func (h *AdminHandler) GetRBACInfo(c *gin.Context) {
 	log := logger.HandlerLogger("admin").WithContext(c.Request.Context())
 
-	rbacInfo := &contracts.RBACInfo{
-		Resources: []contracts.Resource{
-			{
-				Name:        "base:template",
-				Description: "Base 模板管理",
-				Actions: []contracts.Action{
-					{Name: "read", Description: "查看模板"},
-					{Name: "create", Description: "创建模板"},
-					{Name: "update", Description: "更新模板"},
-					{Name: "delete", Description: "删除模板"},
-				},
-			},
-		},
-		Roles: []contracts.Role{
-			{
-				Name:        "base_master",
-				Description: "Base Master 角色",
-				Permissions: []string{
-					"base:template:*",
-				},
-			},
-			{
-				Name:        "template_editor",
-				Description: "模板编辑角色",
-				Permissions: []string{
-					"base:template:read",
-					"base:template:create",
-					"base:template:update",
-				},
-			},
-			{
-				Name:        "template_viewer",
-				Description: "模板查看角色",
-				Permissions: []string{
-					"base:template:read",
-				},
-			},
-		},
-		Permissions: []contracts.Permission{
-			{Resource: "base:template", Action: "read"},
-			{Resource: "base:template", Action: "create"},
-			{Resource: "base:template", Action: "update"},
-			{Resource: "base:template", Action: "delete"},
-		},
+	rbacInfo, err := loadRBACInfoFromFile()
+	if err != nil {
+		log.WithError(err).Warn("failed to load RBAC info from file, falling back to defaults")
+		rbacInfo = defaultRBACInfo()
 	}
 
 	log.Info("RBAC info requested")

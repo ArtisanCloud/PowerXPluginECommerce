@@ -60,8 +60,8 @@
 <script setup lang="ts">
 import { ref, reactive, computed } from 'vue'
 import type { DropdownItem } from '@nuxt/ui/dist/runtime/types'
-import CreateAttributeGroupModal from '~/components/modals/CreateAttributeGroupModal.vue'
-import EditAttributeGroupModal from '~/components/modals/EditAttributeGroupModal.vue'
+import CreateAttributeGroupModal from '~/components/Modals/CreateAttributeGroupModal.vue'
+import EditAttributeGroupModal from '~/components/Modals/EditAttributeGroupModal.vue'
 
 const pending = ref(false)
 const isCreateModalOpen = ref(false)

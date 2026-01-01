@@ -30,7 +30,7 @@ func NewMetricRefreshJob(deps *app.Deps, interval time.Duration) *MetricRefreshJ
 	if interval <= 0 {
 		interval = 30 * time.Minute
 	}
-	logger := deps.RuntimeLogger(nil, "channel-metric-refresh", nil)
+	logger := deps.RuntimeLogger(context.TODO(), "channel-metric-refresh", nil)
 	return &MetricRefreshJob{
 		db:          deps.DB,
 		metricRepo:  channelrepo.NewChannelMetricRepository(deps.DB),

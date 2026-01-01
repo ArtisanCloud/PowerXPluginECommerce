@@ -8,7 +8,7 @@ import (
 
 	dbm "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/marketplace"
 	repository "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository"
-	"github.com/google/uuid"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -44,7 +44,7 @@ func (r *UsageRepository) InsertEnvelopes(ctx context.Context, tenantID string, 
 			}
 			env.TenantUuid = tenantID
 			if strings.TrimSpace(env.ID) == "" {
-				env.ID = uuid.NewString()
+				env.ID = utils.NewUUID()
 			}
 			if env.IngestStatus == "" {
 				env.IngestStatus = dbm.UsageIngestStatusProcessed
@@ -78,7 +78,7 @@ func (r *UsageRepository) UpsertAggregate(ctx context.Context, aggregate *dbm.Us
 		return errors.New("tenant_uuid is required")
 	}
 	if strings.TrimSpace(aggregate.ID) == "" {
-		aggregate.ID = uuid.NewString()
+		aggregate.ID = utils.NewUUID()
 	}
 	return r.WithTenantTx(ctx, tenantID, func(tx *gorm.DB) error {
 		return tx.Clauses(clause.OnConflict{

@@ -53,7 +53,7 @@ func (s *PrivacyService) PurgeUsageData(ctx context.Context, tenantID, licenseID
 	}
 	if s.logger != nil {
 		s.logger.WithFields(logrus.Fields{
-			"tenant_uuid":          tenantID,
+			"tenant_uuid":        tenantID,
 			"license_id":         licenseID,
 			"cutoff":             cutoff.Format(time.RFC3339),
 			"envelopes_deleted":  envDeleted,
