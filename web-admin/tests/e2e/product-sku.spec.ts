@@ -5,21 +5,27 @@ test.beforeEach(async ({ page }) => {
 	await bootstrapAuthenticatedSession(page)
 })
 
+async function openSkuHarness(page: any) {
+	await page.goto('/e2e/sku', { waitUntil: 'domcontentloaded', timeout: 120_000 })
+	await page.waitForLoadState('networkidle', { timeout: 60_000 }).catch(() => undefined)
+	await expect(page.locator('#us1-generator')).toBeVisible({ timeout: 60_000 })
+}
+
 test.describe('Product SKU user stories (E2E harness)', () => {
 	test('US1 - SKU generator creates combinations and persists', async ({ page }) => {
-		await page.goto('/e2e/sku')
+		await openSkuHarness(page)
 
 		const generatorSection = page.locator('#us1-generator')
-		await generatorSection.getByRole('button', { name: '生成预览' }).click()
+		await expect(generatorSection.getByTestId('btn-generate')).toBeVisible()
+		await generatorSection.getByTestId('btn-generate').click()
 		await expect(page.getByTestId('generator-ready')).toBeVisible()
-		await generatorSection.getByRole('button', { name: '写入 SKU' }).click()
+		await generatorSection.getByTestId('btn-write-sku').click()
 		await expect(generatorSection.getByText('已写入 1 条 SKU')).toBeVisible()
 	})
 
 	test('US2 - Bulk adjustment submits task and lists it in task center', async ({ page }) => {
-		await page.goto('/e2e/sku')
+		await openSkuHarness(page)
 
-		const bulkSection = page.locator('#us2-bulk')
 		const bulkDialog = page.getByTestId('bulk-dialog')
 		await expect(bulkDialog).toBeVisible()
 		const adjustmentInput = bulkDialog.locator('input[type="number"]').first()
@@ -32,15 +38,16 @@ test.describe('Product SKU user stories (E2E harness)', () => {
 	})
 
 	test('US3 - Channel mapping, barcode, inventory and serial tabs', async ({ page }) => {
-		await page.goto('/e2e/sku')
+		await openSkuHarness(page)
 
 		const channelSection = page.locator('#us3-channels')
-		await channelSection.getByRole('button', { name: '编辑' }).first().click()
+		await expect(channelSection.getByTestId('btn-edit-channel')).toBeVisible()
+		await channelSection.getByTestId('btn-edit-channel').click()
 		await channelSection.getByTestId('channel-sku-input').fill('SKU-E2E-CHANGED')
-		await channelSection.getByRole('button', { name: '保存映射' }).click()
+		await channelSection.getByTestId('btn-save-channel').click()
 		await expect(channelSection.getByText('渠道映射已保存')).toBeVisible()
 
-		await channelSection.getByRole('button', { name: '推送发布' }).first().click()
+		await channelSection.getByTestId('btn-publish-channel').click()
 		await expect(channelSection.getByText('发布已触发')).toBeVisible()
 
 		const barcodeSection = page.locator('#us3-barcode')

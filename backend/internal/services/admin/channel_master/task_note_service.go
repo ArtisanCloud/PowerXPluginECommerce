@@ -42,7 +42,7 @@ func NewTaskNoteService(deps *app.Deps, audit AuditEmitter) *TaskNoteService {
 	if deps == nil || deps.DB == nil {
 		panic("task note service requires database dependency")
 	}
-	logger := deps.RuntimeLogger(nil, "channel-task-note-service", nil)
+	logger := deps.RuntimeLogger(context.TODO(), "channel-task-note-service", nil)
 	if audit == nil {
 		audit = channelobs.NewAuditEmitter(logger)
 	}

@@ -503,7 +503,7 @@ func actorFromContext(ctx context.Context) string {
 	if ctx == nil {
 		return "system"
 	}
-	if tc, ok := ctx.Value("tenant_ctx").(authx.TenantContext); ok {
+	if tc, ok := authx.TenantContextFromContext(ctx); ok {
 		if tc.UserID > 0 {
 			return fmt.Sprintf("user:%d", tc.UserID)
 		}

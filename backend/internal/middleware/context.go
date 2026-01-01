@@ -32,6 +32,14 @@ const (
 	ctxKeyCustomer = "customer_ctx"
 )
 
+type stdCtxKey string
+
+const (
+	stdTenantCtxKey stdCtxKey = stdCtxKey(ctxKeyTenant)
+	stdRawBearerKey stdCtxKey = stdCtxKey(ctxKeyToken)
+	stdCustomerKey  stdCtxKey = stdCtxKey(ctxKeyCustomer)
+)
+
 type tenantUUIDContextKey struct{}
 type customerContextKey struct{}
 
@@ -61,6 +69,67 @@ func GetRawBearerToken(c *gin.Context) (string, bool) {
 	}
 	s, ok := v.(string)
 	return s, ok && s != ""
+}
+
+// ContextWithTenantContext stores TenantContext into a standard context.
+// 为了兼容旧代码，同时写入 string key 与 typed key。
+func ContextWithTenantContext(ctx context.Context, tc TenantContext) context.Context {
+	if ctx == nil {
+		return nil
+	}
+	ctx = context.WithValue(ctx, stdTenantCtxKey, tc)
+	return ctx
+}
+
+// TenantContextFromContext extracts TenantContext from a standard context.
+// 为了兼容旧代码，同时读取 string key 与 typed key。
+func TenantContextFromContext(ctx context.Context) (TenantContext, bool) {
+	if ctx == nil {
+		return TenantContext{}, false
+	}
+	if v := ctx.Value(stdTenantCtxKey); v != nil {
+		if tc, ok := v.(TenantContext); ok {
+			return tc, true
+		}
+	}
+	if v := ctx.Value(ctxKeyTenant); v != nil {
+		if tc, ok := v.(TenantContext); ok {
+			return tc, true
+		}
+	}
+	return TenantContext{}, false
+}
+
+// ContextWithRawBearerToken stores raw bearer token into a standard context.
+// 为了兼容旧代码，同时写入 string key 与 typed key。
+func ContextWithRawBearerToken(ctx context.Context, token string) context.Context {
+	if ctx == nil {
+		return nil
+	}
+	if strings.TrimSpace(token) == "" {
+		return ctx
+	}
+	ctx = context.WithValue(ctx, stdRawBearerKey, token)
+	return ctx
+}
+
+// RawBearerTokenFromContext extracts raw bearer token from a standard context.
+// 为了兼容旧代码，同时读取 string key 与 typed key。
+func RawBearerTokenFromContext(ctx context.Context) (string, bool) {
+	if ctx == nil {
+		return "", false
+	}
+	if v := ctx.Value(stdRawBearerKey); v != nil {
+		if s, ok := v.(string); ok && strings.TrimSpace(s) != "" {
+			return strings.TrimSpace(s), true
+		}
+	}
+	if v := ctx.Value(ctxKeyToken); v != nil {
+		if s, ok := v.(string); ok && strings.TrimSpace(s) != "" {
+			return strings.TrimSpace(s), true
+		}
+	}
+	return "", false
 }
 
 // SetCustomerContext stores customer info on gin context.

@@ -282,7 +282,7 @@ func NewService(deps *app.Deps, mapper DTOMapper, audit AuditEmitter, metrics *c
 	if mapper == nil {
 		mapper = defaultMapper{}
 	}
-	logger := deps.RuntimeLogger(nil, "channel-master-service", nil)
+	logger := deps.RuntimeLogger(context.TODO(), "channel-master-service", nil)
 	if metrics == nil {
 		metrics = channelobs.NewMetrics(logger)
 	}
@@ -654,7 +654,7 @@ func actorFromContext(ctx context.Context) string {
 	if ctx == nil {
 		return "system"
 	}
-	if tc, ok := ctx.Value("tenant_ctx").(authx.TenantContext); ok {
+	if tc, ok := authx.TenantContextFromContext(ctx); ok {
 		if tc.UserID > 0 {
 			return fmt.Sprintf("user:%d", tc.UserID)
 		}

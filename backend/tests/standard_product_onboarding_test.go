@@ -58,28 +58,28 @@ func TestStandardProductOnboardingFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "published", published.Status)
 
-		result, err := skuSvc.UpsertSkus(tenantCtx, productsku.SkuUpsertRequest{
-			SKUs: []productsku.SkuUpsertPayload{
-				{
-					SPUID:       published.ID,
-					SKUCode:     "STD-PRODUCT-001-A",
-					Status:      "online",
-					MinOrderQty: 1,
-					Specs: []productsku.SkuSpec{
-						{SpecID: "capacity", SpecName: "Capacity", ValueID: "single", ValueName: "单件"},
-					},
-				},
-				{
-					SPUID:       published.ID,
-					SKUCode:     "STD-PRODUCT-001-B",
-					Status:      "offline",
-					MinOrderQty: 10,
-					Specs: []productsku.SkuSpec{
-						{SpecID: "capacity", SpecName: "Capacity", ValueID: "bundle", ValueName: "十件装"},
-					},
+	result, err := skuSvc.UpsertSkus(tenantCtx, productsku.SkuUpsertRequest{
+		SKUs: []productsku.SkuUpsertPayload{
+			{
+				SPUID:       published.ID,
+				SKUCode:     "STD-PRODUCT-001-A",
+				Status:      "online",
+				MinOrderQty: 1,
+				Specs: []productsku.SkuSpec{
+					{SpecID: "capacity", SpecName: "Capacity", ValueID: "single", ValueName: "单件"},
 				},
 			},
-		})
+			{
+				SPUID:       published.ID,
+				SKUCode:     "STD-PRODUCT-001-B",
+				Status:      "offline",
+				MinOrderQty: 10,
+				Specs: []productsku.SkuSpec{
+					{SpecID: "capacity", SpecName: "Capacity", ValueID: "bundle", ValueName: "十件装"},
+				},
+			},
+		},
+	})
 	require.NoError(t, err)
 	require.Equal(t, 2, result.Created)
 

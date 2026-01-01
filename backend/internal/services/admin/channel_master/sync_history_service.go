@@ -32,7 +32,7 @@ func NewSyncHistoryService(deps *app.Deps, metrics *channelobs.Metrics) *SyncHis
 	if deps == nil || deps.DB == nil {
 		panic("sync history service requires database dependency")
 	}
-	logger := deps.RuntimeLogger(nil, "channel-sync-service", nil)
+	logger := deps.RuntimeLogger(context.TODO(), "channel-sync-service", nil)
 	if metrics == nil {
 		metrics = channelobs.NewMetrics(logger)
 	}

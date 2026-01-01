@@ -80,15 +80,15 @@ func setupListingRepo(t *testing.T) *mrepo.ListingRepository {
 
 	repo := mrepo.NewListingRepository(db)
 	listing := &dbm.Listing{
-		ID:        "listing-1",
-		TenantUuid:  "tenant-1",
-		PluginID:  "com.example.plugin",
-		VendorID:  "vendor-1",
-		Status:    dbm.ListingStatusPublished,
-		Title:     "Example",
-		Slug:      "example",
-		CreatedAt: time.Now().Add(-48 * time.Hour),
-		UpdatedAt: time.Now().Add(-12 * time.Hour),
+		ID:         "listing-1",
+		TenantUuid: "tenant-1",
+		PluginID:   "com.example.plugin",
+		VendorID:   "vendor-1",
+		Status:     dbm.ListingStatusPublished,
+		Title:      "Example",
+		Slug:       "example",
+		CreatedAt:  time.Now().Add(-48 * time.Hour),
+		UpdatedAt:  time.Now().Add(-12 * time.Hour),
 	}
 	require.NoError(t, repo.Create(context.Background(), listing))
 	return repo

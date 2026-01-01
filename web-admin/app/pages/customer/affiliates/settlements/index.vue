@@ -446,7 +446,7 @@
 </template>
 
 <script setup lang="ts">
-import ViewCommissionModal from "~/components/Modals/ViewCommissionModal.vue";
+import ViewCommissionModal from "~/components/modals/ViewCommissionModal.vue";
 
 const avatarPlaceholder = "https://api.dicebear.com/7.x/miniavs/svg?seed=placeholder";
 

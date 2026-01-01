@@ -589,9 +589,9 @@ func stringValue(val any) string {
 	switch typed := val.(type) {
 	case string:
 		return strings.TrimSpace(typed)
-	case fmt.Stringer:
-		return strings.TrimSpace(typed.String())
 	case json.Number:
+		return strings.TrimSpace(typed.String())
+	case fmt.Stringer:
 		return strings.TrimSpace(typed.String())
 	default:
 		return strings.TrimSpace(fmt.Sprint(typed))

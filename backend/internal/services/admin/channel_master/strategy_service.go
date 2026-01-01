@@ -82,7 +82,7 @@ func NewStrategyService(deps *app.Deps, audit AuditEmitter) *StrategyService {
 	if deps == nil || deps.DB == nil {
 		panic("strategy service requires database dependency")
 	}
-	logger := deps.RuntimeLogger(nil, "channel-strategy-service", nil)
+	logger := deps.RuntimeLogger(context.TODO(), "channel-strategy-service", nil)
 	if audit == nil {
 		audit = channelobs.NewAuditEmitter(logger)
 	}

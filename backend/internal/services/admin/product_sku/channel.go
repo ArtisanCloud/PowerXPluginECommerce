@@ -75,9 +75,9 @@ func (s *Service) UpsertChannelMapping(ctx context.Context, skuID string, payloa
 		SyncMode:     normalizeSyncMode(payload.SyncMode),
 		PublishTime:  payload.PublishTime,
 	}
-entry.PriceOverride = marshalJSONValue(payload.PriceOverride)
-entry.MediaOverride = marshalJSONValue(payload.MediaOverride)
-entry.Metadata = marshalJSONValue(payload.Metadata)
+	entry.PriceOverride = marshalJSONValue(payload.PriceOverride)
+	entry.MediaOverride = marshalJSONValue(payload.MediaOverride)
+	entry.Metadata = marshalJSONValue(payload.Metadata)
 
 	if err := s.ChannelRepo.UpsertMapping(ctx, entry); err != nil {
 		return nil, err

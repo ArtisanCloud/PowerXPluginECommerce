@@ -69,7 +69,6 @@ func TestServiceUpdateCustomerConflict(t *testing.T) {
 	})
 	require.NoError(t, err)
 	conflictEmail := first.Email
-	err = nil
 	_, err = svc.UpdateCustomer(ctx, second.ID, UpdateCustomerInput{Email: &conflictEmail})
 	require.Error(t, err)
 	require.ErrorIs(t, err, ErrCustomerConflict)

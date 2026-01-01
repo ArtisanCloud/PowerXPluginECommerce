@@ -266,9 +266,9 @@
 
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
-import ViewRuleModal from "~/components/Modals/ViewRuleModal.vue";
-import CreateRuleModal from "~/components/Modals/CreateRuleModal.vue";
-import EditRuleModal from "~/components/Modals/EditRuleModal.vue";
+import ViewRuleModal from "~/components/modals/ViewRuleModal.vue";
+import CreateRuleModal from "~/components/modals/CreateRuleModal.vue";
+import EditRuleModal from "~/components/modals/EditRuleModal.vue";
 
 // 规则数据类型
 type MembershipRule = {

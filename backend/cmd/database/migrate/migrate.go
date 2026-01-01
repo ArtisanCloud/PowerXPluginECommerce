@@ -382,9 +382,7 @@ func rlsPolicyExists(ctx context.Context, db *gorm.DB, tableName, policyName str
 	cleanTable := tableName
 	if schema != "" {
 		prefix := fmt.Sprintf(`"%s".`, schema)
-		if strings.HasPrefix(cleanTable, prefix) {
-			cleanTable = strings.TrimPrefix(cleanTable, prefix)
-		}
+		cleanTable = strings.TrimPrefix(cleanTable, prefix)
 	}
 	query := `SELECT COUNT(*) FROM pg_policies WHERE schemaname = current_schema() AND tablename = ? AND policyname = ?`
 	args := []any{cleanTable, policyName}

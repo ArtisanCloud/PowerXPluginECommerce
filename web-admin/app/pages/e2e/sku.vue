@@ -21,7 +21,9 @@
 					</div>
 					<div class="flex gap-2">
 						<UButton @click="generatePreview" data-testid="btn-generate">生成预览</UButton>
-						<UButton color="primary" :disabled="!state.previewReady" @click="writeSku">写入 SKU</UButton>
+						<UButton color="primary" :disabled="!state.previewReady" @click="writeSku" data-testid="btn-write-sku">
+							写入 SKU
+						</UButton>
 					</div>
 				</div>
 				<div class="mt-4 space-y-2">
@@ -93,7 +95,13 @@
 				<template #header>
 					<div class="flex items-center justify-between">
 						<h3 class="text-lg font-semibold text-gray-900 dark:text-white">渠道映射</h3>
-						<UButton size="xs" variant="soft" icon="i-heroicons-pencil" @click="state.channelEditing = true">
+						<UButton
+							size="xs"
+							variant="soft"
+							icon="i-heroicons-pencil"
+							@click="state.channelEditing = true"
+							data-testid="btn-edit-channel"
+						>
 							编辑
 						</UButton>
 					</div>
@@ -116,8 +124,8 @@
 						/>
 					</UFormGroup>
 					<div class="flex gap-2">
-						<UButton color="primary" @click="saveChannel">保存映射</UButton>
-						<UButton variant="soft" @click="publishChannel">推送发布</UButton>
+						<UButton color="primary" @click="saveChannel" data-testid="btn-save-channel">保存映射</UButton>
+						<UButton variant="soft" @click="publishChannel" data-testid="btn-publish-channel">推送发布</UButton>
 					</div>
 					<div class="space-y-1 text-sm text-gray-600 dark:text-gray-400">
 						<p v-if="state.channelMessage">{{ state.channelMessage }}</p>
@@ -176,9 +184,11 @@
 <script setup lang="ts">
 import { reactive, ref } from 'vue'
 import { createError } from 'h3'
-import { useToast } from '#imports'
+import { useRuntimeConfig, useToast } from '#imports'
 
-if (process.env.NODE_ENV !== 'development') {
+const runtimeConfig = useRuntimeConfig()
+const harnessEnabled = import.meta.dev || runtimeConfig.public.e2eHarness === true
+if (!harnessEnabled) {
 	throw createError({ statusCode: 404, statusMessage: 'Not Found' })
 }
 

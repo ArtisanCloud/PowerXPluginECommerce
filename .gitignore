@@ -44,3 +44,9 @@ backend/etc/host-values.yaml
 
 # Root-level overrides (non-production secrets)
 config/config.yaml
+
+.gomodcache
+
+# Local Go caches (Make targets use backend/.gomodcache)
+backend/.gomodcache/
+backend/.gocache/

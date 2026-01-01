@@ -65,7 +65,7 @@ func NewCredentialService(deps *app.Deps, alertEmitter *channelobs.AlertEmitter,
 	if deps == nil || deps.DB == nil {
 		panic("credential service requires database dependency")
 	}
-	logger := deps.RuntimeLogger(nil, "channel-credential-service", nil)
+	logger := deps.RuntimeLogger(context.TODO(), "channel-credential-service", nil)
 	if metrics == nil {
 		metrics = channelobs.NewMetrics(logger)
 	}

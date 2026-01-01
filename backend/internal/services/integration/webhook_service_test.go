@@ -74,9 +74,9 @@ func TestWebhookService_ReplayAttemptFlow(t *testing.T) {
 	svc, ctx := setupWebhookService(t)
 
 	sub, err := svc.CreateSubscription(ctx, service.CreateSubscriptionParams{
-		TenantUuid:  "42",
-		EventType: "integration.dispatch",
-		TargetURL: "https://example.org/webhook",
+		TenantUuid: "42",
+		EventType:  "integration.dispatch",
+		TargetURL:  "https://example.org/webhook",
 	})
 	if err != nil {
 		t.Fatalf("CreateSubscription failed: %v", err)
@@ -87,7 +87,7 @@ func TestWebhookService_ReplayAttemptFlow(t *testing.T) {
 
 	attempt, err := svc.RecordDeliveryAttempt(ctx, service.DeliveryResultParams{
 		SubscriptionID: sub.ID,
-		TenantUuid:       sub.TenantUuid,
+		TenantUuid:     sub.TenantUuid,
 		Status:         model.AttemptStatusDLQ,
 		RetryCount:     2,
 	})

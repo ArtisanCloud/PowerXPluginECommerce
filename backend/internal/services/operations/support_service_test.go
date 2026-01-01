@@ -75,8 +75,8 @@ func TestSupportService_ConfigurePlaybookAndMetrics(t *testing.T) {
 	// Create support ticket and ensure webhook dispatch + metrics
 	ticket, err := svc.CreateTicket(ctx, operationsvc.CreateTicketRequest{
 		TenantUuid: "tenant-1",
-		Subject:  "Login issue",
-		Priority: "P1",
+		Subject:    "Login issue",
+		Priority:   "P1",
 		RequestedBy: map[string]any{
 			"name": "Alice",
 		},

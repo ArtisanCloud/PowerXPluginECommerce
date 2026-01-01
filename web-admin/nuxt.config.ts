@@ -256,7 +256,8 @@ export default defineNuxtConfig({
       insidePowerX: INSIDE_POWERX,
       pluginAdminBase,
       bridgeDebug: BRIDGE_DEBUG,
-      powerxCoreBase
+      powerxCoreBase,
+      e2eHarness: process.env.NUXT_PUBLIC_E2E_HARNESS === '1'
     }
   },
   nitro: {

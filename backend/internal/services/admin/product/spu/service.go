@@ -44,7 +44,7 @@ func NewService(deps *app.Deps) *Service {
 	if deps == nil || deps.DB == nil {
 		panic("spu service requires initialized DB dependency")
 	}
-	logger := deps.RuntimeLogger(nil, "product-spu-publisher", nil)
+	logger := deps.RuntimeLogger(context.TODO(), "product-spu-publisher", nil)
 	return &Service{
 		deps:         deps,
 		spuRepo:      productrepo.NewSPURepository(deps.DB),

@@ -242,7 +242,7 @@ func buildSkuExportCSV(skus []productskumodel.ProductSKU) string {
 	writer := csv.NewWriter(buffer)
 	_ = writer.Write([]string{"sku_code", "status", "barcode", "min_order_qty"})
 	for _, sku := range skus {
-		writer.Write([]string{
+		_ = writer.Write([]string{
 			sku.SKUCode,
 			sku.Status,
 			sku.Barcode,

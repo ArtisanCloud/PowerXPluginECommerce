@@ -225,7 +225,7 @@
 
 <script setup lang="ts">
 // 导入模态框组件
-import BatchAdjustPointsModal from "~/components/Modals/BatchAdjustPointsModal.vue";
+import BatchAdjustPointsModal from "~/components/modals/BatchAdjustPointsModal.vue";
 
 // 模态框状态
 const showBatchAdjustModal = ref(false);

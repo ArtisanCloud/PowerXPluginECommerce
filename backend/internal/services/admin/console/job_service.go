@@ -153,17 +153,24 @@ func WithJobClock(now func() time.Time) JobServiceOption {
 
 // NewJobService constructs a job service using shared dependencies.
 func NewJobService(deps *app.Deps, opts ...JobServiceOption) *JobService {
-	if deps == nil || deps.DB == nil {
+	if deps == nil {
 		return &JobService{}
 	}
+	if deps.DB == nil {
+		return &JobService{}
+	}
+
+	cfg := deps.Config
+	db := deps.DB
+
 	locker := SafeOpLocker(newMemoryLocker())
 	metrics := deps.AdminConsoleMetrics
 	if metrics == nil {
 		metrics = adminmetrics.NewMetrics()
 	}
 	service := &JobService{
-		cfg:     deps.Config,
-		repo:    consolerepo.NewJobRunRepository(deps.DB),
+		cfg:     cfg,
+		repo:    consolerepo.NewJobRunRepository(db),
 		locker:  locker,
 		metrics: metrics,
 		nowFunc: time.Now,
@@ -172,8 +179,8 @@ func NewJobService(deps *app.Deps, opts ...JobServiceOption) *JobService {
 		opt(service)
 	}
 	lockTTL := time.Duration(120) * time.Second
-	if deps != nil && deps.Config != nil {
-		lockTTL = time.Duration(deps.Config.AdminConsoleSafeOpsLockTTL()) * time.Second
+	if cfg != nil {
+		lockTTL = time.Duration(cfg.AdminConsoleSafeOpsLockTTL()) * time.Second
 	}
 	service.lockTTL = lockTTL
 	return service

@@ -28,7 +28,7 @@ type CredentialChecker struct {
 
 // NewCredentialChecker constructs job.
 func NewCredentialChecker(deps *app.Deps, lead, interval time.Duration, alertEmitter *channelobs.AlertEmitter) *CredentialChecker {
-	logger := deps.RuntimeLogger(nil, "channel-credential-checker", nil)
+	logger := deps.RuntimeLogger(context.TODO(), "channel-credential-checker", nil)
 	return &CredentialChecker{
 		db:           deps.DB,
 		alertRepo:    channelrepo.NewChannelAlertRepository(deps.DB),

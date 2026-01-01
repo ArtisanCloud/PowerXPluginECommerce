@@ -114,8 +114,8 @@ func (n *RenewalNotifier) execute(ctx context.Context) {
 			if n.dispatcher != nil {
 				if err := n.dispatcher.DispatchRenewalReminder(ctx, license, channels); err != nil {
 					n.logger.WithError(err).WithFields(logrus.Fields{
-						"tenant_uuid":  tenantID,
-						"license_id": license.ID,
+						"tenant_uuid": tenantID,
+						"license_id":  license.ID,
 					}).Warn("failed to dispatch renewal reminder")
 				}
 			}
