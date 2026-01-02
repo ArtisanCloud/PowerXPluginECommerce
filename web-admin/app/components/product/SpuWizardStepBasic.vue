@@ -22,7 +22,10 @@
     </UFormField>
     <UFormField label="类目 ID" :description="errors.categoryId" class="col-span-12 md:col-span-6">
       <template #default="{ id }">
-        <UInput :id="id" v-model.trim="localValue.categoryId" placeholder="cat-001" data-testid="spu-category-id" />
+        <div class="flex gap-2">
+          <UInput :id="id" v-model.trim="localValue.categoryId" placeholder="cat-001" data-testid="spu-category-id" class="flex-1" />
+          <UButton variant="soft" icon="i-heroicons-squares-2x2" @click="openCategoryPicker">选择</UButton>
+        </div>
       </template>
     </UFormField>
     <UFormField label="类目路径" :description="errors.categoryPath" class="col-span-12 md:col-span-6">
@@ -35,11 +38,87 @@
         <UInput :id="id" v-model="tagsInput" placeholder="hot,new" />
       </template>
     </UFormField>
+
+    <div v-if="templateFields.length" class="col-span-12">
+      <div class="mb-2 flex items-center justify-between">
+        <div class="text-sm font-semibold text-white/90">模板字段（attributes）</div>
+        <div class="text-xs text-white/50">随类目生效模板变化</div>
+      </div>
+      <div class="grid grid-cols-12 gap-4 rounded-lg border border-white/10 bg-white/5 p-4">
+        <div v-for="field in templateFields" :key="field.fieldKey" class="col-span-12 md:col-span-6">
+          <UFormField :label="fieldLabel(field)" :description="field.required ? '必填' : ''">
+            <template #default="{ id }">
+              <UInput
+                v-if="field.fieldType === 'string' || field.fieldType === 'date'"
+                :id="id"
+                v-model="localValue.attributes[field.fieldKey]"
+                :placeholder="`输入 ${field.fieldKey}`"
+              />
+              <UInput
+                v-else-if="field.fieldType === 'number'"
+                :id="id"
+                v-model.number="localValue.attributes[field.fieldKey]"
+                type="number"
+              />
+              <USwitch
+                v-else-if="field.fieldType === 'boolean'"
+                v-model="localValue.attributes[field.fieldKey]"
+              />
+              <USelect
+                v-else-if="field.fieldType === 'enum'"
+                :id="id"
+                v-model="localValue.attributes[field.fieldKey]"
+                :items="enumItems(field)"
+                class="w-full"
+              />
+              <UTextarea
+                v-else
+                :id="id"
+                v-model="localValue.attributes[field.fieldKey]"
+                :rows="2"
+                placeholder="JSON / 任意内容"
+              />
+            </template>
+          </UFormField>
+        </div>
+      </div>
+    </div>
   </div>
+
+  <UModal v-model="categoryPickerOpen" :ui="{ width: 'max-w-2xl' }">
+    <UCard>
+      <template #header>
+        <div class="flex items-center justify-between">
+          <h3 class="text-lg font-semibold">选择类目</h3>
+          <UButton icon="i-heroicons-x-mark" variant="ghost" @click="categoryPickerOpen = false" />
+        </div>
+      </template>
+      <div class="space-y-4">
+        <UInput v-model="categoryKeyword" icon="i-heroicons-magnifying-glass-20-solid" placeholder="搜索类目" clearable />
+        <USelectMenu
+          v-model="selectedCategoryId"
+          :options="filteredCategoryOptions"
+          value-attribute="value"
+          option-attribute="label"
+          placeholder="请选择类目"
+          class="w-full"
+        />
+      </div>
+      <template #footer>
+        <div class="flex justify-end gap-3">
+          <UButton variant="ghost" @click="categoryPickerOpen = false">取消</UButton>
+          <UButton color="primary" :disabled="!selectedCategoryId" @click="confirmCategory">确认</UButton>
+        </div>
+      </template>
+    </UCard>
+  </UModal>
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
+import { useToastAlert } from '~/composables/useToastAlert'
+import { useCategoryApi, type CategoryNode } from '~/composables/api/useCategory'
+import { useCategoryTemplateApi, type CategoryTemplateField, type EffectiveTemplateResponse } from '~/composables/api/useCategoryTemplate'
 
 const props = defineProps<{
   modelValue: Record<string, any>
@@ -56,6 +135,7 @@ const localValue = reactive({
   categoryPath: '',
   responsibleUser: '',
   tags: [] as string[],
+  attributes: {} as Record<string, any>,
 })
 
 const types = [
@@ -71,6 +151,9 @@ watch(
   (val) => {
     Object.assign(localValue, val || {})
     tagsInput.value = (val?.tags || []).join(',')
+    if (!localValue.attributes) {
+      localValue.attributes = {}
+    }
   },
   { immediate: true }
 )
@@ -79,6 +162,7 @@ watch(localValue, () => {
   emit('update:modelValue', {
     ...localValue,
     tags: localValue.tags,
+    attributes: localValue.attributes,
   })
 })
 
@@ -88,4 +172,129 @@ watch(tagsInput, (val) => {
     .map((tag) => tag.trim())
     .filter(Boolean)
 })
+
+const toast = useToastAlert()
+const categoryApi = useCategoryApi()
+const templateApi = useCategoryTemplateApi()
+
+const categoryPickerOpen = ref(false)
+const categoryKeyword = ref('')
+const selectedCategoryId = ref<string | null>(null)
+const categoryTree = ref<CategoryNode[]>([])
+const categoryMap = ref<Record<string, CategoryNode>>({})
+
+const templateFields = ref<CategoryTemplateField[]>([])
+const effectiveTemplate = ref<EffectiveTemplateResponse | null>(null)
+
+const openCategoryPicker = async () => {
+	categoryPickerOpen.value = true
+	selectedCategoryId.value = localValue.categoryId || null
+	if (categoryTree.value.length) return
+	try {
+		const resp = await categoryApi.tree()
+		categoryTree.value = resp.items ?? []
+		categoryMap.value = buildCategoryMap(categoryTree.value)
+	} catch (error: any) {
+		toast.add({ title: '加载类目失败', description: error?.message || '无法获取类目树', color: 'error' })
+	}
+}
+
+const categoryOptions = computed(() => flattenTree(categoryTree.value))
+const filteredCategoryOptions = computed(() => {
+	const kw = categoryKeyword.value.trim().toLowerCase()
+	if (!kw) return categoryOptions.value
+	return categoryOptions.value.filter((opt) => String(opt.label).toLowerCase().includes(kw))
+})
+
+const confirmCategory = async () => {
+	if (!selectedCategoryId.value) return
+	const node = categoryMap.value[selectedCategoryId.value]
+	if (!node) return
+	localValue.categoryId = node.id
+	localValue.categoryPath = node.path
+	categoryPickerOpen.value = false
+	await loadEffectiveTemplate()
+}
+
+watch(
+	() => localValue.categoryId,
+	() => loadEffectiveTemplate(),
+)
+
+const loadEffectiveTemplate = async () => {
+	const catId = String(localValue.categoryId || '').trim()
+	if (!catId) {
+		templateFields.value = []
+		effectiveTemplate.value = null
+		return
+	}
+	try {
+		const eff = await templateApi.effective(catId).catch(() => null)
+		effectiveTemplate.value = eff
+		templateFields.value = (eff?.fields ?? []).map((f) => ({
+			...f,
+			fieldType: normalizeFieldType(String(f.fieldType || 'string')),
+		}))
+		for (const f of templateFields.value) {
+			if (f.defaultValue !== undefined && localValue.attributes[f.fieldKey] === undefined) {
+				localValue.attributes[f.fieldKey] = f.defaultValue
+			}
+			if (f.fieldType === 'boolean' && localValue.attributes[f.fieldKey] === undefined) {
+				localValue.attributes[f.fieldKey] = false
+			}
+		}
+	} catch (error: any) {
+		templateFields.value = []
+		effectiveTemplate.value = null
+		toast.add({ title: '加载生效模板失败', description: error?.message || '请稍后重试', color: 'error' })
+	}
+}
+
+const fieldLabel = (field: CategoryTemplateField) => {
+	const suffix = field.required ? ' *' : ''
+	return `${field.fieldKey}${suffix}`
+}
+
+function normalizeFieldType(raw: string) {
+	const t = String(raw || '').trim().toLowerCase()
+	switch (t) {
+		case 'bool':
+			return 'boolean'
+		case 'int':
+		case 'float':
+			return 'number'
+		default:
+			return t || 'string'
+	}
+}
+
+const enumItems = (field: CategoryTemplateField) => {
+	const raw = field.validationRules?.options ?? field.validationRules?.enum ?? field.validationRules?.values
+	const options = Array.isArray(raw) ? raw : []
+	return options.map((v: any) => ({ label: String(v), value: String(v) }))
+}
+
+function buildCategoryMap(nodes: CategoryNode[]) {
+	const out: Record<string, CategoryNode> = {}
+	const walk = (items: CategoryNode[]) => {
+		for (const node of items) {
+			out[node.id] = node
+			if (node.children?.length) walk(node.children)
+		}
+	}
+	walk(nodes)
+	return out
+}
+
+function flattenTree(nodes: CategoryNode[], level = 0): Array<{ label: string; value: string }> {
+	const out: Array<{ label: string; value: string }> = []
+	for (const node of nodes) {
+		const prefix = level > 0 ? `${'—'.repeat(Math.min(level, 6))} ` : ''
+		out.push({ label: `${prefix}${node.displayName}`, value: node.id })
+		if (node.children?.length) {
+			out.push(...flattenTree(node.children, level + 1))
+		}
+	}
+	return out
+}
 </script>

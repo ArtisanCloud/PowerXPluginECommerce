@@ -1,0 +1,160 @@
+openapi: 3.0.3
+info:
+  title: com.powerx.plugin.ecommerce - Product Categories
+  version: "0.1.0"
+  description: |
+    商品类目、类目模板与渠道映射的合同（用于联调与测试）。
+servers:
+  - url: /_p/com.powerx.plugin.ecommerce/api/v1
+paths:
+  /admin/product/categories/tree:
+    get:
+      summary: 获取管理端类目树（可包含停用项）
+      responses:
+        "200":
+          description: OK
+  /admin/product/categories:
+    get:
+      summary: 查询类目列表（支持过滤）
+      responses:
+        "200":
+          description: OK
+    post:
+      summary: 创建类目
+      responses:
+        "200":
+          description: OK
+  /admin/product/categories/{id}:
+    patch:
+      summary: 编辑类目
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+  /admin/product/categories/{id}/move:
+    post:
+      summary: 迁移类目父节点/调整层级
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+  /admin/product/categories/{id}/status:
+    patch:
+      summary: 启用/停用类目
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+  /admin/product/categories/import:
+    post:
+      summary: CSV 导入类目树/映射（按实现拆分子资源）
+      responses:
+        "200":
+          description: OK
+  /admin/product/categories/export:
+    post:
+      summary: CSV 导出类目树/映射（按实现拆分子资源）
+      responses:
+        "200":
+          description: OK
+  /admin/product/category-templates:
+    get:
+      summary: 查询模板列表
+      responses:
+        "200":
+          description: OK
+    post:
+      summary: 创建模板
+      responses:
+        "200":
+          description: OK
+  /admin/product/category-templates/{id}:
+    patch:
+      summary: 编辑模板（草稿）
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+  /admin/product/category-templates/{id}/publish:
+    post:
+      summary: 发布模板版本
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+  /admin/product/category-templates/{id}/rollback:
+    post:
+      summary: 回滚到历史版本
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+  /admin/product/categories/{id}/mappings:
+    get:
+      summary: 获取某类目全部渠道映射
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+    post:
+      summary: 创建/更新某类目的渠道映射
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+  /admin/product/categories/{id}/audit:
+    get:
+      summary: 查询类目相关审计事件
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+  /mini-app/categories/tree:
+    get:
+      summary: 获取前台可展示类目树（停用类目及其子树不返回）
+      responses:
+        "200":
+          description: OK
+  /mini-app/products:
+    get:
+      summary: 迷你应用商品列表（建议支持 categoryId/categoryPath 过滤）
+      responses:
+        "200":
+          description: OK
+

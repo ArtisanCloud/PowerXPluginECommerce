@@ -268,7 +268,7 @@ func (d *LocalDirectory) UserContextFromToken(ctx context.Context, bearer string
 	}
 	claims := &authx.PowerXClaims{}
 	token, err := jwt.ParseWithClaims(bearer, claims, func(t *jwt.Token) (any, error) {
-		if t.Method != jwt.SigningMethodHS256 {
+		if t.Method == nil || t.Method.Alg() != jwt.SigningMethodHS256.Alg() {
 			return nil, errors.New("invalid signing method")
 		}
 		return d.hmacSecret, nil

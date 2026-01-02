@@ -1,0 +1,19 @@
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  page,
+  body {
+    min-height: 100vh;
+  }
+
+  page {
+    background-color: theme("colors.background-light");
+    color: theme("colors.text-dark");
+  }
+
+  /* 小程序端常见：button/text 有默认样式，尽量让基础表现可控 */
+  button {
+    background: transparent;
+  }
+}

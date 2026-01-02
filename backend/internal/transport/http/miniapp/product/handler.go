@@ -42,11 +42,13 @@ func (h *Handler) ListProducts(c *gin.Context) {
 		keyword = strings.TrimSpace(query.Q)
 	}
 	result, err := h.spuService.List(c.Request.Context(), spuservice.ListFilters{
-		Keyword:  keyword,
-		Status:   strings.TrimSpace(query.Status),
-		Type:     strings.TrimSpace(query.Type),
-		Page:     query.Page,
-		PageSize: query.PageSize,
+		Keyword:            keyword,
+		Status:             strings.TrimSpace(query.Status),
+		Type:               strings.TrimSpace(query.Type),
+		CategoryID:         strings.TrimSpace(query.CategoryID),
+		CategoryPathPrefix: strings.TrimSpace(query.CategoryPathPrefix),
+		Page:               query.Page,
+		PageSize:           query.PageSize,
 	})
 	if err != nil {
 		respondMiniAppError(c, http.StatusInternalServerError, err)

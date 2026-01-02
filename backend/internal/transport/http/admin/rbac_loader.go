@@ -210,6 +210,38 @@ func defaultRBACInfo() *contracts.RBACInfo {
 func defaultRBACResources() []contracts.Resource {
 	return []contracts.Resource{
 		{
+			Name:        "com.powerx.plugin.ecommerce:product.category",
+			Description: "商品类目树管理与前台展示数据",
+			Actions: []contracts.Action{
+				{Name: "read", Description: "查看类目树、类目列表与审计记录"},
+				{Name: "manage", Description: "创建/编辑/迁移/启停类目"},
+			},
+		},
+		{
+			Name:        "com.powerx.plugin.ecommerce:product.category.template",
+			Description: "类目模板配置与版本管理",
+			Actions: []contracts.Action{
+				{Name: "read", Description: "查看模板、预览与历史版本"},
+				{Name: "manage", Description: "创建/编辑/发布/回滚模板"},
+			},
+		},
+		{
+			Name:        "com.powerx.plugin.ecommerce:product.category.mapping",
+			Description: "渠道类目映射维护",
+			Actions: []contracts.Action{
+				{Name: "read", Description: "查看渠道类目映射"},
+				{Name: "manage", Description: "新增/编辑/删除渠道类目映射"},
+			},
+		},
+		{
+			Name:        "com.powerx.plugin.ecommerce:product.category.import",
+			Description: "类目/映射批量导入导出",
+			Actions: []contracts.Action{
+				{Name: "read", Description: "导出 CSV 与查看导出结果"},
+				{Name: "manage", Description: "导入 CSV 并触发批量处理"},
+			},
+		},
+		{
 			Name:        "com.powerx.plugin.ecommerce:product.sku",
 			Description: "SKU 生成与基础信息管理",
 			Actions: []contracts.Action{
@@ -320,6 +352,26 @@ func defaultRBACResources() []contracts.Resource {
 
 func defaultRoles() []contracts.Role {
 	return []contracts.Role{
+		{
+			Name:        "product_category.viewer",
+			Description: "查看类目树、模板与渠道映射",
+			Permissions: []string{
+				"com.powerx.plugin.ecommerce:product.category:read",
+				"com.powerx.plugin.ecommerce:product.category.template:read",
+				"com.powerx.plugin.ecommerce:product.category.mapping:read",
+				"com.powerx.plugin.ecommerce:product.category.import:read",
+			},
+		},
+		{
+			Name:        "product_category.operator",
+			Description: "维护类目树、模板与渠道映射，并执行导入导出",
+			Permissions: []string{
+				"com.powerx.plugin.ecommerce:product.category:manage",
+				"com.powerx.plugin.ecommerce:product.category.template:manage",
+				"com.powerx.plugin.ecommerce:product.category.mapping:manage",
+				"com.powerx.plugin.ecommerce:product.category.import:manage",
+			},
+		},
 		{
 			Name:        "product_sku.viewer",
 			Description: "查看 SKU、库存、渠道映射与日志",

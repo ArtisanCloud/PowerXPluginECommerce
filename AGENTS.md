@@ -44,6 +44,8 @@ Always respond in Chinese-simplified
 - PostgreSQL（schema `powerx_plugin_base`）存放 channel_* 表；Redis 用于凭证巡检与 KPI 缓存 (003-channel-master)
 - Backend Go 1.24（PowerX 插件栈），Frontend TypeScript 5.9 + Nuxt 4（Node 20） + Gin HTTP、GORM(Postgres driver)、PowerX plugin SDK、Redis 客户端、Nuxt UI 3.3.x、Pinia、Nuxt i18n、@nuxt/icon (002-product-sku-management)
 - PostgreSQL（schema `powerx_plugin_base`，表含 `product_skus`、`product_sku_channels`、`product_sku_inventory` 等），可选 Redis 做库存缓存与任务锁 (002-product-sku-management)
+- Go 1.24（backend），Node 20 + TypeScript 5.9 + Nuxt 4（web-admin） + Gin、GORM（postgres driver）、PowerX plugin framework；Nuxt 4、@nuxt/ui 3.3.x、Pinia、Nuxt i18n (004-product-categories)
+- PostgreSQL（schema: `powerx_plugin_base`） (004-product-categories)
 
 ## Recent Changes
 - 003-channels-subscription: Added Backend Go 1.24; Frontend Node 20 + TypeScript 5.9 + Nuxt 4 + Gin, GORM (postgres driver), PowerX plugin framework, JWT、grpc/protobuf、Redis 客户端；前端 @nuxt/ui 3.3.x、Pinia、i18n、Nuxt Icon

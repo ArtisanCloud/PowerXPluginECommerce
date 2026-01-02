@@ -99,3 +99,39 @@
 - 类目 A/B 实验：不同前台展示顺序及 SEO 策略。
 - 与外部 PIM 对接：支持 webhook 与实时同步。
 - 可视化影响分析：展示模板变更影响到的商品/渠道数量。
+
+## 11. 落地范围（本仓库）
+
+### 11.1 已实现
+- **US1 类目树维护 + 前台展示树**：后台类目树 CRUD/迁移/启停/排序（基础版本）；miniapp `GET /mini-app/categories/tree` 返回“可展示类目树”（停用节点及其子树不返回）；miniapp 商品列表支持按 `categoryId` / `categoryPathPrefix` 过滤。
+- **US2 类目模板 + SPU 录入校验**：模板草稿管理、发布/回滚、预览/模拟校验、影响范围预览与触发批量重检；SPU 新建/编辑请求增加 `attributes` 并按“生效模板”做字段校验。
+- **US3 渠道类目映射 + CSV**：映射维护（查询/新增/编辑/删除）、CSV 导入导出、按类目查询审计。
+
+### 11.2 未实现（保留在 Backlog/后续迭代）
+- PRD 中提到的：类目权限范围（按角色/组织设置可管理类目范围）的“业务维度”存储/配置 UI（当前仅提供路由级 RBAC 资源与权限声明）。
+- 类目树/模板的“Excel/JSON 导入导出”、SEO & 展示推荐位等扩展字段（本期只做 MVP 所需字段与 CSV）。
+
+## 12. 接口对齐说明
+
+### 12.1 路径前缀
+- 本插件 API 统一前缀为 `/{APIPrefix}`（默认 `/api/v1`），管理端路由挂载在 `/admin/**`，因此本文实际落地的类目相关路径为 `/api/v1/admin/product/**`（而不是 PRD 示例中的 `/api/products/**`）。
+
+### 12.2 管理端（类目/模板/映射）
+- 类目树/列表：`GET /api/v1/admin/product/categories/tree`、`GET /api/v1/admin/product/categories`
+- 类目创建/编辑：`POST /api/v1/admin/product/categories`、`PATCH /api/v1/admin/product/categories/{id}`
+- 迁移/启停：`POST /api/v1/admin/product/categories/{id}/move`、`PATCH /api/v1/admin/product/categories/{id}/status`
+- 渠道映射：`GET /api/v1/admin/product/categories/{id}/mappings`、`POST /api/v1/admin/product/categories/{id}/mappings`（支持 `operation=delete`）
+- 导入导出（CSV）：`POST /api/v1/admin/product/categories/import`、`POST /api/v1/admin/product/categories/export`（按 `kind` 区分）
+- 审计：`GET /api/v1/admin/product/categories/{id}/audit`
+- 模板：`GET|POST|PATCH /api/v1/admin/product/category-templates`、`POST /api/v1/admin/product/category-templates/{id}/publish`、`POST /api/v1/admin/product/category-templates/{id}/rollback` 等
+
+### 12.3 miniapp（前台展示）
+- 可展示类目树：`GET /api/v1/mini-app/categories/tree`
+- 商品列表筛选：`GET /api/v1/mini-app/products?categoryId=...` 或 `categoryPathPrefix=...`
+
+## 13. 执行记录（Polish & Cross-Cutting）
+
+执行日期：2026-01-02
+- 后端质量门禁：`make lint`、`make test`（通过）
+- 前端质量门禁：`make build-admin`（通过；存在 Nuxt circular-chunk 警告）
+- 端到端启动验证：`make dev` 可完成迁移并启动 HTTP（`:8086`），但“创建类目→前台树查询→按类目筛选商品”的完整链路需要租户/账号/鉴权数据准备，建议在本地按 `specs/004-product-categories/quickstart.md` 手工验证

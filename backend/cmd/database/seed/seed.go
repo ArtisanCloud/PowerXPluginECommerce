@@ -110,6 +110,16 @@ func seedCustomerPermissions(db *gorm.DB) (map[string]uint64, error) {
 		{Resource: "com.powerx.plugin.ecommerce:product.sku.serial", Action: "manage", Description: "录入或导出 SKU 序列号/批次"},
 		{Resource: "com.powerx.plugin.ecommerce:product.sku.barcode", Action: "read", Description: "查看 SKU 条码"},
 		{Resource: "com.powerx.plugin.ecommerce:product.sku.barcode", Action: "manage", Description: "生成/校验 SKU 条码"},
+
+		// 商品类目（004-product-categories）
+		{Resource: "com.powerx.plugin.ecommerce:product.category", Action: "read", Description: "查看类目树、类目列表与审计记录"},
+		{Resource: "com.powerx.plugin.ecommerce:product.category", Action: "manage", Description: "创建/编辑/迁移/启停类目"},
+		{Resource: "com.powerx.plugin.ecommerce:product.category.template", Action: "read", Description: "查看类目模板、预览与历史版本"},
+		{Resource: "com.powerx.plugin.ecommerce:product.category.template", Action: "manage", Description: "创建/编辑/发布/回滚类目模板"},
+		{Resource: "com.powerx.plugin.ecommerce:product.category.mapping", Action: "read", Description: "查看渠道类目映射"},
+		{Resource: "com.powerx.plugin.ecommerce:product.category.mapping", Action: "manage", Description: "维护渠道类目映射"},
+		{Resource: "com.powerx.plugin.ecommerce:product.category.import", Action: "read", Description: "导出类目/映射 CSV"},
+		{Resource: "com.powerx.plugin.ecommerce:product.category.import", Action: "manage", Description: "导入类目/映射 CSV"},
 	}
 
 	customerPermissions = append(customerPermissions, productPermissions...)

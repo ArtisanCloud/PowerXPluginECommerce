@@ -261,7 +261,7 @@ func (r *Router) buildRBAC() *middleware.RBACConfig {
 	return &middleware.RBACConfig{
 		Enabled:          true,
 		DefaultDeny:      false,
-		SuperAdminRoles:  []string{"superadmin", "admin"},
+		SuperAdminRoles:  []string{"superadmin", "admin", "system.admin"},
 		RoutePermissions: map[string]middleware.Permission{},
 		DelegateToPowerX: delegate,
 		PowerXIssuer:     issuer,

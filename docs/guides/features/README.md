@@ -11,6 +11,7 @@
 - `README.md`（本文）：约定文档格式及维护指引。
 - `product/subscription_onboarding.md`：订阅型商品上架 & 下单准备的完整用例。
 - `product/standard_onboarding.md`：常规一次性商品上架与库存准备用例。
+- `product/category_management.md`：商品类目使用指导（类目树 / 模板 / 渠道映射 / CSV）。
 - _更多场景_：请按 `snake_case` 命名，例如 `channel_resync_runbook.md`。
 
 ## 规范约定

@@ -13,6 +13,7 @@ import (
 	channelproductjobs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/jobs/channel/product"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	productmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/product"
+	product_category "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/product_category"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"github.com/lib/pq"
@@ -70,6 +71,7 @@ type UpsertSPURequest struct {
 	Tags            []string        `json:"tags"`
 	ResponsibleUser string          `json:"responsibleUser"`
 	Locales         []LocaleContent `json:"locales"`
+	Attributes      map[string]any  `json:"attributes,omitempty"`
 }
 
 // Normalize trims whitespace and deduplicates tags for consistent processing.
@@ -82,6 +84,9 @@ func (r *UpsertSPURequest) Normalize() {
 	r.BrandID = strings.TrimSpace(r.BrandID)
 	r.DefaultLocale = strings.TrimSpace(r.DefaultLocale)
 	r.ResponsibleUser = strings.TrimSpace(r.ResponsibleUser)
+	if r.Attributes == nil {
+		r.Attributes = map[string]any{}
+	}
 	tagSet := map[string]struct{}{}
 	for _, tag := range r.Tags {
 		if trimmed := strings.TrimSpace(tag); trimmed != "" {
@@ -133,6 +138,17 @@ func (s *Service) ValidateUpsertRequest(ctx context.Context, req UpsertSPUReques
 		if _, err := s.tenantFromContext(ctx); err != nil {
 			return err
 		}
+		// US2：按类目取生效模板并校验 attributes（仅新建/编辑校验）
+		templateSvc := product_category.NewService(s.deps)
+		if templateSvc != nil && templateSvc.Ready() {
+			tErrs, err := templateSvc.ValidateAttributesForCategory(ctx, req.CategoryID, req.Attributes)
+			if err != nil {
+				return err
+			}
+			for _, e := range tErrs {
+				errs = errs.add(e.Field, e.Message)
+			}
+		}
 		return nil
 	}
 	return errs
@@ -150,11 +166,13 @@ func (s *Service) tenantFromContext(ctx context.Context) (string, error) {
 
 // ListFilters describes query params for listing SPUs.
 type ListFilters struct {
-	Keyword  string
-	Status   string
-	Type     string
-	Page     int
-	PageSize int
+	Keyword            string
+	Status             string
+	Type               string
+	CategoryID         string
+	CategoryPathPrefix string
+	Page               int
+	PageSize           int
 }
 
 // ListResult wraps paginated SPU summaries.
@@ -215,6 +233,11 @@ func (s *Service) List(ctx context.Context, filters ListFilters) (*ListResult, e
 	}
 	if filters.Type != "" {
 		query = query.Where("type = ?", filters.Type)
+	}
+	if strings.TrimSpace(filters.CategoryID) != "" {
+		query = query.Where("category_id = ?", strings.TrimSpace(filters.CategoryID))
+	} else if strings.TrimSpace(filters.CategoryPathPrefix) != "" {
+		query = query.Where("category_path LIKE ?", strings.TrimSpace(filters.CategoryPathPrefix)+"%")
 	}
 	if filters.Keyword != "" {
 		like := "%" + strings.TrimSpace(filters.Keyword) + "%"

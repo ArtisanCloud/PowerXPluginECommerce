@@ -3,12 +3,14 @@ package product
 import "time"
 
 type miniAppProductListQuery struct {
-	Keyword  string `form:"keyword"`
-	Q        string `form:"q"`
-	Status   string `form:"status"`
-	Type     string `form:"type"`
-	Page     int    `form:"page"`
-	PageSize int    `form:"pageSize"`
+	Keyword            string `form:"keyword"`
+	Q                  string `form:"q"`
+	Status             string `form:"status"`
+	Type               string `form:"type"`
+	CategoryID         string `form:"categoryId"`
+	CategoryPathPrefix string `form:"categoryPathPrefix"`
+	Page               int    `form:"page"`
+	PageSize           int    `form:"pageSize"`
 }
 
 type miniAppSkuListQuery struct {
