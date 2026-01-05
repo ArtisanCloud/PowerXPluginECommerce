@@ -52,6 +52,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) {
 		spus.POST("", handler.Create)
 		spus.PATCH("/:id", handler.Update)
 		spus.GET("/:id", handler.Get)
+		spus.POST("/:id/revise", handler.Revise)
 		spus.POST("/:id/submit", handler.Submit)
 		spus.POST("/:id/publish", handler.Publish)
 		spus.POST("/:id/withdraw", handler.Withdraw)

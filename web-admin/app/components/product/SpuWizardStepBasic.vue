@@ -20,17 +20,30 @@
         <UInput :id="id" v-model.trim="localValue.responsibleUser" placeholder="ops-01" />
       </template>
     </UFormField>
-    <UFormField label="类目 ID" :description="errors.categoryId" class="col-span-12 md:col-span-6">
+    <UFormField label="类目" :description="errors.categoryId" class="col-span-12 md:col-span-6">
       <template #default="{ id }">
         <div class="flex gap-2">
-          <UInput :id="id" v-model.trim="localValue.categoryId" placeholder="cat-001" data-testid="spu-category-id" class="flex-1" />
+          <UInput
+            :id="id"
+            :model-value="selectedCategoryDisplay"
+            placeholder="请选择类目"
+            data-testid="spu-category-id"
+            class="flex-1"
+            readonly
+          />
           <UButton variant="soft" icon="i-heroicons-squares-2x2" @click="openCategoryPicker">选择</UButton>
         </div>
       </template>
     </UFormField>
     <UFormField label="类目路径" :description="errors.categoryPath" class="col-span-12 md:col-span-6">
       <template #default="{ id }">
-        <UInput :id="id" v-model.trim="localValue.categoryPath" placeholder="root/cat-001" data-testid="spu-category-path" />
+        <UInput
+          :id="id"
+          :model-value="selectedCategoryPathDisplay"
+          placeholder="选择类目后自动生成"
+          data-testid="spu-category-path"
+          readonly
+        />
       </template>
     </UFormField>
     <UFormField class="col-span-12" label="标签 (逗号分隔)">
@@ -85,32 +98,34 @@
     </div>
   </div>
 
-  <UModal v-model="categoryPickerOpen" :ui="{ width: 'max-w-2xl' }">
-    <UCard>
-      <template #header>
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg font-semibold">选择类目</h3>
-          <UButton icon="i-heroicons-x-mark" variant="ghost" @click="categoryPickerOpen = false" />
-        </div>
-      </template>
-      <div class="space-y-4">
-        <UInput v-model="categoryKeyword" icon="i-heroicons-magnifying-glass-20-solid" placeholder="搜索类目" clearable />
-        <USelectMenu
-          v-model="selectedCategoryId"
-          :options="filteredCategoryOptions"
-          value-attribute="value"
-          option-attribute="label"
-          placeholder="请选择类目"
-          class="w-full"
-        />
-      </div>
-      <template #footer>
-        <div class="flex justify-end gap-3">
-          <UButton variant="ghost" @click="categoryPickerOpen = false">取消</UButton>
-          <UButton color="primary" :disabled="!selectedCategoryId" @click="confirmCategory">确认</UButton>
-        </div>
-      </template>
-    </UCard>
+  <UModal
+    v-model:open="categoryPickerOpen"
+    title="选择类目"
+    description="请选择一个类目用于 SPU 归类。"
+    :close="{ onClick: closeCategoryPicker }"
+    :ui="{
+      content: 'max-w-2xl w-[90vw] overflow-visible',
+      body: 'space-y-4 p-4 sm:p-5 overflow-visible',
+      footer: 'px-4 sm:px-5 pb-4 sm:pb-5 pt-0 flex justify-end gap-2',
+    }"
+  >
+    <template #body>
+      <UInput v-model="categoryKeyword" icon="i-heroicons-magnifying-glass-20-solid" placeholder="搜索类目" clearable />
+      <USelectMenu
+        v-model="selectedCategoryId"
+        :items="filteredCategoryOptions"
+        value-key="value"
+        label-key="label"
+        :portal="false"
+        :popper="{ placement: 'top-start' }"
+        placeholder="请选择类目"
+        class="w-full"
+      />
+    </template>
+    <template #footer>
+      <UButton variant="ghost" @click="closeCategoryPicker">取消</UButton>
+      <UButton color="primary" :disabled="!selectedCategoryId" @click="confirmCategory">确认</UButton>
+    </template>
   </UModal>
 </template>
 
@@ -182,21 +197,70 @@ const categoryKeyword = ref('')
 const selectedCategoryId = ref<string | null>(null)
 const categoryTree = ref<CategoryNode[]>([])
 const categoryMap = ref<Record<string, CategoryNode>>({})
+const categoryTreeLoading = ref(false)
 
 const templateFields = ref<CategoryTemplateField[]>([])
 const effectiveTemplate = ref<EffectiveTemplateResponse | null>(null)
 
-const openCategoryPicker = async () => {
-	categoryPickerOpen.value = true
-	selectedCategoryId.value = localValue.categoryId || null
-	if (categoryTree.value.length) return
+const selectedCategoryNode = computed(() => {
+	const id = String(localValue.categoryId || '').trim()
+	return id ? categoryMap.value[id] ?? null : null
+})
+
+const selectedCategoryDisplay = computed(() => {
+	const node = selectedCategoryNode.value
+	if (node) {
+		const alias = (node.aliasSlug || node.code || '').trim()
+		return alias ? `${node.displayName}（${alias}）` : node.displayName
+	}
+	return String(localValue.categoryId || '').trim()
+})
+
+const selectedCategoryPathDisplay = computed(() => {
+	const raw = String(localValue.categoryPath || '').trim()
+	if (!raw) return ''
+	const ids = parseCategoryPathIDs(raw)
+	if (!ids.length) return raw
+	const parts = ids
+		.map((id) => categoryMap.value[id])
+		.filter(Boolean)
+		.map((node) => (node?.aliasSlug || node?.code || node?.displayName || node?.id || '').trim())
+		.filter(Boolean)
+	if (parts.length) {
+		return parts.join(' / ')
+	}
+	return raw
+})
+
+const blurActiveElement = () => {
+  if (typeof document === 'undefined') return
+  const active = document.activeElement as HTMLElement | null
+  active?.blur()
+}
+
+const ensureCategoryTreeLoaded = async () => {
+	if (categoryTree.value.length || categoryTreeLoading.value) return
 	try {
+		categoryTreeLoading.value = true
 		const resp = await categoryApi.tree()
 		categoryTree.value = resp.items ?? []
 		categoryMap.value = buildCategoryMap(categoryTree.value)
 	} catch (error: any) {
 		toast.add({ title: '加载类目失败', description: error?.message || '无法获取类目树', color: 'error' })
+	} finally {
+		categoryTreeLoading.value = false
 	}
+}
+
+const closeCategoryPicker = () => {
+  blurActiveElement()
+  categoryPickerOpen.value = false
+}
+
+const openCategoryPicker = async () => {
+	categoryPickerOpen.value = true
+	selectedCategoryId.value = localValue.categoryId || null
+	await ensureCategoryTreeLoaded()
 }
 
 const categoryOptions = computed(() => flattenTree(categoryTree.value))
@@ -212,16 +276,23 @@ const confirmCategory = async () => {
 	if (!node) return
 	localValue.categoryId = node.id
 	localValue.categoryPath = node.path
-	categoryPickerOpen.value = false
+	closeCategoryPicker()
 	await loadEffectiveTemplate()
 }
 
 watch(
 	() => localValue.categoryId,
-	() => loadEffectiveTemplate(),
+	(id) => {
+		const trimmed = String(id || '').trim()
+		if (trimmed) {
+			ensureCategoryTreeLoaded()
+		}
+		loadEffectiveTemplate()
+	},
+	{ immediate: true },
 )
 
-const loadEffectiveTemplate = async () => {
+async function loadEffectiveTemplate() {
 	const catId = String(localValue.categoryId || '').trim()
 	if (!catId) {
 		templateFields.value = []
@@ -296,5 +367,12 @@ function flattenTree(nodes: CategoryNode[], level = 0): Array<{ label: string; v
 		}
 	}
 	return out
+}
+
+function parseCategoryPathIDs(path: string) {
+	return String(path || '')
+		.split('/')
+		.map((p) => p.trim())
+		.filter(Boolean)
 }
 </script>

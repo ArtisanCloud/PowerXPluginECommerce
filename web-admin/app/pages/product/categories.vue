@@ -67,6 +67,13 @@
 							</div>
 							<div class="flex flex-wrap gap-2">
 								<UButton icon="i-heroicons-plus" variant="soft" @click="openCreateChild(selected)">新建子类目</UButton>
+								<UButton
+									icon="i-heroicons-shopping-bag"
+									variant="soft"
+									:to="{ path: '/product/spus', query: { categoryPathPrefix: selected.path, categoryName: selected.displayName } }"
+								>
+									查看商品
+								</UButton>
 								<UButton icon="i-heroicons-arrows-right-left" variant="soft" @click="openMove(selected)">迁移</UButton>
 								<UButton icon="i-heroicons-trash" color="error" variant="soft" @click="openDeleteConfirm">删除</UButton>
 							</div>

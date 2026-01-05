@@ -35,7 +35,8 @@
    - 编辑名称/编码并保存；
    - 启停类目（停用后该类目及其子树不应出现在 miniapp“可展示树”中）；
    - 拖拽或迁移到新的父节点（系统应阻止形成环）。
-4. **删除保护**：若类目存在子类目或被商品引用，删除应被禁止（建议先迁移/停用）。
+4. 如需查看该类目下的商品：点击「查看商品」跳转到 SPU 列表，并自动带上类目过滤（默认包含子树）。
+5. **删除保护**：若类目存在子类目或被商品引用，删除应被禁止（建议先迁移/停用）。
 
 **接口参考**
 - `GET /api/v1/admin/product/categories/tree`
@@ -44,19 +45,32 @@
 - `PATCH /api/v1/admin/product/categories/{id}`
 - `POST /api/v1/admin/product/categories/{id}/move`
 - `PATCH /api/v1/admin/product/categories/{id}/status`
+- `DELETE /api/v1/admin/product/categories/{id}`
+
+### 1.1) 类目与 SPU 列表联动（管理端）
+
+当你从「类目（Categories）」页面点击「查看商品」，会跳转到 `SPU 列表` 并带上查询参数：
+
+- `categoryPathPrefix`：类目路径前缀（用于筛选“当前类目 + 子类目”下的 SPU）
+- `categoryId`：类目 ID（精确筛选；若同时传入则优先生效）
+
+**接口参考**
+- `GET /api/v1/admin/product/spus?categoryPathPrefix={pathPrefix}`
+- `GET /api/v1/admin/product/spus?categoryId={categoryId}`
+
+> 关系说明：类目与 **SPU** 关联（SPU 上维护 `categoryId/categoryPath`）；SKU 作为 SPU 的规格/变体，一般不单独挂类目，默认继承 SPU 的类目。
 
 ### 2) miniapp 获取可展示类目树（US1）
 
-miniapp 路由默认启用 customer 鉴权。
+miniapp 的“开放只读接口”不要求管理员 JWT/RBAC，也不要求 customer token，但**必须携带租户上下文**（`X-Tenant-UUID` 或 `tenant_uuid`）。
 
-1. 注册/登录获取 token：
-   - `POST /api/v1/mini-app/auth/register`
-   - `POST /api/v1/mini-app/auth/login`
-2. 带上 `Authorization: Bearer <customer_token>` 与 `X-Tenant-UUID` 调用：
+1. 直接调用：
    - `GET /api/v1/mini-app/categories/tree`
-3. **验证**：
+2. **验证**：
    - 返回的树中不包含已停用类目及其子树；
    - 树结构与后台最新层级/排序一致。
+
+如需了解完整的 mini-app 接口（含商品列表、SKU 列表、可选登录），参见：`docs/guides/features/product/miniapp_open_api.md`。
 
 ### 3) 配置类目模板并驱动 SPU 录入校验（US2）
 
@@ -137,4 +151,3 @@ SPU 新建/编辑请求支持 `attributes`，并按类目生效模板校验：
 | 403（权限不足） | 检查 RBAC 资源权限是否包含类目/模板/映射/导入导出（见“依赖与权限”表） |
 | 409/400（唯一性冲突） | 常见于类目 code/alias/slug 或映射唯一键冲突；根据返回字段定位并调整后重试 |
 | CSV 导入失败 | 检查 header 是否包含 `channel,platformCategoryId`；`metadata` 必须是合法 JSON 字符串或空 |
-

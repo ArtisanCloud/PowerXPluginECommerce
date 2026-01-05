@@ -171,6 +171,7 @@ type ListFilters struct {
 	Type               string
 	CategoryID         string
 	CategoryPathPrefix string
+	Tags               []string
 	Page               int
 	PageSize           int
 }
@@ -242,6 +243,35 @@ func (s *Service) List(ctx context.Context, filters ListFilters) (*ListResult, e
 	if filters.Keyword != "" {
 		like := "%" + strings.TrimSpace(filters.Keyword) + "%"
 		query = query.Where("code ILIKE ? OR name ILIKE ?", like, like)
+	}
+	if len(filters.Tags) > 0 {
+		tagSet := map[string]struct{}{}
+		tags := make([]string, 0, len(filters.Tags))
+		for _, tag := range filters.Tags {
+			normalized := strings.ToLower(strings.TrimSpace(tag))
+			if normalized == "" {
+				continue
+			}
+			if _, exists := tagSet[normalized]; exists {
+				continue
+			}
+			tagSet[normalized] = struct{}{}
+			tags = append(tags, normalized)
+		}
+		if len(tags) > 0 {
+			dialect := strings.ToLower(strings.TrimSpace(s.deps.DB.Dialector.Name()))
+			if dialect == "postgres" {
+				query = query.Where("tags && ?", pq.Array(tags))
+			} else {
+				conditions := make([]string, 0, len(tags))
+				args := make([]any, 0, len(tags))
+				for _, tag := range tags {
+					conditions = append(conditions, "LOWER(tags) LIKE ?")
+					args = append(args, "%"+tag+"%")
+				}
+				query = query.Where("("+strings.Join(conditions, " OR ")+")", args...)
+			}
+		}
 	}
 	var total int64
 	if err := query.Count(&total).Error; err != nil {
@@ -444,9 +474,98 @@ type WithdrawRequest struct {
 	Reason     string   `json:"reason"`
 }
 
+// ReviseRequest captures audit info when creating a new draft revision.
+type ReviseRequest struct {
+	Reason string `json:"reason"`
+}
+
 // DeleteRequest captures audit info when removing an SPU.
 type DeleteRequest struct {
 	Reason string `json:"reason"`
+}
+
+// Revise creates a new draft version from a published SPU and moves it back to draft state.
+// 说明：当前实现采用“单状态”模型 —— 一旦创建草稿，SPU 状态会从 published 切回 draft，但已发布版本仍保留在版本历史中。
+func (s *Service) Revise(ctx context.Context, id string, req ReviseRequest) (*SPUDetail, error) {
+	if s == nil {
+		return nil, errors.New("spu service not initialized")
+	}
+	tenantID, err := s.tenantFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	req.Reason = strings.TrimSpace(req.Reason)
+	if req.Reason == "" {
+		var vErrs ValidationErrors
+		vErrs = vErrs.add("reason", "reason is required")
+		return nil, vErrs
+	}
+	operator := actorFromContext(ctx)
+	var detail *SPUDetail
+	err = s.spuRepo.WithTenantTx(ctx, tenantID, func(tx *gorm.DB) error {
+		var spu productmodel.SPU
+		if err := tx.Where("tenant_uuid = ? AND id = ?", tenantID, id).First(&spu).Error; err != nil {
+			return err
+		}
+		if strings.ToLower(spu.Status) != "published" {
+			return fmt.Errorf("spu status %s cannot revise", spu.Status)
+		}
+		sourceVersionID := derefString(spu.CurrentVersionID)
+		if strings.TrimSpace(sourceVersionID) == "" {
+			return errors.New("missing published version")
+		}
+		var sourceVersion productmodel.SPUVersion
+		if err := tx.Where("tenant_uuid = ? AND id = ? AND spu_id = ?", tenantID, sourceVersionID, spu.ID).First(&sourceVersion).Error; err != nil {
+			return err
+		}
+
+		var nextVersionNumber int
+		if err := tx.Model(&productmodel.SPUVersion{}).
+			Where("tenant_uuid = ? AND spu_id = ?", tenantID, spu.ID).
+			Select("COALESCE(MAX(version_number), 0)").
+			Scan(&nextVersionNumber).Error; err != nil {
+			return err
+		}
+		nextVersionNumber += 1
+
+		payload := decodeVersionPayload(sourceVersion.Payload)
+		payload["version"] = "draft"
+		payload["revisionSourceVersionId"] = sourceVersionID
+		payload["revisionReason"] = req.Reason
+		if operator != "" && operator != "system" {
+			payload["revisionBy"] = operator
+		}
+		body, _ := json.Marshal(payload)
+
+		now := time.Now().UTC()
+		version := &productmodel.SPUVersion{
+			ID:            utils.NewUUID(),
+			TenantUUID:    tenantID,
+			SPUID:         spu.ID,
+			VersionNumber: nextVersionNumber,
+			Status:        "draft",
+			Payload:       datatypes.JSON(body),
+		}
+		if err := tx.Create(version).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&spu).Updates(map[string]any{
+			"status":             "draft",
+			"current_version_id": version.ID,
+			"updated_at":         now,
+		}).Error; err != nil {
+			return err
+		}
+		spu.Status = "draft"
+		spu.UpdatedAt = now
+		spu.CurrentVersionID = &version.ID
+		detail = convertToDetail(&spu, nil, version.ID)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return detail, nil
 }
 
 // Submit transitions a draft SPU into reviewing state.

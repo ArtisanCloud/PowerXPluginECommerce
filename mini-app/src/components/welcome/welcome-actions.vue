@@ -10,7 +10,13 @@
         <text class="ml-2 text-lg font-black">→</text>
       </view>
 
-      <view class="flex h-12 w-full items-center justify-center" @tap="$emit('login')">
+      <view
+        v-if="loggedInLabel"
+        class="flex h-12 w-full items-center justify-center text-base font-semibold text-text-dark"
+      >
+        <text class="truncate">{{ loggedInLabel }}</text>
+      </view>
+      <view v-else class="flex h-12 w-full items-center justify-center" @tap="$emit('login')">
         <text class="text-base font-semibold text-text-dark">{{ ctaLoginPrefix }}</text>
         <text class="ml-1 text-base font-semibold text-primary">{{ ctaLoginAction }}</text>
       </view>
@@ -30,6 +36,7 @@ defineProps<{
   ctaStart: string;
   ctaLoginPrefix: string;
   ctaLoginAction: string;
+  loggedInLabel?: string;
 }>();
 
 defineEmits<{

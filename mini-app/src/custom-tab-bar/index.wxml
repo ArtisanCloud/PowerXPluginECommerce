@@ -1,0 +1,48 @@
+<view class="tabbar">
+  <view class="tabbar__inner">
+    <view class="tabbar__side">
+      <view
+        wx:for="{{leftList}}"
+        wx:key="pagePath"
+        class="tabbar__item"
+        data-path="{{item.pagePath}}"
+        bindtap="onTap"
+      >
+        <image
+          class="tabbar__icon"
+          mode="aspectFit"
+          src="{{selectedPath === item.pagePath ? item.selectedIconPath : item.iconPath}}"
+        />
+        <text class="tabbar__text" style="color: {{selectedPath === item.pagePath ? selectedColor : color}};">
+          {{item.text}}
+        </text>
+      </view>
+    </view>
+
+    <view wx:if="{{enableFab}}" class="tabbar__fabWrap">
+      <view class="tabbar__fab" bindtap="onFabTap">
+        <view class="tabbar__fabPlus">+</view>
+      </view>
+    </view>
+
+    <view class="tabbar__side">
+      <view
+        wx:for="{{rightList}}"
+        wx:key="pagePath"
+        class="tabbar__item"
+        data-path="{{item.pagePath}}"
+        bindtap="onTap"
+      >
+        <image
+          class="tabbar__icon"
+          mode="aspectFit"
+          src="{{selectedPath === item.pagePath ? item.selectedIconPath : item.iconPath}}"
+        />
+        <text class="tabbar__text" style="color: {{selectedPath === item.pagePath ? selectedColor : color}};">
+          {{item.text}}
+        </text>
+      </view>
+    </view>
+  </view>
+  <view class="tabbar__safe"></view>
+</view>

@@ -7,5 +7,42 @@
   "ctaStart": "开始分销",
   "ctaLoginPrefix": "已有账号？",
   "ctaLoginAction": "去登录",
-  "langSwitch": "EN"
+  "langSwitch": "EN",
+  "home": {
+    "loggedInAsPrefix": "已登录：",
+    "loggedIn": "已登录"
+  },
+  "auth": {
+    "help": "帮助",
+    "helpToast": "帮助功能即将上线",
+    "bannerKicker": "分销商城",
+    "bannerTitle": "今天就开始赚钱",
+    "welcomeBack": "欢迎回来",
+    "createAccount": "创建账号",
+    "subtitle": "管理你的门店与分销网络。",
+    "tabLogin": "登录",
+    "tabSignup": "注册",
+    "name": "昵称",
+    "namePlaceholder": "请输入昵称",
+    "phone": "手机号",
+    "phonePlaceholder": "138 0000 0000",
+    "password": "密码",
+    "passwordPlaceholder": "请输入密码",
+    "agreePrefix": "我已阅读并同意",
+    "userAgreement": "用户协议",
+    "privacyPolicy": "隐私政策",
+    "and": "与",
+    "dot": "。",
+    "submitLogin": "登录",
+    "submitSignup": "注册",
+    "orContinue": "或使用以下方式继续",
+    "forgot": "忘记密码？",
+    "support": "联系客服",
+    "todo": "暂未开放",
+    "mustAgree": "请先勾选协议",
+    "missingFields": "请填写必填项",
+    "failed": "请求失败",
+    "loginSuccess": "登录成功",
+    "signupSuccess": "注册成功"
+  }
 }

@@ -4,11 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
+	"strings"
+	"time"
 
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models"
 	customermodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/customer"
 	iammodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/iam"
+	productmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product"
+	productcategory "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_category"
+	productsku "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_sku"
 	templatemodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/template"
+	"github.com/lib/pq"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
@@ -29,6 +36,9 @@ func SeedPluginData(ctx context.Context, db *gorm.DB) error {
 		return err
 	}
 	if err := seedSampleCustomers(ctxDB); err != nil {
+		return err
+	}
+	if err := seedSportsCatalog(ctxDB); err != nil {
 		return err
 	}
 	return nil
@@ -282,6 +292,795 @@ func seedSampleCustomers(db *gorm.DB) error {
 			if err := db.Model(&existing).Updates(updates).Error; err != nil {
 				return err
 			}
+		}
+	}
+	return nil
+}
+
+type categorySeedSpec struct {
+	ID          string
+	Code        string
+	DisplayName string
+	AliasSlug   string
+	ParentCode  string
+	SortOrder   int
+	IsFeatured  bool
+	ImageURL    string
+}
+
+type spuSeedSpec struct {
+	ID           string
+	Code         string
+	Name         string
+	Type         string
+	CategoryCode string
+	Status       string
+	DefaultLocale string
+	Responsible  string
+	Tags         []string
+	Description  string
+}
+
+type skuSeedSpec struct {
+	ID        string
+	SPUCode   string
+	SKUCode   string
+	Status    string
+	Barcode   string
+	Tags      []string
+	Spec      map[string]any
+	SalePrice float64
+	Currency  string
+	MediaID   string
+	ImageURL  string
+}
+
+func seedSportsCatalog(db *gorm.DB) error {
+	if db == nil || db.Migrator() == nil {
+		return nil
+	}
+	if !db.Migrator().HasTable(&productcategory.ProductCategory{}) || !db.Migrator().HasTable(&productmodel.SPU{}) {
+		return nil
+	}
+
+	if err := seedSportsCategories(db); err != nil {
+		return err
+	}
+	if err := seedSportsSPUs(db); err != nil {
+		return err
+	}
+	if err := seedSportsSKUs(db); err != nil {
+		return err
+	}
+	return nil
+}
+
+func seedSportsCategories(db *gorm.DB) error {
+	specs := []categorySeedSpec{
+		{
+			ID:          "8fc75aca-42d3-4d03-ba79-852c87c4f180",
+			Code:        "basketball",
+			DisplayName: "篮球",
+			AliasSlug:   "basketball",
+			ParentCode:  "",
+			SortOrder:   10,
+			IsFeatured:  true,
+		},
+		{
+			ID:          "d4a603a5-16b4-4aa1-9b4f-9ccecd0b63aa",
+			Code:        "basketball-balls",
+			DisplayName: "篮球（用球）",
+			AliasSlug:   "basketball-balls",
+			ParentCode:  "basketball",
+			SortOrder:   10,
+			IsFeatured:  true,
+		},
+		{
+			ID:          "b46f7d0d-cc6d-49f9-95c9-88b9a7da8e92",
+			Code:        "basketball-jerseys",
+			DisplayName: "篮球服饰",
+			AliasSlug:   "jerseys",
+			ParentCode:  "basketball",
+			SortOrder:   20,
+		},
+		{
+			ID:          "d9a0b8b4-7b24-45de-9f9b-3a2a8f1e25e2",
+			Code:        "football",
+			DisplayName: "足球",
+			AliasSlug:   "football",
+			ParentCode:  "",
+			SortOrder:   20,
+			IsFeatured:  true,
+		},
+		{
+			ID:          "d5f5c1b5-55f4-4d7c-9e6c-6228e15a13ed",
+			Code:        "football-balls",
+			DisplayName: "足球（用球）",
+			AliasSlug:   "football-balls",
+			ParentCode:  "football",
+			SortOrder:   10,
+			IsFeatured:  true,
+		},
+		{
+			ID:          "0ebcd9b4-9fe3-4f7f-8f28-0d92b6be8e5a",
+			Code:        "apparel",
+			DisplayName: "运动服饰",
+			AliasSlug:   "apparel",
+			ParentCode:  "",
+			SortOrder:   30,
+		},
+		{
+			ID:          "c6b7e3ed-9d9d-4a58-8b86-cf6d5b0e9ea1",
+			Code:        "apparel-tops",
+			DisplayName: "上衣",
+			AliasSlug:   "tops",
+			ParentCode:  "apparel",
+			SortOrder:   10,
+		},
+		{
+			ID:          "e3dd0cbe-7e12-4c79-95f2-7e699bdfb3cc",
+			Code:        "apparel-pants",
+			DisplayName: "裤装",
+			AliasSlug:   "pants",
+			ParentCode:  "apparel",
+			SortOrder:   20,
+		},
+		{
+			ID:          "0d5b9b1e-2d07-4b5a-a3f9-9d9d4c5f30ec",
+			Code:        "shoes",
+			DisplayName: "运动鞋",
+			AliasSlug:   "shoes",
+			ParentCode:  "",
+			SortOrder:   40,
+		},
+		{
+			ID:          "1f7c19a9-5e6a-4ee9-8f37-16aabca19a39",
+			Code:        "shoes-basketball",
+			DisplayName: "篮球鞋",
+			AliasSlug:   "shoes-basketball",
+			ParentCode:  "shoes",
+			SortOrder:   10,
+			IsFeatured:  true,
+		},
+		{
+			ID:          "9c8d1a0e-14b3-4d5e-9a88-6f5de6cf0c1a",
+			Code:        "shoes-football",
+			DisplayName: "足球鞋",
+			AliasSlug:   "shoes-football",
+			ParentCode:  "shoes",
+			SortOrder:   20,
+			IsFeatured:  true,
+		},
+		{
+			ID:          "1f9f5e88-0a2b-4e0d-96a1-2d2c3f4a5b6c",
+			Code:        "magazines",
+			DisplayName: "体育内容订阅",
+			AliasSlug:   "magazines",
+			ParentCode:  "",
+			SortOrder:   50,
+		},
+	}
+
+	byCode := map[string]*productcategory.ProductCategory{}
+	// Preload existing ones.
+	var existing []productcategory.ProductCategory
+	if err := db.Where("tenant_uuid = ?", defaultTenantUUID).Find(&existing).Error; err != nil {
+		return err
+	}
+	for i := range existing {
+		c := existing[i]
+		byCode[c.Code] = &c
+	}
+
+	for _, spec := range specs {
+		var parent *productcategory.ProductCategory
+		var parentID *string
+		if spec.ParentCode != "" {
+			p, ok := byCode[spec.ParentCode]
+			if !ok {
+				return fmt.Errorf("missing parent category %s for %s", spec.ParentCode, spec.Code)
+			}
+			parent = p
+			parentID = &p.ID
+		}
+		level := 0
+		parentPath := ""
+		if parent != nil {
+			level = parent.Level + 1
+			parentPath = parent.Path
+		}
+		id := spec.ID
+		if id == "" {
+			return fmt.Errorf("category %s missing id", spec.Code)
+		}
+		path := fmt.Sprintf("/%s/", id)
+		if parentPath != "" {
+			path = parentPath + id + "/"
+		}
+
+		var category productcategory.ProductCategory
+		err := db.Where("tenant_uuid = ? AND code = ?", defaultTenantUUID, spec.Code).First(&category).Error
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			category = productcategory.ProductCategory{
+				ID:          id,
+				TenantUUID:  defaultTenantUUID,
+				ParentID:    parentID,
+				Code:        spec.Code,
+				DisplayName: spec.DisplayName,
+				AliasSlug:   spec.AliasSlug,
+				Path:        path,
+				Level:       level,
+				SortOrder:   spec.SortOrder,
+				Status:      productcategory.CategoryStatusEnabled,
+				IsFeatured:  spec.IsFeatured,
+				ImageURL:    spec.ImageURL,
+				CreatedAt:   time.Now().UTC(),
+				UpdatedAt:   time.Now().UTC(),
+			}
+			category.Normalize()
+			if err := db.Create(&category).Error; err != nil {
+				return err
+			}
+		case err != nil:
+			return err
+		default:
+			// Use existing ID for path (cannot change primary key).
+			id = category.ID
+			path = fmt.Sprintf("/%s/", id)
+			if parentPath != "" {
+				path = parentPath + id + "/"
+			}
+			updates := map[string]any{
+				"parent_id":    parentID,
+				"display_name": spec.DisplayName,
+				"alias_slug":   spec.AliasSlug,
+				"path":         path,
+				"level":        level,
+				"sort_order":   spec.SortOrder,
+				"status":       productcategory.CategoryStatusEnabled,
+				"is_featured":  spec.IsFeatured,
+				"image_url":    spec.ImageURL,
+				"updated_at":   time.Now().UTC(),
+			}
+			if err := db.Model(&category).Updates(updates).Error; err != nil {
+				return err
+			}
+		}
+		// Update cache for children.
+		c := category
+		byCode[spec.Code] = &c
+	}
+	return nil
+}
+
+func seedSportsSPUs(db *gorm.DB) error {
+	if !db.Migrator().HasTable(&productmodel.SPUVersion{}) || !db.Migrator().HasTable(&productmodel.SPULocale{}) {
+		return nil
+	}
+
+	catByCode, err := loadCategoriesByCode(db)
+	if err != nil {
+		return err
+	}
+
+	specs := []spuSeedSpec{
+		{
+			ID:            "9d9d4c5f-30ec-45f2-bef5-34b37d01f452",
+			Code:          "BALL-BASKET-001",
+			Name:          "NBA 室内外训练篮球 7号",
+			Type:          "one_time",
+			CategoryCode:  "basketball-balls",
+			Status:        "published",
+			DefaultLocale: "zh-CN",
+			Responsible:   "ops-01",
+			Tags:          []string{"basketball", "ball", "training"},
+			Description:   "耐磨防滑，适合室内外训练与比赛。",
+		},
+		{
+			ID:            "7d9e3f1b-2b1a-4c22-8b5d-2e8c1dfaa6b0",
+			Code:          "BALL-SOCCER-001",
+			Name:          "FIFA 训练足球 5号",
+			Type:          "one_time",
+			CategoryCode:  "football-balls",
+			Status:        "published",
+			DefaultLocale: "zh-CN",
+			Responsible:   "ops-01",
+			Tags:          []string{"football", "ball", "training"},
+			Description:   "标准 5 号训练球，脚感舒适耐用。",
+		},
+		{
+			ID:            "2a2c2c2c-9f7e-4f0d-8c3e-0b9a4d7e1c20",
+			Code:          "SHOE-BASKET-001",
+			Name:          "篮球鞋 Pro Jump 高帮",
+			Type:          "one_time",
+			CategoryCode:  "shoes-basketball",
+			Status:        "published",
+			DefaultLocale: "zh-CN",
+			Responsible:   "ops-01",
+			Tags:          []string{"basketball", "shoes", "high-top"},
+			Description:   "高帮支撑，缓震回弹，适合强对抗。",
+		},
+		{
+			ID:            "3b3c3c3c-6e12-4a9a-9f2a-1b2c3d4e5f60",
+			Code:          "SHOE-SOCCER-001",
+			Name:          "足球鞋 Speed Cleats 碎钉",
+			Type:          "one_time",
+			CategoryCode:  "shoes-football",
+			Status:        "published",
+			DefaultLocale: "zh-CN",
+			Responsible:   "ops-01",
+			Tags:          []string{"football", "shoes", "cleats"},
+			Description:   "轻量贴合，抓地稳定，适合人草场地。",
+		},
+		{
+			ID:            "4c4d4d4d-7e12-4c79-95f2-7e699bdfb3dd",
+			Code:          "APP-JERSEY-001",
+			Name:          "篮球背心 速干球衣",
+			Type:          "one_time",
+			CategoryCode:  "basketball-jerseys",
+			Status:        "published",
+			DefaultLocale: "zh-CN",
+			Responsible:   "ops-01",
+			Tags:          []string{"basketball", "apparel", "quick-dry"},
+			Description:   "速干透气，训练与比赛皆可。",
+		},
+		{
+			ID:            "5d5e5e5e-7a12-4c79-95f2-7e699bdfb3ee",
+			Code:          "APP-TRACK-001",
+			Name:          "运动长裤 训练款",
+			Type:          "one_time",
+			CategoryCode:  "apparel-pants",
+			Status:        "published",
+			DefaultLocale: "zh-CN",
+			Responsible:   "ops-01",
+			Tags:          []string{"apparel", "training", "pants"},
+			Description:   "弹力面料，日常训练/跑步皆适用。",
+		},
+		{
+			ID:            "6e6f6f6f-1234-4f0d-8c3e-0b9a4d7e1c21",
+			Code:          "SUB-MAG-SPORTS-001",
+			Name:          "体育月刊",
+			Type:          "subscription",
+			CategoryCode:  "magazines",
+			Status:        "published",
+			DefaultLocale: "zh-CN",
+			Responsible:   "editor-01",
+			Tags:          []string{"subscription", "content"},
+			Description:   "每月一期：篮球/足球/装备评测/训练方法。",
+		},
+	}
+
+	for _, spec := range specs {
+		cat, ok := catByCode[spec.CategoryCode]
+		if !ok {
+			return fmt.Errorf("missing category %s for spu %s", spec.CategoryCode, spec.Code)
+		}
+		if err := upsertSPUWithVersionAndLocale(db, spec, cat); err != nil {
+			return err
+		}
+	}
+
+	// Subscription plans for 体育月刊.
+	if db.Migrator().HasTable(&productmodel.SubscriptionPlan{}) {
+		monthlyID := "9c1c0b9a-1c20-4d7e-8c3e-0b9a4d7e1c22"
+		yearlyID := "a1b2c3d4-5f60-4a9a-9f2a-1b2c3d4e5f61"
+		subSpuID := specs[len(specs)-1].ID
+		plans := []productmodel.SubscriptionPlan{
+			{
+				ID:           monthlyID,
+				TenantUUID:   defaultTenantUUID,
+				SPUID:        subSpuID,
+				PlanCode:     "monthly",
+				Name:         "月订阅",
+				BillingCycle: "monthly",
+				BillingValue: 0,
+				Price:        29.9,
+				Currency:     "CNY",
+				TrialDays:    7,
+				AutoRenew:    true,
+				CancelPolicy: "anytime",
+				EffectScope:  "new_only",
+				Status:       "active",
+				Metadata:     datatypes.JSON([]byte(`{}`)),
+			},
+			{
+				ID:           yearlyID,
+				TenantUUID:   defaultTenantUUID,
+				SPUID:        subSpuID,
+				PlanCode:     "yearly",
+				Name:         "年订阅",
+				BillingCycle: "yearly",
+				BillingValue: 0,
+				Price:        299.0,
+				Currency:     "CNY",
+				TrialDays:    14,
+				AutoRenew:    true,
+				CancelPolicy: "anytime",
+				EffectScope:  "new_only",
+				Status:       "active",
+				Metadata:     datatypes.JSON([]byte(`{}`)),
+			},
+		}
+		for _, plan := range plans {
+			var existingPlan productmodel.SubscriptionPlan
+			err := db.Where("tenant_uuid = ? AND spu_id = ? AND plan_code = ?", defaultTenantUUID, plan.SPUID, plan.PlanCode).
+				First(&existingPlan).Error
+			switch {
+			case errors.Is(err, gorm.ErrRecordNotFound):
+				now := time.Now().UTC()
+				plan.CreatedAt = now
+				plan.UpdatedAt = now
+				if err := db.Create(&plan).Error; err != nil {
+					return err
+				}
+			case err != nil:
+				return err
+			default:
+				updates := map[string]any{
+					"name":          plan.Name,
+					"billing_cycle": plan.BillingCycle,
+					"billing_value": plan.BillingValue,
+					"price":         plan.Price,
+					"currency":      plan.Currency,
+					"trial_days":    plan.TrialDays,
+					"auto_renew":    plan.AutoRenew,
+					"cancel_policy": plan.CancelPolicy,
+					"effect_scope":  plan.EffectScope,
+					"status":        plan.Status,
+					"metadata":      plan.Metadata,
+					"updated_at":    time.Now().UTC(),
+				}
+				if err := db.Model(&existingPlan).Updates(updates).Error; err != nil {
+					return err
+				}
+			}
+		}
+	}
+
+	return nil
+}
+
+func seedSportsSKUs(db *gorm.DB) error {
+	if !db.Migrator().HasTable(&productsku.ProductSKU{}) {
+		return nil
+	}
+	hasMedia := db.Migrator().HasTable(&productsku.ProductSKUMedia{})
+	spuIDs, err := loadSPUIdsByCode(db)
+	if err != nil {
+		return err
+	}
+	specs := []skuSeedSpec{
+		{
+			ID:      "8a8a8a8a-1111-4f0d-8c3e-0b9a4d7e1c30",
+			SPUCode: "BALL-BASKET-001",
+			SKUCode: "BALL-BASKET-001-STD",
+			Status:  "published",
+			Barcode: "6900000000001",
+			Tags:    []string{"basketball", "ball"},
+			Spec:    map[string]any{"size": "7", "material": "composite"},
+			SalePrice: 199,
+			Currency:  "CNY",
+			MediaID:   "9a8a8a8a-1111-4f0d-8c3e-0b9a4d7e1c30",
+		},
+		{
+			ID:      "8a8a8a8a-2222-4f0d-8c3e-0b9a4d7e1c31",
+			SPUCode: "BALL-BASKET-001",
+			SKUCode: "BALL-BASKET-001-PRO",
+			Status:  "published",
+			Barcode: "6900000000002",
+			Tags:    []string{"basketball", "ball", "premium"},
+			Spec:    map[string]any{"size": "7", "material": "leather"},
+			SalePrice: 399,
+			Currency:  "CNY",
+			MediaID:   "9a8a8a8a-2222-4f0d-8c3e-0b9a4d7e1c31",
+		},
+		{
+			ID:      "8a8a8a8a-3333-4f0d-8c3e-0b9a4d7e1c32",
+			SPUCode: "BALL-SOCCER-001",
+			SKUCode: "BALL-SOCCER-001-STD",
+			Status:  "published",
+			Barcode: "6900000000003",
+			Tags:    []string{"football", "ball"},
+			Spec:    map[string]any{"size": "5", "surface": "training"},
+			SalePrice: 169,
+			Currency:  "CNY",
+			MediaID:   "9a8a8a8a-3333-4f0d-8c3e-0b9a4d7e1c32",
+		},
+		{
+			ID:      "8a8a8a8a-4444-4f0d-8c3e-0b9a4d7e1c33",
+			SPUCode: "SHOE-BASKET-001",
+			SKUCode: "SHOE-BASKET-001-42",
+			Status:  "published",
+			Barcode: "6900000000004",
+			Tags:    []string{"basketball", "shoes"},
+			Spec:    map[string]any{"size": "42", "color": "black"},
+			SalePrice: 699,
+			Currency:  "CNY",
+			MediaID:   "9a8a8a8a-4444-4f0d-8c3e-0b9a4d7e1c33",
+		},
+		{
+			ID:      "8a8a8a8a-5555-4f0d-8c3e-0b9a4d7e1c34",
+			SPUCode: "SHOE-BASKET-001",
+			SKUCode: "SHOE-BASKET-001-43",
+			Status:  "published",
+			Barcode: "6900000000005",
+			Tags:    []string{"basketball", "shoes"},
+			Spec:    map[string]any{"size": "43", "color": "white"},
+			SalePrice: 699,
+			Currency:  "CNY",
+			MediaID:   "9a8a8a8a-5555-4f0d-8c3e-0b9a4d7e1c34",
+		},
+		{
+			ID:      "8a8a8a8a-6666-4f0d-8c3e-0b9a4d7e1c35",
+			SPUCode: "APP-JERSEY-001",
+			SKUCode: "APP-JERSEY-001-M",
+			Status:  "published",
+			Barcode: "6900000000006",
+			Tags:    []string{"basketball", "apparel"},
+			Spec:    map[string]any{"size": "M", "color": "blue"},
+			SalePrice: 299,
+			Currency:  "CNY",
+			MediaID:   "9a8a8a8a-6666-4f0d-8c3e-0b9a4d7e1c35",
+		},
+		{
+			ID:      "8a8a8a8a-7777-4f0d-8c3e-0b9a4d7e1c36",
+			SPUCode: "APP-JERSEY-001",
+			SKUCode: "APP-JERSEY-001-L",
+			Status:  "published",
+			Barcode: "6900000000007",
+			Tags:    []string{"basketball", "apparel"},
+			Spec:    map[string]any{"size": "L", "color": "blue"},
+			SalePrice: 299,
+			Currency:  "CNY",
+			MediaID:   "9a8a8a8a-7777-4f0d-8c3e-0b9a4d7e1c36",
+		},
+	}
+	now := time.Now().UTC()
+	for _, spec := range specs {
+		spuID, ok := spuIDs[spec.SPUCode]
+		if !ok {
+			return fmt.Errorf("missing spu %s for sku %s", spec.SPUCode, spec.SKUCode)
+		}
+		specBytes, _ := json.Marshal(spec.Spec)
+		defaultValuesBytes, _ := json.Marshal(map[string]any{
+			"sale_price": spec.SalePrice,
+			"currency":   strings.TrimSpace(spec.Currency),
+		})
+		var sku productsku.ProductSKU
+		err := db.Where("tenant_uuid = ? AND sku_code = ?", defaultTenantUUID, spec.SKUCode).First(&sku).Error
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			sku = productsku.ProductSKU{
+				ID:         spec.ID,
+				TenantUUID: defaultTenantUUID,
+				SPUID:      spuID,
+				SKUCode:    spec.SKUCode,
+				Barcode:    spec.Barcode,
+				Status:     spec.Status,
+				SpecValues: datatypes.JSON(specBytes),
+				DefaultValues: datatypes.JSON(defaultValuesBytes),
+				Tags:       pq.StringArray(spec.Tags),
+				CreatedAt:  now,
+				UpdatedAt:  now,
+			}
+			if err := db.Create(&sku).Error; err != nil {
+				return err
+			}
+		case err != nil:
+			return err
+		default:
+			updates := map[string]any{
+				"spu_id":      spuID,
+				"barcode":     spec.Barcode,
+				"status":      spec.Status,
+				"spec_values": datatypes.JSON(specBytes),
+				"default_values": datatypes.JSON(defaultValuesBytes),
+				"tags":        pq.StringArray(spec.Tags),
+				"updated_at":  now,
+			}
+			if err := db.Model(&sku).Updates(updates).Error; err != nil {
+				return err
+			}
+		}
+
+		if hasMedia {
+			url := strings.TrimSpace(spec.ImageURL)
+			if url == "" {
+				url = fmt.Sprintf("https://picsum.photos/seed/%s/600/750", spec.SKUCode)
+			}
+			var media productsku.ProductSKUMedia
+			err := db.Where("tenant_uuid = ? AND sku_id = ? AND is_primary = ?", defaultTenantUUID, spec.ID, true).
+				First(&media).Error
+			switch {
+			case errors.Is(err, gorm.ErrRecordNotFound):
+				media = productsku.ProductSKUMedia{
+					ID:         spec.MediaID,
+					TenantUUID: defaultTenantUUID,
+					SKUId:      spec.ID,
+					MediaType:  "image",
+					URL:        url,
+					IsPrimary:  true,
+					SortOrder:  0,
+					CreatedAt:  now,
+					UpdatedAt:  now,
+				}
+				if err := db.Create(&media).Error; err != nil {
+					return err
+				}
+			case err != nil:
+				return err
+			default:
+				updates := map[string]any{
+					"url":        url,
+					"media_type": "image",
+					"sort_order": 0,
+					"updated_at": now,
+				}
+				if err := db.Model(&media).Updates(updates).Error; err != nil {
+					return err
+				}
+			}
+		}
+	}
+	return nil
+}
+
+func loadCategoriesByCode(db *gorm.DB) (map[string]productcategory.ProductCategory, error) {
+	out := make(map[string]productcategory.ProductCategory)
+	var cats []productcategory.ProductCategory
+	if err := db.Where("tenant_uuid = ?", defaultTenantUUID).Find(&cats).Error; err != nil {
+		return nil, err
+	}
+	for _, cat := range cats {
+		out[cat.Code] = cat
+	}
+	return out, nil
+}
+
+func loadSPUIdsByCode(db *gorm.DB) (map[string]string, error) {
+	out := make(map[string]string)
+	var spus []productmodel.SPU
+	if err := db.Where("tenant_uuid = ?", defaultTenantUUID).Find(&spus).Error; err != nil {
+		return nil, err
+	}
+	for _, spu := range spus {
+		out[spu.Code] = spu.ID
+	}
+	return out, nil
+}
+
+func upsertSPUWithVersionAndLocale(db *gorm.DB, spec spuSeedSpec, cat productcategory.ProductCategory) error {
+	now := time.Now().UTC()
+	var spu productmodel.SPU
+	err := db.Where("tenant_uuid = ? AND code = ?", defaultTenantUUID, spec.Code).First(&spu).Error
+	switch {
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		spu = productmodel.SPU{
+			ID:              spec.ID,
+			TenantUUID:      defaultTenantUUID,
+			Code:            spec.Code,
+			Name:            spec.Name,
+			Type:            spec.Type,
+			CategoryID:      cat.ID,
+			CategoryPath:    cat.Path,
+			DefaultLocale:   spec.DefaultLocale,
+			Status:          spec.Status,
+			Tags:            pq.StringArray(spec.Tags),
+			ResponsibleUser: spec.Responsible,
+			ChannelsSummary: datatypes.JSON([]byte(`{}`)),
+			CreatedAt:       now,
+			UpdatedAt:       now,
+		}
+		if err := db.Create(&spu).Error; err != nil {
+			return err
+		}
+	case err != nil:
+		return err
+	default:
+		updates := map[string]any{
+			"name":             spec.Name,
+			"type":             spec.Type,
+			"category_id":      cat.ID,
+			"category_path":    cat.Path,
+			"default_locale":   spec.DefaultLocale,
+			"status":           spec.Status,
+			"tags":             pq.StringArray(spec.Tags),
+			"responsible_user": spec.Responsible,
+			"updated_at":       now,
+		}
+		if err := db.Model(&spu).Updates(updates).Error; err != nil {
+			return err
+		}
+	}
+
+	// Version + current_version_id
+	payload := map[string]any{
+		"version": "seed",
+		"input": map[string]any{
+			"code":            spec.Code,
+			"name":            spec.Name,
+			"type":            spec.Type,
+			"categoryId":      cat.ID,
+			"categoryPath":    cat.Path,
+			"defaultLocale":   spec.DefaultLocale,
+			"tags":            spec.Tags,
+			"responsibleUser": spec.Responsible,
+			"locales": []map[string]any{
+				{"locale": "zh-CN", "title": spec.Name, "description": spec.Description},
+			},
+			"attributes": map[string]any{},
+		},
+		"skus": []any{},
+	}
+	body, _ := json.Marshal(payload)
+	var version productmodel.SPUVersion
+	err = db.Where("tenant_uuid = ? AND spu_id = ? AND version_number = ?", defaultTenantUUID, spu.ID, 1).First(&version).Error
+	switch {
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		version = productmodel.SPUVersion{
+			ID:            spu.ID, // keep uuid shape
+			TenantUUID:    defaultTenantUUID,
+			SPUID:         spu.ID,
+			VersionNumber: 1,
+			Status:        spec.Status,
+			Payload:       datatypes.JSON(body),
+			SubmittedBy:   spec.Responsible,
+			ApprovedAt:    &now,
+			CreatedAt:     now,
+			UpdatedAt:     now,
+		}
+		if err := db.Create(&version).Error; err != nil {
+			return err
+		}
+	case err != nil:
+		return err
+	default:
+		updates := map[string]any{
+			"status":      spec.Status,
+			"payload":     datatypes.JSON(body),
+			"approved_at": now,
+			"updated_at":  now,
+		}
+		if err := db.Model(&version).Updates(updates).Error; err != nil {
+			return err
+		}
+	}
+	if spu.CurrentVersionID == nil || *spu.CurrentVersionID != version.ID {
+		if err := db.Model(&spu).Updates(map[string]any{"current_version_id": version.ID}).Error; err != nil {
+			return err
+		}
+	}
+
+	// Locale (zh-CN)
+	var locale productmodel.SPULocale
+	err = db.Where("tenant_uuid = ? AND spu_id = ? AND locale = ?", defaultTenantUUID, spu.ID, "zh-CN").First(&locale).Error
+	switch {
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		locale = productmodel.SPULocale{
+			ID:         spu.ID,
+			TenantUUID: defaultTenantUUID,
+			SPUID:      spu.ID,
+			Locale:     "zh-CN",
+			Title:      spec.Name,
+			Description: spec.Description,
+			Status:     "active",
+			CreatedAt:  now,
+			UpdatedAt:  now,
+		}
+		if err := db.Create(&locale).Error; err != nil {
+			return err
+		}
+	case err != nil:
+		return err
+	default:
+		updates := map[string]any{
+			"title":       spec.Name,
+			"description": spec.Description,
+			"updated_at":  now,
+		}
+		if err := db.Model(&locale).Updates(updates).Error; err != nil {
+			return err
 		}
 	}
 	return nil

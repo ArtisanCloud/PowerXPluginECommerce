@@ -20,6 +20,10 @@
 
 			<UCard>
 				<div class="space-y-4">
+					<div v-if="categoryBadge" class="flex flex-wrap items-center gap-3">
+						<UBadge color="primary" variant="soft">{{ categoryBadge }}</UBadge>
+						<UButton size="xs" variant="ghost" @click="clearCategoryFilter">清除类目筛选</UButton>
+					</div>
 					<div class="grid grid-cols-12 gap-4">
 						<UFormField label="关键字" :ui="inlineFieldUi" class="col-span-12 md:col-span-4">
 							<UInput
@@ -131,15 +135,16 @@
 			:prevent-close="listWithdraw.loading"
 			:ui="modalUi"
 		>
-			<template #body>
-				<UFormField label="渠道（默认全部）">
-					<USelectMenu
-						v-model="listWithdraw.form.channels"
-						:items="listWithdraw.items"
-						multiple
-						placeholder="全部渠道"
-					/>
-				</UFormField>
+				<template #body>
+					<UFormField label="渠道（默认全部）">
+						<USelectMenu
+							v-model="listWithdraw.form.channels"
+							:items="listWithdraw.items"
+							:portal="false"
+							multiple
+							placeholder="全部渠道"
+						/>
+					</UFormField>
 				<UFormField label="下架时间" help="不填写则立即下架">
 					<UInput v-model="listWithdraw.form.withdrawAt" type="datetime-local" />
 				</UFormField>
@@ -177,7 +182,7 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
-import { useToast } from '#imports'
+import { useRoute, useRouter, useToast } from '#imports'
 import type { TableColumn } from '@nuxt/ui'
 import SpuBulkDialog from '~/components/product/SpuBulkDialog.vue'
 import type { SpuSummary } from '~/composables/api/useSpu'
@@ -186,14 +191,27 @@ import { useSpuStore } from '~/stores/product/spu'
 import { channelSelectOptions } from '~/data/channelCatalog'
 
 const toast = useToast()
+const route = useRoute()
+const router = useRouter()
 const store = useSpuStore()
 const api = useSpuApi()
 const { items, loading, total } = storeToRefs(store)
-const filters = reactive<{ keyword: string; status: string | null; type: string | null; channel: string | null }>({
+const filters = reactive<{
+	keyword: string
+	status: string | null
+	type: string | null
+	channel: string | null
+	categoryId: string
+	categoryPathPrefix: string
+	categoryName: string
+}>({
 	keyword: '',
 	status: null,
 	type: null,
 	channel: null,
+	categoryId: '',
+	categoryPathPrefix: '',
+	categoryName: '',
 })
 const pagination = reactive({ page: 1, pageSize: 10 })
 const modalUi = {
@@ -259,6 +277,17 @@ const columns = computed<TableColumn<SpuSummary>[]>(() => [
 	{ id: 'actions', header: '操作' },
 ])
 const pageCount = computed(() => Math.max(1, Math.ceil(total.value / pagination.pageSize)))
+const categoryBadge = computed(() => {
+	if (filters.categoryName) return `类目：${filters.categoryName}`
+	if (filters.categoryId) return `类目 ID：${filters.categoryId}`
+	if (filters.categoryPathPrefix) return `类目 Path：${filters.categoryPathPrefix}`
+	return ''
+})
+
+const normalizeQueryString = (value: unknown) => {
+	if (Array.isArray(value)) return typeof value[0] === 'string' ? value[0] : ''
+	return typeof value === 'string' ? value : ''
+}
 
 const typeLabel = (value: string) => {
 	const map: Record<string, string> = { one_time: '一次性', subscription: '订阅', bundle: '组合' }
@@ -287,6 +316,8 @@ const fetchList = () =>
 		status: filters.status ?? undefined,
 		type: filters.type ?? undefined,
 		channel: filters.channel ?? undefined,
+		categoryId: filters.categoryId || undefined,
+		categoryPathPrefix: filters.categoryPathPrefix || undefined,
 		page: pagination.page,
 		pageSize: pagination.pageSize,
 	})
@@ -300,6 +331,21 @@ const resetFilters = () => {
 	filters.status = null
 	filters.type = null
 	filters.channel = null
+	applyFilters()
+}
+
+const clearCategoryFilter = async () => {
+	filters.categoryId = ''
+	filters.categoryPathPrefix = ''
+	filters.categoryName = ''
+	await router.replace({
+		query: {
+			...route.query,
+			categoryId: undefined,
+			categoryPathPrefix: undefined,
+			categoryName: undefined,
+		},
+	})
 	applyFilters()
 }
 watch(
@@ -441,6 +487,9 @@ const handleBulkSubmitted = ({ taskId, mode }: { taskId: string; mode: 'import' 
 }
 
 onMounted(() => {
+	filters.categoryId = normalizeQueryString(route.query.categoryId)
+	filters.categoryPathPrefix = normalizeQueryString(route.query.categoryPathPrefix)
+	filters.categoryName = normalizeQueryString(route.query.categoryName)
 	fetchList()
 })
 </script>

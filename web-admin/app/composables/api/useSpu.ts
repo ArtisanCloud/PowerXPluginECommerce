@@ -1,9 +1,13 @@
-import { apiGet, apiPost, apiPatch, apiPut, useApiClient } from './_client'
+import { apiDel, apiGet, apiPost, apiPatch, apiPut, useApiClient } from './_client'
 import type { ApiResponse } from './_base'
 
 export interface SpuListParams {
   keyword?: string
   status?: string
+  type?: string
+  channel?: string
+  categoryId?: string
+  categoryPathPrefix?: string
   page?: number
   pageSize?: number
 }
@@ -145,6 +149,10 @@ export interface DeleteSpuPayload {
   reason: string
 }
 
+export interface ReviseSpuPayload {
+  reason: string
+}
+
 export interface VersionListResponse {
   items: SpuVersionSummary[]
   total: number
@@ -216,6 +224,8 @@ export function useSpuApi() {
     unwrap(apiPost<ApiResponse<SpuDetail>>(`${basePath}/${id}/withdraw`, payload, init))
   const deleteSpu = (id: string, payload: DeleteSpuPayload, init?: any) =>
     unwrap(apiPost<ApiResponse<SpuDetail>>(`${basePath}/${id}/delete`, payload, init))
+  const reviseSpu = (id: string, payload: ReviseSpuPayload, init?: any) =>
+    unwrap(apiPost<ApiResponse<SpuDetail>>(`${basePath}/${id}/revise`, payload, init))
 
   const listSpuSkus = (id: string, init?: any) =>
     unwrap(apiGet<ApiResponse<SpuSkuListResponse>>(`${basePath}/${id}/skus`, undefined, init))
@@ -261,6 +271,7 @@ export function useSpuApi() {
     publishSpu,
     withdrawSpu,
     deleteSpu,
+    reviseSpu,
     listSpuSkus,
     replaceSpuSkus,
     listSpuVersions,

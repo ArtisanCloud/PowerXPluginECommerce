@@ -7,5 +7,42 @@
   "ctaStart": "Start Selling",
   "ctaLoginPrefix": "Already have an account?",
   "ctaLoginAction": "Log In",
-  "langSwitch": "中文"
+  "langSwitch": "中文",
+  "home": {
+    "loggedInAsPrefix": "Signed in as ",
+    "loggedIn": "Signed in"
+  },
+  "auth": {
+    "help": "Help",
+    "helpToast": "Help is coming soon",
+    "bannerKicker": "Distribution Mall",
+    "bannerTitle": "Start earning today",
+    "welcomeBack": "Welcome Back",
+    "createAccount": "Create Account",
+    "subtitle": "Manage your store and distribution network.",
+    "tabLogin": "Log In",
+    "tabSignup": "Sign Up",
+    "name": "Name",
+    "namePlaceholder": "Your name",
+    "phone": "Phone Number",
+    "phonePlaceholder": "138 0000 0000",
+    "password": "Password",
+    "passwordPlaceholder": "Enter your password",
+    "agreePrefix": "I have read and agree to the ",
+    "userAgreement": "User Agreement",
+    "privacyPolicy": "Privacy Policy",
+    "and": " and ",
+    "dot": ".",
+    "submitLogin": "Log In",
+    "submitSignup": "Sign Up",
+    "orContinue": "Or continue with",
+    "forgot": "Forgot Password?",
+    "support": "Customer Support",
+    "todo": "Not available yet",
+    "mustAgree": "Please agree to continue",
+    "missingFields": "Please fill required fields",
+    "failed": "Request failed",
+    "loginSuccess": "Logged in",
+    "signupSuccess": "Registered"
+  }
 }
