@@ -115,6 +115,7 @@ func EnsureProductTables(t *testing.T, db *gorm.DB, isPostgres bool) {
 			lifecycle_phase TEXT,
 			min_order_qty INTEGER,
 			spec_values ` + jsonType + `,
+			spec_signature TEXT,
 			default_values ` + jsonType + `,
 			logistics ` + jsonType + `,
 			price_refs ` + jsonType + `,

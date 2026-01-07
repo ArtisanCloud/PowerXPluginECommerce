@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/contracts"
+	productspecmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_spec"
 	spuservice "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/product/spu"
 	skuservice "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/product_sku"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/middleware"
@@ -68,10 +69,23 @@ func (h *Handler) ListProducts(c *gin.Context) {
 		CategoryID:         strings.TrimSpace(query.CategoryID),
 		CategoryPathPrefix: strings.TrimSpace(query.CategoryPathPrefix),
 		Tags:               tags,
+		Sort:               strings.TrimSpace(query.Sort),
+		Order:              strings.TrimSpace(query.Order),
+		MinPrice:           query.MinPrice,
+		MaxPrice:           query.MaxPrice,
+		InStock:            query.InStock,
+		HasPlans:           query.HasPlans,
 		Page:               query.Page,
 		PageSize:           query.PageSize,
 	})
 	if err != nil {
+		if errors.Is(err, spuservice.ErrInvalidSPUListSort) ||
+			errors.Is(err, spuservice.ErrInvalidSPUListOrder) ||
+			errors.Is(err, spuservice.ErrUnsupportedSPUListSort) ||
+			errors.Is(err, spuservice.ErrSPUListRequiresPostgres) {
+			respondMiniAppError(c, http.StatusBadRequest, err)
+			return
+		}
 		respondMiniAppError(c, http.StatusInternalServerError, err)
 		return
 	}
@@ -92,9 +106,7 @@ func (h *Handler) ListProducts(c *gin.Context) {
 		Total:    result.Total,
 		Items:    make([]miniAppProductSummary, 0, len(enriched)),
 	}
-	for _, item := range enriched {
-		resp.Items = append(resp.Items, item)
-	}
+	resp.Items = append(resp.Items, enriched...)
 	contracts.ResponseSuccess(c, resp)
 }
 
@@ -327,6 +339,193 @@ func (h *Handler) GetProduct(c *gin.Context) {
 	contracts.ResponseSuccess(c, resp)
 }
 
+// GetProductDetail returns SPU + specs + SKU mappings for spec selection.
+func (h *Handler) GetProductDetail(c *gin.Context) {
+	if h == nil || h.spuService == nil || h.db == nil {
+		respondMiniAppError(c, http.StatusServiceUnavailable, errors.New("product service unavailable"))
+		return
+	}
+	spuID := strings.TrimSpace(c.Param("id"))
+	if spuID == "" {
+		respondMiniAppError(c, http.StatusBadRequest, errors.New("spu id is required"))
+		return
+	}
+	spu, err := h.spuService.Get(c.Request.Context(), spuID)
+	if err != nil {
+		respondMiniAppError(c, http.StatusNotFound, err)
+		return
+	}
+	if spu == nil || !strings.EqualFold(strings.TrimSpace(spu.Status), "published") {
+		respondMiniAppError(c, http.StatusNotFound, errors.New("product not found"))
+		return
+	}
+
+	tenantUUID, _ := middleware.TenantUUIDFromContext(c)
+	coverURL, skuCount, minPrice, maxPrice, currency := h.enrichSingleProduct(c.Request.Context(), tenantUUID, spu.ID, spu.Type)
+	subtitle, description := h.loadSPULocaleSnippet(c.Request.Context(), tenantUUID, spu.ID, spu.DefaultLocale)
+
+	spuResp := miniAppProductDetail{
+		ID:           spu.ID,
+		Code:         spu.Code,
+		Name:         spu.Name,
+		Type:         spu.Type,
+		Status:       spu.Status,
+		CategoryID:   spu.CategoryID,
+		CategoryPath: spu.CategoryPath,
+		Tags:         append([]string(nil), spu.Tags...),
+		CoverURL:     coverURL,
+		Subtitle:     subtitle,
+		Description:  description,
+		MinPrice:     minPrice,
+		MaxPrice:     maxPrice,
+		Currency:     currency,
+		PriceLabel:   buildPriceLabel(spu.Type, minPrice, maxPrice, currency),
+		SKUCount:     skuCount,
+	}
+
+	specBundle, groupByID, optionByID := h.loadSpecBundle(c.Request.Context(), tenantUUID, spu.ID)
+	skus := h.loadSkuDetailsForSpec(c.Request.Context(), tenantUUID, spu.ID, groupByID, optionByID)
+
+	contracts.ResponseSuccess(c, miniAppProductDetailBundle{
+		SPU:  spuResp,
+		Spec: specBundle,
+		SKUs: skus,
+	})
+}
+
+func (h *Handler) loadSpecBundle(ctx context.Context, tenantUUID, spuID string) (miniAppProductSpecBundle, map[string]productspecmodel.ProductSpecGroup, map[string]productspecmodel.ProductSpecOption) {
+	out := miniAppProductSpecBundle{Groups: []miniAppSpecGroup{}}
+	groupByID := map[string]productspecmodel.ProductSpecGroup{}
+	optionByID := map[string]productspecmodel.ProductSpecOption{}
+	if h == nil || h.db == nil || strings.TrimSpace(tenantUUID) == "" || strings.TrimSpace(spuID) == "" {
+		return out, groupByID, optionByID
+	}
+	var groups []productspecmodel.ProductSpecGroup
+	if err := h.db.WithContext(ctx).
+		Where("tenant_uuid = ? AND spu_id = ? AND deleted_at IS NULL AND status = 'active'", tenantUUID, spuID).
+		Order("sort_order ASC, code ASC, created_at ASC").
+		Find(&groups).Error; err != nil {
+		return out, groupByID, optionByID
+	}
+	groupIDs := make([]string, 0, len(groups))
+	for _, g := range groups {
+		groupByID[g.ID] = g
+		groupIDs = append(groupIDs, g.ID)
+	}
+	var options []productspecmodel.ProductSpecOption
+	if len(groupIDs) > 0 {
+		if err := h.db.WithContext(ctx).
+			Where("tenant_uuid = ? AND group_id IN ? AND deleted_at IS NULL AND status = 'active'", tenantUUID, groupIDs).
+			Order("sort_order ASC, code ASC, created_at ASC").
+			Find(&options).Error; err != nil {
+			return out, groupByID, optionByID
+		}
+	}
+	optsByGroup := make(map[string][]productspecmodel.ProductSpecOption, len(groupIDs))
+	for _, o := range options {
+		optionByID[o.ID] = o
+		optsByGroup[o.GroupID] = append(optsByGroup[o.GroupID], o)
+	}
+	for _, g := range groups {
+		dto := miniAppSpecGroup{
+			ID:        g.ID,
+			Code:      g.Code,
+			Name:      g.Name,
+			Required:  g.Required,
+			SortOrder: g.SortOrder,
+			Options:   []miniAppSpecOption{},
+		}
+		for _, o := range optsByGroup[g.ID] {
+			dto.Options = append(dto.Options, miniAppSpecOption{
+				ID:        o.ID,
+				Code:      o.Code,
+				Name:      o.Name,
+				SortOrder: o.SortOrder,
+				Meta:      decodeJSONMap(o.Meta),
+			})
+		}
+		out.Groups = append(out.Groups, dto)
+	}
+	return out, groupByID, optionByID
+}
+
+func decodeJSONMap(raw datatypes.JSON) map[string]any {
+	if len(raw) == 0 {
+		return nil
+	}
+	var out map[string]any
+	if err := json.Unmarshal(raw, &out); err != nil {
+		return nil
+	}
+	return out
+}
+
+func (h *Handler) loadSkuDetailsForSpec(ctx context.Context, tenantUUID, spuID string, groupByID map[string]productspecmodel.ProductSpecGroup, optionByID map[string]productspecmodel.ProductSpecOption) []miniAppSkuDetail {
+	if h == nil || h.db == nil || strings.TrimSpace(tenantUUID) == "" || strings.TrimSpace(spuID) == "" {
+		return []miniAppSkuDetail{}
+	}
+	type skuRow struct {
+		ID            string         `gorm:"column:id"`
+		SKUCode       string         `gorm:"column:sku_code"`
+		Status        string         `gorm:"column:status"`
+		SpecValues    datatypes.JSON `gorm:"column:spec_values"`
+		DefaultValues datatypes.JSON `gorm:"column:default_values"`
+		SpecSignature string         `gorm:"column:spec_signature"`
+	}
+	var rows []skuRow
+	if err := h.db.WithContext(ctx).
+		Table("product_skus").
+		Select("id, sku_code, status, spec_values, default_values, spec_signature").
+		Where("tenant_uuid = ? AND spu_id = ? AND deleted_at IS NULL AND status = ?", tenantUUID, spuID, "published").
+		Order("created_at ASC").
+		Find(&rows).Error; err != nil {
+		return []miniAppSkuDetail{}
+	}
+	skuIDs := make([]string, 0, len(rows))
+	for _, r := range rows {
+		skuIDs = append(skuIDs, r.ID)
+	}
+	mediaBySKU := h.loadSkuCoverURLs(ctx, tenantUUID, skuIDs)
+
+	out := make([]miniAppSkuDetail, 0, len(rows))
+	for _, r := range rows {
+		price, currency, ok := extractPriceFromDefaultValues(r.DefaultValues)
+		var pricePtr *float64
+		if ok {
+			p := price
+			pricePtr = &p
+		}
+		spec := map[string]string{}
+		var specs []skuservice.SkuSpec
+		if len(r.SpecValues) > 0 {
+			_ = json.Unmarshal(r.SpecValues, &specs)
+		}
+		for _, s := range specs {
+			gid := strings.TrimSpace(s.SpecID)
+			oid := strings.TrimSpace(s.ValueID)
+			g, okG := groupByID[gid]
+			o, okO := optionByID[oid]
+			if !okG || !okO {
+				continue
+			}
+			if strings.TrimSpace(g.Code) == "" || strings.TrimSpace(o.Code) == "" {
+				continue
+			}
+			spec[g.Code] = o.Code
+		}
+		out = append(out, miniAppSkuDetail{
+			ID:            r.ID,
+			Code:          r.SKUCode,
+			Price:         pricePtr,
+			Currency:      strings.TrimSpace(currency),
+			ImageURL:      strings.TrimSpace(mediaBySKU[r.ID]),
+			Spec:          spec,
+			SpecSignature: strings.TrimSpace(r.SpecSignature),
+		})
+	}
+	return out
+}
+
 // ListSkus returns SPU scoped SKU summaries.
 func (h *Handler) ListSkus(c *gin.Context) {
 	if h == nil || h.skuService == nil || !h.skuService.Ready() {
@@ -378,9 +577,7 @@ func (h *Handler) ListSkus(c *gin.Context) {
 		Total:    result.Total,
 		Items:    make([]miniAppSkuSummary, 0, len(enriched)),
 	}
-	for _, item := range enriched {
-		resp.Items = append(resp.Items, item)
-	}
+	resp.Items = append(resp.Items, enriched...)
 	contracts.ResponseSuccess(c, resp)
 }
 

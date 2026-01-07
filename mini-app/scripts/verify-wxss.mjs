@@ -31,3 +31,20 @@ if (content.includes("\\[" ) || content.includes("\\]") || content.includes("\\\
   process.exit(1);
 }
 
+// 微信 WXSS 不支持 CSS 变量（Tailwind v3 默认会输出 --tw-* / var(--tw-*)）
+if (content.includes("--tw-") || content.includes("var(--tw-")) {
+  console.error(`WXSS contains unsupported CSS variables (Tailwind --tw-*): ${file}`);
+  process.exit(1);
+}
+
+// 微信 WXSS 对 :not() 兼容性较差（不同版本会直接编译失败），这里直接禁止
+if (content.includes(":not(")) {
+  console.error(`WXSS contains unsupported selector :not(): ${file}`);
+  process.exit(1);
+}
+
+// 微信 WXSS 对通配选择器 / 一般兄弟选择器在部分场景会编译失败（如 `> * ~ *`）
+if (content.includes("> *") || content.includes("~ *")) {
+  console.error(`WXSS contains potentially unsupported selectors (universal/sibling): ${file}`);
+  process.exit(1);
+}

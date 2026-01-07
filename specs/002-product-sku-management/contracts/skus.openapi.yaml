@@ -5,6 +5,59 @@ info:
 servers:
   - url: /v1
 paths:
+  /admin/product/spus/{spuId}/spec-groups:
+    get:
+      summary: List spec groups/options for an SPU
+      parameters:
+        - in: path
+          name: spuId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Spec group list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  groups:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SpecGroup'
+    put:
+      summary: Replace spec groups/options for an SPU
+      parameters:
+        - in: path
+          name: spuId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                groups:
+                  type: array
+                  items:
+                    $ref: '#/components/schemas/SpecGroupInput'
+      responses:
+        '200':
+          description: Updated spec group list
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  groups:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/SpecGroup'
+
   /products/skus:
     get:
       summary: List SKUs with filters
@@ -368,6 +421,78 @@ paths:
                 $ref: '#/components/schemas/MiniAppSkuListResponse'
 components:
   schemas:
+    SpecOption:
+      type: object
+      properties:
+        id:
+          type: string
+        group_id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        sort_order:
+          type: integer
+        meta:
+          type: object
+        status:
+          type: string
+    SpecGroup:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        sort_order:
+          type: integer
+        required:
+          type: boolean
+        status:
+          type: string
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpecOption'
+    SpecOptionInput:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        sort_order:
+          type: integer
+        meta:
+          type: object
+        status:
+          type: string
+      required: [code, name]
+    SpecGroupInput:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        sort_order:
+          type: integer
+        required:
+          type: boolean
+        status:
+          type: string
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/SpecOptionInput'
+      required: [code, name]
     SkuListResponse:
       type: object
       properties:
@@ -390,6 +515,9 @@ components:
           type: string
         sku_code:
           type: string
+        spec_signature:
+          type: string
+          description: Stable signature such as "color=red|size=m"
         specs:
           type: array
           items:

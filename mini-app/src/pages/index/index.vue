@@ -146,6 +146,7 @@
 import { onMounted, ref } from "vue";
 import { onShow } from "@dcloudio/uni-app";
 import { miniAppGetCategoryTreeItems, type MiniAppCategoryNode } from "@/services/miniapp-category";
+import { syncTabBarSelected } from "@/utils/tabbar";
 
 type Banner = { badge: string; title: string; subtitle: string; image: string };
 type CategoryItem = { key: string; id: string; path: string; name: string; icon: string };
@@ -296,6 +297,6 @@ onMounted(() => {
 });
 
 onShow(() => {
-  // 首页游客态可浏览；登录后可扩展分销/佣金/会员权益等能力
+  syncTabBarSelected("pages/index/index");
 });
 </script>

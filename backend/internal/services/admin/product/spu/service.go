@@ -27,6 +27,13 @@ var ErrMissingTenant = errors.New("tenant context missing")
 // ErrInvalidStatus indicates an unsupported state transition.
 var ErrInvalidStatus = errors.New("invalid status transition")
 
+var (
+	ErrInvalidSPUListSort      = errors.New("invalid spu list sort")
+	ErrInvalidSPUListOrder     = errors.New("invalid spu list order")
+	ErrUnsupportedSPUListSort  = errors.New("unsupported spu list sort")
+	ErrSPUListRequiresPostgres = errors.New("spu list sort/filter requires postgres")
+)
+
 // Service orchestrates tenant-scoped SPU lifecycle operations.
 type Service struct {
 	deps         *app.Deps
@@ -172,6 +179,12 @@ type ListFilters struct {
 	CategoryID         string
 	CategoryPathPrefix string
 	Tags               []string
+	Sort               string
+	Order              string
+	MinPrice           *float64
+	MaxPrice           *float64
+	InStock            *bool
+	HasPlans           *bool
 	Page               int
 	PageSize           int
 }
@@ -219,6 +232,25 @@ func (s *Service) List(ctx context.Context, filters ListFilters) (*ListResult, e
 	if err != nil {
 		return nil, err
 	}
+	sortKey, err := normalizeSPUListSort(filters.Sort)
+	if err != nil {
+		return nil, err
+	}
+	orderDir, err := normalizeSPUListOrder(filters.Order)
+	if err != nil {
+		return nil, err
+	}
+	if sortKey == "sales" {
+		return nil, fmt.Errorf("%w: sales sort requires a sales data source", ErrUnsupportedSPUListSort)
+	}
+	dialect := strings.ToLower(strings.TrimSpace(s.deps.DB.Dialector.Name()))
+	needsPrice := sortKey == "price" || filters.MinPrice != nil || filters.MaxPrice != nil
+	needsPlans := needsPrice || filters.HasPlans != nil || filters.InStock != nil
+	needsInventory := filters.InStock != nil
+	if (needsPrice || needsPlans || needsInventory) && dialect != "postgres" {
+		return nil, fmt.Errorf("%w: dialect=%s", ErrSPUListRequiresPostgres, dialect)
+	}
+
 	page := filters.Page
 	if page < 1 {
 		page = 1
@@ -259,7 +291,6 @@ func (s *Service) List(ctx context.Context, filters ListFilters) (*ListResult, e
 			tags = append(tags, normalized)
 		}
 		if len(tags) > 0 {
-			dialect := strings.ToLower(strings.TrimSpace(s.deps.DB.Dialector.Name()))
 			if dialect == "postgres" {
 				query = query.Where("tags && ?", pq.Array(tags))
 			} else {
@@ -273,12 +304,81 @@ func (s *Service) List(ctx context.Context, filters ListFilters) (*ListResult, e
 			}
 		}
 	}
+
+	if dialect == "postgres" {
+		if needsPrice {
+			skuAgg := s.deps.DB.WithContext(ctx).
+				Table("product_skus").
+				Select("spu_id, MIN("+postgresSKUPriceExpr()+") AS min_price, MAX("+postgresSKUPriceExpr()+") AS max_price").
+				Where("tenant_uuid = ? AND deleted_at IS NULL AND status = ?", tenantID, "published").
+				Group("spu_id")
+			query = query.Joins("LEFT JOIN (?) AS sku_agg ON sku_agg.spu_id = product_spus.id", skuAgg)
+		}
+		if needsPlans {
+			planAgg := s.deps.DB.WithContext(ctx).
+				Table("product_spu_subscription_plans").
+				Select("spu_id, MIN(price) AS min_price, MAX(price) AS max_price, COUNT(*) AS plan_count").
+				Where("tenant_uuid = ? AND status = ?", tenantID, "active").
+				Group("spu_id")
+			query = query.Joins("LEFT JOIN (?) AS plan_agg ON plan_agg.spu_id = product_spus.id", planAgg)
+		}
+		if needsInventory {
+			invAgg := s.deps.DB.WithContext(ctx).
+				Table("product_skus AS s").
+				Select("s.spu_id, SUM(GREATEST(i.available_qty - i.locked_qty, 0)) AS available_qty").
+				Joins("JOIN product_sku_inventories AS i ON i.sku_id = s.id").
+				Where("s.tenant_uuid = ? AND s.deleted_at IS NULL AND s.status = ? AND i.tenant_uuid = ? AND i.deleted_at IS NULL",
+					tenantID, "published", tenantID).
+				Group("s.spu_id")
+			query = query.Joins("LEFT JOIN (?) AS inv_agg ON inv_agg.spu_id = product_spus.id", invAgg)
+		}
+
+		if filters.HasPlans != nil {
+			if *filters.HasPlans {
+				query = query.Where("product_spus.type = ? AND plan_agg.plan_count IS NOT NULL AND plan_agg.plan_count > 0", "subscription")
+			} else {
+				query = query.Where("product_spus.type <> ? OR plan_agg.plan_count IS NULL OR plan_agg.plan_count = 0", "subscription")
+			}
+		}
+		if filters.InStock != nil {
+			if *filters.InStock {
+				query = query.Where(`(
+product_spus.type = 'subscription' AND plan_agg.plan_count IS NOT NULL AND plan_agg.plan_count > 0
+) OR (
+product_spus.type <> 'subscription' AND COALESCE(inv_agg.available_qty, 0) > 0
+)`)
+			} else {
+				query = query.Where(`(
+product_spus.type = 'subscription' AND (plan_agg.plan_count IS NULL OR plan_agg.plan_count = 0)
+) OR (
+product_spus.type <> 'subscription' AND COALESCE(inv_agg.available_qty, 0) <= 0
+)`)
+			}
+		}
+		if filters.MinPrice != nil {
+			query = query.Where(postgresSPUEffectiveMinPriceExpr()+" >= ?", *filters.MinPrice)
+		}
+		if filters.MaxPrice != nil {
+			query = query.Where(postgresSPUEffectiveMinPriceExpr()+" <= ?", *filters.MaxPrice)
+		}
+	}
+
+	countQuery := query.Session(&gorm.Session{})
 	var total int64
-	if err := query.Count(&total).Error; err != nil {
+	if err := countQuery.Count(&total).Error; err != nil {
 		return nil, err
 	}
+
+	listQuery := query.Session(&gorm.Session{}).Select("product_spus.*")
+	switch sortKey {
+	case "price":
+		listQuery = listQuery.Order(postgresSPUEffectiveMinPriceExpr() + " " + orderDir + " NULLS LAST").Order("updated_at DESC")
+	default:
+		listQuery = listQuery.Order("updated_at " + orderDir)
+	}
+
 	var records []productmodel.SPU
-	if err := query.Order("updated_at DESC").
+	if err := listQuery.
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
 		Find(&records).Error; err != nil {
@@ -296,6 +396,52 @@ func (s *Service) List(ctx context.Context, filters ListFilters) (*ListResult, e
 		})
 	}
 	return &ListResult{Items: items, Total: total, Page: page, PageSize: pageSize}, nil
+}
+
+func normalizeSPUListSort(raw string) (string, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || strings.EqualFold(raw, "comprehensive") {
+		return "updated_at", nil
+	}
+	switch strings.ToLower(raw) {
+	case "updatedat", "updated_at":
+		return "updated_at", nil
+	case "price":
+		return "price", nil
+	case "sales":
+		return "sales", nil
+	default:
+		return "", fmt.Errorf("%w: %s", ErrInvalidSPUListSort, raw)
+	}
+}
+
+func normalizeSPUListOrder(raw string) (string, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "DESC", nil
+	}
+	switch strings.ToLower(raw) {
+	case "asc":
+		return "ASC", nil
+	case "desc":
+		return "DESC", nil
+	default:
+		return "", fmt.Errorf("%w: %s", ErrInvalidSPUListOrder, raw)
+	}
+}
+
+func postgresSKUPriceExpr() string {
+	return `COALESCE(
+NULLIF(default_values->>'sale_price','')::numeric,
+NULLIF(default_values->>'salePrice','')::numeric,
+NULLIF(default_values->>'price','')::numeric,
+NULLIF(default_values->>'list_price','')::numeric,
+NULLIF(default_values->>'listPrice','')::numeric
+)`
+}
+
+func postgresSPUEffectiveMinPriceExpr() string {
+	return `CASE WHEN product_spus.type = 'subscription' THEN plan_agg.min_price ELSE sku_agg.min_price END`
 }
 
 // CreateDraft persists a new SPU draft and associated version snapshot.

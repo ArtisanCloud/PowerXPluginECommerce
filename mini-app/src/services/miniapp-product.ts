@@ -61,6 +61,9 @@ export type MiniAppSkuSummary = {
   imageUrl?: string;
   price?: number;
   currency?: string;
+  specSignature?: string;
+  spec?: Record<string, string>;
+  stockQty?: number;
 };
 
 export type MiniAppSkuListResponse = {
@@ -68,6 +71,32 @@ export type MiniAppSkuListResponse = {
   page: number;
   pageSize: number;
   total: number;
+};
+
+export type MiniAppSpecOption = {
+  id: string;
+  code: string;
+  name: string;
+  sortOrder?: number;
+  meta?: any;
+  status?: string;
+};
+
+export type MiniAppSpecGroup = {
+  id: string;
+  code: string;
+  name: string;
+  required?: boolean;
+  sortOrder?: number;
+  options: MiniAppSpecOption[];
+};
+
+export type MiniAppProductDetailWithSpecResponse = {
+  spu: MiniAppProductDetail;
+  spec?: {
+    groups: MiniAppSpecGroup[];
+  };
+  skus: MiniAppSkuSummary[];
 };
 
 export type MiniAppProductListParams = {
@@ -80,6 +109,10 @@ export type MiniAppProductListParams = {
   type?: string;
   sort?: "comprehensive" | "sales" | "price" | "updatedAt";
   order?: "asc" | "desc";
+  minPrice?: number;
+  maxPrice?: number;
+  inStock?: boolean;
+  hasPlans?: boolean;
   page?: number;
   pageSize?: number;
 };
@@ -118,6 +151,10 @@ export async function miniAppListProducts(params: MiniAppProductListParams = {})
     type: params.type,
     sort: params.sort,
     order: params.order,
+    minPrice: params.minPrice,
+    maxPrice: params.maxPrice,
+    inStock: params.inStock,
+    hasPlans: params.hasPlans,
     page: params.page ?? 1,
     pageSize: params.pageSize ?? 20,
   });
@@ -143,6 +180,13 @@ export async function miniAppGetProduct(id: string) {
   return await miniAppRequest<MiniAppProductDetail>({
     method: "GET",
     path: `/products/${encodeURIComponent(String(id))}`,
+  });
+}
+
+export async function miniAppGetProductDetailWithSpec(id: string) {
+  return await miniAppRequest<MiniAppProductDetailWithSpecResponse>({
+    method: "GET",
+    path: `/products/${encodeURIComponent(String(id))}/detail`,
   });
 }
 

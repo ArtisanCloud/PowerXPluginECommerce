@@ -11,8 +11,15 @@ type miniAppProductListQuery struct {
 	Type               string `form:"type"`
 	CategoryID         string `form:"categoryId"`
 	CategoryPathPrefix string `form:"categoryPathPrefix"`
-	Page               int    `form:"page"`
-	PageSize           int    `form:"pageSize"`
+	// Sort: comprehensive|updatedAt|sales|price; Order: asc|desc.
+	Sort     string   `form:"sort"`
+	Order    string   `form:"order"`
+	MinPrice *float64 `form:"minPrice"`
+	MaxPrice *float64 `form:"maxPrice"`
+	InStock  *bool    `form:"inStock"`
+	HasPlans *bool    `form:"hasPlans"`
+	Page     int      `form:"page"`
+	PageSize int      `form:"pageSize"`
 }
 
 type miniAppProductTagListQuery struct {
@@ -77,6 +84,33 @@ type miniAppProductDetail struct {
 	SKUCount     int      `json:"skuCount,omitempty"`
 }
 
+type miniAppProductDetailBundle struct {
+	SPU  miniAppProductDetail     `json:"spu"`
+	Spec miniAppProductSpecBundle `json:"spec"`
+	SKUs []miniAppSkuDetail       `json:"skus"`
+}
+
+type miniAppProductSpecBundle struct {
+	Groups []miniAppSpecGroup `json:"groups"`
+}
+
+type miniAppSpecGroup struct {
+	ID        string              `json:"id"`
+	Code      string              `json:"code"`
+	Name      string              `json:"name"`
+	Required  bool                `json:"required"`
+	SortOrder int                 `json:"sortOrder"`
+	Options   []miniAppSpecOption `json:"options"`
+}
+
+type miniAppSpecOption struct {
+	ID        string         `json:"id"`
+	Code      string         `json:"code"`
+	Name      string         `json:"name"`
+	SortOrder int            `json:"sortOrder"`
+	Meta      map[string]any `json:"meta,omitempty"`
+}
+
 type skuListResponse struct {
 	Items    []miniAppSkuSummary `json:"items"`
 	Page     int                 `json:"page"`
@@ -95,6 +129,17 @@ type miniAppSkuSummary struct {
 	ImageURL  string     `json:"imageUrl,omitempty"`
 	Price     *float64   `json:"price,omitempty"`
 	Currency  string     `json:"currency,omitempty"`
+}
+
+type miniAppSkuDetail struct {
+	ID            string            `json:"id"`
+	Code          string            `json:"code"`
+	Price         *float64          `json:"price,omitempty"`
+	Currency      string            `json:"currency,omitempty"`
+	ImageURL      string            `json:"imageUrl,omitempty"`
+	StockQty      *int              `json:"stockQty,omitempty"`
+	Spec          map[string]string `json:"spec,omitempty"`
+	SpecSignature string            `json:"specSignature,omitempty"`
 }
 
 type subscriptionPlanListResponse struct {

@@ -11,6 +11,8 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
+import { onShow } from "@dcloudio/uni-app";
+import { syncTabBarSelected } from "@/utils/tabbar";
 
 const topInset = ref<number>(40);
 
@@ -30,5 +32,8 @@ onMounted(() => {
     topInset.value = 40;
   }
 });
-</script>
 
+onShow(() => {
+  syncTabBarSelected("pages/cart/index");
+});
+</script>

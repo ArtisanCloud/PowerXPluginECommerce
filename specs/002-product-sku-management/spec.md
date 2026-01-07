@@ -74,6 +74,7 @@
 ### Functional Requirements
 
 - **FR-001**: 系统必须提供 SKU 生成器，可基于 SPU 规格组合动态列出所有潜在 SKU，并允许用户勾选、筛选和批量设置默认字段。
+- **FR-001A**: 系统必须提供“规格维度/规格取值”的一等数据管理能力：可在 SPU 维度维护 `SpecGroup(code/name/required/sort/status)` 与其 `SpecOption(code/name/meta/sort/status)`，作为 SKU 组合与前端选择的唯一来源。
 - **FR-002**: 生成器需支持设置条码、成本、起订量、重量、尺寸、单位等默认值，并在创建时写入每个 SKU，可对已有 SKU 选择是否同步。
 - **FR-003**: SKU 列表与矩阵视图必须提供批量选择、复制、快速编辑、差异化字段配置，并可针对单个 SKU 编辑媒体、物流及供应信息。
 - **FR-004**: 列表页需提供 SPU、类目、规格、渠道、库存区间、标签等过滤；批量操作需限定权限并支持上/下架、价格调整、库存调整、导出、指派仓库。
@@ -86,6 +87,16 @@
 - **FR-011**: 批量价格或库存调整需支持可配置的审批策略，可按操作类型、影响范围或金额/数量阈值自动判断是否进入审批流，并记录审批人及结论。
 - **FR-012**: Web Admin 中的 SKU 列表、矩阵视图以及 SPU 编辑页的“关联 SKU”区域必须读取真实 API 数据（`GET /api/v1/admin/product/skus` 等）并在保存后刷新，禁止继续使用 mock 数据或空白占位。
 - **FR-013**: “关联 SKU”弹窗/生成器产生的数据必须实时落地 `product_skus` 及关联表，摘要/列表均以该表为唯一数据源；版本 `payload` 仅用于审批、回滚与审计，不可再驱动前端展示或成为唯一存储。
+- **FR-014**: SKU 必须持久化 `spec_signature`（如 `color=red|size=m`），并在数据库层面做 `(tenant_uuid, spu_id, spec_signature)` 唯一约束，防止同一规格组合重复创建多个 SKU。
+
+### API Contract Additions
+
+- **Admin - 规格定义（SPU 维度）**
+  - `GET /api/v1/admin/product/spus/{spuId}/spec-groups`：返回规格维度及其取值（嵌套 options）。
+  - `PUT /api/v1/admin/product/spus/{spuId}/spec-groups`：整体替换该 SPU 的规格维度与取值（用于管理端可视化编辑）。
+
+- **MiniApp - 一次取齐用于规格选择**
+  - `GET /api/v1/mini-app/products/{spuId}/detail`：返回 `spu + spec(groups/options) + skus(specSignature + spec映射)`，前端据此做禁用态与 skuId 匹配。
 
 ### Key Entities *(include if feature involves data)*
 

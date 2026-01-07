@@ -49,10 +49,6 @@ jobs:
         working-directory: web-admin
         run: npm ci
 
-      - name: Install Playwright browsers
-        working-directory: web-admin
-        run: npx playwright install --with-deps chromium
-
       - name: Install golangci-lint
         run: |
           go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.64.8

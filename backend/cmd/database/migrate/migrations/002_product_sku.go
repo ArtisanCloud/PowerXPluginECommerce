@@ -1,9 +1,14 @@
 package migrations
 
-import productskumodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_sku"
+import (
+	productspecmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_spec"
+	productskumodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_sku"
+)
 
 // ProductSkuTables enumerates all SKU-related tables for automated migrations.
 var ProductSkuTables = []interface{}{
+	&productspecmodel.ProductSpecGroup{},
+	&productspecmodel.ProductSpecOption{},
 	&productskumodel.ProductSKU{},
 	&productskumodel.ProductSKUAttribute{},
 	&productskumodel.ProductSKUChannel{},

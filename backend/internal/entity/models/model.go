@@ -82,6 +82,8 @@ const (
 	TableProductSpuExportTasks           = "product_spu_export_tasks"
 	TableProductSpuApprovals             = "product_spu_approvals"
 	TableProductSpuAuditLogs             = "product_spu_audit_logs"
+	TableProductSpecGroups              = "product_spec_groups"
+	TableProductSpecOptions             = "product_spec_options"
 	TableProductSkus                     = "product_skus"
 	TableProductSkuAttributes            = "product_sku_attributes"
 	TableProductSkuChannels              = "product_sku_channels"

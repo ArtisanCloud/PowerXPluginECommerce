@@ -2,15 +2,27 @@
 
 ## Entity: ProductSKU
 - **Identifiers**: `id (uuid)`, `tenant_uuid`, `sku_code` (unique per tenant), `spu_id`  
-- **Attributes**: `spec_values[]`, `barcode`, `status (draft/ready/online/offline)`, `lifecycle_phase`, `price_refs`（关联价目表 ID、阶梯价 JSON）、`min_order_qty`, `weight`, `dimensions`, `logistics (hs_code, package_type)`、`media_refs[]`, `tags[]`。  
+- **Attributes**: `spec_values[]`, `spec_signature`（基于 groupCode=optionCode 的稳定组合签名，用于唯一约束与前端匹配）、`barcode`, `status (draft/ready/online/offline)`, `lifecycle_phase`, `price_refs`（关联价目表 ID、阶梯价 JSON）、`min_order_qty`, `weight`, `dimensions`, `logistics (hs_code, package_type)`、`media_refs[]`, `tags[]`。  
 - **Relationships**: belongs to `SPU`; has many `SkuChannels`, `SkuInventories`, `SkuMedia`, `SkuAuditLogs`。  
 - **Validation Rules**: `sku_code`、`barcode` 每租户唯一；规格组合必须覆盖 SPU 的各必填规格；状态变迁需经过审批/推送（draft→ready→online/offline）。
+
+## Entity: ProductSpecGroup
+- **Identifiers**: `id (uuid)`, `tenant_uuid`, `spu_id`, `code`（SPU 内唯一）  
+- **Attributes**: `name`, `sort_order`, `required`, `status (active/inactive)`  
+- **Relationships**: has many `ProductSpecOption`；用于 SKU 生成器与前端规格选择渲染。  
+- **Validation**: `(tenant_uuid, spu_id, code)` 唯一；`required=true` 的维度必须在每个 SKU 中出现一次。
+
+## Entity: ProductSpecOption
+- **Identifiers**: `id (uuid)`, `tenant_uuid`, `spu_id`, `group_id`, `code`（Group 内唯一）  
+- **Attributes**: `name`, `sort_order`, `meta (jsonb)`, `status (active/inactive)`  
+- **Relationships**: belongs to `ProductSpecGroup`；用于 SKU 组合与前端选项禁用态计算。  
+- **Validation**: `(tenant_uuid, group_id, code)` 唯一；禁用项不参与新组合生成（历史 SKU 可保留）。
 
 ## Entity: ProductSkuAttribute
 - **Identifiers**: `id`, `sku_id`, `spec_id`, `spec_value_id`.  
 - **Attributes**: `display_order`.  
 - **Relationships**: 每个 SKU 多个 attribute，约束组合唯一。  
-- **Validation**: `spec_id + spec_value_id` 必须属于对应 SPU；同一 SKU 不可重复同一 spec。
+- **Validation**: `spec_id` 绑定 `ProductSpecGroup.id`，`spec_value_id` 绑定 `ProductSpecOption.id`；同一 SKU 不可重复同一 spec。
 
 ## Entity: ProductSkuChannel
 - **Identifiers**: `id`, `sku_id`, `channel_code`, `tenant_uuid`.  

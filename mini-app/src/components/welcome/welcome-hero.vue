@@ -6,7 +6,10 @@
     >
       <image class="h-full w-full" mode="aspectFill" :src="imageSrc" />
 
-      <view class="absolute inset-0 bg-gradient-to-t from-background-light via-transparent to-transparent opacity-60" />
+      <view
+        class="absolute inset-0"
+        style="background: linear-gradient(to top, rgba(248,250,249,1), rgba(248,250,249,0)); opacity: 0.6;"
+      />
 
       <view
         class="absolute right-4 top-4 flex items-center gap-2 rounded-full border border-line-5 bg-surface-95 px-3 py-2 shadow-sm"

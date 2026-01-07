@@ -320,6 +320,17 @@
           </view>
         </view>
       </view>
+
+      <SkuPickerSheet
+        v-if="!isSubscription"
+        v-model="skuSheetOpen"
+        v-model:selectedSkuId="selectedSkuId"
+        :skus="skus"
+        :spec-groups="specGroups"
+        :cover-url="coverUrl"
+        :max-qty="5"
+        @confirm="onSkuSheetConfirm"
+      />
     </view>
   </view>
 </template>
@@ -327,11 +338,14 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
+import SkuPickerSheet from "@/components/product/sku-picker-sheet.vue";
 import {
   miniAppGetProduct,
+  miniAppGetProductDetailWithSpec,
   miniAppListSkus,
   miniAppListSubscriptionPlans,
   type MiniAppProductDetail,
+  type MiniAppSpecGroup,
   type MiniAppSkuSummary,
   type MiniAppSubscriptionPlan,
 } from "@/services/miniapp-product";
@@ -344,10 +358,12 @@ const errorMsg = ref("");
 
 const product = ref<MiniAppProductDetail | null>(null);
 const skus = ref<MiniAppSkuSummary[]>([]);
+const specGroups = ref<MiniAppSpecGroup[]>([]);
 const plans = ref<MiniAppSubscriptionPlan[]>([]);
 
 const selectedSkuId = ref("");
 const selectedPlanId = ref("");
+const skuSheetOpen = ref(false);
 
 const coverUrl = ref("");
 
@@ -494,11 +510,27 @@ function onPrimaryAction() {
 }
 
 function onAddToCart() {
-  onPrimaryAction();
+  if (isSubscription.value) {
+    onPrimaryAction();
+    return;
+  }
+  if (!skus.value.length) {
+    uni.showToast({ title: "暂无可选 SKU", icon: "none" });
+    return;
+  }
+  skuSheetOpen.value = true;
 }
 
 function onBuyNow() {
-  uni.showToast({ title: "下单能力待接入", icon: "none" });
+  if (isSubscription.value) {
+    uni.showToast({ title: "下单能力待接入", icon: "none" });
+    return;
+  }
+  if (!skus.value.length) {
+    uni.showToast({ title: "暂无可选 SKU", icon: "none" });
+    return;
+  }
+  skuSheetOpen.value = true;
 }
 
 function toCart() {
@@ -537,6 +569,15 @@ function previewImages(urls: string[], current: string) {
 function onGalleryChange(e: any) {
   const current = Number(e?.detail?.current ?? 0);
   galleryIndex.value = Number.isFinite(current) ? current : 0;
+}
+
+function onSkuSheetConfirm(payload: { action: "cart" | "buy"; skuId: string; qty: number }) {
+  selectSku(payload.skuId);
+  if (payload.action === "cart") {
+    uni.showToast({ title: `已选 ${payload.qty} 件，购物车能力待接入`, icon: "none" });
+    return;
+  }
+  uni.showToast({ title: `已选 ${payload.qty} 件，下单能力待接入`, icon: "none" });
 }
 
 function openSpecPicker() {
@@ -581,11 +622,22 @@ async function loadAll() {
       const resp = await miniAppListSubscriptionPlans(spuId.value);
       plans.value = Array.isArray(resp?.items) ? resp.items : [];
       if (!selectedPlanId.value && plans.value.length) selectedPlanId.value = plans.value[0].id;
-    } else {
+      return;
+    }
+
+    try {
+      const detail = await miniAppGetProductDetailWithSpec(spuId.value);
+      if (detail?.spu) product.value = detail.spu;
+      coverUrl.value = (detail?.spu?.coverUrl || product.value?.coverUrl) ?? coverUrl.value;
+      specGroups.value = Array.isArray(detail?.spec?.groups) ? detail.spec!.groups : [];
+      skus.value = Array.isArray(detail?.skus) ? detail.skus : [];
+    } catch {
       const resp = await miniAppListSkus(spuId.value, 1, 50);
       skus.value = Array.isArray(resp?.items) ? resp.items : [];
-      if (!selectedSkuId.value && skus.value.length) selectedSkuId.value = skus.value[0].id;
+      specGroups.value = [];
     }
+
+    if (!selectedSkuId.value && skus.value.length) selectedSkuId.value = skus.value[0].id;
   } catch (e: any) {
     errorMsg.value = e?.message || "加载失败";
   } finally {

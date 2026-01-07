@@ -130,7 +130,13 @@
           </view>
         </view>
 
-        <scroll-view scroll-y class="w-full" style="height: calc(100vh - 220px);" @scrolltolower="onReachBottom">
+        <scroll-view
+          scroll-y
+          class="w-full"
+          style="height: calc(100vh - 220px);"
+          :lower-threshold="200"
+          @scrolltolower="onReachBottom"
+        >
           <view class="px-3 pb-28">
             <view v-if="loading" class="py-6 text-center" style="color:#90a4ae;font-size:12px;">
               加载中...
@@ -187,6 +193,11 @@
               </view>
             </view>
             <view style="height: 40px;" />
+            <view class="flex items-center justify-center" style="padding: 14px 0; color: #90a4ae; font-size: 11px;">
+              <text v-if="loading">加载中...</text>
+              <text v-else-if="noMore">没有更多了</text>
+              <text v-else>上拉加载更多</text>
+            </view>
           </view>
         </scroll-view>
       </view>
@@ -197,10 +208,11 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { onShow } from "@dcloudio/uni-app";
 import { miniAppGetCategoryTreeItems, type MiniAppCategoryNode } from "@/services/miniapp-category";
 import { miniAppListProducts, miniAppListProductTags, type MiniAppProductTagItem } from "@/services/miniapp-product";
+import { syncTabBarSelected } from "@/utils/tabbar";
 
 	type Chip = { key: string; label: string };
 	type Sidebar = { key: string; label: string; icon: string; pathPrefix?: string; id?: string };
@@ -250,6 +262,7 @@ const errorMsg = ref("");
 const page = ref(1);
 const pageSize = ref(20);
 const total = ref(0);
+const noMore = computed(() => total.value > 0 && products.value.length >= total.value);
 
 const placeholderImages = [
   "https://lh3.googleusercontent.com/aida-public/AB6AXuCg6FsSWqWzgBZu6SO_586WS1dZZSLI_4FZg3AkMAKVJBgwQ1TP64nNujeYl2F1Cy90DXslNyCZ3luU22WAp7EqKZcNRwDUcXyekZ1SJNfXz-Ng326aaor1EkIa8HQ2NKnTIRtiKSk9TyqYy3QxFGiGxXGV9cAzNv28dpANZW3OciBxNEUHYUDWQcsHHtiV9SYBMiSywXyQKu9vZXIAN50f7HHDglzRaVYMhva6Z6z6nu3pJJZXqkgqbUXCT5ioqcj1mt58pkTc-RLD",
@@ -344,27 +357,32 @@ function flattenSidebar(nodes: MiniAppCategoryNode[]) {
   // mini-app/tree 返回根数组；通常为顶层类目
   const items = Array.isArray(nodes) ? nodes.slice() : [];
   items.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
-  return items.map((n, idx) => ({
+  const mapped = items.map((n, idx) => ({
     key: n.id || String(idx),
     id: n.id,
     label: n.displayName || n.code || "Category",
     icon: n.isFeatured ? "★" : "•",
     pathPrefix: n.path,
   }));
+  return [{ key: "all", label: "全部商品", icon: "◎", pathPrefix: "" }, ...mapped];
 }
 
 	async function loadCategories() {
 	  const items = await miniAppGetCategoryTreeItems();
 	  categoryTree.value = items;
 	  sidebar.value = flattenSidebar(items);
+	  const storedKey = String(uni.getStorageSync("miniapp.mall.category.key") || "").trim();
 	  const storedID = String(uni.getStorageSync("miniapp.mall.category.id") || "").trim();
-	  if (storedID) {
+	  if (storedKey) {
+	    const hit = sidebar.value.find((s) => String(s.key || "").trim() === storedKey);
+	    if (hit) activeSidebar.value = hit.key;
+	  } else if (storedID) {
 	    const hit = sidebar.value.find((s) => String(s.id || "").trim() === storedID);
 	    if (hit) activeSidebar.value = hit.key;
 	  }
-	  if (!activeSidebar.value && sidebar.value.length) activeSidebar.value = sidebar.value[0].key;
+	  if (!activeSidebar.value) activeSidebar.value = "all";
 	  if (sidebar.value.length && !sidebar.value.find((s) => s.key === activeSidebar.value)) {
-	    activeSidebar.value = sidebar.value[0].key;
+	    activeSidebar.value = "all";
 	  }
 	  refreshSubcategories();
 	}
@@ -379,6 +397,11 @@ function flattenSidebar(nodes: MiniAppCategoryNode[]) {
 	}
 
 	function refreshSubcategories() {
+	  if (activeSidebar.value === "all") {
+	    subcategories.value = [];
+	    activeSubcategoryId.value = "";
+	    return;
+	  }
 	  const top = categoryTree.value.find((n) => n.id === activeSidebar.value);
 	  const children = Array.isArray(top?.children) ? top!.children.slice() : [];
 	  children.sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
@@ -435,10 +458,14 @@ function onSearch() {
 }
 
 function setSort(next: "comprehensive" | "sales" | "price") {
-  sort.value = next;
   if (next !== "price") {
-    uni.showToast({ title: next === "sales" ? "按销量（待接入）" : "综合排序", icon: "none" });
+    if (next === "sales") {
+      uni.showToast({ title: "按销量暂未支持", icon: "none" });
+      return;
+    }
+    uni.showToast({ title: "综合排序", icon: "none" });
   }
+  sort.value = next;
   loadProducts(true);
 }
 
@@ -465,7 +492,7 @@ function addToCart(p: Product) {
 
 function onReachBottom() {
   if (loading.value) return;
-  if (products.value.length >= total.value && total.value > 0) return;
+  if (noMore.value) return;
   loadProducts(false);
 }
 
@@ -483,6 +510,7 @@ watch(activeSidebar, () => {
   if (!activeSidebar.value) return;
   try {
     const item = sidebar.value.find((s) => s.key === activeSidebar.value);
+    uni.setStorageSync("miniapp.mall.category.key", String(activeSidebar.value));
     if (item?.id) uni.setStorageSync("miniapp.mall.category.id", String(item.id));
   } catch {}
   refreshSubcategories();
@@ -495,6 +523,6 @@ watch(activeChip, () => {
 });
 
 onShow(() => {
-  // 游客态可浏览；登录后可扩展购物车/下单/会员价等能力
+  syncTabBarSelected("pages/mall/index");
 });
 </script>

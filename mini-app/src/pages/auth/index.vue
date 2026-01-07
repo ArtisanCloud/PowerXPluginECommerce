@@ -21,7 +21,10 @@
       <view class="pt-4">
         <view class="relative w-full overflow-hidden rounded-xl shadow-sm">
           <image class="h-180 w-full" mode="aspectFill" :src="bannerImage" />
-          <view class="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-60" />
+          <view
+            class="absolute inset-0"
+            style="background: linear-gradient(to top, rgba(0,0,0,0.65), rgba(0,0,0,0)); opacity: 0.6;"
+          />
           <view class="absolute bottom-0 left-0 right-0 p-5">
             <view class="text-xs font-semibold uppercase tracking-wider text-white opacity-90">
               {{ t("auth.bannerKicker") }}

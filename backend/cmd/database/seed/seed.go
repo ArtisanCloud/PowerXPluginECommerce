@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -14,7 +15,9 @@ import (
 	productmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product"
 	productcategory "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_category"
 	productsku "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_sku"
+	productspec "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_spec"
 	templatemodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/template"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"github.com/lib/pq"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -349,9 +352,161 @@ func seedSportsCatalog(db *gorm.DB) error {
 	if err := seedSportsSPUs(db); err != nil {
 		return err
 	}
+	if err := seedSportsSpecs(db); err != nil {
+		return err
+	}
 	if err := seedSportsSKUs(db); err != nil {
 		return err
 	}
+	return nil
+}
+
+type skuSpecJSON struct {
+	SpecID    string `json:"spec_id"`
+	SpecName  string `json:"spec_name,omitempty"`
+	ValueID   string `json:"value_id"`
+	ValueName string `json:"value_name,omitempty"`
+}
+
+func seedSportsSpecs(db *gorm.DB) error {
+	if db == nil || db.Migrator() == nil {
+		return nil
+	}
+	if !db.Migrator().HasTable(&productspec.ProductSpecGroup{}) || !db.Migrator().HasTable(&productspec.ProductSpecOption{}) {
+		return nil
+	}
+	spuIDs, err := loadSPUIdsByCode(db)
+	if err != nil {
+		return err
+	}
+
+	// Mirror the SKU seed spec list so that the spec definition exists before seeding SKUs.
+	specs := []skuSeedSpec{
+		{SPUCode: "BALL-BASKET-001", Spec: map[string]any{"size": "7", "material": "leather"}},
+		{SPUCode: "BALL-BASKET-002", Spec: map[string]any{"size": "7", "material": "leather"}},
+		{SPUCode: "BALL-SOCCER-001", Spec: map[string]any{"size": "5", "surface": "training"}},
+		{SPUCode: "SHOE-BASKET-001", Spec: map[string]any{"size": "42", "color": "black"}},
+		{SPUCode: "SHOE-BASKET-001", Spec: map[string]any{"size": "43", "color": "white"}},
+		{SPUCode: "APP-JERSEY-001", Spec: map[string]any{"size": "M", "color": "blue"}},
+		{SPUCode: "APP-JERSEY-001", Spec: map[string]any{"size": "L", "color": "blue"}},
+	}
+
+	preferredOrder := map[string]int{
+		"color":    10,
+		"size":     20,
+		"material": 30,
+		"surface":  40,
+	}
+
+	type groupKey struct {
+		SPUID string
+		Code  string
+	}
+	groups := make(map[groupKey]productspec.ProductSpecGroup)
+	valuesByGroup := make(map[groupKey]map[string]string)
+
+	for _, spec := range specs {
+		spuID, ok := spuIDs[spec.SPUCode]
+		if !ok {
+			continue
+		}
+		for rawKey, rawVal := range spec.Spec {
+			code := strings.ToLower(strings.TrimSpace(rawKey))
+			valStr := strings.TrimSpace(fmt.Sprintf("%v", rawVal))
+			if code == "" || valStr == "" {
+				continue
+			}
+			key := groupKey{SPUID: spuID, Code: code}
+			if _, ok := groups[key]; !ok {
+				sortOrder := 100
+				if v, ok := preferredOrder[code]; ok {
+					sortOrder = v
+				}
+				groups[key] = productspec.ProductSpecGroup{
+					ID:         utils.NewUUID(),
+					TenantUUID: defaultTenantUUID,
+					SPUID:      spuID,
+					Code:       code,
+					Name:       rawKey,
+					SortOrder:  sortOrder,
+					Required:   true,
+					Status:     "active",
+				}
+			}
+			if _, ok := valuesByGroup[key]; !ok {
+				valuesByGroup[key] = map[string]string{}
+			}
+			valuesByGroup[key][strings.ToLower(valStr)] = valStr
+		}
+	}
+
+	now := time.Now().UTC()
+	for key, candidate := range groups {
+		var existing productspec.ProductSpecGroup
+		err := db.Where("tenant_uuid = ? AND spu_id = ? AND code = ?", defaultTenantUUID, key.SPUID, key.Code).First(&existing).Error
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			candidate.CreatedAt = now
+			candidate.UpdatedAt = now
+			if err := db.Create(&candidate).Error; err != nil {
+				return err
+			}
+			existing = candidate
+		case err != nil:
+			return err
+		default:
+			updates := map[string]any{
+				"name":       candidate.Name,
+				"sort_order": candidate.SortOrder,
+				"required":   candidate.Required,
+				"status":     candidate.Status,
+				"updated_at": now,
+			}
+			if err := db.Model(&existing).Updates(updates).Error; err != nil {
+				return err
+			}
+		}
+
+		// Upsert options for the group.
+		values := valuesByGroup[key]
+		for optCode, optName := range values {
+			if strings.TrimSpace(optCode) == "" || strings.TrimSpace(optName) == "" {
+				continue
+			}
+			var existingOpt productspec.ProductSpecOption
+			err := db.Where("tenant_uuid = ? AND group_id = ? AND code = ?", defaultTenantUUID, existing.ID, optCode).First(&existingOpt).Error
+			switch {
+			case errors.Is(err, gorm.ErrRecordNotFound):
+				opt := productspec.ProductSpecOption{
+					ID:         utils.NewUUID(),
+					TenantUUID: defaultTenantUUID,
+					SPUID:      existing.SPUID,
+					GroupID:    existing.ID,
+					Code:       optCode,
+					Name:       optName,
+					SortOrder:  0,
+					Status:     "active",
+					CreatedAt:  now,
+					UpdatedAt:  now,
+				}
+				if err := db.Create(&opt).Error; err != nil {
+					return err
+				}
+			case err != nil:
+				return err
+			default:
+				updates := map[string]any{
+					"name":       optName,
+					"status":     "active",
+					"updated_at": now,
+				}
+				if err := db.Model(&existingOpt).Updates(updates).Error; err != nil {
+					return err
+				}
+			}
+		}
+	}
+
 	return nil
 }
 
@@ -746,6 +901,8 @@ func seedSportsSKUs(db *gorm.DB) error {
 		return nil
 	}
 	hasMedia := db.Migrator().HasTable(&productsku.ProductSKUMedia{})
+	hasSpecTables := db.Migrator().HasTable(&productspec.ProductSpecGroup{}) && db.Migrator().HasTable(&productspec.ProductSpecOption{})
+	hasSkuAttributes := db.Migrator().HasTable(&productsku.ProductSKUAttribute{})
 	spuIDs, err := loadSPUIdsByCode(db)
 	if err != nil {
 		return err
@@ -843,6 +1000,84 @@ func seedSportsSKUs(db *gorm.DB) error {
 			return fmt.Errorf("missing spu %s for sku %s", spec.SPUCode, spec.SKUCode)
 		}
 		specBytes, _ := json.Marshal(spec.Spec)
+		specSignature := ""
+		if hasSpecTables {
+			var groups []productspec.ProductSpecGroup
+			if err := db.Where("tenant_uuid = ? AND spu_id = ? AND deleted_at IS NULL AND status = 'active'", defaultTenantUUID, spuID).
+				Order("sort_order ASC, code ASC").
+				Find(&groups).Error; err != nil {
+				return err
+			}
+			groupByCode := make(map[string]productspec.ProductSpecGroup, len(groups))
+			groupIDs := make([]string, 0, len(groups))
+			for _, g := range groups {
+				groupByCode[strings.ToLower(strings.TrimSpace(g.Code))] = g
+				groupIDs = append(groupIDs, g.ID)
+			}
+			var options []productspec.ProductSpecOption
+			if len(groupIDs) > 0 {
+				if err := db.Where("tenant_uuid = ? AND spu_id = ? AND group_id IN ? AND deleted_at IS NULL AND status = 'active'",
+					defaultTenantUUID, spuID, groupIDs).
+					Find(&options).Error; err != nil {
+					return err
+				}
+			}
+			optionByGroupAndCode := make(map[string]productspec.ProductSpecOption, len(options))
+			for _, o := range options {
+				key := o.GroupID + "::" + strings.ToLower(strings.TrimSpace(o.Code))
+				optionByGroupAndCode[key] = o
+			}
+
+			specPairs := make([]skuSpecJSON, 0, len(spec.Spec))
+			signParts := make([]string, 0, len(spec.Spec))
+			type signPart struct {
+				SortOrder int
+				GroupCode string
+				Text      string
+			}
+			sorted := make([]signPart, 0, len(spec.Spec))
+			for rawKey, rawVal := range spec.Spec {
+				gc := strings.ToLower(strings.TrimSpace(rawKey))
+				valStr := strings.TrimSpace(fmt.Sprintf("%v", rawVal))
+				oc := strings.ToLower(valStr)
+				if gc == "" || oc == "" {
+					continue
+				}
+				g, ok := groupByCode[gc]
+				if !ok {
+					continue
+				}
+				o, ok := optionByGroupAndCode[g.ID+"::"+oc]
+				if !ok {
+					continue
+				}
+				specPairs = append(specPairs, skuSpecJSON{
+					SpecID:    g.ID,
+					SpecName:  g.Name,
+					ValueID:   o.ID,
+					ValueName: o.Name,
+				})
+				sorted = append(sorted, signPart{
+					SortOrder: g.SortOrder,
+					GroupCode: g.Code,
+					Text:      strings.TrimSpace(g.Code) + "=" + strings.TrimSpace(o.Code),
+				})
+			}
+			sort.Slice(sorted, func(i, j int) bool {
+				if sorted[i].SortOrder == sorted[j].SortOrder {
+					return sorted[i].GroupCode < sorted[j].GroupCode
+				}
+				return sorted[i].SortOrder < sorted[j].SortOrder
+			})
+			for _, p := range sorted {
+				signParts = append(signParts, p.Text)
+			}
+			specSignature = strings.Join(signParts, "|")
+			if len(specPairs) > 0 {
+				specBytes, _ = json.Marshal(specPairs)
+			}
+		}
+
 		defaultValuesBytes, _ := json.Marshal(map[string]any{
 			"sale_price": spec.SalePrice,
 			"currency":   strings.TrimSpace(spec.Currency),
@@ -859,6 +1094,7 @@ func seedSportsSKUs(db *gorm.DB) error {
 				Barcode:    spec.Barcode,
 				Status:     spec.Status,
 				SpecValues: datatypes.JSON(specBytes),
+				SpecSignature: strings.TrimSpace(specSignature),
 				DefaultValues: datatypes.JSON(defaultValuesBytes),
 				Tags:       pq.StringArray(spec.Tags),
 				CreatedAt:  now,
@@ -875,12 +1111,58 @@ func seedSportsSKUs(db *gorm.DB) error {
 				"barcode":     spec.Barcode,
 				"status":      spec.Status,
 				"spec_values": datatypes.JSON(specBytes),
+				"spec_signature": strings.TrimSpace(specSignature),
 				"default_values": datatypes.JSON(defaultValuesBytes),
 				"tags":        pq.StringArray(spec.Tags),
 				"updated_at":  now,
 			}
 			if err := db.Model(&sku).Updates(updates).Error; err != nil {
 				return err
+			}
+		}
+
+		if hasSkuAttributes && hasSpecTables {
+			// Keep product_sku_attributes in sync for filtering.
+			var pairs []skuSpecJSON
+			_ = json.Unmarshal(specBytes, &pairs)
+			for idx, p := range pairs {
+				if strings.TrimSpace(p.SpecID) == "" || strings.TrimSpace(p.ValueID) == "" {
+					continue
+				}
+				var existingAttr productsku.ProductSKUAttribute
+				err := db.Where("tenant_uuid = ? AND sku_id = ? AND spec_id = ? AND spec_value_id = ?",
+					defaultTenantUUID, spec.ID, p.SpecID, p.ValueID).
+					First(&existingAttr).Error
+				switch {
+				case errors.Is(err, gorm.ErrRecordNotFound):
+					attr := productsku.ProductSKUAttribute{
+						ID:           utils.NewUUID(),
+						TenantUUID:   defaultTenantUUID,
+						SKUId:        spec.ID,
+						SpecID:       p.SpecID,
+						SpecValueID:  p.ValueID,
+						SpecName:     p.SpecName,
+						ValueName:    p.ValueName,
+						DisplayOrder: idx,
+						CreatedAt:    now,
+						UpdatedAt:    now,
+					}
+					if err := db.Create(&attr).Error; err != nil {
+						return err
+					}
+				case err != nil:
+					return err
+				default:
+					updates := map[string]any{
+						"spec_name":      p.SpecName,
+						"value_name":     p.ValueName,
+						"display_order":  idx,
+						"updated_at":     now,
+					}
+					if err := db.Model(&existingAttr).Updates(updates).Error; err != nil {
+						return err
+					}
+				}
 			}
 		}
 
