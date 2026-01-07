@@ -89,7 +89,7 @@ func (s *Service) UpsertSkus(ctx context.Context, req SkuUpsertRequest) (*SkuUps
 				}
 			}
 			if record, ok := existingRecords[codeKey]; ok {
-				if err := s.updateExistingSKU(tx, tenantID, record, payload, now); err != nil {
+				if err := s.updateExistingSKU(ctx, tx, tenantID, record, payload, now); err != nil {
 					return err
 				}
 				removeSpecHashForSKU(existingMap, spuID, record.SKUCode)
@@ -111,6 +111,10 @@ func (s *Service) UpsertSkus(ctx context.Context, req SkuUpsertRequest) (*SkuUps
 				result.Skipped = append(result.Skipped, payload.SKUCode)
 				continue
 			}
+			signature, err := s.buildSpecSignature(ctx, tx, tenantID, spuID, payload.Specs)
+			if err != nil {
+				return err
+			}
 			record := &productskumodel.ProductSKU{
 				ID:             utils.NewUUID(),
 				TenantUUID:     tenantID,
@@ -120,6 +124,7 @@ func (s *Service) UpsertSkus(ctx context.Context, req SkuUpsertRequest) (*SkuUps
 				Status:         sanitizeStatus(payload.Status),
 				MinOrderQty:    payload.MinOrderQty,
 				SpecValues:     marshalJSON(payload.Specs),
+				SpecSignature:  signature,
 				DefaultValues:  marshalJSON(payload.DefaultValues),
 				CreatedAt:      now,
 				UpdatedAt:      now,
@@ -153,16 +158,22 @@ func (s *Service) UpsertSkus(ctx context.Context, req SkuUpsertRequest) (*SkuUps
 	return result, nil
 }
 
-func (s *Service) updateExistingSKU(tx *gorm.DB, tenantID string, existing productskumodel.ProductSKU, payload SkuUpsertPayload, now time.Time) error {
+func (s *Service) updateExistingSKU(ctx context.Context, tx *gorm.DB, tenantID string, existing productskumodel.ProductSKU, payload SkuUpsertPayload, now time.Time) error {
 	updates := map[string]interface{}{
 		"sku_code":       payload.SKUCode,
 		"barcode":        payload.Barcode,
 		"status":         sanitizeStatus(payload.Status),
 		"min_order_qty":  payload.MinOrderQty,
 		"spec_values":    marshalJSON(payload.Specs),
+		"spec_signature": "",
 		"default_values": marshalJSON(payload.DefaultValues),
 		"updated_at":     now,
 	}
+	signature, err := s.buildSpecSignature(ctx, tx, tenantID, existing.SPUID, payload.Specs)
+	if err != nil {
+		return err
+	}
+	updates["spec_signature"] = signature
 	if err := tx.Model(&productskumodel.ProductSKU{}).
 		Where("id = ?", existing.ID).
 		Updates(updates).Error; err != nil {

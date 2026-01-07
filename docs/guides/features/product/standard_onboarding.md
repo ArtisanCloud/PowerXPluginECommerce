@@ -83,7 +83,7 @@
 1. 调用 `/api/v1/admin/product/spus?keyword=STD-PRODUCT-001` 确认列表包含该商品。
 2. 调用 `/api/v1/admin/product/skus?spuId={id}&status=online` 仅返回线上 SKU。
 3. 调用 `/api/v1/mini-app/products?keyword=STD-PRODUCT-001` 验证迷你端可读到同一 SPU（仅需携带 `X-Tenant-UUID`，无需管理员 JWT）。
-4. 调用 `/api/v1/mini-app/products/{id}/skus`（可附带 `status=online`）确认返回列表与正式 `product_skus` 一致。
+4. 调用 `/api/v1/mini-app/products/{id}/skus`（mini-app 仅返回 `published` SKU）确认返回列表与正式 `product_skus` 一致。
 5. **验证**：四个接口返回的 `status`、`inventoryRef`、`minOrderQty`、`code` 等字段应彼此一致；mini-app 响应字段精简但需包含 `id/code/status/updatedAt`。
 
 ## 回归测试提示

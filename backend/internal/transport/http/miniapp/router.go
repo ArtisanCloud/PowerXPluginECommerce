@@ -5,6 +5,7 @@ import (
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	httpmw "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/middleware"
 	miniappauth "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/miniapp/auth"
+	miniappcategory "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/miniapp/category"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/miniapp/product"
 	"github.com/gin-gonic/gin"
 )
@@ -20,8 +21,13 @@ func RegisterRoutes(rg *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	}
 	group := rg.Group("/mini-app", httpmw.EnsureTenant())
 	miniappauth.RegisterRoutes(group, deps)
+	// Open (no customer token required): 用于小程序“游客态”浏览类目/商品列表。
+	open := group.Group("")
+	miniappcategory.RegisterRoutes(open, deps)
+	product.RegisterRoutes(open, deps)
+
+	// Protected (customer token required): 预留给后续订单、收藏等需要用户态的能力。
 	protected := group.Group("")
 	protected.Use(httpmw.CustomerAuthenticate(authenticator))
-	product.RegisterRoutes(protected, deps)
 	return group
 }

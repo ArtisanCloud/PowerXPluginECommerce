@@ -89,7 +89,7 @@ func parseHS256(raw string, cfg JWTAuthConfig) (TenantContext, error) {
 	}
 	claims := &PowerXClaims{}
 	token, err := jwt.ParseWithClaims(raw, claims, func(t *jwt.Token) (any, error) {
-		if t.Method != jwt.SigningMethodHS256 {
+		if t.Method == nil || t.Method.Alg() != jwt.SigningMethodHS256.Alg() {
 			return nil, errors.New("unexpected sign method")
 		}
 		return []byte(cfg.HMACSecret), nil

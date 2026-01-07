@@ -123,6 +123,11 @@
 - [X] T052 [P] 添加端到端冒烟脚本（`web-admin/tests/e2e/product-sku.spec.ts`）覆盖三大故事 happy path（含导出、渠道发布）
 - [X] T053 核对 `plugin.yaml`、菜单与 RBAC 权限（`plugin.yaml`、`backend/etc/rbac.yaml`）确保上线前一致
 - [X] T054 [P] 验证 `make test`, `make test-admin`, `make integration-smoke` 并整理发布 checklist（`reports/sku-release.md`）
+- [X] T055 [P] 新增规格维度/取值一等数据表（`backend/internal/entity/models/product_spec/*`、`backend/cmd/database/migrate/migrations/002_product_sku.go`）
+- [X] T056 [P] 为 SKU 增加 `spec_signature` 并写入唯一约束（`backend/internal/entity/models/product_sku/sku.go`、`backend/internal/services/admin/product_sku/spec_signature.go`）
+- [X] T057 [P] 提供管理端规格编辑 API（`GET/PUT /api/v1/admin/product/spus/{id}/spec-groups`，代码见 `backend/internal/transport/http/admin/product_spec/*`）
+- [X] T058 [P] 提供 mini-app 规格选择聚合接口（`GET /api/v1/mini-app/products/{id}/detail`，代码见 `backend/internal/transport/http/miniapp/product/*`）
+- [X] T059 [P] 更新合同与调用指南（`specs/002-product-sku-management/contracts/skus.openapi.yaml`、`docs/guides/features/product/miniapp_open_api.md`）
 
 ---
 

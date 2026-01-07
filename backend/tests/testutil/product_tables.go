@@ -13,8 +13,10 @@ func EnsureProductTables(t *testing.T, db *gorm.DB, isPostgres bool) {
 	t.Helper()
 
 	jsonType := "TEXT"
+	tagsType := "TEXT"
 	if isPostgres {
 		jsonType = "JSONB"
+		tagsType = "TEXT[]"
 	}
 
 	tableNames := []string{
@@ -23,6 +25,8 @@ func EnsureProductTables(t *testing.T, db *gorm.DB, isPostgres bool) {
 		basemodels.TableProductSpuApprovals,
 		basemodels.TableProductSpuChannels,
 		basemodels.TableProductSpuAuditLogs,
+		basemodels.TableProductSpecGroups,
+		basemodels.TableProductSpecOptions,
 		basemodels.TableProductSkus,
 		basemodels.TableProductSkuAttributes,
 	}
@@ -43,7 +47,7 @@ func EnsureProductTables(t *testing.T, db *gorm.DB, isPostgres bool) {
 			default_locale TEXT NOT NULL,
 			status TEXT NOT NULL,
 			current_version_id TEXT,
-			tags TEXT,
+			tags ` + tagsType + `,
 			responsible_user TEXT,
 			channels_summary ` + jsonType + `,
 			created_at TIMESTAMP,
@@ -105,6 +109,33 @@ func EnsureProductTables(t *testing.T, db *gorm.DB, isPostgres bool) {
 			operator TEXT,
 			created_at TIMESTAMP
 		)`,
+		`CREATE TABLE IF NOT EXISTS product_spec_groups (
+			id TEXT PRIMARY KEY,
+			tenant_uuid TEXT NOT NULL,
+			spu_id TEXT NOT NULL,
+			code TEXT NOT NULL,
+			name TEXT,
+			status TEXT,
+			required BOOLEAN,
+			sort_order INTEGER,
+			created_at TIMESTAMP,
+			updated_at TIMESTAMP,
+			deleted_at TIMESTAMP
+		)`,
+		`CREATE TABLE IF NOT EXISTS product_spec_options (
+			id TEXT PRIMARY KEY,
+			tenant_uuid TEXT NOT NULL,
+			spu_id TEXT NOT NULL,
+			group_id TEXT NOT NULL,
+			code TEXT NOT NULL,
+			name TEXT,
+			status TEXT,
+			sort_order INTEGER,
+			meta ` + jsonType + `,
+			created_at TIMESTAMP,
+			updated_at TIMESTAMP,
+			deleted_at TIMESTAMP
+		)`,
 		`CREATE TABLE IF NOT EXISTS product_skus (
 			id TEXT PRIMARY KEY,
 			tenant_uuid TEXT NOT NULL,
@@ -115,10 +146,11 @@ func EnsureProductTables(t *testing.T, db *gorm.DB, isPostgres bool) {
 			lifecycle_phase TEXT,
 			min_order_qty INTEGER,
 			spec_values ` + jsonType + `,
+			spec_signature TEXT,
 			default_values ` + jsonType + `,
 			logistics ` + jsonType + `,
 			price_refs ` + jsonType + `,
-			tags TEXT,
+			tags ` + tagsType + `,
 			created_at TIMESTAMP,
 			updated_at TIMESTAMP,
 			deleted_at TIMESTAMP

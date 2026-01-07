@@ -27,11 +27,13 @@ func (h *Handler) List(c *gin.Context) {
 		return
 	}
 	filters := spuservice.ListFilters{
-		Keyword:  c.Query("keyword"),
-		Status:   c.Query("status"),
-		Type:     c.Query("type"),
-		Page:     toInt(c.Query("page"), 1),
-		PageSize: toInt(c.Query("pageSize"), 20),
+		Keyword:            c.Query("keyword"),
+		Status:             c.Query("status"),
+		Type:               c.Query("type"),
+		CategoryID:         c.Query("categoryId"),
+		CategoryPathPrefix: c.Query("categoryPathPrefix"),
+		Page:               toInt(c.Query("page"), 1),
+		PageSize:           toInt(c.Query("pageSize"), 20),
 	}
 	result, err := h.service.List(c.Request.Context(), filters)
 	if err != nil {
@@ -216,6 +218,35 @@ func (h *Handler) Get(c *gin.Context) {
 		return
 	}
 	contracts.ResponseSuccess(c, detail)
+}
+
+// Revise creates a new draft version from current published SPU (Plan A).
+func (h *Handler) Revise(c *gin.Context) {
+	if h.service == nil {
+		contracts.ResponseError(c, http.StatusServiceUnavailable, contracts.ErrCodeInternalError, "spu service unavailable")
+		return
+	}
+	req := spuservice.ReviseRequest{}
+	if c.Request.ContentLength > 0 {
+		if err := c.ShouldBindJSON(&req); err != nil {
+			contracts.ResponseError(c, http.StatusBadRequest, contracts.ErrCodeInvalidRequest, err.Error())
+			return
+		}
+	}
+	detail, err := h.service.Revise(c.Request.Context(), c.Param("id"), req)
+	if err != nil {
+		status := http.StatusBadRequest
+		if err == gorm.ErrRecordNotFound {
+			status = http.StatusNotFound
+		}
+		if vErrs, ok := err.(spuservice.ValidationErrors); ok {
+			contracts.ResponseErrorWithDetails(c, http.StatusUnprocessableEntity, contracts.ErrCodeValidationFailed, "参数校验失败", vErrs)
+			return
+		}
+		contracts.ResponseError(c, status, contracts.ErrCodeInvalidRequest, err.Error())
+		return
+	}
+	contracts.ResponseSuccessWithMessage(c, detail, "spu revised to draft")
 }
 
 func toInt(val string, fallback int) int {

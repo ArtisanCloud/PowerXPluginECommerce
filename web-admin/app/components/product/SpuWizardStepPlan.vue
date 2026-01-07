@@ -71,7 +71,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, watch } from 'vue'
+import { computed, reactive, ref, toRaw, watch } from 'vue'
 
 type Plan = {
 	planCode: string
@@ -111,6 +111,32 @@ const cancelPolicyOptions = [
 
 const localValue = reactive<{ plans: Plan[] }>({ plans: [] })
 const isSubscription = computed(() => props.spuType === 'subscription')
+const syncingFromProps = ref(false)
+const lastEmittedKey = ref('')
+
+const toPlainPlan = (input: Partial<Plan> | undefined | null): Plan => {
+	const raw = (input ? toRaw(input as any) : {}) as Partial<Plan>
+	return {
+		...createPlan(),
+		...raw,
+		planCode: String(raw.planCode ?? '').trim(),
+		name: String(raw.name ?? '').trim(),
+		billingCycle: String(raw.billingCycle ?? createPlan().billingCycle),
+		currency: String(raw.currency ?? createPlan().currency).toUpperCase(),
+		price: typeof raw.price === 'number' ? raw.price : Number(raw.price ?? 0),
+		trialDays: typeof raw.trialDays === 'number' ? raw.trialDays : Number(raw.trialDays ?? 0),
+		autoRenew: typeof raw.autoRenew === 'boolean' ? raw.autoRenew : createPlan().autoRenew,
+		effectScope: String(raw.effectScope ?? createPlan().effectScope),
+		cancelPolicy: String(raw.cancelPolicy ?? createPlan().cancelPolicy),
+	}
+}
+
+const clonePlans = (plans: Plan[] | undefined | null) => (plans ?? []).map((plan) => toPlainPlan(plan))
+
+const plansKey = (plans: Plan[] | undefined | null) => {
+	const items = (plans ?? []).map((plan) => toPlainPlan(plan))
+	return JSON.stringify(items)
+}
 
 const ensurePlans = () => {
 	if (!localValue.plans.length) {
@@ -119,21 +145,30 @@ const ensurePlans = () => {
 }
 
 watch(
-	() => props.modelValue,
-	(val) => {
-		localValue.plans = val?.plans?.length ? structuredClone(val.plans) : []
+	() => props.modelValue?.plans,
+	(plans) => {
+		const nextKey = plansKey(plans ?? [])
+		const currentKey = plansKey(localValue.plans)
+		if (nextKey === currentKey) return
+		syncingFromProps.value = true
+		localValue.plans = clonePlans(plans)
 		if (isSubscription.value) {
 			ensurePlans()
 		}
+		lastEmittedKey.value = plansKey(localValue.plans)
+		syncingFromProps.value = false
 	},
-	{ immediate: true, deep: true }
+	{ immediate: true }
 )
 
 watch(
 	() => isSubscription.value,
 	(active) => {
 		if (active) {
+			syncingFromProps.value = true
 			ensurePlans()
+			lastEmittedKey.value = plansKey(localValue.plans)
+			syncingFromProps.value = false
 		}
 	}
 )
@@ -141,8 +176,11 @@ watch(
 watch(
 	localValue,
 	() => {
-		const payload = structuredClone(localValue)
-		emit('update:modelValue', payload)
+		if (syncingFromProps.value) return
+		const key = plansKey(localValue.plans)
+		if (key === lastEmittedKey.value) return
+		lastEmittedKey.value = key
+		emit('update:modelValue', { plans: localValue.plans.map((plan) => toPlainPlan(plan)) })
 	},
 	{ deep: true }
 )

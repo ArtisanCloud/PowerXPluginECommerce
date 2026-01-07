@@ -13,6 +13,7 @@ import (
 	channelproductjobs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/jobs/channel/product"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	productmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/product"
+	product_category "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/product_category"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"github.com/lib/pq"
@@ -25,6 +26,13 @@ var ErrMissingTenant = errors.New("tenant context missing")
 
 // ErrInvalidStatus indicates an unsupported state transition.
 var ErrInvalidStatus = errors.New("invalid status transition")
+
+var (
+	ErrInvalidSPUListSort      = errors.New("invalid spu list sort")
+	ErrInvalidSPUListOrder     = errors.New("invalid spu list order")
+	ErrUnsupportedSPUListSort  = errors.New("unsupported spu list sort")
+	ErrSPUListRequiresPostgres = errors.New("spu list sort/filter requires postgres")
+)
 
 // Service orchestrates tenant-scoped SPU lifecycle operations.
 type Service struct {
@@ -70,6 +78,7 @@ type UpsertSPURequest struct {
 	Tags            []string        `json:"tags"`
 	ResponsibleUser string          `json:"responsibleUser"`
 	Locales         []LocaleContent `json:"locales"`
+	Attributes      map[string]any  `json:"attributes,omitempty"`
 }
 
 // Normalize trims whitespace and deduplicates tags for consistent processing.
@@ -82,6 +91,9 @@ func (r *UpsertSPURequest) Normalize() {
 	r.BrandID = strings.TrimSpace(r.BrandID)
 	r.DefaultLocale = strings.TrimSpace(r.DefaultLocale)
 	r.ResponsibleUser = strings.TrimSpace(r.ResponsibleUser)
+	if r.Attributes == nil {
+		r.Attributes = map[string]any{}
+	}
 	tagSet := map[string]struct{}{}
 	for _, tag := range r.Tags {
 		if trimmed := strings.TrimSpace(tag); trimmed != "" {
@@ -133,6 +145,17 @@ func (s *Service) ValidateUpsertRequest(ctx context.Context, req UpsertSPUReques
 		if _, err := s.tenantFromContext(ctx); err != nil {
 			return err
 		}
+		// US2：按类目取生效模板并校验 attributes（仅新建/编辑校验）
+		templateSvc := product_category.NewService(s.deps)
+		if templateSvc != nil && templateSvc.Ready() {
+			tErrs, err := templateSvc.ValidateAttributesForCategory(ctx, req.CategoryID, req.Attributes)
+			if err != nil {
+				return err
+			}
+			for _, e := range tErrs {
+				errs = errs.add(e.Field, e.Message)
+			}
+		}
 		return nil
 	}
 	return errs
@@ -150,11 +173,20 @@ func (s *Service) tenantFromContext(ctx context.Context) (string, error) {
 
 // ListFilters describes query params for listing SPUs.
 type ListFilters struct {
-	Keyword  string
-	Status   string
-	Type     string
-	Page     int
-	PageSize int
+	Keyword            string
+	Status             string
+	Type               string
+	CategoryID         string
+	CategoryPathPrefix string
+	Tags               []string
+	Sort               string
+	Order              string
+	MinPrice           *float64
+	MaxPrice           *float64
+	InStock            *bool
+	HasPlans           *bool
+	Page               int
+	PageSize           int
 }
 
 // ListResult wraps paginated SPU summaries.
@@ -200,6 +232,25 @@ func (s *Service) List(ctx context.Context, filters ListFilters) (*ListResult, e
 	if err != nil {
 		return nil, err
 	}
+	sortKey, err := normalizeSPUListSort(filters.Sort)
+	if err != nil {
+		return nil, err
+	}
+	orderDir, err := normalizeSPUListOrder(filters.Order)
+	if err != nil {
+		return nil, err
+	}
+	if sortKey == "sales" {
+		return nil, fmt.Errorf("%w: sales sort requires a sales data source", ErrUnsupportedSPUListSort)
+	}
+	dialect := strings.ToLower(strings.TrimSpace(s.deps.DB.Dialector.Name()))
+	needsPrice := sortKey == "price" || filters.MinPrice != nil || filters.MaxPrice != nil
+	needsPlans := needsPrice || filters.HasPlans != nil || filters.InStock != nil
+	needsInventory := filters.InStock != nil
+	if (needsPrice || needsPlans || needsInventory) && dialect != "postgres" {
+		return nil, fmt.Errorf("%w: dialect=%s", ErrSPUListRequiresPostgres, dialect)
+	}
+
 	page := filters.Page
 	if page < 1 {
 		page = 1
@@ -216,16 +267,118 @@ func (s *Service) List(ctx context.Context, filters ListFilters) (*ListResult, e
 	if filters.Type != "" {
 		query = query.Where("type = ?", filters.Type)
 	}
+	if strings.TrimSpace(filters.CategoryID) != "" {
+		query = query.Where("category_id = ?", strings.TrimSpace(filters.CategoryID))
+	} else if strings.TrimSpace(filters.CategoryPathPrefix) != "" {
+		query = query.Where("category_path LIKE ?", strings.TrimSpace(filters.CategoryPathPrefix)+"%")
+	}
 	if filters.Keyword != "" {
 		like := "%" + strings.TrimSpace(filters.Keyword) + "%"
 		query = query.Where("code ILIKE ? OR name ILIKE ?", like, like)
 	}
+	if len(filters.Tags) > 0 {
+		tagSet := map[string]struct{}{}
+		tags := make([]string, 0, len(filters.Tags))
+		for _, tag := range filters.Tags {
+			normalized := strings.ToLower(strings.TrimSpace(tag))
+			if normalized == "" {
+				continue
+			}
+			if _, exists := tagSet[normalized]; exists {
+				continue
+			}
+			tagSet[normalized] = struct{}{}
+			tags = append(tags, normalized)
+		}
+		if len(tags) > 0 {
+			if dialect == "postgres" {
+				query = query.Where("tags && ?", pq.Array(tags))
+			} else {
+				conditions := make([]string, 0, len(tags))
+				args := make([]any, 0, len(tags))
+				for _, tag := range tags {
+					conditions = append(conditions, "LOWER(tags) LIKE ?")
+					args = append(args, "%"+tag+"%")
+				}
+				query = query.Where("("+strings.Join(conditions, " OR ")+")", args...)
+			}
+		}
+	}
+
+	if dialect == "postgres" {
+		if needsPrice {
+			skuAgg := s.deps.DB.WithContext(ctx).
+				Table("product_skus").
+				Select("spu_id, MIN("+postgresSKUPriceExpr()+") AS min_price, MAX("+postgresSKUPriceExpr()+") AS max_price").
+				Where("tenant_uuid = ? AND deleted_at IS NULL AND status = ?", tenantID, "published").
+				Group("spu_id")
+			query = query.Joins("LEFT JOIN (?) AS sku_agg ON sku_agg.spu_id = product_spus.id", skuAgg)
+		}
+		if needsPlans {
+			planAgg := s.deps.DB.WithContext(ctx).
+				Table("product_spu_subscription_plans").
+				Select("spu_id, MIN(price) AS min_price, MAX(price) AS max_price, COUNT(*) AS plan_count").
+				Where("tenant_uuid = ? AND status = ?", tenantID, "active").
+				Group("spu_id")
+			query = query.Joins("LEFT JOIN (?) AS plan_agg ON plan_agg.spu_id = product_spus.id", planAgg)
+		}
+		if needsInventory {
+			invAgg := s.deps.DB.WithContext(ctx).
+				Table("product_skus AS s").
+				Select("s.spu_id, SUM(GREATEST(i.available_qty - i.locked_qty, 0)) AS available_qty").
+				Joins("JOIN product_sku_inventories AS i ON i.sku_id = s.id").
+				Where("s.tenant_uuid = ? AND s.deleted_at IS NULL AND s.status = ? AND i.tenant_uuid = ? AND i.deleted_at IS NULL",
+					tenantID, "published", tenantID).
+				Group("s.spu_id")
+			query = query.Joins("LEFT JOIN (?) AS inv_agg ON inv_agg.spu_id = product_spus.id", invAgg)
+		}
+
+		if filters.HasPlans != nil {
+			if *filters.HasPlans {
+				query = query.Where("product_spus.type = ? AND plan_agg.plan_count IS NOT NULL AND plan_agg.plan_count > 0", "subscription")
+			} else {
+				query = query.Where("product_spus.type <> ? OR plan_agg.plan_count IS NULL OR plan_agg.plan_count = 0", "subscription")
+			}
+		}
+		if filters.InStock != nil {
+			if *filters.InStock {
+				query = query.Where(`(
+product_spus.type = 'subscription' AND plan_agg.plan_count IS NOT NULL AND plan_agg.plan_count > 0
+) OR (
+product_spus.type <> 'subscription' AND COALESCE(inv_agg.available_qty, 0) > 0
+)`)
+			} else {
+				query = query.Where(`(
+product_spus.type = 'subscription' AND (plan_agg.plan_count IS NULL OR plan_agg.plan_count = 0)
+) OR (
+product_spus.type <> 'subscription' AND COALESCE(inv_agg.available_qty, 0) <= 0
+)`)
+			}
+		}
+		if filters.MinPrice != nil {
+			query = query.Where(postgresSPUEffectiveMinPriceExpr()+" >= ?", *filters.MinPrice)
+		}
+		if filters.MaxPrice != nil {
+			query = query.Where(postgresSPUEffectiveMinPriceExpr()+" <= ?", *filters.MaxPrice)
+		}
+	}
+
+	countQuery := query.Session(&gorm.Session{})
 	var total int64
-	if err := query.Count(&total).Error; err != nil {
+	if err := countQuery.Count(&total).Error; err != nil {
 		return nil, err
 	}
+
+	listQuery := query.Session(&gorm.Session{}).Select("product_spus.*")
+	switch sortKey {
+	case "price":
+		listQuery = listQuery.Order(postgresSPUEffectiveMinPriceExpr() + " " + orderDir + " NULLS LAST").Order("updated_at DESC")
+	default:
+		listQuery = listQuery.Order("updated_at " + orderDir)
+	}
+
 	var records []productmodel.SPU
-	if err := query.Order("updated_at DESC").
+	if err := listQuery.
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
 		Find(&records).Error; err != nil {
@@ -243,6 +396,52 @@ func (s *Service) List(ctx context.Context, filters ListFilters) (*ListResult, e
 		})
 	}
 	return &ListResult{Items: items, Total: total, Page: page, PageSize: pageSize}, nil
+}
+
+func normalizeSPUListSort(raw string) (string, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" || strings.EqualFold(raw, "comprehensive") {
+		return "updated_at", nil
+	}
+	switch strings.ToLower(raw) {
+	case "updatedat", "updated_at":
+		return "updated_at", nil
+	case "price":
+		return "price", nil
+	case "sales":
+		return "sales", nil
+	default:
+		return "", fmt.Errorf("%w: %s", ErrInvalidSPUListSort, raw)
+	}
+}
+
+func normalizeSPUListOrder(raw string) (string, error) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "DESC", nil
+	}
+	switch strings.ToLower(raw) {
+	case "asc":
+		return "ASC", nil
+	case "desc":
+		return "DESC", nil
+	default:
+		return "", fmt.Errorf("%w: %s", ErrInvalidSPUListOrder, raw)
+	}
+}
+
+func postgresSKUPriceExpr() string {
+	return `COALESCE(
+NULLIF(default_values->>'sale_price','')::numeric,
+NULLIF(default_values->>'salePrice','')::numeric,
+NULLIF(default_values->>'price','')::numeric,
+NULLIF(default_values->>'list_price','')::numeric,
+NULLIF(default_values->>'listPrice','')::numeric
+)`
+}
+
+func postgresSPUEffectiveMinPriceExpr() string {
+	return `CASE WHEN product_spus.type = 'subscription' THEN plan_agg.min_price ELSE sku_agg.min_price END`
 }
 
 // CreateDraft persists a new SPU draft and associated version snapshot.
@@ -421,9 +620,98 @@ type WithdrawRequest struct {
 	Reason     string   `json:"reason"`
 }
 
+// ReviseRequest captures audit info when creating a new draft revision.
+type ReviseRequest struct {
+	Reason string `json:"reason"`
+}
+
 // DeleteRequest captures audit info when removing an SPU.
 type DeleteRequest struct {
 	Reason string `json:"reason"`
+}
+
+// Revise creates a new draft version from a published SPU and moves it back to draft state.
+// 说明：当前实现采用“单状态”模型 —— 一旦创建草稿，SPU 状态会从 published 切回 draft，但已发布版本仍保留在版本历史中。
+func (s *Service) Revise(ctx context.Context, id string, req ReviseRequest) (*SPUDetail, error) {
+	if s == nil {
+		return nil, errors.New("spu service not initialized")
+	}
+	tenantID, err := s.tenantFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	req.Reason = strings.TrimSpace(req.Reason)
+	if req.Reason == "" {
+		var vErrs ValidationErrors
+		vErrs = vErrs.add("reason", "reason is required")
+		return nil, vErrs
+	}
+	operator := actorFromContext(ctx)
+	var detail *SPUDetail
+	err = s.spuRepo.WithTenantTx(ctx, tenantID, func(tx *gorm.DB) error {
+		var spu productmodel.SPU
+		if err := tx.Where("tenant_uuid = ? AND id = ?", tenantID, id).First(&spu).Error; err != nil {
+			return err
+		}
+		if strings.ToLower(spu.Status) != "published" {
+			return fmt.Errorf("spu status %s cannot revise", spu.Status)
+		}
+		sourceVersionID := derefString(spu.CurrentVersionID)
+		if strings.TrimSpace(sourceVersionID) == "" {
+			return errors.New("missing published version")
+		}
+		var sourceVersion productmodel.SPUVersion
+		if err := tx.Where("tenant_uuid = ? AND id = ? AND spu_id = ?", tenantID, sourceVersionID, spu.ID).First(&sourceVersion).Error; err != nil {
+			return err
+		}
+
+		var nextVersionNumber int
+		if err := tx.Model(&productmodel.SPUVersion{}).
+			Where("tenant_uuid = ? AND spu_id = ?", tenantID, spu.ID).
+			Select("COALESCE(MAX(version_number), 0)").
+			Scan(&nextVersionNumber).Error; err != nil {
+			return err
+		}
+		nextVersionNumber += 1
+
+		payload := decodeVersionPayload(sourceVersion.Payload)
+		payload["version"] = "draft"
+		payload["revisionSourceVersionId"] = sourceVersionID
+		payload["revisionReason"] = req.Reason
+		if operator != "" && operator != "system" {
+			payload["revisionBy"] = operator
+		}
+		body, _ := json.Marshal(payload)
+
+		now := time.Now().UTC()
+		version := &productmodel.SPUVersion{
+			ID:            utils.NewUUID(),
+			TenantUUID:    tenantID,
+			SPUID:         spu.ID,
+			VersionNumber: nextVersionNumber,
+			Status:        "draft",
+			Payload:       datatypes.JSON(body),
+		}
+		if err := tx.Create(version).Error; err != nil {
+			return err
+		}
+		if err := tx.Model(&spu).Updates(map[string]any{
+			"status":             "draft",
+			"current_version_id": version.ID,
+			"updated_at":         now,
+		}).Error; err != nil {
+			return err
+		}
+		spu.Status = "draft"
+		spu.UpdatedAt = now
+		spu.CurrentVersionID = &version.ID
+		detail = convertToDetail(&spu, nil, version.ID)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return detail, nil
 }
 
 // Submit transitions a draft SPU into reviewing state.

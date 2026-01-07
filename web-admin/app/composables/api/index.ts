@@ -2,6 +2,9 @@
 
 export * from "./useTemplate";
 export * from "./useStream";
+export * from "./useCategory";
+export * from "./useCategoryTemplate";
+export * from "./useCategoryMapping";
 export {
   useApiClient,
   apiGet,

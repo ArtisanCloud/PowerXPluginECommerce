@@ -82,6 +82,7 @@ var businessTables = func() []interface{} {
 	tables := append([]interface{}{}, corePluginTables...)
 	tables = append(tables, migrations.CustomerOpsCustomerTables...)
 	tables = append(tables, migrations.ProductSPUTables...)
+	tables = append(tables, migrations.ProductCategoryTables...)
 	tables = append(tables, migrations.ChannelMasterTables...)
 	tables = append(tables, marketplaceTables...)
 	tables = append(tables, runtimeOpsTables...)

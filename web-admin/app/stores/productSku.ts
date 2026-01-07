@@ -51,6 +51,21 @@ const defaultConfig = () => {
 
 const ACTIVE_BULK_STATUSES: SkuBulkTaskStatus[] = ['pending', 'approved', 'running']
 
+const normalizeListParams = (params?: SkuListParams): SkuListParams => {
+	const safe = params ?? {}
+	const normalized: SkuListParams = {
+		page: typeof safe.page === 'number' && safe.page > 0 ? safe.page : 1,
+		pageSize: typeof safe.pageSize === 'number' && safe.pageSize > 0 ? safe.pageSize : 20,
+	}
+	const spuId = String(safe.spuId ?? '').trim()
+	if (spuId) normalized.spuId = spuId
+	const status = String(safe.status ?? '').trim()
+	if (status) normalized.status = status
+	const channel = String(safe.channel ?? '').trim()
+	if (channel) normalized.channel = channel
+	return normalized
+}
+
 export const useProductSkuStore = defineStore('product-sku', {
 	state: (): ProductSkuState => ({
 		items: [],

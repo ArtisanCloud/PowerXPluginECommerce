@@ -15,12 +15,16 @@ func TestRegisterRoutesAddsMiniAppEndpoints(t *testing.T) {
 
 	var (
 		foundProducts bool
+		foundTags     bool
 		foundSkus     bool
 		foundAuth     bool
 	)
 	for _, route := range engine.Routes() {
 		if route.Method == "GET" && route.Path == "/api/v1/mini-app/products" {
 			foundProducts = true
+		}
+		if route.Method == "GET" && route.Path == "/api/v1/mini-app/products/tags" {
+			foundTags = true
 		}
 		if route.Method == "GET" && route.Path == "/api/v1/mini-app/products/:id/skus" {
 			foundSkus = true
@@ -29,7 +33,7 @@ func TestRegisterRoutesAddsMiniAppEndpoints(t *testing.T) {
 			foundAuth = true
 		}
 	}
-	if !foundProducts || !foundSkus || !foundAuth {
+	if !foundProducts || !foundTags || !foundSkus || !foundAuth {
 		t.Fatalf("expected mini-app product routes registered, got %+v", engine.Routes())
 	}
 }

@@ -19,6 +19,18 @@
 				</UButton>
 				<UButton variant="soft" color="primary" @click="openVersionModal">版本时间线</UButton>
 				<UButton variant="soft" color="secondary" @click="openApprovalModal">审批记录</UButton>
+				<UButton v-if="spu?.status === 'draft'" variant="soft" color="primary" @click="openEditModal">
+					编辑基础信息
+				</UButton>
+				<UButton
+					v-if="spu && spu.status !== 'draft'"
+					variant="soft"
+					color="primary"
+					:loading="reviseLoading"
+					@click="openReviseModal"
+				>
+					创建草稿版本
+				</UButton>
 				<UButton v-if="spu?.status === 'draft'" color="primary" :loading="submitLoading" @click="submitDraft">
 					提交审核
 				</UButton>
@@ -56,7 +68,15 @@
 					</div>
 					<div>
 						<dt class="text-sm text-gray-500 dark:text-gray-400">类目</dt>
-						<dd class="text-base font-medium text-gray-900 dark:text-white">{{ spu.categoryPath }}</dd>
+						<dd class="text-base font-medium text-gray-900 dark:text-white">
+							<NuxtLink to="/product/categories" class="text-primary hover:underline">
+								{{ categoryPathDisplay || spu.categoryPath || '—' }}
+							</NuxtLink>
+						</dd>
+					</div>
+					<div>
+						<dt class="text-sm text-gray-500 dark:text-gray-400">类型</dt>
+						<dd class="text-base font-medium text-gray-900 dark:text-white">{{ typeLabel(spu.type) }}</dd>
 					</div>
 					<div>
 						<dt class="text-sm text-gray-500 dark:text-gray-400">负责人</dt>
@@ -65,6 +85,13 @@
 					<div>
 						<dt class="text-sm text-gray-500 dark:text-gray-400">默认语言</dt>
 						<dd class="text-base font-medium text-gray-900 dark:text-white">{{ spu.defaultLocale }}</dd>
+					</div>
+					<div class="md:col-span-2">
+						<dt class="text-sm text-gray-500 dark:text-gray-400">标签</dt>
+						<dd class="mt-1 flex flex-wrap gap-2">
+							<UBadge v-for="tag in (spu.tags || [])" :key="tag" variant="soft" color="neutral">{{ tag }}</UBadge>
+							<span v-if="!(spu.tags || []).length" class="text-base font-medium text-gray-900 dark:text-white">—</span>
+						</dd>
 					</div>
 				</dl>
 			</UCard>
@@ -99,7 +126,14 @@
 							<tbody class="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900/30">
 								<tr v-for="sku in skuSummaryPreview" :key="sku.id || sku.code">
 									<td class="px-3 py-2 font-medium text-gray-900 dark:text-white">
-										{{ sku.code || '—' }}
+										<NuxtLink
+											v-if="sku.id"
+											:to="`/product/skus/${sku.id}`"
+											class="text-primary hover:underline"
+										>
+											{{ sku.code || sku.id }}
+										</NuxtLink>
+										<span v-else>{{ sku.code || '—' }}</span>
 									</td>
 									<td class="px-3 py-2 text-gray-600 dark:text-gray-300">
 										<div class="line-clamp-2">
@@ -220,6 +254,46 @@
 		</template>
 	</UModal>
 	<UModal
+		v-model:open="editModalOpen"
+		title="编辑 SPU（草稿）"
+		description="仅草稿可编辑，保存后会更新当前草稿版本。"
+		:close="{ onClick: closeEditModal }"
+		:prevent-close="editSaving"
+		:ui="panelModalUi"
+	>
+		<template #body>
+			<UTabs v-model="editActiveTab" :items="editTabs" class="w-full" />
+			<div v-if="editActiveTab === 'basic'" class="mt-4">
+				<SpuWizardStepBasic v-model="editBasicModel" />
+			</div>
+			<div v-else class="mt-4">
+				<SpuWizardStepLocale v-model="editLocaleModel" />
+			</div>
+		</template>
+		<template #footer>
+			<UButton color="neutral" variant="subtle" :disabled="editSaving" @click="closeEditModal">取消</UButton>
+			<UButton color="primary" :loading="editSaving" @click="saveEditModal">保存</UButton>
+		</template>
+	</UModal>
+	<UModal
+		v-model:open="reviseModalOpen"
+		title="创建草稿版本"
+		description="将已发布 SPU 切换为草稿以便编辑（已发布版本仍保留在版本历史中）。"
+		:close="{ onClick: closeReviseModal }"
+		:prevent-close="reviseLoading"
+		:ui="modalUi"
+	>
+		<template #body>
+			<UFormField label="原因" help="必填，用于审计记录">
+				<UTextarea v-model="reviseReason" :rows="3" placeholder="例如：更新类目与模板字段" />
+			</UFormField>
+		</template>
+		<template #footer>
+			<UButton color="neutral" variant="subtle" :disabled="reviseLoading" @click="closeReviseModal">取消</UButton>
+			<UButton color="primary" :loading="reviseLoading" @click="confirmRevise">确认创建</UButton>
+		</template>
+	</UModal>
+	<UModal
 		v-model:open="channelModalOpen"
 		title="渠道可见性配置"
 		description="配置各渠道上架计划与展示内容"
@@ -307,6 +381,9 @@ import { useRoute, useRouter } from 'vue-router'
 import type { SpuDetail, SpuSkuLink } from '~/composables/api/useSpu'
 import { useSpuApi } from '~/composables/api/useSpu'
 import { useSkuApi } from '~/composables/api/useSku'
+import { useCategoryApi, type CategoryNode } from '~/composables/api/useCategory'
+import SpuWizardStepBasic from '~/components/product/SpuWizardStepBasic.vue'
+import SpuWizardStepLocale from '~/components/product/SpuWizardStepLocale.vue'
 import SpuSkuLinker from '~/pages/product/spus/components/SpuSkuLinker.vue'
 import VersionDiff from '~/pages/product/spus/components/VersionDiff.vue'
 import SpuAuditTimeline from '~/components/product/SpuAuditTimeline.vue'
@@ -329,8 +406,11 @@ const router = useRouter()
 const toast = useToast()
 const api = useSpuApi()
 const skuApi = useSkuApi()
+const categoryApi = useCategoryApi()
 const store = useSpuStore()
 const spu = ref<SpuDetail | null>(null)
+const categoryTreeLoaded = ref(false)
+const categoryMap = ref<Record<string, CategoryNode>>({})
 const loading = computed(() => store.detailLoading)
 const skuSummaryLimit = 5
 const skuSummaryItems = ref<SkuSummaryRow[]>([])
@@ -348,6 +428,21 @@ const versionDetailLoading = computed(() => store.versionLoading)
 const selectedVersionId = ref<string | null>(null)
 const approvalComment = ref('')
 const approvalSubmitting = ref(false)
+const reviseModalOpen = ref(false)
+const reviseLoading = ref(false)
+const reviseReason = ref('')
+const editModalOpen = ref(false)
+const editSaving = ref(false)
+const editActiveTab = ref<'basic' | 'locale'>('basic')
+const editTabs = [
+	{ label: '基础信息', value: 'basic' },
+	{ label: '多语言内容', value: 'locale' },
+]
+const editBasicModel = ref<Record<string, any>>({})
+const editLocaleModel = ref<{ defaultLocale: string; locales: Array<Record<string, any>> }>({
+	defaultLocale: 'zh-CN',
+	locales: [{ locale: 'zh-CN', title: '', description: '' }],
+})
 const modalUi = {
 	content: 'max-w-lg w-full',
 	body: 'space-y-4 p-4 sm:p-5',
@@ -424,6 +519,31 @@ const spuSpecs = computed(() => {
 		.filter((spec: any) => spec.values.length)
 })
 
+const parseCategoryPathIDs = (path?: string) =>
+	String(path || '')
+		.split('/')
+		.map((p) => p.trim())
+		.filter(Boolean)
+
+const categoryPathDisplay = computed(() => {
+	const current = spu.value
+	if (!current?.categoryPath) return ''
+	const ids = parseCategoryPathIDs(current.categoryPath)
+	if (!ids.length || !Object.keys(categoryMap.value).length) return ''
+	const parts = ids
+		.map((id) => categoryMap.value[id])
+		.filter(Boolean)
+		.map((node) => (node.aliasSlug || node.code || node.displayName || node.id).trim())
+		.filter(Boolean)
+	return parts.length ? parts.join(' / ') : ''
+})
+
+const typeLabel = (value?: string) => {
+	const key = String(value || '').toLowerCase()
+	const map: Record<string, string> = { one_time: '一次性', subscription: '订阅', bundle: '组合' }
+	return map[key] || value || '—'
+}
+
 type BadgeColor = 'primary' | 'secondary' | 'success' | 'info' | 'warning' | 'error' | 'neutral'
 
 const approvalStatusColor = (status?: string): BadgeColor => {
@@ -458,6 +578,9 @@ const load = async () => {
 	const currentId = route.params.id as string
 	const detail = await store.fetchDetail(currentId)
 	spu.value = detail ?? null
+	if (detail?.categoryId) {
+		await ensureCategoryMapLoaded()
+	}
 	selectedVersionId.value = null
 	await store.fetchVersions(currentId)
 	if (!selectedVersionId.value && versions.value.length) {
@@ -469,11 +592,34 @@ const load = async () => {
 	}
 }
 
+const ensureCategoryMapLoaded = async () => {
+	if (categoryTreeLoaded.value) return
+	try {
+		const resp = await categoryApi.tree()
+		const items = resp.items ?? []
+		const out: Record<string, CategoryNode> = {}
+		const walk = (nodes: CategoryNode[]) => {
+			for (const node of nodes) {
+				out[node.id] = node
+				if (node.children?.length) walk(node.children)
+			}
+		}
+		walk(items)
+		categoryMap.value = out
+		categoryTreeLoaded.value = true
+	} catch (error) {
+		console.warn('加载类目树失败', error)
+	}
+}
+
 const refreshSpuDetail = async () => {
 	if (!spu.value) return
 	const detail = await store.fetchDetail(spu.value.id)
 	if (detail) {
 		spu.value = detail
+		if (detail.categoryId) {
+			await ensureCategoryMapLoaded()
+		}
 	}
 }
 
@@ -542,6 +688,90 @@ const openSubscriptionModal = () => {
 const openSkuModal = () => {
 	if (!spu.value) return
 	skuModalOpen.value = true
+}
+
+const openEditModal = () => {
+	const current = spu.value
+	if (!current) return
+	if ((current.status || '').toLowerCase() !== 'draft') {
+		toast.add({ title: '仅草稿可编辑', color: 'warning' })
+		return
+	}
+	const payloadInput = (versionDetail.value as any)?.payload?.input ?? {}
+	editBasicModel.value = {
+		code: payloadInput.code ?? current.code,
+		name: payloadInput.name ?? current.name,
+		type: payloadInput.type ?? current.type,
+		categoryId: payloadInput.categoryId ?? current.categoryId,
+		categoryPath: payloadInput.categoryPath ?? current.categoryPath,
+		brandId: payloadInput.brandId ?? current.brandId,
+		responsibleUser: payloadInput.responsibleUser ?? current.responsibleUser,
+		tags: payloadInput.tags ?? current.tags ?? [],
+		attributes: payloadInput.attributes ?? {},
+	}
+	editLocaleModel.value = {
+		defaultLocale: payloadInput.defaultLocale ?? current.defaultLocale ?? 'zh-CN',
+		locales: payloadInput.locales ?? current.locales ?? [{ locale: 'zh-CN', title: current.name, description: '' }],
+	}
+	editActiveTab.value = 'basic'
+	editModalOpen.value = true
+}
+
+const closeEditModal = () => {
+	blurActiveElement()
+	editModalOpen.value = false
+}
+
+const saveEditModal = async () => {
+	if (!spu.value) return
+	try {
+		editSaving.value = true
+		const payload = {
+			...editBasicModel.value,
+			...editLocaleModel.value,
+			tags: Array.isArray((editBasicModel.value as any).tags) ? (editBasicModel.value as any).tags : [],
+		}
+		await store.update(spu.value.id, payload)
+		toast.add({ title: '已保存草稿', color: 'success' })
+		closeEditModal()
+		await load()
+	} catch (error) {
+		console.error(error)
+		toast.add({ title: '保存失败', color: 'error' })
+	} finally {
+		editSaving.value = false
+	}
+}
+
+const openReviseModal = () => {
+	reviseReason.value = ''
+	reviseModalOpen.value = true
+}
+
+const closeReviseModal = () => {
+	blurActiveElement()
+	reviseModalOpen.value = false
+}
+
+const confirmRevise = async () => {
+	if (!spu.value) return
+	if (!reviseReason.value.trim()) {
+		toast.add({ title: '请填写原因', color: 'warning' })
+		return
+	}
+	try {
+		reviseLoading.value = true
+		await store.revise(spu.value.id, { reason: reviseReason.value.trim() })
+		toast.add({ title: '已创建草稿版本', description: '现在可以编辑基础信息并重新提交审批', color: 'success' })
+		closeReviseModal()
+		await load()
+		openEditModal()
+	} catch (error) {
+		console.error(error)
+		toast.add({ title: '创建草稿失败', color: 'error' })
+	} finally {
+		reviseLoading.value = false
+	}
 }
 
 const closeWithdrawModal = () => {

@@ -6,11 +6,13 @@ import (
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 )
 
-// RBACEntries declares product SKU route permissions.
+// RBACEntries declares route-level RBAC mappings for product admin APIs (SKU/SPU/categories/templates).
 func RBACEntries(prefix string) map[string]authx.Permission {
 	base := strings.TrimRight(prefix, "/") + "/admin/product"
 	skuBase := base + "/skus"
 	spuBase := base + "/spus"
+	categoryBase := base + "/categories"
+	templateBase := base + "/category-templates"
 	resource := func(suffix string) string {
 		return "com.powerx.plugin.ecommerce:" + suffix
 	}
@@ -34,6 +36,31 @@ func RBACEntries(prefix string) map[string]authx.Permission {
 		"POST:" + skuBase + "/:id/serials":                 {Resource: resource("product.sku.serial"), Action: "manage"},
 		"POST:" + skuBase + "/:id/barcodes":                {Resource: resource("product.sku.barcode"), Action: "manage"},
 		"POST:" + spuBase + "/:id/skus/generate":           {Resource: resource("product.sku"), Action: "manage"},
+
+		// Category CRUD.
+		"GET:" + categoryBase:                   {Resource: resource("product.category"), Action: "read"},
+		"GET:" + categoryBase + "/tree":         {Resource: resource("product.category"), Action: "read"},
+		"POST:" + categoryBase:                  {Resource: resource("product.category"), Action: "manage"},
+		"PATCH:" + categoryBase + "/:id":        {Resource: resource("product.category"), Action: "manage"},
+		"DELETE:" + categoryBase + "/:id":       {Resource: resource("product.category"), Action: "manage"},
+		"POST:" + categoryBase + "/:id/move":    {Resource: resource("product.category"), Action: "manage"},
+		"PATCH:" + categoryBase + "/:id/status": {Resource: resource("product.category"), Action: "manage"},
+		"GET:" + categoryBase + "/:id/audit":    {Resource: resource("product.category"), Action: "read"},
+
+		// Category mappings.
+		"GET:" + categoryBase + "/:id/mappings":  {Resource: resource("product.category.mapping"), Action: "read"},
+		"POST:" + categoryBase + "/:id/mappings": {Resource: resource("product.category.mapping"), Action: "manage"},
+
+		// Import/export.
+		"POST:" + categoryBase + "/import": {Resource: resource("product.category.import"), Action: "manage"},
+		"POST:" + categoryBase + "/export": {Resource: resource("product.category.import"), Action: "read"},
+
+		// Category templates.
+		"GET:" + templateBase:                    {Resource: resource("product.category.template"), Action: "read"},
+		"POST:" + templateBase:                   {Resource: resource("product.category.template"), Action: "manage"},
+		"PATCH:" + templateBase + "/:id":         {Resource: resource("product.category.template"), Action: "manage"},
+		"POST:" + templateBase + "/:id/publish":  {Resource: resource("product.category.template"), Action: "manage"},
+		"POST:" + templateBase + "/:id/rollback": {Resource: resource("product.category.template"), Action: "manage"},
 	}
 	return entries
 }

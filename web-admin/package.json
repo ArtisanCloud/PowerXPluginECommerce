@@ -5,8 +5,9 @@
   "scripts": {
     "dev": "node ./node_modules/nuxi/bin/nuxi.mjs dev",
     "build": "node ./node_modules/nuxi/bin/nuxi.mjs build",
-    "lint": "node -e \"console.log('Lint checks pending configuration');\"",
+    "lint": "node -e \"console.log('Lint checks pending configuration');\" --",
     "test": "npm run test:unit && npm run test:e2e",
+    "test:ci": "npm run test:unit",
     "test:unit": "node ./node_modules/vitest/dist/cli.js run --dir tests/unit && node ./node_modules/vitest/dist/cli.js run --dir tests/component",
     "test:e2e": "playwright test tests/e2e/product-sku.spec.ts"
   },

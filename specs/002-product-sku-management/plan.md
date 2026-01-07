@@ -5,7 +5,7 @@
 
 ## Summary
 
-围绕 SKU 生成、批量调整与渠道映射建立统一的后台+前端交互：后端提供生成器、批量任务、审批流、渠道映射及库存同步 API，并保障多租户审计；前端 web-admin 在 SKU 列表、矩阵与详情中提供 SKU 生成器、批量操作、渠道配置、库存可视与条码管理体验，确保 50 个 SKU 10 分钟内配置完成、批量任务 ≥98% 成功且库存同步 ≤5 分钟。
+围绕 SKU 生成、批量调整与渠道映射建立统一的后台+前端交互：后端提供生成器、批量任务、审批流、渠道映射及库存同步 API，并保障多租户审计；同时补齐“规格维度/取值（SpecGroup/SpecOption）”一等数据与 `spec_signature` 唯一约束，并提供 mini-app 的 `GET /mini-app/products/{id}/detail` 聚合接口供前端做规格选择/禁用态与 SKU 匹配；前端 web-admin 在 SKU 列表、矩阵与详情中提供 SKU 生成器、批量操作、渠道配置、库存可视与条码管理体验，确保 50 个 SKU 10 分钟内配置完成、批量任务 ≥98% 成功且库存同步 ≤5 分钟。
 
 ## Technical Context
 
@@ -28,6 +28,8 @@
 5. **Minimal Footprint & Versioned Releases**：沿用现有 Go/Nuxt 栈，无新增语言，交付更新 `plugin.yaml` & 文档 —— *PASS*。  
 6. **Operational Constraints**：Postgres schema 统一 `powerx_plugin_base`，配置保存在 `backend/etc/`，前端满足 Nuxt UI 约束 —— *PASS*。  
 **Post-Design Re-check**：Phase 1 数据模型与合同维持相同分层，无新增风险 —— *PASS*。
+
+> 注：规格定义相关的新接口位于 `/v1/admin/product/spus/{id}/spec-groups`，mini-app 聚合接口位于 `/v1/mini-app/products/{id}/detail`；均已补齐合同与调用指南。
 
 ## Project Structure
 
