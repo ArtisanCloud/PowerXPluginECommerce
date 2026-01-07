@@ -163,7 +163,6 @@ func (s *Service) Replace(ctx context.Context, spuID string, req ReplaceRequest)
 	}
 	now := time.Now().UTC()
 
-	var returnValue []SpecGroupDTO
 	err = s.deps.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
 		existingGroups, err := s.GroupRepo.ListBySPU(ctx, tenantID, spuID)
 		if err != nil {
@@ -335,9 +334,5 @@ func (s *Service) Replace(ctx context.Context, spuID string, req ReplaceRequest)
 	if err != nil {
 		return nil, err
 	}
-	returnValue, err = s.List(ctx, spuID)
-	if err != nil {
-		return nil, err
-	}
-	return returnValue, nil
+	return s.List(ctx, spuID)
 }
