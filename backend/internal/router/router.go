@@ -12,6 +12,7 @@ import (
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http"
 	middleware2 "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/middleware"
 	miniappapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/miniapp"
+	pricingapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/pricing"
 	publicauth "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/public"
 
 	"github.com/gin-gonic/gin"
@@ -129,6 +130,13 @@ func (r *Router) setupRoutes() {
 	gApi.Use(middleware2.RBAC(rbacCfg, nil, nil))
 	apiRegistry.RegisterAPIRoutes(gApi)
 	r.injectRBACFromRegistry(rbacCfg, apiRegistry)
+
+	// Business API group: fixed /v1/** contract in proxy mode.
+	v1 := r.engine.Group("/v1")
+	v1.Use(middleware2.RequestTrace())
+	v1.Use(middleware2.JWTAuth(jwtCfg))
+	v1.Use(middleware2.RBAC(rbacCfg, nil, nil))
+	_ = pricingapi.RegisterRoutes(v1, r.deps)
 
 	// 如需调试：打印已注册路由
 	// apiRegistry.PrintRegisteredRoutes()

@@ -14,6 +14,7 @@ import (
 	adminintegration "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/integration"
 	adminmarketplace "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/marketplace"
 	adminoperations "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/operations"
+	adminpricing "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/pricing"
 	adminproduct "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/product"
 	adminruntime "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/runtime_ops"
 	adminsecurity "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/security"
@@ -22,6 +23,7 @@ import (
 	customerapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/customer"
 	integrationapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/integration"
 	jobapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/jobs"
+	pricingapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/pricing"
 	publicassets "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/public/assets"
 	publicmarketplace "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/public/marketplace"
 	tenantmarketplace "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/tenant/marketplace"
@@ -53,6 +55,7 @@ func (r *Registry) RegisterAPIRoutes(gApi *gin.RouterGroup) {
 	integrationapi.RegisterAPIRoutes(gApi, r.deps)
 	customerapi.RegisterRoutes(adminGroup, r.deps)
 	jobapi.RegisterRoutes(gApi, r.deps)
+	pricingapi.RegisterRoutes(gApi, r.deps)
 	r.RegisterMarketplaceRoutes(gApi)
 	if isDevEnvironment(r.deps) {
 		r.registerDevAssetsRoute()
@@ -66,6 +69,7 @@ func (r *Registry) RegisterAPIRoutes(gApi *gin.RouterGroup) {
 	r.mergeRBAC(adminmarketplace.RBACEntries(r.apiPrefix()))
 	r.mergeRBAC(adminproduct.RBACEntries(r.apiPrefix()))
 	r.mergeRBAC(adminchannels.RBACEntries(r.apiPrefix()))
+	r.mergeRBAC(adminpricing.RBACEntries(r.apiPrefix()))
 	r.mergeRBAC(integrationRBACEntries(r.apiPrefix()))
 	r.mergeRBAC(marketplacePublicRBACEntries(r.apiPrefix()))
 	r.mergeRBAC(customerapi.RBACEntries(r.apiPrefix()))

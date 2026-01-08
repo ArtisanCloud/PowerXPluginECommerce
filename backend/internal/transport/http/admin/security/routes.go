@@ -8,7 +8,7 @@ import (
 
 // RegisterRoutes wires the admin security namespace.
 func RegisterRoutes(rg *gin.RouterGroup, deps *app.Deps) {
-	if rg == nil || deps == nil {
+	if rg == nil || deps == nil || deps.Config == nil {
 		return
 	}
 	auditWriter := CreateAuditWriter(deps.Config)

@@ -82,8 +82,8 @@ const (
 	TableProductSpuExportTasks           = "product_spu_export_tasks"
 	TableProductSpuApprovals             = "product_spu_approvals"
 	TableProductSpuAuditLogs             = "product_spu_audit_logs"
-	TableProductSpecGroups              = "product_spec_groups"
-	TableProductSpecOptions             = "product_spec_options"
+	TableProductSpecGroups               = "product_spec_groups"
+	TableProductSpecOptions              = "product_spec_options"
 	TableProductSkus                     = "product_skus"
 	TableProductSkuAttributes            = "product_sku_attributes"
 	TableProductSkuChannels              = "product_sku_channels"
@@ -112,4 +112,11 @@ const (
 	TableIAMMemberRoles                  = "iam_member_roles"
 	TableIAMRolePermissions              = "iam_role_permissions"
 	TableIAMRefreshTokens                = "iam_refresh_tokens"
+
+	// Pricing (Pricebook)
+	TablePricebooks         = "pricebooks"
+	TablePricebookVersions  = "pricebook_versions"
+	TablePricebookScopes    = "pricebook_scopes"
+	TablePricebookItems     = "pricebook_items"
+	TablePricebookAuditLogs = "pricebook_audit_logs"
 )

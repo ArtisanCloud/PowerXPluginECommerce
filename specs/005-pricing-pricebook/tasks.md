@@ -24,32 +24,32 @@
 
 **⚠️ 说明**：本阶段完成前不要开始任何用户故事的业务功能实现。
 
-- [ ] T004 新增表名常量：在 `backend/internal/entity/models/model.go` 增加 `TablePricebooks`、`TablePricebookVersions`、`TablePricebookScopes`、`TablePricebookItems`、`TablePricebookAuditLogs`
-- [ ] T005 [P] 定义 GORM 模型：新增 `backend/internal/entity/models/pricing/pricebook.go`
-- [ ] T006 [P] 定义 GORM 模型：新增 `backend/internal/entity/models/pricing/pricebook_version.go`
-- [ ] T007 [P] 定义 GORM 模型：新增 `backend/internal/entity/models/pricing/pricebook_scope.go`
-- [ ] T008 [P] 定义 GORM 模型：新增 `backend/internal/entity/models/pricing/pricebook_item.go`
-- [ ] T009 [P] 定义 GORM 模型：新增 `backend/internal/entity/models/pricing/pricebook_audit_log.go`
-- [ ] T010 注册迁移表集合：新增 `backend/cmd/database/migrate/migrations/005_pricing_pricebook.go`（导出 `PricingPricebookTables`）
-- [ ] T011 将迁移纳入业务表清单：更新 `backend/cmd/database/migrate/migrate.go` 将 `migrations.PricingPricebookTables` 追加到 `businessTables`
-- [ ] T012 [P] 新增定价域 RLS 策略：新增 `backend/cmd/database/migrate/rls_pricing.go` 并实现 `ensurePricingRLSPolicies(ctx, db)`（覆盖 `pricebooks/pricebook_versions/pricebook_scopes/pricebook_items/pricebook_audit_logs`）
-- [ ] T013 在迁移流程中启用定价域 RLS：更新 `backend/cmd/database/migrate/migrate.go` 在 `MigratePluginModels` 流程末尾调用 `ensurePricingRLSPolicies(ctx, db)`
-- [ ] T014 [P] 定义 repository：新增 `backend/internal/entity/repository/pricing/pricebook_repository.go`（内嵌 `*repository.BaseRepository[T]` + `NewXXXRepository`）
-- [ ] T015 [P] 定义 repository：新增 `backend/internal/entity/repository/pricing/pricebook_version_repository.go`
-- [ ] T016 [P] 定义 repository：新增 `backend/internal/entity/repository/pricing/pricebook_scope_repository.go`
-- [ ] T017 [P] 定义 repository：新增 `backend/internal/entity/repository/pricing/pricebook_item_repository.go`
-- [ ] T018 [P] 定义 repository：新增 `backend/internal/entity/repository/pricing/pricebook_audit_log_repository.go`
-- [ ] T019 定义定价服务骨架：新增 `backend/internal/services/pricing/service.go`（注入 repos、tenantFromContext、HealthProbe/Ready 口径）
-- [ ] T020 [P] 定义 DTO（管理端）：新增 `backend/internal/transport/http/admin/pricing/dto.go`（Pricebook/Version/Item/Scope 请求响应结构）
-- [ ] T021 [P] 定义错误码与错误响应：新增 `backend/internal/transport/http/admin/pricing/errors.go`（与 OpenAPI `ErrorResponse` 对齐）
-- [ ] T022 定义 RBACEntries：新增 `backend/internal/transport/http/admin/pricing/rbac.go`（资源 `pricing:pricebook` + actions `read/manage/publish`）
-- [ ] T023 注册管理端路由：新增 `backend/internal/transport/http/admin/pricing/routes.go` 并更新 `backend/internal/transport/http/admin/routes.go` 挂载到 `/api/v1/admin/pricing`
-- [ ] T024 注册 RBAC 汇总：更新 `backend/internal/transport/http/registry.go` 合并 `adminpricing.RBACEntries(r.apiPrefix())`
-- [ ] T025 定义查价路由（可复用注册）：新增 `backend/internal/transport/http/pricing/routes.go`（对接任意 `*gin.RouterGroup`，并在组内注册 `/pricing/query`）
-- [ ] T026 在 Router 中挂载 `/v1` 业务组：更新 `backend/internal/router/router.go` 新增 `/v1` group，并使用与 `gApi` 一致的 `RequestTrace + JWTAuth + RBAC` 中间件链
-- [ ] T027 将查价主路径注册到 `/v1`：更新 `backend/internal/router/router.go` 在 `/v1` group 上调用 `pricing.RegisterRoutes(...)`（生成 `/v1/pricing/query`）
-- [ ] T028 将查价兼容别名注册到 `apiPrefix`：更新 `backend/internal/transport/http/registry.go` 在 `RegisterAPIRoutes(gApi)` 中调用 `pricing.RegisterRoutes(gApi, deps)`（生成 `/api/v1/pricing/query`）
-- [ ] T029 [P] 路由一致性冒烟：新增 `backend/internal/router/router_pricing_test.go` 验证 `/v1/pricing/query` 与 `/api/v1/pricing/query` 均存在且使用相同 handler
+- [x] T004 新增表名常量：在 `backend/internal/entity/models/model.go` 增加 `TablePricebooks`、`TablePricebookVersions`、`TablePricebookScopes`、`TablePricebookItems`、`TablePricebookAuditLogs`
+- [x] T005 [P] 定义 GORM 模型：新增 `backend/internal/entity/models/pricing/pricebook.go`
+- [x] T006 [P] 定义 GORM 模型：新增 `backend/internal/entity/models/pricing/pricebook_version.go`
+- [x] T007 [P] 定义 GORM 模型：新增 `backend/internal/entity/models/pricing/pricebook_scope.go`
+- [x] T008 [P] 定义 GORM 模型：新增 `backend/internal/entity/models/pricing/pricebook_item.go`
+- [x] T009 [P] 定义 GORM 模型：新增 `backend/internal/entity/models/pricing/pricebook_audit_log.go`
+- [x] T010 注册迁移表集合：新增 `backend/cmd/database/migrate/migrations/005_pricing_pricebook.go`（导出 `PricingPricebookTables`）
+- [x] T011 将迁移纳入业务表清单：更新 `backend/cmd/database/migrate/migrate.go` 将 `migrations.PricingPricebookTables` 追加到 `businessTables`
+- [x] T012 [P] 新增定价域 RLS 策略：新增 `backend/cmd/database/migrate/rls_pricing.go` 并实现 `ensurePricingRLSPolicies(ctx, db)`（覆盖 `pricebooks/pricebook_versions/pricebook_scopes/pricebook_items/pricebook_audit_logs`）
+- [x] T013 在迁移流程中启用定价域 RLS：更新 `backend/cmd/database/migrate/migrate.go` 在 `MigratePluginModels` 流程末尾调用 `ensurePricingRLSPolicies(ctx, db)`
+- [x] T014 [P] 定义 repository：新增 `backend/internal/entity/repository/pricing/pricebook_repository.go`（内嵌 `*repository.BaseRepository[T]` + `NewXXXRepository`）
+- [x] T015 [P] 定义 repository：新增 `backend/internal/entity/repository/pricing/pricebook_version_repository.go`
+- [x] T016 [P] 定义 repository：新增 `backend/internal/entity/repository/pricing/pricebook_scope_repository.go`
+- [x] T017 [P] 定义 repository：新增 `backend/internal/entity/repository/pricing/pricebook_item_repository.go`
+- [x] T018 [P] 定义 repository：新增 `backend/internal/entity/repository/pricing/pricebook_audit_log_repository.go`
+- [x] T019 定义定价服务骨架：新增 `backend/internal/services/pricing/service.go`（注入 repos、tenantFromContext、HealthProbe/Ready 口径）
+- [x] T020 [P] 定义 DTO（管理端）：新增 `backend/internal/transport/http/admin/pricing/dto.go`（Pricebook/Version/Item/Scope 请求响应结构）
+- [x] T021 [P] 定义错误码与错误响应：新增 `backend/internal/transport/http/admin/pricing/errors.go`（与 OpenAPI `ErrorResponse` 对齐）
+- [x] T022 定义 RBACEntries：新增 `backend/internal/transport/http/admin/pricing/rbac.go`（资源 `pricing:pricebook` + actions `read/manage/publish`）
+- [x] T023 注册管理端路由：新增 `backend/internal/transport/http/admin/pricing/routes.go` 并更新 `backend/internal/transport/http/admin/routes.go` 挂载到 `/api/v1/admin/pricing`
+- [x] T024 注册 RBAC 汇总：更新 `backend/internal/transport/http/registry.go` 合并 `adminpricing.RBACEntries(r.apiPrefix())`
+- [x] T025 定义查价路由（可复用注册）：新增 `backend/internal/transport/http/pricing/routes.go`（对接任意 `*gin.RouterGroup`，并在组内注册 `/pricing/query`）
+- [x] T026 在 Router 中挂载 `/v1` 业务组：更新 `backend/internal/router/router.go` 新增 `/v1` group，并使用与 `gApi` 一致的 `RequestTrace + JWTAuth + RBAC` 中间件链
+- [x] T027 将查价主路径注册到 `/v1`：更新 `backend/internal/router/router.go` 在 `/v1` group 上调用 `pricing.RegisterRoutes(...)`（生成 `/v1/pricing/query`）
+- [x] T028 将查价兼容别名注册到 `apiPrefix`：更新 `backend/internal/transport/http/registry.go` 在 `RegisterAPIRoutes(gApi)` 中调用 `pricing.RegisterRoutes(gApi, deps)`（生成 `/api/v1/pricing/query`）
+- [x] T029 [P] 路由一致性冒烟：新增 `backend/internal/router/router_pricing_test.go` 验证 `/v1/pricing/query` 与 `/api/v1/pricing/query` 均存在且使用相同 handler
 
 **Checkpoint**：完成后，代码结构/迁移/RBAC/路由入口齐备，可以进入用户故事开发。
 

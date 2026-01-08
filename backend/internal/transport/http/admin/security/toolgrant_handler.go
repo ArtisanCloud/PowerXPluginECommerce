@@ -15,13 +15,27 @@ type ToolGrantHandler struct {
 }
 
 func NewToolGrantHandler(deps *app.Deps) *ToolGrantHandler {
+	if deps == nil || deps.DB == nil || deps.Config == nil || deps.Config.Security == nil || deps.Config.Security.ToolGrantSecret == "" {
+		return &ToolGrantHandler{service: nil}
+	}
 	signingKey := []byte(deps.Config.Security.ToolGrantSecret)
 	logger := deps.RuntimeLogger(deps.Ctx, "admin_toolgrant", nil)
 	svc := toolgrantservice.NewService(deps.DB, deps.Config, logger, signingKey)
 	return &ToolGrantHandler{service: svc}
 }
 
+func (h *ToolGrantHandler) ensureConfigured(c *gin.Context) bool {
+	if h == nil || h.service == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "toolgrant is not configured"})
+		return false
+	}
+	return true
+}
+
 func (h *ToolGrantHandler) Revoke(c *gin.Context) {
+	if !h.ensureConfigured(c) {
+		return
+	}
 	var payload struct {
 		TenantUuid  string `json:"tenant_uuid" binding:"required"`
 		ToolGrantID string `json:"toolgrant_id" binding:"required"`
@@ -44,6 +58,9 @@ func (h *ToolGrantHandler) Revoke(c *gin.Context) {
 }
 
 func (h *ToolGrantHandler) ListRevocations(c *gin.Context) {
+	if !h.ensureConfigured(c) {
+		return
+	}
 	tenantID := c.Query("tenant_uuid")
 	if tenantID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant_uuid is required"})
@@ -64,6 +81,9 @@ func (h *ToolGrantHandler) ListRevocations(c *gin.Context) {
 }
 
 func (h *ToolGrantHandler) ListUsageEvents(c *gin.Context) {
+	if !h.ensureConfigured(c) {
+		return
+	}
 	tenantID := c.Query("tenant_uuid")
 	if tenantID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "tenant_uuid is required"})
