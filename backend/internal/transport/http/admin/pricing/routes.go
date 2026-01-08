@@ -19,6 +19,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	domain := pricingsvc.NewService(deps)
 	pricebooks := NewPricebooksHandler(domain)
 	versions := NewVersionsHandler(domain)
+	items := NewItemsHandler(domain)
 
 	rg.GET("/pricebooks", pricebooks.List)
 	rg.POST("/pricebooks", pricebooks.Create)
@@ -27,6 +28,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.POST("/pricebooks/:pricebookId/versions", versions.Create)
 	rg.POST("/pricebooks/:pricebookId/versions/:versionId/publish", versions.Publish)
 	rg.POST("/pricebooks/:pricebookId/versions/:versionId/archive", versions.Archive)
+	rg.PUT("/pricebooks/:pricebookId/versions/:versionId/items", items.Upsert)
 
 	return rg
 }

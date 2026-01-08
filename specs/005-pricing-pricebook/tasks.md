@@ -84,14 +84,14 @@
 
 **Independent Test**：创建草稿版本→配置 scope→批量 upsert 10 个 SKU 条目→发布→再查价（US3）可命中；同时验证非 draft 版本写入被拒绝。
 
-- [ ] T042 [US2] Scope DTO 与解析：完善 `backend/internal/transport/http/admin/pricing/dto.go`（channel_ids/customer_group_ids/supplier_ids）
-- [ ] T043 [US2] 管理端 scope 更新：扩展 `backend/internal/transport/http/admin/pricing/pricebooks_handler.go` 支持 scopes 写入
-- [ ] T044 [US2] 服务层 scope upsert：新增 `backend/internal/services/pricing/scope_service.go`（无记录=全量适用；有记录=必须命中）
-- [ ] T045 [US2] 管理端条目 upsert：新增 `backend/internal/transport/http/admin/pricing/items_handler.go`（PUT `/versions/{versionId}/items`）
-- [ ] T046 [US2] 服务层条目 upsert：新增 `backend/internal/services/pricing/item_service.go`（仅 draft 可写；unique(tenant,version,sku) 覆盖更新）
-- [ ] T047 [US2] 条目校验：在 `backend/internal/services/pricing/item_service.go` 增加金额字段一致性校验（负数/最小大于最大等返回错误码）
-- [ ] T048 [US2] 字段优先级定义：在 `backend/internal/services/pricing/item_service.go` 或 `pricing` 公共包内固化“成交价字段优先级”为 `sale > base > msrp`，并在查价返回中输出 `source_field`（对齐 spec FR-007A）
-- [ ] T049 [US2] 最小单测：新增 `backend/internal/services/pricing/item_service_test.go` 覆盖“非 draft 禁止写入”与关键校验
+- [x] T042 [US2] Scope DTO 与解析：完善 `backend/internal/transport/http/admin/pricing/dto.go`（channel_ids/customer_group_ids/supplier_ids）
+- [x] T043 [US2] 管理端 scope 更新：扩展 `backend/internal/transport/http/admin/pricing/pricebooks_handler.go` 支持 scopes 写入
+- [x] T044 [US2] 服务层 scope upsert：新增 `backend/internal/services/pricing/scope_service.go`（无记录=全量适用；有记录=必须命中）
+- [x] T045 [US2] 管理端条目 upsert：新增 `backend/internal/transport/http/admin/pricing/items_handler.go`（PUT `/versions/{versionId}/items`）
+- [x] T046 [US2] 服务层条目 upsert：新增 `backend/internal/services/pricing/item_service.go`（仅 draft 可写；unique(tenant,version,sku) 覆盖更新）
+- [x] T047 [US2] 条目校验：在 `backend/internal/services/pricing/item_service.go` 增加金额字段一致性校验（负数/最小大于最大等返回错误码）
+- [x] T048 [US2] 字段优先级定义：在 `backend/internal/services/pricing/price_fields.go` 固化“成交价字段优先级”为 `sale > base > msrp`，并在查价返回中输出 `source_field`（对齐 spec FR-007A）
+- [x] T049 [US2] 最小单测：新增 `backend/internal/services/pricing/item_service_test.go` 覆盖“非 draft 禁止写入”与关键校验
 
 **Checkpoint**：US2 完成后，价目表数据可完整配置，为 US3 查价提供稳定输入。
 

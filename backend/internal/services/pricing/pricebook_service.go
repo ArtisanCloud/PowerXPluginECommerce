@@ -176,7 +176,12 @@ func (s *PricebookService) Create(ctx context.Context, in CreatePricebookInput) 
 	pb.CurrentVersionID = &v1.ID
 
 	if in.Scopes != nil {
-		if err := replaceScopes(ctx, tx, tenantUUID, pb.ID, in.Scopes); err != nil {
+		scopeSvc := NewScopeService(s.deps)
+		if err := scopeSvc.ReplacePricebookScopes(ctx, tx, ReplaceScopesInput{
+			PricebookID: pb.ID,
+			Scopes:      in.Scopes,
+			Actor:       in.Actor,
+		}); err != nil {
 			return nil, err
 		}
 	}
@@ -252,7 +257,12 @@ func (s *PricebookService) Update(ctx context.Context, in UpdatePricebookInput) 
 	}
 
 	if in.Scopes != nil {
-		if err := replaceScopes(ctx, tx, tenantUUID, pb.ID, in.Scopes); err != nil {
+		scopeSvc := NewScopeService(s.deps)
+		if err := scopeSvc.ReplacePricebookScopes(ctx, tx, ReplaceScopesInput{
+			PricebookID: pb.ID,
+			Scopes:      in.Scopes,
+			Actor:       in.Actor,
+		}); err != nil {
 			return nil, err
 		}
 	}
@@ -267,51 +277,4 @@ func (s *PricebookService) Update(ctx context.Context, in UpdatePricebookInput) 
 		return nil, err
 	}
 	return &pb, nil
-}
-
-func replaceScopes(ctx context.Context, tx *gorm.DB, tenantUUID, pricebookID string, in *PricebookScopesInput) error {
-	if tx == nil {
-		return errors.New("transaction is required")
-	}
-	if in == nil {
-		return nil
-	}
-	if err := tx.WithContext(ctx).
-		Where("tenant_uuid = ? AND pricebook_id = ?", tenantUUID, pricebookID).
-		Delete(&pricingModel.PricebookScope{}).Error; err != nil {
-		return err
-	}
-
-	now := time.Now().UTC()
-	add := func(dimension string, ids []string) error {
-		for _, raw := range ids {
-			id := strings.TrimSpace(raw)
-			if id == "" {
-				continue
-			}
-			scope := &pricingModel.PricebookScope{
-				ID:          uuid.NewString(),
-				TenantUUID:  tenantUUID,
-				PricebookID: pricebookID,
-				Dimension:   dimension,
-				DimensionID: id,
-				CreatedAt:   now,
-				UpdatedAt:   now,
-			}
-			if err := tx.WithContext(ctx).Create(scope).Error; err != nil {
-				return err
-			}
-		}
-		return nil
-	}
-	if err := add("channel", in.ChannelIDs); err != nil {
-		return err
-	}
-	if err := add("customer_group", in.CustomerGroupIDs); err != nil {
-		return err
-	}
-	if err := add("supplier", in.SupplierIDs); err != nil {
-		return err
-	}
-	return nil
 }
