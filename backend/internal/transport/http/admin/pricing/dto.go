@@ -22,6 +22,17 @@ type PricebookDTO struct {
 	UpdatedAt        *time.Time       `json:"updated_at,omitempty"`
 }
 
+type PageMeta struct {
+	Page     int   `json:"page"`
+	PageSize int   `json:"page_size"`
+	Total    int64 `json:"total"`
+}
+
+type PricebookListResponse struct {
+	Items []PricebookDTO `json:"items"`
+	Meta  PageMeta       `json:"meta"`
+}
+
 type PricebookCreateRequest struct {
 	Code        string           `json:"code" binding:"required"`
 	Name        string           `json:"name" binding:"required"`

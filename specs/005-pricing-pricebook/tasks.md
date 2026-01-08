@@ -61,18 +61,18 @@
 
 **Independent Test**：通过管理端接口完成：创建价目表、写入少量条目、发布版本（立即生效），再发布新版本并验证旧版本被自动终止；最后下线版本并验证不再命中。
 
-- [ ] T030 [US1] 实现管理端列表/创建：新增 `backend/internal/transport/http/admin/pricing/pricebooks_handler.go`（GET/POST `/admin/pricing/pricebooks`）
-- [ ] T031 [US1] 实现管理端更新：扩展 `backend/internal/transport/http/admin/pricing/pricebooks_handler.go`（PATCH `/admin/pricing/pricebooks/{pricebookId}`）
-- [ ] T032 [US1] 实现版本创建：新增 `backend/internal/transport/http/admin/pricing/versions_handler.go`（POST `/admin/pricing/pricebooks/{id}/versions`）
-- [ ] T033 [US1] 实现版本发布：扩展 `backend/internal/transport/http/admin/pricing/versions_handler.go`（POST `/publish`）
-- [ ] T034 [US1] 实现版本下线：扩展 `backend/internal/transport/http/admin/pricing/versions_handler.go`（POST `/archive`）
-- [ ] T035 [US1] 服务层：实现 `backend/internal/services/pricing/pricebook_service.go`（Create/List/Update 价目表 + 创建 v1 draft）
-- [ ] T036 [US1] 服务层：实现 `backend/internal/services/pricing/version_service.go`（CreateVersion/PublishVersion/ArchiveVersion，含发布幂等）
-- [ ] T037 [P] [US1] 并发发布锁定支持：扩展 `backend/internal/entity/repository/pricing/pricebook_repository.go` 与 `backend/internal/entity/repository/pricing/pricebook_version_repository.go` 增加“按 pricebook 行锁/active 版本锁”的查询方法（用于 Publish 事务）
-- [ ] T038 [US1] 发布幂等与并发策略：在 `backend/internal/services/pricing/version_service.go` 落实“发布新版本自动终止旧版本有效期”（FR-004A）并使用锁/冲突检测保证同一时刻最多一个 active 版本
-- [ ] T039 [US1] 审计：实现 `backend/internal/services/pricing/audit_service.go`（记录 create/update/publish/archive 摘要）
-- [ ] T040 [US1] 校验：在 `backend/internal/services/pricing/version_service.go` 增加有效期校验（expires_at > effective_at；不合法返回错误码）
-- [ ] T041 [US1] 最小单测：新增 `backend/internal/services/pricing/version_service_test.go` 覆盖“发布新版本终止旧版本有效期”与“并发 publish 不产生双 active”的确定性行为
+- [x] T030 [US1] 实现管理端列表/创建：新增 `backend/internal/transport/http/admin/pricing/pricebooks_handler.go`（GET/POST `/admin/pricing/pricebooks`）
+- [x] T031 [US1] 实现管理端更新：扩展 `backend/internal/transport/http/admin/pricing/pricebooks_handler.go`（PATCH `/admin/pricing/pricebooks/{pricebookId}`）
+- [x] T032 [US1] 实现版本创建：新增 `backend/internal/transport/http/admin/pricing/versions_handler.go`（POST `/admin/pricing/pricebooks/{id}/versions`）
+- [x] T033 [US1] 实现版本发布：扩展 `backend/internal/transport/http/admin/pricing/versions_handler.go`（POST `/publish`）
+- [x] T034 [US1] 实现版本下线：扩展 `backend/internal/transport/http/admin/pricing/versions_handler.go`（POST `/archive`）
+- [x] T035 [US1] 服务层：实现 `backend/internal/services/pricing/pricebook_service.go`（Create/List/Update 价目表 + 创建 v1 draft）
+- [x] T036 [US1] 服务层：实现 `backend/internal/services/pricing/version_service.go`（CreateVersion/PublishVersion/ArchiveVersion，含发布幂等）
+- [x] T037 [P] [US1] 并发发布锁定支持：扩展 `backend/internal/entity/repository/pricing/pricebook_repository.go` 与 `backend/internal/entity/repository/pricing/pricebook_version_repository.go` 增加“按 pricebook 行锁/active 版本锁”的查询方法（用于 Publish 事务）
+- [x] T038 [US1] 发布幂等与并发策略：在 `backend/internal/services/pricing/version_service.go` 落实“发布新版本自动终止旧版本有效期”（FR-004A）并使用锁/冲突检测保证同一时刻最多一个 active 版本
+- [x] T039 [US1] 审计：实现 `backend/internal/services/pricing/audit_service.go`（记录 create/update/publish/archive 摘要）
+- [x] T040 [US1] 校验：在 `backend/internal/services/pricing/version_service.go` 增加有效期校验（expires_at > effective_at；不合法返回错误码）
+- [x] T041 [US1] 最小单测：新增 `backend/internal/services/pricing/version_service_test.go` 覆盖“发布新版本终止旧版本有效期”与“并发 publish 不产生双 active”的确定性行为
 
 **Checkpoint**：US1 可独立演示与验收（不依赖 US2/US3 完整实现，但需最小条目能力见 US2/T045）。
 

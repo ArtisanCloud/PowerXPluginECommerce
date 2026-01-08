@@ -8,6 +8,7 @@ import (
 	repo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // PricebookRepository wraps BaseRepository with tenant-aware helpers.
@@ -39,4 +40,21 @@ func (r *PricebookRepository) Create(ctx context.Context, pb *pricingModel.Price
 		pb.TenantUUID = tenantUUID
 	}
 	return r.BaseRepository.Create(ctx, pb)
+}
+
+// LockByID loads the pricebook row with an UPDATE lock when supported by the dialect.
+func (r *PricebookRepository) LockByID(ctx context.Context, pricebookID string) (*pricingModel.Pricebook, error) {
+	tenantUUID, err := authx.RequireTenantUUID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	db := r.DB.WithContext(ctx)
+	if r.DB != nil && r.DB.Dialector != nil && r.DB.Dialector.Name() != "sqlite" {
+		db = db.Clauses(clause.Locking{Strength: "UPDATE"})
+	}
+	var pb pricingModel.Pricebook
+	if err := db.Where("tenant_uuid = ? AND id = ?", tenantUUID, strings.TrimSpace(pricebookID)).First(&pb).Error; err != nil {
+		return nil, err
+	}
+	return &pb, nil
 }

@@ -34,6 +34,13 @@ func NewService(deps *app.Deps) *Service {
 	}
 }
 
+func (s *Service) Deps() *app.Deps {
+	if s == nil {
+		return nil
+	}
+	return s.deps
+}
+
 func (s *Service) Ready() bool { return s != nil && s.deps != nil && s.deps.DB != nil }
 
 func (s *Service) HealthProbe(ctx context.Context) error {
