@@ -155,6 +155,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ItemsUpsertResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
         '409':
           description: Version not editable or conflict
           content:
@@ -523,7 +529,7 @@ components:
           type: array
           items:
             type: string
-          description: sku_ids skipped due to validation failures
+          description: sku_ids skipped due to duplicate entries in the same request payload
       required: [upserted]
 
     PricingQueryRequest:

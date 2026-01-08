@@ -57,7 +57,7 @@
 | 导入/导出 | Excel/CSV 模板；导入可更新现有条目或添加新条目 |
 | 审批 & 特批 | 价目更新需走审批流；超出阈值（如低于成本）自动触发特批 |
 | 冲突检测 | 检测同 SKU 在同维度是否存在多个价目冲突，提供提示或阻止发布 |
-| API 查询 | 提供 `GET /api/pricing/pricebooks/:id/prices`、`POST /api/pricing/query` 供订单/渠道调用 |
+| API 查询 | 一期以“统一查价”接口为主：`POST /v1/pricing/query`（主路径）与 `POST /api/v1/pricing/query`（兼容别名）；管理端配置接口见 11.5 |
 | 审计 | 记录每次变更、审批、发布，支持 diff 查看 |
 
 ## 5. 关键流程
@@ -77,11 +77,10 @@
    2. 可按门店/区域定义零售价，供门店 POS/渠道同步。
 
 ## 6. 数据 & API
-- **表**：`pricebooks`、`pricebook_versions`、`pricebook_items`、`pricebook_scope`（渠道/客户组/供应商/门店）、`pricebook_audit_logs`。
-- **API**：
-  - `GET /api/pricing/pricebooks`、`POST /api/pricing/pricebooks`、`PATCH /api/pricing/pricebooks/{id}`、`POST /api/pricing/pricebooks/{id}/publish`、`POST /api/pricing/pricebooks/{id}/archive`。
-  - `POST /api/pricing/pricebooks/{id}/import`、`GET /api/pricing/pricebooks/{id}/export`。
-  - `POST /api/pricing/query`（输入 SKU、渠道、客户、供应商、日期、币种，返回最终价）。
+- **表**：`pricebooks`、`pricebook_versions`、`pricebook_scopes`（渠道/客户组/供应商）、`pricebook_items`、`pricebook_audit_logs`。
+- **API（一期实现，以 OpenAPI 为准）**：
+  - 管理端：`/api/v1/admin/pricing/pricebooks/**`（创建/更新主档、创建版本、发布/下线、条目 upsert）
+  - 业务查价：`POST /v1/pricing/query`（主路径）+ `POST /api/v1/pricing/query`（兼容别名）
 
 ---
 
@@ -92,7 +91,7 @@
 本插件后端 API 通常挂在统一前缀（例如 `"/api/v1"`），管理端路由在其下使用 `"/admin"` 分组。
 
 - **管理端 Pricebook API（建议）**：`/api/v1/admin/pricing/pricebooks/**`
-- **对外查询 API（建议）**：`/api/v1/pricing/query`（供订单/前台/渠道调用；鉴权方式按现有 tenant/jwt 中间件对齐）
+- **对外查询 API（建议）**：`/v1/pricing/query`（主路径）与 `/api/v1/pricing/query`（兼容别名；鉴权方式按现有 tenant/jwt 中间件对齐）
 
 > 备注：本 PRD 的旧路径 `GET /api/pricing/pricebooks` 等仅作为“概念名称”。实际落地建议统一到 `"/api/v1"` 与 `"/admin"` 规范，以便 RBAC 自动汇总。
 
@@ -223,8 +222,9 @@
 4. 选择最优 pricebook/version：按“更具体”优先（命中的受限维度越多越优先），再按 `priority`（若一期不加字段则跳过），最后按 `published_at` 新者优先。
 5. item 命中：在选定 `version_id` 下查 `pricebook_items` 的 `sku_id`。
 6. 回退策略（一期建议固定如下，避免价格空洞）：
-   - 若选定版本下无该 SKU 条目，则回退到 `code=base` 的 Base Pricebook 的当前 active 版本条目；
-   - 若仍无条目，返回 `404 PRICE_NOT_FOUND`。
+   - 若已命中某 pricebook/version，但该版本下无该 SKU 条目，则允许回退到同币种 `code=base` 的 Base Pricebook；
+   - 其余场景（范围不命中、币种不匹配、无候选版本等）**不回退**，直接返回“无价”。
+   - 一期返回语义：`200` 且 `priced=false`，并给出 `trace.no_price_reason`（而非 `404`）。
 7. 输出字段优先级：
    - `sale_amount_minor`（若非空）→ 否则 `base_amount_minor` → 否则 `msrp_amount_minor`；三者都空则视为未配置。
 
@@ -238,6 +238,35 @@ Query：
 - `currency`
 - `status`（`active`/`archived`）
 - `page`,`page_size`
+
+返回（一期实现）：
+- `200`：`{ items: Pricebook[], meta: { page, page_size, total } }`
+- OpenAPI 以 `specs/005-pricing-pricebook/contracts/pricing-pricebooks.openapi.yaml` 为准
+
+#### 11.5.2 新建：`POST /api/v1/admin/pricing/pricebooks`
+- 创建 pricebook 主档，并自动创建 `v1` 草稿版本（`state=draft`），并写入 `current_version_id`
+
+#### 11.5.3 更新：`PATCH /api/v1/admin/pricing/pricebooks/{pricebookId}`
+- 支持更新 `name/description/status/scopes`
+- scopes 为 replace 语义：传入 scopes 则整体替换；不传 scopes 则不变；传入空数组视为“删除 scopes=全量适用”
+
+#### 11.5.4 版本：`POST /api/v1/admin/pricing/pricebooks/{pricebookId}/versions`
+- 创建新草稿版本（`state=draft`）
+
+#### 11.5.5 条目 upsert：`PUT /api/v1/admin/pricing/pricebooks/{pricebookId}/versions/{versionId}/items`
+- 仅允许 `draft` 版本写入；否则返回冲突（`409 VERSION_NOT_EDITABLE`）
+- unique(`tenant_uuid`,`version_id`,`sku_id`) 覆盖更新
+
+#### 11.5.6 发布/下线
+- `POST /api/v1/admin/pricing/pricebooks/{pricebookId}/versions/{versionId}/publish`
+  - 发布后成为可命中的 `active` 版本，并自动终止旧 active 版本有效期（FR-004A）
+- `POST /api/v1/admin/pricing/pricebooks/{pricebookId}/versions/{versionId}/archive`
+  - 下线版本，使其不再可命中
+
+#### 11.5.7 统一查价（业务侧）
+- `POST /v1/pricing/query`（主路径）
+- `POST /api/v1/pricing/query`（兼容别名）
+- 返回 `priced=true/false`，并在无价时通过 `trace.no_price_reason` 说明原因；在回退时通过 `trace.fallback` 说明回退类型
 
 Response（示例字段）：
 - `items[]`: `{ id, code, name, type, currency, status, current_version_id, updated_at }`
@@ -287,7 +316,7 @@ Request：
 将版本置为 `archived`；若其为 `current_version_id`，则清空或回退到上一 active 版本（一期建议清空，并在 query 走 base 回退）。
 
 ### 11.6 查询 API 契约（Phase 1）
-#### `POST /api/v1/pricing/query`
+#### `POST /v1/pricing/query`（主路径）与 `POST /api/v1/pricing/query`（兼容别名）
 Request：
 ```json
 {
@@ -300,10 +329,12 @@ Request：
 }
 ```
 
-Response：
+Response（有价示例）：
 ```json
 {
   "currency": "CNY",
+  "priced": true,
+  "source_field": "base",
   "price": { "amount_minor": 19900, "amount": "199.00" },
   "matched": {
     "pricebook_id": "uuid",
@@ -325,20 +356,27 @@ Response：
 }
 ```
 
+Response（无价示例）：
+```json
+{
+  "currency": "CNY",
+  "priced": false,
+  "trace": { "fallback": "none", "no_price_reason": "SCOPE_MISMATCH" }
+}
+```
+
 ### 11.7 错误码与错误结构（建议）
 统一错误结构（示例）：
 ```json
 { "error": { "code": "PRICEBOOK_NOT_FOUND", "message": "pricebook not found" } }
 ```
 
-建议错误码：
-- `PRICEBOOK_NOT_FOUND`：主档不存在
-- `PRICEBOOK_VERSION_NOT_FOUND`：版本不存在
-- `PRICEBOOK_VERSION_NOT_EDITABLE`：非 draft 版本不可写
-- `PRICEBOOK_VERSION_INVALID_PERIOD`：effective/expires 不合法
-- `PRICE_NOT_FOUND`：查询未命中任何价格（含 base 回退后仍无）
+一期实现错误码（以 OpenAPI 与后端实现为准）：
 - `INVALID_ARGUMENT`：缺少必填字段或格式错误
-- `CONFLICT`：发布冲突（并发 publish 导致）
+- `PRICEBOOK_NOT_FOUND`：主档不存在
+- `VERSION_NOT_FOUND`：版本不存在
+- `VERSION_NOT_EDITABLE`：非 draft 版本不可写（如 items upsert / publish）
+- `PUBLISH_CONFLICT`：发布冲突（并发 publish 或有效期重叠）
 
 ### 11.8 权限（RBAC）落地口径（一期最小）
 资源建议：`pricing:pricebook`

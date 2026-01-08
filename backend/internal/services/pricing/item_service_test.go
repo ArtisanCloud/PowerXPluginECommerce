@@ -12,6 +12,7 @@ import (
 	"github.com/google/uuid"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 func TestUpsertItemsRejectsNonDraftVersion(t *testing.T) {
@@ -91,7 +92,9 @@ func TestUpsertItemsValidatesNegativeAmount(t *testing.T) {
 func openPricingItemsTestDB(t *testing.T) *gorm.DB {
 	t.Helper()
 	coremodels.ForceSchemaForTests("")
-	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent),
+	})
 	if err != nil {
 		t.Fatalf("open sqlite: %v", err)
 	}

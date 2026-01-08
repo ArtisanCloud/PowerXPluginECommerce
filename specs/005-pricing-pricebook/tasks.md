@@ -103,16 +103,16 @@
 
 **Independent Test**：用同一租户构造：Base pricebook + scoped pricebook；验证命中 scoped；当 scoped 命中但缺条目时回退 Base；当范围不命中/币种不匹配时返回无价（带原因码）；参数缺失返回错误（带错误码）。
 
-- [ ] T050 [US3] 查价 DTO：新增 `backend/internal/transport/http/pricing/dto.go`（PricingQueryRequest/Response、reason codes、source_field）
-- [ ] T051 [US3] 查价 handler：新增 `backend/internal/transport/http/pricing/query_handler.go`（POST `/pricing/query`，参数校验与错误语义分流）
-- [ ] T052 [US3] 查价 service：新增 `backend/internal/services/pricing/query_service.go`（实现选择规则与回退/无价语义）
-- [ ] T053 [US3] 候选筛选（scope）：在 `backend/internal/services/pricing/query_service.go` 实现“无 scope=全量适用；有 scope=必须命中”的维度判断
-- [ ] T054 [US3] 版本有效期判断：在 `backend/internal/services/pricing/query_service.go` 实现 `effective_at <= as_of < expires_at`（expires_at 为空视为永久）
-- [ ] T055 [US3] 多候选选择规则：在 `backend/internal/services/pricing/query_service.go` 实现“具体度优先 → 显式优先级（如实现）→ 最近发布优先”
-- [ ] T056 [US3] 回退策略（C）：在 `backend/internal/services/pricing/query_service.go` 仅在“已命中版本但缺条目”时回退 Base；其余不回退
-- [ ] T057 [US3] 无价 vs 错误语义（C）：在 `backend/internal/services/pricing/query_service.go` 与 `backend/internal/transport/http/pricing/query_handler.go` 落实“无价原因码/错误码”的返回口径，并在有价时返回 `source_field`
-- [ ] T058 [US3] Repository 查询优化：在 `backend/internal/entity/repository/pricing/price_query_repository.go` 封装查价所需查询（候选版本/条目命中），并确保按 tenant_uuid 过滤
-- [ ] T059 [US3] 最小单测：新增 `backend/internal/services/pricing/query_service_test.go` 覆盖“多候选选择/回退/无价原因码/错误语义”
+- [x] T050 [US3] 查价 DTO：新增 `backend/internal/transport/http/pricing/dto.go`（PricingQueryRequest/Response、reason codes、source_field）
+- [x] T051 [US3] 查价 handler：新增 `backend/internal/transport/http/pricing/query_handler.go`（POST `/pricing/query`，参数校验与错误语义分流）
+- [x] T052 [US3] 查价 service：新增 `backend/internal/services/pricing/query_service.go`（实现选择规则与回退/无价语义）
+- [x] T053 [US3] 候选筛选（scope）：在 `backend/internal/services/pricing/query_service.go` 实现“无 scope=全量适用；有 scope=必须命中”的维度判断
+- [x] T054 [US3] 版本有效期判断：在 `backend/internal/services/pricing/query_service.go` 实现 `effective_at <= as_of < expires_at`（expires_at 为空视为永久）
+- [x] T055 [US3] 多候选选择规则：在 `backend/internal/services/pricing/query_service.go` 实现“具体度优先 → 显式优先级（如实现）→ 最近发布优先”
+- [x] T056 [US3] 回退策略（C）：在 `backend/internal/services/pricing/query_service.go` 仅在“已命中版本但缺条目”时回退 Base；其余不回退
+- [x] T057 [US3] 无价 vs 错误语义（C）：在 `backend/internal/services/pricing/query_service.go` 与 `backend/internal/transport/http/pricing/query_handler.go` 落实“无价原因码/错误码”的返回口径，并在有价时返回 `source_field`
+- [x] T058 [US3] Repository 查询优化：在 `backend/internal/entity/repository/pricing/price_query_repository.go` 封装查价所需查询（候选版本/条目命中），并确保按 tenant_uuid 过滤
+- [x] T059 [US3] 最小单测：新增 `backend/internal/services/pricing/query_service_test.go` 覆盖“多候选选择/回退/无价原因码/错误语义”
 
 **Checkpoint**：US3 完成后，可对接订单/前台/渠道同步的统一查价能力。
 
@@ -120,11 +120,11 @@
 
 ## Phase 6: Polish & Cross-Cutting（收尾与质量）
 
-- [ ] T060 [P] 文档同步：更新 `docs/plan/pricing/pricebooks.md`（如接口/字段有偏差，保持 PRD 与合同一致）
+- [x] T060 [P] 文档同步：更新 `docs/plan/pricing/pricebooks.md`（如接口/字段有偏差，保持 PRD 与合同一致）
 - [ ] T061 完成 quickstart 验证：按 `specs/005-pricing-pricebook/quickstart.md` 跑通 migrate + dev + 查价冒烟
-- [ ] T062 代码格式化：运行 `gofmt`（触及文件）并修复格式问题
-- [ ] T063 基础测试：运行 `go test ./...`（至少覆盖新增 pricing 域单测）
-- [ ] T064 [P] OpenAPI 校验：对齐 `specs/005-pricing-pricebook/contracts/pricing-pricebooks.openapi.yaml` 与最终实现（必要时补充字段/响应示例）
+- [x] T062 代码格式化：运行 `gofmt`（触及文件）并修复格式问题
+- [x] T063 基础测试：运行 `go test ./...`（至少覆盖新增 pricing 域单测）
+- [x] T064 [P] OpenAPI 校验：对齐 `specs/005-pricing-pricebook/contracts/pricing-pricebooks.openapi.yaml` 与最终实现（必要时补充字段/响应示例）
 
 ---
 
