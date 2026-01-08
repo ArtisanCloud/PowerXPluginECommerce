@@ -29,6 +29,11 @@ type PricebookListResult struct {
 	Total    int64
 }
 
+const (
+	BasePricebookCode = "base"
+	BasePricebookName = "基础价目表"
+)
+
 type PricebookService struct {
 	*Service
 	audit *AuditService
@@ -39,6 +44,145 @@ func NewPricebookService(deps *app.Deps) *PricebookService {
 	return &PricebookService{Service: svc, audit: &AuditService{Service: svc}}
 }
 
+func (s *PricebookService) EnsureBasePricebook(ctx context.Context, currencyHint, actor string) (*pricingModel.Pricebook, error) {
+	if !s.Ready() {
+		return nil, E(CodeServiceUnavailable, ErrServiceUnavailable)
+	}
+	tenantUUID, err := authx.RequireTenantUUID(ctx)
+	if err != nil {
+		return nil, E(CodeTenantMissing, err)
+	}
+	currency := strings.TrimSpace(currencyHint)
+	if currency == "" {
+		currency = "USD"
+	}
+	actor = strings.TrimSpace(actor)
+	if actor == "" {
+		actor = defaultActorFromTenant(tenantUUID)
+	}
+
+	tx, err := s.PricebookRepo.BeginTenantTx(ctx)
+	if err != nil {
+		return nil, err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	var pb pricingModel.Pricebook
+	if err := tx.WithContext(ctx).
+		Where("tenant_uuid = ? AND code = ?", tenantUUID, BasePricebookCode).
+		First(&pb).Error; err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+		now := time.Now().UTC()
+		pb = pricingModel.Pricebook{
+			ID:          uuid.NewString(),
+			TenantUUID:  tenantUUID,
+			Code:        BasePricebookCode,
+			Name:        BasePricebookName,
+			Type:        "sales",
+			Currency:    currency,
+			Description: "",
+			Status:      "active",
+			CreatedAt:   now,
+			UpdatedAt:   now,
+		}
+		if err := tx.WithContext(ctx).Create(&pb).Error; err != nil {
+			return nil, err
+		}
+
+		publishedAt := now
+		v1 := pricingModel.PricebookVersion{
+			ID:          uuid.NewString(),
+			TenantUUID:  tenantUUID,
+			PricebookID: pb.ID,
+			Version:     1,
+			State:       "active",
+			EffectiveAt: now,
+			PublishedAt: &publishedAt,
+			PublishedBy: actor,
+			Note:        "system base pricebook",
+			CreatedAt:   now,
+			UpdatedAt:   now,
+		}
+		if err := tx.WithContext(ctx).Create(&v1).Error; err != nil {
+			return nil, err
+		}
+		if err := tx.WithContext(ctx).Model(&pricingModel.Pricebook{}).
+			Where("tenant_uuid = ? AND id = ?", tenantUUID, pb.ID).
+			Update("current_version_id", v1.ID).Error; err != nil {
+			return nil, err
+		}
+		pb.CurrentVersionID = &v1.ID
+
+		_ = s.audit.Log(ctx, tx, "pricebook", pb.ID, "ensure_base", actor, map[string]any{
+			"currency": pb.Currency,
+			"type":     pb.Type,
+		})
+	} else {
+		updates := map[string]any{}
+		if pb.Status != "active" {
+			updates["status"] = "active"
+		}
+		if len(updates) > 0 {
+			updates["updated_at"] = time.Now().UTC()
+			if err := tx.WithContext(ctx).Model(&pricingModel.Pricebook{}).
+				Where("tenant_uuid = ? AND id = ?", tenantUUID, pb.ID).
+				Updates(updates).Error; err != nil {
+				return nil, err
+			}
+		}
+
+		var activeCount int64
+		if err := tx.WithContext(ctx).Model(&pricingModel.PricebookVersion{}).
+			Where("tenant_uuid = ? AND pricebook_id = ? AND state = ?", tenantUUID, pb.ID, "active").
+			Count(&activeCount).Error; err != nil {
+			return nil, err
+		}
+		if activeCount == 0 {
+			var maxVer int
+			if err := tx.WithContext(ctx).Model(&pricingModel.PricebookVersion{}).
+				Where("tenant_uuid = ? AND pricebook_id = ?", tenantUUID, pb.ID).
+				Select("COALESCE(MAX(version),0)").
+				Scan(&maxVer).Error; err != nil {
+				return nil, err
+			}
+			now := time.Now().UTC()
+			publishedAt := now
+			v := pricingModel.PricebookVersion{
+				ID:          uuid.NewString(),
+				TenantUUID:  tenantUUID,
+				PricebookID: pb.ID,
+				Version:     maxVer + 1,
+				State:       "active",
+				EffectiveAt: now,
+				PublishedAt: &publishedAt,
+				PublishedBy: actor,
+				Note:        "system ensure base active version",
+				CreatedAt:   now,
+				UpdatedAt:   now,
+			}
+			if err := tx.WithContext(ctx).Create(&v).Error; err != nil {
+				return nil, err
+			}
+			if err := tx.WithContext(ctx).Model(&pricingModel.Pricebook{}).
+				Where("tenant_uuid = ? AND id = ?", tenantUUID, pb.ID).
+				Update("current_version_id", v.ID).Error; err != nil {
+				return nil, err
+			}
+			pb.CurrentVersionID = &v.ID
+		}
+	}
+
+	if err := tx.WithContext(ctx).Where("tenant_uuid = ? AND id = ?", tenantUUID, pb.ID).First(&pb).Error; err != nil {
+		return nil, err
+	}
+	if err := tx.Commit().Error; err != nil {
+		return nil, err
+	}
+	return &pb, nil
+}
+
 func (s *PricebookService) List(ctx context.Context, f PricebookListFilters) (*PricebookListResult, error) {
 	if !s.Ready() {
 		return nil, E(CodeServiceUnavailable, ErrServiceUnavailable)
@@ -46,6 +190,9 @@ func (s *PricebookService) List(ctx context.Context, f PricebookListFilters) (*P
 	tenantUUID, err := authx.RequireTenantUUID(ctx)
 	if err != nil {
 		return nil, E(CodeTenantMissing, err)
+	}
+	if _, err := s.EnsureBasePricebook(ctx, f.Currency, defaultActorFromTenant(tenantUUID)); err != nil {
+		return nil, err
 	}
 	if f.Page <= 0 {
 		f.Page = 1
@@ -119,6 +266,11 @@ func (s *PricebookService) Create(ctx context.Context, in CreatePricebookInput) 
 	}
 	if typ != "sales" && typ != "purchase" {
 		return nil, E(CodeInvalidArgument, errors.New("type must be sales or purchase"))
+	}
+	if !strings.EqualFold(code, BasePricebookCode) {
+		if _, err := s.EnsureBasePricebook(ctx, currency, in.Actor); err != nil {
+			return nil, err
+		}
 	}
 
 	tx, err := s.PricebookRepo.BeginTenantTx(ctx)
@@ -214,6 +366,9 @@ func (s *PricebookService) Update(ctx context.Context, in UpdatePricebookInput) 
 	if err != nil {
 		return nil, E(CodeTenantMissing, err)
 	}
+	if _, err := s.EnsureBasePricebook(ctx, "", in.Actor); err != nil {
+		return nil, err
+	}
 	if strings.TrimSpace(in.PricebookID) == "" {
 		return nil, E(CodeInvalidArgument, errors.New("pricebook_id is required"))
 	}
@@ -246,6 +401,9 @@ func (s *PricebookService) Update(ctx context.Context, in UpdatePricebookInput) 
 		if v != "active" && v != "archived" {
 			return nil, E(CodeInvalidArgument, errors.New("status must be active or archived"))
 		}
+		if strings.EqualFold(pb.Code, BasePricebookCode) && v != "active" {
+			return nil, E(CodeForbidden, errors.New("base pricebook cannot be archived"))
+		}
 		updates["status"] = v
 	}
 	if len(updates) > 0 {
@@ -277,4 +435,76 @@ func (s *PricebookService) Update(ctx context.Context, in UpdatePricebookInput) 
 		return nil, err
 	}
 	return &pb, nil
+}
+
+type DeletePricebookInput struct {
+	PricebookID string
+	Actor       string
+}
+
+func (s *PricebookService) Delete(ctx context.Context, in DeletePricebookInput) error {
+	if !s.Ready() {
+		return E(CodeServiceUnavailable, ErrServiceUnavailable)
+	}
+	tenantUUID, err := authx.RequireTenantUUID(ctx)
+	if err != nil {
+		return E(CodeTenantMissing, err)
+	}
+	if _, err := s.EnsureBasePricebook(ctx, "", in.Actor); err != nil {
+		return err
+	}
+	pricebookID := strings.TrimSpace(in.PricebookID)
+	if pricebookID == "" {
+		return E(CodeInvalidArgument, errors.New("pricebook_id is required"))
+	}
+
+	tx, err := s.PricebookRepo.BeginTenantTx(ctx)
+	if err != nil {
+		return err
+	}
+	defer func() { _ = tx.Rollback() }()
+
+	var pb pricingModel.Pricebook
+	if err := tx.WithContext(ctx).
+		Where("tenant_uuid = ? AND id = ?", tenantUUID, pricebookID).
+		First(&pb).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return E(CodePricebookNotFound, err)
+		}
+		return err
+	}
+	if strings.EqualFold(strings.TrimSpace(pb.Code), BasePricebookCode) {
+		return E(CodeForbidden, errors.New("base pricebook cannot be deleted"))
+	}
+
+	if err := tx.WithContext(ctx).
+		Where("tenant_uuid = ? AND pricebook_id = ?", tenantUUID, pb.ID).
+		Delete(&pricingModel.PricebookScope{}).Error; err != nil {
+		return err
+	}
+	if err := tx.WithContext(ctx).
+		Where("tenant_uuid = ? AND pricebook_id = ?", tenantUUID, pb.ID).
+		Delete(&pricingModel.PricebookItem{}).Error; err != nil {
+		return err
+	}
+	if err := tx.WithContext(ctx).
+		Where("tenant_uuid = ? AND pricebook_id = ?", tenantUUID, pb.ID).
+		Delete(&pricingModel.PricebookVersion{}).Error; err != nil {
+		return err
+	}
+	if err := tx.WithContext(ctx).
+		Where("tenant_uuid = ? AND id = ?", tenantUUID, pb.ID).
+		Delete(&pricingModel.Pricebook{}).Error; err != nil {
+		return err
+	}
+
+	actor := strings.TrimSpace(in.Actor)
+	if actor == "" {
+		actor = defaultActorFromTenant(tenantUUID)
+	}
+	_ = s.audit.Log(ctx, tx, "pricebook", pb.ID, "delete", actor, map[string]any{
+		"code": pb.Code,
+	})
+
+	return tx.Commit().Error
 }

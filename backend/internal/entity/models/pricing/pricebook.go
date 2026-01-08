@@ -1,6 +1,8 @@
 package models
 
 import (
+	"errors"
+	"strings"
 	"time"
 
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models"
@@ -25,3 +27,13 @@ type Pricebook struct {
 
 // TableName implements gorm.Tabler.
 func (Pricebook) TableName() string { return models.S(models.TablePricebooks) }
+
+func (pb *Pricebook) BeforeDelete(tx *gorm.DB) error {
+	if pb == nil {
+		return nil
+	}
+	if strings.EqualFold(strings.TrimSpace(pb.Code), "base") {
+		return errors.New("base pricebook cannot be deleted")
+	}
+	return nil
+}

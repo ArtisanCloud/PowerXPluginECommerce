@@ -24,6 +24,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.GET("/pricebooks", pricebooks.List)
 	rg.POST("/pricebooks", pricebooks.Create)
 	rg.PATCH("/pricebooks/:pricebookId", pricebooks.Update)
+	rg.DELETE("/pricebooks/:pricebookId", pricebooks.Delete)
 
 	rg.POST("/pricebooks/:pricebookId/versions", versions.Create)
 	rg.POST("/pricebooks/:pricebookId/versions/:versionId/publish", versions.Publish)

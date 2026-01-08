@@ -16,6 +16,7 @@ func RBACEntries(prefix string) map[string]authx.Permission {
 		"GET:" + base + "/pricebooks":                                           {Resource: res("pricing.pricebook"), Action: "read"},
 		"POST:" + base + "/pricebooks":                                          {Resource: res("pricing.pricebook"), Action: "manage"},
 		"PATCH:" + base + "/pricebooks/:pricebookId":                            {Resource: res("pricing.pricebook"), Action: "manage"},
+		"DELETE:" + base + "/pricebooks/:pricebookId":                           {Resource: res("pricing.pricebook"), Action: "manage"},
 		"POST:" + base + "/pricebooks/:pricebookId/versions":                    {Resource: res("pricing.pricebook"), Action: "manage"},
 		"PUT:" + base + "/pricebooks/:pricebookId/versions/:versionId/items":    {Resource: res("pricing.pricebook"), Action: "manage"},
 		"POST:" + base + "/pricebooks/:pricebookId/versions/:versionId/publish": {Resource: res("pricing.pricebook"), Action: "publish"},

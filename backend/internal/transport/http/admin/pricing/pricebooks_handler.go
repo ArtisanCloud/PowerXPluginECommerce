@@ -136,6 +136,26 @@ func (h *PricebooksHandler) Update(c *gin.Context) {
 	c.JSON(http.StatusOK, toPricebookDTO(pb, req.Scopes))
 }
 
+func (h *PricebooksHandler) Delete(c *gin.Context) {
+	if h == nil || h.pb == nil || !h.pb.Ready() {
+		respondError(c, http.StatusServiceUnavailable, pricingsvc.CodeServiceUnavailable, pricingsvc.ErrServiceUnavailable)
+		return
+	}
+	pricebookID := strings.TrimSpace(c.Param("pricebookId"))
+	if pricebookID == "" {
+		respondError(c, http.StatusBadRequest, pricingsvc.CodeInvalidArgument, errors.New("pricebookId is required"))
+		return
+	}
+	if err := h.pb.Delete(c.Request.Context(), pricingsvc.DeletePricebookInput{
+		PricebookID: pricebookID,
+		Actor:       actorFromContext(c),
+	}); err != nil {
+		respondServiceError(c, err)
+		return
+	}
+	c.Status(http.StatusNoContent)
+}
+
 func toPricebookDTO(pb *pricingModel.Pricebook, scopes *PricebookScopes) PricebookDTO {
 	if pb == nil {
 		return PricebookDTO{}

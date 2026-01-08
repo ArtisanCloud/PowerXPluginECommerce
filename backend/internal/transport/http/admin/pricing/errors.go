@@ -63,6 +63,8 @@ func statusAndCodeFromServiceErr(err error) (int, string) {
 		switch se.Code {
 		case pricingsvc.CodeServiceUnavailable:
 			return http.StatusServiceUnavailable, se.Code
+		case pricingsvc.CodeForbidden:
+			return http.StatusForbidden, se.Code
 		case pricingsvc.CodePricebookNotFound, pricingsvc.CodeVersionNotFound:
 			return http.StatusNotFound, se.Code
 		case pricingsvc.CodeVersionNotEditable, pricingsvc.CodePublishConflict:

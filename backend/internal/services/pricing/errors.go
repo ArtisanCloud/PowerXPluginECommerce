@@ -7,6 +7,7 @@ var ErrServiceUnavailable = errors.New("pricing service unavailable")
 const (
 	CodeServiceUnavailable  = "SERVICE_UNAVAILABLE"
 	CodeInvalidArgument     = "INVALID_ARGUMENT"
+	CodeForbidden           = "FORBIDDEN"
 	CodePricebookNotFound   = "PRICEBOOK_NOT_FOUND"
 	CodeVersionNotFound     = "VERSION_NOT_FOUND"
 	CodeVersionNotEditable  = "VERSION_NOT_EDITABLE"
