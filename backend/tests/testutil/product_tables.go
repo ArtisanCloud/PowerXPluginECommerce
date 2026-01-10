@@ -22,9 +22,11 @@ func EnsureProductTables(t *testing.T, db *gorm.DB, isPostgres bool) {
 	tableNames := []string{
 		basemodels.TableProductSpus,
 		basemodels.TableProductSpuVersions,
+		basemodels.TableProductSpuLocales,
 		basemodels.TableProductSpuApprovals,
 		basemodels.TableProductSpuChannels,
 		basemodels.TableProductSpuAuditLogs,
+		basemodels.TableProductCategories,
 		basemodels.TableProductSpecGroups,
 		basemodels.TableProductSpecOptions,
 		basemodels.TableProductSkus,
@@ -71,6 +73,19 @@ func EnsureProductTables(t *testing.T, db *gorm.DB, isPostgres bool) {
 			created_at TIMESTAMP,
 			updated_at TIMESTAMP
 		)`,
+		`CREATE TABLE IF NOT EXISTS product_spu_locales (
+			id TEXT PRIMARY KEY,
+			tenant_uuid TEXT NOT NULL,
+			spu_id TEXT NOT NULL,
+			locale TEXT NOT NULL,
+			title TEXT NOT NULL,
+			subtitle TEXT,
+			description TEXT,
+			attributes ` + jsonType + `,
+			status TEXT,
+			updated_at TIMESTAMP,
+			created_at TIMESTAMP
+		)`,
 		`CREATE TABLE IF NOT EXISTS product_spu_approvals (
 			id TEXT PRIMARY KEY,
 			tenant_uuid TEXT NOT NULL,
@@ -108,6 +123,22 @@ func EnsureProductTables(t *testing.T, db *gorm.DB, isPostgres bool) {
 			payload ` + jsonType + `,
 			operator TEXT,
 			created_at TIMESTAMP
+		)`,
+		`CREATE TABLE IF NOT EXISTS product_categories (
+			id TEXT PRIMARY KEY,
+			tenant_uuid TEXT NOT NULL,
+			parent_id TEXT,
+			code TEXT NOT NULL,
+			display_name TEXT NOT NULL,
+			alias_slug TEXT,
+			path TEXT,
+			level INTEGER,
+			sort_order INTEGER,
+			status TEXT,
+			template_id TEXT,
+			created_at TIMESTAMP,
+			updated_at TIMESTAMP,
+			deleted_at TIMESTAMP
 		)`,
 		`CREATE TABLE IF NOT EXISTS product_spec_groups (
 			id TEXT PRIMARY KEY,
