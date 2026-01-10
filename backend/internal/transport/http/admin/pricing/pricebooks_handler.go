@@ -6,6 +6,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/contracts"
 	pricingModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/pricing"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	pricingsvc "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/pricing"
@@ -52,11 +53,40 @@ func (h *PricebooksHandler) List(c *gin.Context) {
 		return
 	}
 
+	currentByID := map[string]pricingModel.PricebookVersion{}
+	ids := make([]string, 0, len(result.Items))
+	for _, row := range result.Items {
+		if row == nil || row.CurrentVersionID == nil || strings.TrimSpace(*row.CurrentVersionID) == "" {
+			continue
+		}
+		ids = append(ids, strings.TrimSpace(*row.CurrentVersionID))
+	}
+	if len(ids) > 0 {
+		tenantUUID, terr := authx.RequireTenantUUID(c.Request.Context())
+		if terr == nil {
+			var vers []pricingModel.PricebookVersion
+			if err := h.domain.Deps().DB.WithContext(c.Request.Context()).
+				Where("tenant_uuid = ? AND id IN ?", tenantUUID, ids).
+				Find(&vers).Error; err == nil {
+				for _, v := range vers {
+					currentByID[v.ID] = v
+				}
+			}
+		}
+	}
+
 	items := make([]PricebookDTO, 0, len(result.Items))
 	for _, row := range result.Items {
-		items = append(items, toPricebookDTO(row, nil))
+		var cur *pricingModel.PricebookVersion
+		if row != nil && row.CurrentVersionID != nil {
+			if v, ok := currentByID[strings.TrimSpace(*row.CurrentVersionID)]; ok {
+				vv := v
+				cur = &vv
+			}
+		}
+		items = append(items, toPricebookDTO(row, nil, cur))
 	}
-	c.JSON(http.StatusOK, PricebookListResponse{
+	contracts.ResponseSuccess(c, PricebookListResponse{
 		Items: items,
 		Meta:  PageMeta{Page: result.Page, PageSize: result.PageSize, Total: result.Total},
 	})
@@ -94,7 +124,19 @@ func (h *PricebooksHandler) Create(c *gin.Context) {
 		respondServiceError(c, err)
 		return
 	}
-	c.JSON(http.StatusCreated, toPricebookDTO(pb, req.Scopes))
+	var cur *pricingModel.PricebookVersion
+	if pb != nil && pb.CurrentVersionID != nil && strings.TrimSpace(*pb.CurrentVersionID) != "" {
+		tenantUUID, terr := authx.RequireTenantUUID(c.Request.Context())
+		if terr == nil {
+			var v pricingModel.PricebookVersion
+			if err := h.domain.Deps().DB.WithContext(c.Request.Context()).
+				Where("tenant_uuid = ? AND id = ?", tenantUUID, strings.TrimSpace(*pb.CurrentVersionID)).
+				First(&v).Error; err == nil {
+				cur = &v
+			}
+		}
+	}
+	contracts.ResponseCreated(c, toPricebookDTO(pb, req.Scopes, cur))
 }
 
 func (h *PricebooksHandler) Update(c *gin.Context) {
@@ -133,7 +175,19 @@ func (h *PricebooksHandler) Update(c *gin.Context) {
 		respondServiceError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, toPricebookDTO(pb, req.Scopes))
+	var cur *pricingModel.PricebookVersion
+	if pb != nil && pb.CurrentVersionID != nil && strings.TrimSpace(*pb.CurrentVersionID) != "" {
+		tenantUUID, terr := authx.RequireTenantUUID(c.Request.Context())
+		if terr == nil {
+			var v pricingModel.PricebookVersion
+			if err := h.domain.Deps().DB.WithContext(c.Request.Context()).
+				Where("tenant_uuid = ? AND id = ?", tenantUUID, strings.TrimSpace(*pb.CurrentVersionID)).
+				First(&v).Error; err == nil {
+				cur = &v
+			}
+		}
+	}
+	contracts.ResponseSuccess(c, toPricebookDTO(pb, req.Scopes, cur))
 }
 
 func (h *PricebooksHandler) Delete(c *gin.Context) {
@@ -153,10 +207,10 @@ func (h *PricebooksHandler) Delete(c *gin.Context) {
 		respondServiceError(c, err)
 		return
 	}
-	c.Status(http.StatusNoContent)
+	contracts.ResponseSuccess(c, gin.H{"deleted": true})
 }
 
-func toPricebookDTO(pb *pricingModel.Pricebook, scopes *PricebookScopes) PricebookDTO {
+func toPricebookDTO(pb *pricingModel.Pricebook, scopes *PricebookScopes, cur *pricingModel.PricebookVersion) PricebookDTO {
 	if pb == nil {
 		return PricebookDTO{}
 	}
@@ -173,6 +227,14 @@ func toPricebookDTO(pb *pricingModel.Pricebook, scopes *PricebookScopes) Pricebo
 		CurrentVersionID: pb.CurrentVersionID,
 		CreatedAt:        &createdAt,
 		UpdatedAt:        &updatedAt,
+	}
+	if cur != nil && strings.TrimSpace(cur.ID) != "" {
+		v := cur.Version
+		s := strings.TrimSpace(cur.State)
+		dto.CurrentVersion = &v
+		if s != "" {
+			dto.CurrentState = &s
+		}
 	}
 	if scopes != nil {
 		dto.Scopes = &PricebookScopes{

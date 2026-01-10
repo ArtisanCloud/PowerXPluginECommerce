@@ -15,6 +15,7 @@
     "submit": "Submit",
     "reset": "Reset",
     "close": "Close",
+    "copy": "Copy",
     "welcome": "Welcome",
     "appName": "PowerX Base"
   },
@@ -229,6 +230,18 @@
     "networkError": "Network error, please check your connection",
     "templateCreated": "Template created successfully"
   },
+  "pricing": {
+    "overview": "Pricing Overview",
+    "pricebooks": "Pricebooks",
+    "rules": "Pricing Rules",
+    "contracts": "Contracts",
+    "region": "Region",
+    "priceSimulation": "Price Simulation",
+    "marginAnalysis": "Margin Analysis",
+    "priceCalculation": "Price Calculation",
+    "priceTrace": "Price Trace",
+    "priceHistory": "Price History"
+  },
   "product": {
     "category": "Category",
     "brand": "Brand",
@@ -243,7 +256,7 @@
       "createDescription": "Fill in the basic information to create a SKU record.",
       "detail": "SKU Detail",
       "search": "Search SKU, code or spec",
-      "status": "Status",
+    "status": "Status",
       "category": "Category",
       "brand": "Brand",
       "skuCode": "SKU Code",

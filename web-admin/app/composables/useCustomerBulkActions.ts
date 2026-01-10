@@ -1,5 +1,5 @@
 import { ref } from "vue";
-import { useCustomerService } from "./api/services/customerService";
+import { useCustomerApi } from "./api";
 import type {
   BulkActionPayload,
   BulkReminderPayload,
@@ -15,7 +15,7 @@ const sleep = (ms: number) =>
   });
 
 export const useCustomerBulkActions = () => {
-  const service = useCustomerService();
+  const api = useCustomerApi();
   const metrics = useCustomerMetrics();
   const toast = useToastAlert();
   const pollingTasks = ref<Record<string, boolean>>({});
@@ -29,7 +29,7 @@ export const useCustomerBulkActions = () => {
       count: payload.ids.length,
     });
     try {
-      const response = await service.runBulkAction(
+      const response = await api.runBulkAction(
         {
           action: payload.action,
           ids: payload.ids,
@@ -58,7 +58,7 @@ export const useCustomerBulkActions = () => {
       count: payload.ids.length,
     });
     try {
-      const response = await service.requestReminder(
+      const response = await api.requestReminder(
         {
           ids: payload.ids,
           channel: payload.channel,
@@ -82,7 +82,7 @@ export const useCustomerBulkActions = () => {
   const submitExport = async (payload: CustomerExportPayload) => {
     const tracker = metrics.trackJob("customer_export_task");
     try {
-      const response = await service.requestExport(
+      const response = await api.requestExport(
         {
           filters: payload.filters,
           fields: payload.fields,
@@ -107,7 +107,7 @@ export const useCustomerBulkActions = () => {
     }
     const tracker = metrics.trackJob("customer_import_task");
     try {
-      const response = await service.requestImport(params.file);
+      const response = await api.requestImport(params.file);
       tracker("success", { taskId: response.taskId });
       toast.add({
         title: "导入任务已提交",
@@ -122,7 +122,7 @@ export const useCustomerBulkActions = () => {
   };
 
   const pollJobOnce = async (taskId: string) => {
-    return service.fetchJobStatus(taskId);
+    return api.fetchJobStatus(taskId);
   };
 
   const pollJobUntilFinished = async (

@@ -58,6 +58,7 @@ type skuListQuery struct {
 	Status   string `form:"status"`
 	Keyword  string `form:"keyword"`
 	Q        string `form:"q"`
+	Locale   string `form:"locale"`
 	Page     int    `form:"page"`
 	PageSize int    `form:"pageSize"`
 }
@@ -80,6 +81,7 @@ func (h *Handler) List(c *gin.Context) {
 		SPUID:    req.SPUID,
 		Status:   req.Status,
 		Keyword:  keyword,
+		Locale:   req.Locale,
 		Page:     req.Page,
 		PageSize: req.PageSize,
 	})

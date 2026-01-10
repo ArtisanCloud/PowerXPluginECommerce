@@ -21,7 +21,7 @@
           {{ t("customer.directory.bulk.addTags") }}
         </UButton>
         <UButton
-          icon="i-heroicons-tag-minus"
+          icon="i-heroicons-tag"
           variant="soft"
           :disabled="!hasSelection"
           @click="openTagsModal('remove')"

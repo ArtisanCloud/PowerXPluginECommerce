@@ -119,7 +119,12 @@ export const useAuth = () => {
   const { refreshToken: refresh, logout: apiLogout } = useAuthService();
 
   const persist = (data: LoginResponse) => {
-    const expires = Date.now() + data.expires_in * 1000;
+    const expires =
+      typeof (data as any)?.expires_at === "number" &&
+      Number.isFinite((data as any).expires_at) &&
+      (data as any).expires_at > 0
+        ? Number((data as any).expires_at)
+        : Date.now() + Number(data.expires_in || 0) * 1000;
     safeLocalStorage.setItem("access_token", data.access_token);
     safeLocalStorage.setItem("refresh_token", data.refresh_token);
     safeLocalStorage.setItem("token_type", data.token_type);

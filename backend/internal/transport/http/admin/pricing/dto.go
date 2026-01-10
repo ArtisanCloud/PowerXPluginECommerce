@@ -17,6 +17,8 @@ type PricebookDTO struct {
 	Status           string           `json:"status"`
 	Description      string           `json:"description,omitempty"`
 	CurrentVersionID *string          `json:"current_version_id,omitempty"`
+	CurrentVersion   *int             `json:"current_version,omitempty"`
+	CurrentState     *string          `json:"current_version_state,omitempty"`
 	Scopes           *PricebookScopes `json:"scopes,omitempty"`
 	CreatedAt        *time.Time       `json:"created_at,omitempty"`
 	UpdatedAt        *time.Time       `json:"updated_at,omitempty"`
@@ -61,6 +63,10 @@ type VersionDTO struct {
 	Note        *string    `json:"note,omitempty"`
 }
 
+type VersionListResponse struct {
+	Items []VersionDTO `json:"items"`
+}
+
 type VersionCreateRequest struct {
 	CopyFromVersionID *string `json:"copy_from_version_id,omitempty"`
 }
@@ -94,4 +100,30 @@ type ItemsUpsertRequest struct {
 type ItemsUpsertResponse struct {
 	Upserted int      `json:"upserted"`
 	Skipped  []string `json:"skipped,omitempty"`
+}
+
+type PricebookItemDTO struct {
+	ID              string         `json:"id"`
+	PricebookID     string         `json:"pricebook_id"`
+	VersionID       string         `json:"version_id"`
+	SKUID           string         `json:"sku_id"`
+	SKUCode         string         `json:"sku_code,omitempty"`
+	SPUID           string         `json:"spu_id,omitempty"`
+	SPUName         string         `json:"spu_name,omitempty"`
+	SpecDisplay     string         `json:"spec_display,omitempty"`
+	BaseAmountMinor *int64         `json:"base_amount_minor,omitempty"`
+	SaleAmountMinor *int64         `json:"sale_amount_minor,omitempty"`
+	MsrpAmountMinor *int64         `json:"msrp_amount_minor,omitempty"`
+	CostAmountMinor *int64         `json:"cost_amount_minor,omitempty"`
+	MinAmountMinor  *int64         `json:"min_amount_minor,omitempty"`
+	MaxAmountMinor  *int64         `json:"max_amount_minor,omitempty"`
+	TaxIncluded     bool           `json:"tax_included"`
+	Meta            map[string]any `json:"meta,omitempty"`
+	CreatedAt       *time.Time     `json:"created_at,omitempty"`
+	UpdatedAt       *time.Time     `json:"updated_at,omitempty"`
+}
+
+type ItemsListResponse struct {
+	Items []PricebookItemDTO `json:"items"`
+	Meta  PageMeta           `json:"meta"`
 }

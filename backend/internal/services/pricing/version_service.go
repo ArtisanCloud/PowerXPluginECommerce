@@ -47,6 +47,10 @@ type ArchiveVersionInput struct {
 	Actor       string
 }
 
+type ListVersionsInput struct {
+	PricebookID string
+}
+
 var publishLocks sync.Map // key string -> *sync.Mutex
 
 func lockForPublish(key string) func() {
@@ -327,6 +331,37 @@ func (s *VersionService) Archive(ctx context.Context, in ArchiveVersionInput) (*
 		return nil, err
 	}
 	return &v, nil
+}
+
+func (s *VersionService) List(ctx context.Context, in ListVersionsInput) ([]*pricingModel.PricebookVersion, error) {
+	if !s.Ready() {
+		return nil, E(CodeServiceUnavailable, ErrServiceUnavailable)
+	}
+	tenantUUID, err := authx.RequireTenantUUID(ctx)
+	if err != nil {
+		return nil, E(CodeTenantMissing, err)
+	}
+	pricebookID := strings.TrimSpace(in.PricebookID)
+	if pricebookID == "" {
+		return nil, E(CodeInvalidArgument, errors.New("pricebook_id is required"))
+	}
+
+	var pb pricingModel.Pricebook
+	if err := s.deps.DB.WithContext(ctx).Where("tenant_uuid = ? AND id = ?", tenantUUID, pricebookID).First(&pb).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, E(CodePricebookNotFound, err)
+		}
+		return nil, err
+	}
+
+	var rows []*pricingModel.PricebookVersion
+	if err := s.deps.DB.WithContext(ctx).
+		Where("tenant_uuid = ? AND pricebook_id = ?", tenantUUID, pricebookID).
+		Order("version desc").
+		Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
 }
 
 func defaultActorFromTenant(tenantUUID string) string {

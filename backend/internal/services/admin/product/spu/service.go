@@ -9,6 +9,7 @@ import (
 	"time"
 
 	productmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product"
+	productskumodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_sku"
 	productrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/product"
 	channelproductjobs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/jobs/channel/product"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
@@ -204,6 +205,7 @@ type SPUSummary struct {
 	Name      string    `json:"name"`
 	Type      string    `json:"type"`
 	Status    string    `json:"status"`
+	SKUCount  int64     `json:"skuCount"`
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
@@ -308,7 +310,7 @@ func (s *Service) List(ctx context.Context, filters ListFilters) (*ListResult, e
 	if dialect == "postgres" {
 		if needsPrice {
 			skuAgg := s.deps.DB.WithContext(ctx).
-				Table("product_skus").
+				Table(productskumodel.ProductSKU{}.TableName()).
 				Select("spu_id, MIN("+postgresSKUPriceExpr()+") AS min_price, MAX("+postgresSKUPriceExpr()+") AS max_price").
 				Where("tenant_uuid = ? AND deleted_at IS NULL AND status = ?", tenantID, "published").
 				Group("spu_id")
@@ -316,7 +318,7 @@ func (s *Service) List(ctx context.Context, filters ListFilters) (*ListResult, e
 		}
 		if needsPlans {
 			planAgg := s.deps.DB.WithContext(ctx).
-				Table("product_spu_subscription_plans").
+				Table(productmodel.SubscriptionPlan{}.TableName()).
 				Select("spu_id, MIN(price) AS min_price, MAX(price) AS max_price, COUNT(*) AS plan_count").
 				Where("tenant_uuid = ? AND status = ?", tenantID, "active").
 				Group("spu_id")
@@ -324,9 +326,9 @@ func (s *Service) List(ctx context.Context, filters ListFilters) (*ListResult, e
 		}
 		if needsInventory {
 			invAgg := s.deps.DB.WithContext(ctx).
-				Table("product_skus AS s").
+				Table(fmt.Sprintf("%s AS s", productskumodel.ProductSKU{}.TableName())).
 				Select("s.spu_id, SUM(GREATEST(i.available_qty - i.locked_qty, 0)) AS available_qty").
-				Joins("JOIN product_sku_inventories AS i ON i.sku_id = s.id").
+				Joins("JOIN "+fmt.Sprintf("%s AS i", productskumodel.ProductSKUInventory{}.TableName())+" ON i.sku_id = s.id").
 				Where("s.tenant_uuid = ? AND s.deleted_at IS NULL AND s.status = ? AND i.tenant_uuid = ? AND i.deleted_at IS NULL",
 					tenantID, "published", tenantID).
 				Group("s.spu_id")
@@ -363,13 +365,22 @@ product_spus.type <> 'subscription' AND COALESCE(inv_agg.available_qty, 0) <= 0
 		}
 	}
 
+	// SKU count is always useful for UI list rendering (independent of pricing/inventory joins).
+	skuCountAgg := s.deps.DB.WithContext(ctx).
+		Table(productskumodel.ProductSKU{}.TableName()).
+		Select("spu_id, COUNT(*) AS sku_count").
+		Where("tenant_uuid = ? AND deleted_at IS NULL", tenantID).
+		Group("spu_id")
+	query = query.Joins("LEFT JOIN (?) AS sku_cnt ON sku_cnt.spu_id = product_spus.id", skuCountAgg)
+
 	countQuery := query.Session(&gorm.Session{})
 	var total int64
 	if err := countQuery.Count(&total).Error; err != nil {
 		return nil, err
 	}
 
-	listQuery := query.Session(&gorm.Session{}).Select("product_spus.*")
+	listQuery := query.Session(&gorm.Session{}).
+		Select("product_spus.id, product_spus.code, product_spus.name, product_spus.type, product_spus.status, product_spus.updated_at, COALESCE(sku_cnt.sku_count, 0) AS sku_count")
 	switch sortKey {
 	case "price":
 		listQuery = listQuery.Order(postgresSPUEffectiveMinPriceExpr() + " " + orderDir + " NULLS LAST").Order("updated_at DESC")
@@ -377,11 +388,21 @@ product_spus.type <> 'subscription' AND COALESCE(inv_agg.available_qty, 0) <= 0
 		listQuery = listQuery.Order("updated_at " + orderDir)
 	}
 
-	var records []productmodel.SPU
+	type spuListRow struct {
+		ID        string    `gorm:"column:id"`
+		Code      string    `gorm:"column:code"`
+		Name      string    `gorm:"column:name"`
+		Type      string    `gorm:"column:type"`
+		Status    string    `gorm:"column:status"`
+		UpdatedAt time.Time `gorm:"column:updated_at"`
+		SKUCount  int64     `gorm:"column:sku_count"`
+	}
+
+	var records []spuListRow
 	if err := listQuery.
 		Offset((page - 1) * pageSize).
 		Limit(pageSize).
-		Find(&records).Error; err != nil {
+		Scan(&records).Error; err != nil {
 		return nil, err
 	}
 	items := make([]SPUSummary, 0, len(records))
@@ -392,6 +413,7 @@ product_spus.type <> 'subscription' AND COALESCE(inv_agg.available_qty, 0) <= 0
 			Name:      rec.Name,
 			Type:      rec.Type,
 			Status:    rec.Status,
+			SKUCount:  rec.SKUCount,
 			UpdatedAt: rec.UpdatedAt,
 		})
 	}

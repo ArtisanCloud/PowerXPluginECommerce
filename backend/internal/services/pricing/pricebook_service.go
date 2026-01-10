@@ -260,6 +260,9 @@ func (s *PricebookService) Create(ctx context.Context, in CreatePricebookInput) 
 	if code == "" || name == "" || currency == "" {
 		return nil, E(CodeInvalidArgument, errors.New("code/name/currency are required"))
 	}
+	if strings.EqualFold(code, BasePricebookCode) {
+		return nil, E(CodeForbidden, errors.New("base pricebook is system-managed"))
+	}
 	typ := strings.TrimSpace(in.Type)
 	if typ == "" {
 		typ = "sales"

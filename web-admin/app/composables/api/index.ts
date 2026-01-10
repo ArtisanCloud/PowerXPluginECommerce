@@ -5,6 +5,9 @@ export * from "./useStream";
 export * from "./useCategory";
 export * from "./useCategoryTemplate";
 export * from "./useCategoryMapping";
+export * from "./useCustomer";
+export * from "./usePricebook";
+export * from "./useProductSpec";
 export {
   useApiClient,
   apiGet,

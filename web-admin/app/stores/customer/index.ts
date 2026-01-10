@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { useCustomerService } from "~/composables/api/services/customerService";
+import { useCustomerApi } from "~/composables/api";
 import { useCustomerMetrics } from "~/composables/useCustomerMetrics";
 import { useMembershipInsights } from "~/composables/useMembershipInsights";
 import { useCustomerBulkActions } from "~/composables/useCustomerBulkActions";
@@ -272,14 +272,14 @@ export const useCustomerStore = defineStore("customer.directory", {
       if (!id) {
         throw new Error("客户 ID 不能为空");
       }
-      const service = useCustomerService();
-      return service.getCustomer(id);
+      const api = useCustomerApi();
+      return api.getCustomer(id);
     },
     isFieldMasked(customer: Customer, field: string) {
       return customer?.maskedFields?.includes(field);
     },
     async fetchCustomers(extra?: Partial<CustomerListFilters>) {
-      const service = useCustomerService();
+      const api = useCustomerApi();
       const metrics = useCustomerMetrics();
       const stopTimer = metrics.startLatencyTimer("customer_list_fetch", {
         source: "directory",
@@ -287,7 +287,7 @@ export const useCustomerStore = defineStore("customer.directory", {
       this.loading = true;
       this.error = null;
       try {
-        const response = await service.listCustomers({
+        const response = await api.listCustomers({
           ...this.filters,
           ...extra,
         });
@@ -485,11 +485,11 @@ export const useCustomerStore = defineStore("customer.directory", {
       if (!payload?.name) {
         throw new Error("缺少客户必填字段");
       }
-      const service = useCustomerService();
+      const api = useCustomerApi();
       this.mutationState.creating = true;
       this.mutationState.error = null;
       try {
-        const customer = await service.createCustomer(payload);
+        const customer = await api.createCustomer(payload);
         this.mutationState.lastAction = "create";
         this.mutationState.lastCustomerId = customer.id;
         if (this.filters.page !== 1) {
@@ -513,11 +513,11 @@ export const useCustomerStore = defineStore("customer.directory", {
       if (!id) {
         throw new Error("customerId is required");
       }
-      const service = useCustomerService();
+      const api = useCustomerApi();
       this.mutationState.updating = true;
       this.mutationState.error = null;
       try {
-        const customer = await service.updateCustomer(id, payload);
+        const customer = await api.updateCustomer(id, payload);
         this.mutationState.lastAction = "update";
         this.mutationState.lastCustomerId = customer.id;
         await this.fetchCustomers();
@@ -538,11 +538,11 @@ export const useCustomerStore = defineStore("customer.directory", {
       if (!params?.id) {
         throw new Error("customerId is required");
       }
-      const service = useCustomerService();
+      const api = useCustomerApi();
       this.mutationState.deleting = true;
       this.mutationState.error = null;
       try {
-        await service.deleteCustomer(params.id, { reason: params.reason });
+        await api.deleteCustomer(params.id, { reason: params.reason });
         this.mutationState.lastAction = "delete";
         this.mutationState.lastCustomerId = params.id;
         this.selection = this.selection.filter((item) => item !== params.id);

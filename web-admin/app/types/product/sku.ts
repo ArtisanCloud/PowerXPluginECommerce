@@ -115,8 +115,12 @@ export interface ProductSku {
   id: string
   tenantUuid: string
   spuId: string
+  spuName?: string
   skuCode: string
   specs: SkuSpecValue[]
+  specDisplay?: string
+  salePrice?: number
+  currency?: string
   barcode?: string
   status: SkuStatus
   lifecyclePhase?: string

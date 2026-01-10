@@ -77,6 +77,13 @@ func main() {
 	if err != nil {
 		logger.WithError(err).Fatal("Failed to bootstrap plugin")
 	}
+	if cfg != nil && cfg.Server.DevMode {
+		if n, err := pluginbootstrap.RepairDraftSKUsForPublishedSPUs(ctx, queryDB); err != nil {
+			logger.WithError(err).Warn("Dev repair: failed to reconcile SKU statuses for published SPUs")
+		} else if n > 0 {
+			logger.WithField("rows", n).Info("Dev repair: reconciled SKU statuses for published SPUs")
+		}
+	}
 
 	// 在初始化 gRPC 客户端之前，尝试从本地数据库加载租户凭证（若存在），以便通过 STS 获取短期令牌
 	if cfg.GRPCUpstream != nil && strings.TrimSpace(cfg.GRPCUpstream.TenantUUID) != "" {

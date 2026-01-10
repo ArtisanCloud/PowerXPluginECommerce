@@ -63,19 +63,25 @@ type SkuListQuery struct {
 	SPUID    string `json:"spu_id,omitempty"`
 	Status   string `json:"status,omitempty"`
 	Keyword  string `json:"keyword,omitempty"`
+	Locale   string `json:"locale,omitempty"`
 	Page     int    `json:"page,omitempty"`
 	PageSize int    `json:"page_size,omitempty"`
 }
 
 // SkuListItem summarizes SKU details for list API.
 type SkuListItem struct {
-	ID        string     `json:"id"`
-	SPUID     string     `json:"spu_id"`
-	SKUCode   string     `json:"sku_code"`
-	Status    string     `json:"status"`
-	Barcode   string     `json:"barcode,omitempty"`
-	CreatedAt *time.Time `json:"created_at,omitempty"`
-	UpdatedAt *time.Time `json:"updated_at,omitempty"`
+	ID          string     `json:"id"`
+	SPUID       string     `json:"spu_id"`
+	SPUName     string     `json:"spu_name,omitempty"`
+	SKUCode     string     `json:"sku_code"`
+	Status      string     `json:"status"`
+	Barcode     string     `json:"barcode,omitempty"`
+	Specs       []SkuSpec  `json:"specs,omitempty"`
+	SpecDisplay string     `json:"spec_display,omitempty"`
+	SalePrice   *float64   `json:"sale_price,omitempty"`
+	Currency    string     `json:"currency,omitempty"`
+	CreatedAt   *time.Time `json:"created_at,omitempty"`
+	UpdatedAt   *time.Time `json:"updated_at,omitempty"`
 }
 
 // SkuListResult is the paginated response payload.

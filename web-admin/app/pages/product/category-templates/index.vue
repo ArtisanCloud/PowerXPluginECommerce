@@ -75,8 +75,10 @@ const creating = ref(false)
 const items = ref<CategoryTemplate[]>([])
 const total = ref(0)
 
+const STATUS_ALL = '__all__'
+
 const statusItems = [
-	{ label: '全部', value: '' },
+	{ label: '全部', value: STATUS_ALL },
 	{ label: '启用', value: 'enabled' },
 	{ label: '停用', value: 'disabled' },
 ]
@@ -84,7 +86,7 @@ const pageSizeItems = [10, 20, 50, 100].map((n) => ({ label: String(n), value: n
 
 const filters = reactive({
 	keyword: '',
-	status: '',
+	status: STATUS_ALL,
 	page: 1,
 	pageSize: 20,
 })
@@ -100,11 +102,11 @@ watch(
 )
 
 const columns = [
-	{ key: 'name', label: '名称' },
-	{ key: 'status', label: '状态' },
-	{ key: 'published', label: '已发布版本' },
-	{ key: 'updatedAt', label: '更新时间' },
-	{ key: 'actions', label: '操作' },
+	{ id: 'name', accessorKey: 'name', header: '名称' },
+	{ id: 'status', accessorKey: 'status', header: '状态' },
+	{ id: 'published', header: '已发布版本' },
+	{ id: 'updatedAt', accessorKey: 'updatedAt', header: '更新时间' },
+	{ id: 'actions', header: '操作' },
 ]
 
 const fetchList = async () => {
@@ -112,7 +114,7 @@ const fetchList = async () => {
 	try {
 		const resp = await api.list({
 			keyword: filters.keyword || undefined,
-			status: filters.status || undefined,
+			status: filters.status === STATUS_ALL ? undefined : filters.status || undefined,
 			page: filters.page,
 			pageSize: filters.pageSize,
 		})
@@ -127,7 +129,7 @@ const fetchList = async () => {
 
 const resetFilters = () => {
 	filters.keyword = ''
-	filters.status = ''
+	filters.status = STATUS_ALL
 	filters.page = 1
 	filters.pageSize = 20
 	fetchList()
@@ -152,4 +154,3 @@ const createTemplate = async () => {
 
 onMounted(() => fetchList())
 </script>
-

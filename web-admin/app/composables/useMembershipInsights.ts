@@ -5,7 +5,7 @@ import type {
   MembershipSnapshot,
   MembershipStats,
 } from "~/types/customer";
-import { useCustomerService } from "./api/services/customerService";
+import { useCustomerApi } from "./api";
 import { useCustomerMetrics } from "./useCustomerMetrics";
 
 interface MembershipQueryResult {
@@ -79,7 +79,7 @@ const aggregateStats = (
 };
 
 export const useMembershipInsights = () => {
-  const service = useCustomerService();
+  const api = useCustomerApi();
   const metrics = useCustomerMetrics();
 
   const fetchInsights = async (
@@ -89,7 +89,7 @@ export const useMembershipInsights = () => {
       source: "members_page",
     });
     try {
-      const response = await service.listMembers(filters);
+      const response = await api.listMembers(filters);
       const insights =
         (response.data || []).map((entry) => ({
           customer: entry.customer,

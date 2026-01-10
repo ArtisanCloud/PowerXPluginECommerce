@@ -53,3 +53,28 @@ checks:
         1) 在所属模块的 routes.go 中声明 HTTP group 与 GET/POST/PUT/DELETE handlers；
         2) 在 admin/tenant 等聚合 routers（例如 backend/internal/transport/http/admin/routes.go）里引入并调用 RegisterRoutes;
         3) 若存在多租户/平台区分，分别在需要的 router group 中挂载，避免出现 404。
+
+  - id: api-rest-ensure-tenant
+    desc: 多租户接口必须统一挂载 EnsureTenant()，保证服务层可从 request context 获取 tenant_uuid
+    assert:
+      type: manual
+      instructions: |
+        适用范围：所有“租户级”接口（读写业务数据，表含 tenant_uuid / service 需要 TenantUUIDFromContext）。
+
+        规范：
+        1) 路由分组必须挂载 EnsureTenant()：
+           - admin：在 /api/v1/admin/** 的子模块 routes.go 中，对业务资源 group 统一使用：
+             router.Group("/xxx", httpmw.EnsureTenant())
+           - tenant：在 /api/v1/tenant/** 下同理
+           - mini-app/public 等“显式无租户/或外部另行校验”的路由除外（但需在代码/文档中写明原因）
+
+        2) 服务层/仓储层只从 context 读取租户，不从 Header/Query 读取：
+           - 使用 authx.TenantUUIDFromContext(ctx) / authx.RequireTenantUUID(ctx)
+           - 不要在 service/repo 内部解析 X-Tenant-UUID 或 tenant_uuid query 参数
+
+        3) 不要把 X-Tenant-UUID 作为生产信任来源：
+           - 该 header 仅用于本地调试/内部调用的兜底（最终信任来源应来自 JWT tid 或 PowerX 签名上下文）
+
+        4) 验收点（新增接口必须自测）：
+           - 仅带 Authorization Bearer（含 tid）时，service 必须能读到 tenant_uuid
+           - 未提供 tenant 的请求返回统一错误（例如 tenant context missing / TENANT_MISSING）

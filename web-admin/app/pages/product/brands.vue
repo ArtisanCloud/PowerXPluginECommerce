@@ -1,5 +1,12 @@
 <template>
   <div class="p-6">
+    <UAlert
+      class="mb-6"
+      color="neutral"
+      variant="soft"
+      title="提示"
+      description="品牌功能后端接口尚未接入，本页暂不发起网络请求（避免 404 噪音）。"
+    />
     <!-- 标题与操作 -->
     <div class="flex justify-between items-center mb-6">
       <div>
@@ -7,7 +14,9 @@
         <p class="text-gray-600 dark:text-gray-400 mt-1">管理您的品牌信息、品牌馆和频道配置</p>
       </div>
       <div class="flex gap-3">
-        <UButton color="primary" icon="i-heroicons-plus" @click="openBrandModal()">新增品牌</UButton>
+        <UButton color="primary" icon="i-heroicons-plus" :disabled="!BRAND_API_ENABLED" @click="openBrandModal()"
+          >新增品牌</UButton
+        >
       </div>
     </div>
 
@@ -23,7 +32,10 @@
             <UInput v-model="searchQuery" placeholder="搜索品牌..." icon="i-heroicons-magnifying-glass" size="sm" />
             <USelectMenu
               v-model="filterOrigin"
-              :options="originOptions"
+              :items="originOptions"
+              value-key="value"
+              label-key="label"
+              :portal="false"
               placeholder="按产地筛选"
               size="sm"
             />
@@ -131,7 +143,10 @@
             <UFormField label="默认品牌馆页面" description="选择默认展示的品牌馆页面">
               <USelectMenu
                 v-model="defaultBrandMallPage"
-                :options="brandMallPages"
+                :items="brandMallPages"
+                value-key="value"
+                label-key="label"
+                :portal="false"
                 placeholder="选择页面"
               />
             </UFormField>
@@ -139,7 +154,10 @@
             <UFormField label="品牌馆展示样式" description="选择品牌馆的展示样式">
               <USelectMenu
                 v-model="brandMallStyle"
-                :options="styleOptions"
+                :items="styleOptions"
+                value-key="value"
+                label-key="label"
+                :portal="false"
                 placeholder="选择样式"
               />
             </UFormField>
@@ -179,18 +197,22 @@
             <UFormField label="品牌频道列表" description="选择可在频道中展示的品牌">
               <USelectMenu
                 v-model="selectedBrandChannels"
-                :options="allBrands"
+                :items="allBrandItems"
+                value-key="value"
+                label-key="label"
+                :portal="false"
                 multiple
                 placeholder="选择品牌"
-                option-attribute="name"
-                value-attribute="id"
               />
             </UFormField>
             
             <UFormField label="频道页面样式" description="选择频道页面的展示样式">
               <USelectMenu
                 v-model="channelPageStyle"
-                :options="styleOptions"
+                :items="styleOptions"
+                value-key="value"
+                label-key="label"
+                :portal="false"
                 placeholder="选择样式"
               />
             </UFormField>
@@ -198,7 +220,10 @@
             <UFormField label="品牌展示顺序" description="设置频道中品牌的展示顺序">
               <USelectMenu
                 v-model="brandDisplayOrder"
-                :options="orderOptions"
+                :items="orderOptions"
+                value-key="value"
+                label-key="label"
+                :portal="false"
                 placeholder="选择排序方式"
               />
             </UFormField>
@@ -239,7 +264,10 @@
             <UFormField label="商店页面模板" description="选择品牌商店页面的模板">
               <USelectMenu
                 v-model="brandStoreTemplate"
-                :options="storeTemplates"
+                :items="storeTemplates"
+                value-key="value"
+                label-key="label"
+                :portal="false"
                 placeholder="选择模板"
               />
             </UFormField>
@@ -382,7 +410,7 @@ const brands = ref<any[]>([])
 const loading = ref(false)
 const currentPage = ref(1)
 const searchQuery = ref('')
-const filterOrigin = ref('')
+const filterOrigin = ref(ORIGIN_ALL)
 
 // 分页
 const pageCount = computed(() => Math.ceil(brands.value.length / 10))
@@ -457,8 +485,11 @@ const orderOptions = [
   { label: '按销量', value: 'sales' },
   { label: '按受欢迎程度', value: 'popularity' }
 ]
+const BRAND_API_ENABLED = false
+const ORIGIN_ALL = '__all__'
+
 const originOptions = [
-  { label: '全部产地', value: '' },
+  { label: '全部产地', value: ORIGIN_ALL },
   { label: '中国', value: '中国' },
   { label: '美国', value: '美国' },
   { label: '法国', value: '法国' },
@@ -466,8 +497,14 @@ const originOptions = [
   { label: '日本', value: '日本' }
 ]
 
+const allBrandItems = computed(() => (allBrands.value || []).map((b: any) => ({ label: b.name, value: b.id })))
+
 // API calls for brand management
 const loadBrands = async () => {
+  if (!BRAND_API_ENABLED) {
+    brands.value = []
+    return
+  }
   loading.value = true
   try {
     const response = await $fetch('/api/brands', {
@@ -476,7 +513,7 @@ const loadBrands = async () => {
         page: currentPage.value,
         limit: 10,
         search: searchQuery.value,
-        origin: filterOrigin.value
+        origin: filterOrigin.value === ORIGIN_ALL ? '' : filterOrigin.value
       }
     })
     
@@ -493,6 +530,9 @@ const loadBrands = async () => {
 
 // Load brand configuration settings
 const loadBrandConfig = async () => {
+  if (!BRAND_API_ENABLED) {
+    return
+  }
   try {
     const response = await $fetch('/api/brands/config')
     const config = response?.data || {}
@@ -530,6 +570,10 @@ const closeBrandModal = () => {
 
 // 保存品牌
 const saveBrand = async () => {
+  if (!BRAND_API_ENABLED) {
+    toast.add({ title: '品牌功能未接入', color: 'yellow' })
+    return
+  }
   if (!brandFormState.name.trim()) {
     brandFormErrors.name = '品牌名称不能为空'
     return
@@ -573,6 +617,10 @@ const viewBrand = (brand: any) => {
 
 // 删除品牌
 const deleteBrand = async (id: number) => {
+  if (!BRAND_API_ENABLED) {
+    toast.add({ title: '品牌功能未接入', color: 'yellow' })
+    return
+  }
   if (!confirm('确定要删除这个品牌吗？')) return
   try {
     await $fetch(`/api/brands/${id}`, { method: 'DELETE' })
@@ -608,12 +656,16 @@ const openBrandModal = (brand: any = null) => {
 // 重置筛选器
 const resetFilters = () => {
   searchQuery.value = ''
-  filterOrigin.value = ''
+  filterOrigin.value = ORIGIN_ALL
   loadBrands()
 }
 
 // 保存品牌馆设置
 const saveBrandMallSettings = async () => {
+  if (!BRAND_API_ENABLED) {
+    toast.add({ title: '品牌功能未接入', color: 'yellow' })
+    return
+  }
   try {
     await $fetch('/api/brands/config', {
       method: 'PUT',
@@ -633,6 +685,10 @@ const saveBrandMallSettings = async () => {
 
 // 保存频道设置
 const saveChannelSettings = async () => {
+  if (!BRAND_API_ENABLED) {
+    toast.add({ title: '品牌功能未接入', color: 'yellow' })
+    return
+  }
   try {
     await $fetch('/api/brands/config', {
       method: 'PUT',
@@ -652,6 +708,10 @@ const saveChannelSettings = async () => {
 
 // 保存商店集成设置
 const saveStoreIntegrationSettings = async () => {
+  if (!BRAND_API_ENABLED) {
+    toast.add({ title: '品牌功能未接入', color: 'yellow' })
+    return
+  }
   try {
     await $fetch('/api/brands/config', {
       method: 'PUT',
@@ -671,6 +731,12 @@ const saveStoreIntegrationSettings = async () => {
 
 // 初始化数据
 onMounted(async () => {
+  filterOrigin.value = ORIGIN_ALL
+  if (!BRAND_API_ENABLED) {
+    brands.value = []
+    allBrands.value = []
+    return
+  }
   await loadBrands()
   await loadBrandConfig()
   try {

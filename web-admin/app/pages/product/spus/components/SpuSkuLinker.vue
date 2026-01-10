@@ -56,12 +56,20 @@
 						</UFormField>
 						<UFormField label="价格 (含税)" required>
 							<template #default="{ id }">
-								<UInput :id="id" v-model.number="row.pricing.price" type="number" min="0" step="0.01" />
+								<div class="space-y-1">
+									<UInput :id="id" v-model.number="row.pricing.price" type="number" min="0" step="0.01" disabled />
+									<p v-if="row.pricingSource === 'pricebook'" class="text-xs text-gray-500 dark:text-gray-400">
+										来源：价格手册（base 优先）。实际下单以价格手册命中价为准。
+									</p>
+									<p v-else class="text-xs text-gray-500 dark:text-gray-400">
+										暂无价格手册条目命中；可到价格手册维护价格。
+									</p>
+								</div>
 							</template>
 						</UFormField>
 						<UFormField label="币种">
 							<template #default="{ id }">
-								<UInput :id="id" v-model.trim="row.pricing.currency" maxlength="3" placeholder="CNY" />
+								<UInput :id="id" v-model.trim="row.pricing.currency" maxlength="3" placeholder="CNY" disabled />
 							</template>
 						</UFormField>
 						<UFormField label="克隆来源">
@@ -107,6 +115,7 @@ interface LocalSkuRow {
 	name: string
 	inventoryRef?: string
 	pricing: { price: number; currency: string }
+	pricingSource?: 'pricebook' | 'legacy' | 'none'
 	cloneFrom?: string
 	attributesText: string
 }
@@ -165,7 +174,8 @@ const composeRowFromSources = (sku: ProductSku, payload?: SpuSkuLink): LocalSkuR
 	code: sku.skuCode || payload?.code || '',
 	name: payload?.name || sku.skuCode || '',
 	inventoryRef: payload?.inventoryRef,
-	pricing: normalizePricing(payload?.pricing),
+	pricing: resolvePricing(sku, payload?.pricing),
+	pricingSource: resolvePricingSource(sku, payload?.pricing),
 	cloneFrom: payload?.cloneFrom,
 	attributesText: stringifyAttributes(payload?.attributes),
 })
@@ -185,6 +195,26 @@ const normalizePricing = (pricing?: { price: number; currency: string }) => {
 	const price = typeof pricing?.price === 'number' ? pricing.price : 0
 	const currency = pricing?.currency || 'CNY'
 	return { price, currency }
+}
+
+const resolvePricing = (sku: ProductSku, legacy?: { price: number; currency: string }) => {
+	const price = typeof sku?.salePrice === 'number' && Number.isFinite(sku.salePrice) ? sku.salePrice : undefined
+	const currency = typeof sku?.currency === 'string' && sku.currency.trim() ? sku.currency.trim() : undefined
+	if (typeof price === 'number' && price > 0) {
+		return { price, currency: currency || 'CNY' }
+	}
+	return normalizePricing(legacy)
+}
+
+const resolvePricingSource = (sku: ProductSku, legacy?: { price: number; currency: string }) => {
+	const price = typeof sku?.salePrice === 'number' && Number.isFinite(sku.salePrice) ? sku.salePrice : undefined
+	if (typeof price === 'number' && price > 0) {
+		return 'pricebook'
+	}
+	if (typeof legacy?.price === 'number' && legacy.price > 0) {
+		return 'legacy'
+	}
+	return 'none'
 }
 
 const stringifyAttributes = (attributes?: Record<string, any>) => {
@@ -297,6 +327,7 @@ const createRow = (): LocalSkuRow => ({
 	code: '',
 	name: '',
 	pricing: { price: 0, currency: 'CNY' },
+	pricingSource: 'none',
 	attributesText: '',
 })
 
@@ -310,5 +341,7 @@ const normalizeOfficialSku = (item: any): ProductSku => ({
 	updatedAt: item?.updatedAt ?? item?.updated_at,
 	specs: item?.specs ?? [],
 	minOrderQty: item?.minOrderQty ?? item?.min_order_qty,
+	salePrice: typeof item?.sale_price === 'number' ? item.sale_price : item?.salePrice,
+	currency: item?.currency ?? item?.currencyCode,
 })
 </script>

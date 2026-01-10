@@ -51,6 +51,21 @@ type UpsertItemsResult struct {
 	Skipped  []string
 }
 
+type ListItemsInput struct {
+	PricebookID string
+	VersionID   string
+	SKUID       string
+	Page        int
+	PageSize    int
+}
+
+type ListItemsResult struct {
+	Items    []*pricingModel.PricebookItem
+	Page     int
+	PageSize int
+	Total    int64
+}
+
 func (s *ItemService) UpsertItems(ctx context.Context, in UpsertItemsInput) (*UpsertItemsResult, error) {
 	if !s.Ready() {
 		return nil, E(CodeServiceUnavailable, ErrServiceUnavailable)
@@ -177,6 +192,64 @@ func (s *ItemService) UpsertItems(ctx context.Context, in UpsertItemsInput) (*Up
 		return nil, err
 	}
 	return &UpsertItemsResult{Upserted: len(rows), Skipped: skipped}, nil
+}
+
+func (s *ItemService) ListItems(ctx context.Context, in ListItemsInput) (*ListItemsResult, error) {
+	if !s.Ready() {
+		return nil, E(CodeServiceUnavailable, ErrServiceUnavailable)
+	}
+	tenantUUID, err := authx.RequireTenantUUID(ctx)
+	if err != nil {
+		return nil, E(CodeTenantMissing, err)
+	}
+	pricebookID := strings.TrimSpace(in.PricebookID)
+	versionID := strings.TrimSpace(in.VersionID)
+	if pricebookID == "" || versionID == "" {
+		return nil, E(CodeInvalidArgument, errors.New("pricebook_id/version_id are required"))
+	}
+
+	page := in.Page
+	pageSize := in.PageSize
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 {
+		pageSize = 200
+	}
+	if pageSize > 1000 {
+		pageSize = 1000
+	}
+
+	var v pricingModel.PricebookVersion
+	if err := s.deps.DB.WithContext(ctx).
+		Where("tenant_uuid = ? AND id = ? AND pricebook_id = ?", tenantUUID, versionID, pricebookID).
+		First(&v).Error; err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, E(CodeVersionNotFound, err)
+		}
+		return nil, err
+	}
+
+	q := s.deps.DB.WithContext(ctx).Model(&pricingModel.PricebookItem{}).
+		Where("tenant_uuid = ? AND pricebook_id = ? AND version_id = ?", tenantUUID, pricebookID, versionID)
+	if strings.TrimSpace(in.SKUID) != "" {
+		q = q.Where("sku_id = ?", strings.TrimSpace(in.SKUID))
+	}
+
+	var total int64
+	if err := q.Count(&total).Error; err != nil {
+		return nil, err
+	}
+
+	var items []*pricingModel.PricebookItem
+	if err := q.Order("updated_at desc, sku_id asc").
+		Limit(pageSize).
+		Offset((page - 1) * pageSize).
+		Find(&items).Error; err != nil {
+		return nil, err
+	}
+
+	return &ListItemsResult{Items: items, Page: page, PageSize: pageSize, Total: total}, nil
 }
 
 func validateItem(in ItemInput) error {

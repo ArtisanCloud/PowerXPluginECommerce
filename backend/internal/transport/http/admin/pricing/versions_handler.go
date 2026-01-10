@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/contracts"
 	pricingModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/pricing"
 	pricingsvc "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/pricing"
 	"github.com/gin-gonic/gin"
@@ -20,6 +21,30 @@ func NewVersionsHandler(domain *pricingsvc.Service) *VersionsHandler {
 		return &VersionsHandler{domain: domain, vs: nil}
 	}
 	return &VersionsHandler{domain: domain, vs: pricingsvc.NewVersionService(domain.Deps())}
+}
+
+func (h *VersionsHandler) List(c *gin.Context) {
+	if h == nil || h.vs == nil || !h.vs.Ready() {
+		respondError(c, http.StatusServiceUnavailable, pricingsvc.CodeServiceUnavailable, pricingsvc.ErrServiceUnavailable)
+		return
+	}
+	pricebookID := strings.TrimSpace(c.Param("pricebookId"))
+	if pricebookID == "" {
+		respondError(c, http.StatusBadRequest, pricingsvc.CodeInvalidArgument, errors.New("pricebookId is required"))
+		return
+	}
+
+	rows, err := h.vs.List(c.Request.Context(), pricingsvc.ListVersionsInput{PricebookID: pricebookID})
+	if err != nil {
+		respondServiceError(c, err)
+		return
+	}
+
+	items := make([]VersionDTO, 0, len(rows))
+	for _, row := range rows {
+		items = append(items, toVersionDTO(row))
+	}
+	contracts.ResponseSuccess(c, VersionListResponse{Items: items})
 }
 
 func (h *VersionsHandler) Create(c *gin.Context) {
@@ -47,7 +72,7 @@ func (h *VersionsHandler) Create(c *gin.Context) {
 		respondServiceError(c, err)
 		return
 	}
-	c.JSON(http.StatusCreated, toVersionDTO(v))
+	contracts.ResponseCreated(c, toVersionDTO(v))
 }
 
 func (h *VersionsHandler) Publish(c *gin.Context) {
@@ -79,7 +104,7 @@ func (h *VersionsHandler) Publish(c *gin.Context) {
 		respondServiceError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, toVersionDTO(v))
+	contracts.ResponseSuccess(c, toVersionDTO(v))
 }
 
 func (h *VersionsHandler) Archive(c *gin.Context) {
@@ -109,7 +134,7 @@ func (h *VersionsHandler) Archive(c *gin.Context) {
 		respondServiceError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, toVersionDTO(v))
+	contracts.ResponseSuccess(c, toVersionDTO(v))
 }
 
 func toVersionDTO(v *pricingModel.PricebookVersion) VersionDTO {

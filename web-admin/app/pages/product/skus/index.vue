@@ -47,18 +47,17 @@
         />
         <USelect
           v-model="statusFilter"
-          :options="statusOptions"
+          :items="statusOptions"
           :placeholder="$t('product.sku.status')"
         />
-        <USelect
-          v-model="categoryFilter"
-          :options="categoryOptions"
-          :placeholder="$t('product.category')"
-        />
-        <USelect
-          v-model="brandFilter"
-          :options="brandOptions"
-          :placeholder="$t('product.brand')"
+        <USelectMenu
+          v-model="spuFilterModel"
+          :items="spuOptionsWithAll"
+          value-key="value"
+          label-key="label"
+          :portal="false"
+          :placeholder="$t('product.sku.spu')"
+          class="w-full"
         />
       </div>
       <div class="flex justify-end mt-4 space-x-2">
@@ -239,17 +238,34 @@
 
               <UFormField :label="$t('product.sku.spu')">
                 <USelectMenu
-                  v-model="currentSku.spuId"
+                  v-model="currentSkuSpuIdModel"
                   :items="spuOptions"
                   value-key="value"
                   label-key="label"
                   :placeholder="$t('product.sku.selectSpu')"
                   :portal="false"
+                  searchable
+                  :ui="{ content: 'z-[80]' }"
+                  class="w-full"
                 />
               </UFormField>
 
               <UFormField :label="$t('product.sku.specifications')">
-                <UInput v-model="currentSku.specifications" :placeholder="$t('product.sku.specifications')" />
+                <div class="space-y-2">
+                  <p class="text-sm text-gray-600 dark:text-gray-400">
+                    SKU 规格来自 SPU 的规格定义，请在 SPU 页面通过「关联 SKU / 批量生成」创建变体。
+                  </p>
+                  <UButton
+                    v-if="currentSku.spuId"
+                    color="primary"
+                    variant="outline"
+                    size="sm"
+                    icon="i-heroicons-arrow-top-right-on-square"
+                    @click="goToSpuSkuGenerator(currentSku.spuId)"
+                  >
+                    去该 SPU 生成 SKU
+                  </UButton>
+                </div>
               </UFormField>
 
               <div class="md:col-span-2">
@@ -586,9 +602,8 @@ const loading = computed(() => storeLoading.value);
 const page = ref(1);
 const pageSize = ref(10);
 const searchQuery = ref("");
-const statusFilter = ref("");
-const categoryFilter = ref("");
-const brandFilter = ref("");
+const statusFilter = ref<string>("__all__");
+const spuFilter = ref<string>("__all__");
 const selectAll = ref(false);
 const selectedSkus = ref<Sku[]>([]);
 const showCreateModal = ref(false);
@@ -645,6 +660,10 @@ const detailTabs = [
 const totalSkus = computed(() => total.value || 0);
 const spuOptions = ref<{ label: string; value: string }[]>([]);
 const spuLookup = ref<Record<string, string>>({});
+const spuOptionsWithAll = computed(() => [
+  { label: t("common.all"), value: "__all__" },
+  ...spuOptions.value,
+]);
 
 const getSpuLabel = (spuId?: string) => {
   if (!spuId) {
@@ -653,25 +672,42 @@ const getSpuLabel = (spuId?: string) => {
   return spuLookup.value[spuId] ?? "";
 };
 
+const normalizeSelectValueToString = (value: any) => {
+  if (!value) {
+    return "";
+  }
+  if (typeof value === "string") {
+    return value;
+  }
+  if (typeof value === "object") {
+    const candidate = (value as any).value ?? (value as any).id;
+    if (typeof candidate === "string") {
+      return candidate;
+    }
+  }
+  return "";
+};
+
+const spuFilterModel = computed({
+  get: () => spuFilter.value,
+  set: (value) => {
+    const normalized = normalizeSelectValueToString(value);
+    spuFilter.value = normalized || "__all__";
+  },
+});
+
+const currentSkuSpuIdModel = computed({
+  get: () => currentSku.value.spuId,
+  set: (value) => {
+    currentSku.value.spuId = normalizeSelectValueToString(value);
+  },
+});
+
 // 筛选选项
 const statusOptions = [
-  { label: t("common.all"), value: "" },
+  { label: t("common.all"), value: "__all__" },
   { label: t("status.active"), value: "active" },
   { label: t("status.inactive"), value: "inactive" }
-];
-
-const categoryOptions = [
-  { label: t("common.all"), value: "" },
-  { label: "手机", value: "手机" },
-  { label: "电脑", value: "电脑" },
-  { label: "配件", value: "配件" }
-];
-
-const brandOptions = [
-  { label: t("common.all"), value: "" },
-  { label: "Apple", value: "Apple" },
-  { label: "Samsung", value: "Samsung" },
-  { label: "Huawei", value: "Huawei" }
 ];
 
 // SKU数据类型
@@ -680,6 +716,7 @@ type Sku = {
   skuCode: string;
   barcode: string;
   spuId?: string;
+  spuName?: string;
   spu: string;
   specifications: string;
   description: string;
@@ -710,6 +747,9 @@ const mapApiStatusToUi = (status?: string): "active" | "inactive" => {
 };
 
 const mapUiStatusToApi = (status?: string) => {
+  if (!status || status === "__all__") {
+    return undefined;
+  }
   if (status === "active") {
     return "online";
   }
@@ -717,42 +757,6 @@ const mapUiStatusToApi = (status?: string) => {
     return "offline";
   }
   return undefined;
-};
-
-const slugifyToken = (value: string, fallback: string) => {
-  if (!value) {
-    return fallback;
-  }
-  const slug = value
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  return slug || fallback;
-};
-
-const buildManualSpecs = (input?: string) => {
-  if (!input) {
-    return [];
-  }
-  const tokens = input
-    .split(/[\n,;\\/，、]+/)
-    .map((token) => token.trim())
-    .filter(Boolean);
-  return tokens.map((token, index) => {
-    const [rawKey, rawValue] = token.split(/[:：=]/);
-    const hasPair = typeof rawValue !== "undefined";
-    const specName = hasPair ? rawKey.trim() || `attr-${index + 1}` : `attr-${index + 1}`;
-    const valueName = hasPair ? rawValue.trim() : rawKey.trim();
-    const resolvedValue = valueName || specName;
-    const specId = slugifyToken(specName, `manual-${index + 1}`);
-    const valueId = slugifyToken(resolvedValue, `${specId}-${index + 1}`);
-    return {
-      specId,
-      specName,
-      valueId,
-      valueName: resolvedValue,
-    };
-  });
 };
 
 const buildDefaultValues = (): SkuGeneratorDefaults => {
@@ -797,16 +801,39 @@ const normalizeApiSku = (item: any): ProductSku => {
       status: "draft",
     };
   }
+  const specs = Array.isArray(item.specs)
+    ? item.specs.map((spec: any) => ({
+        specId: spec?.spec_id ?? spec?.specId ?? "",
+        specName: spec?.spec_name ?? spec?.specName ?? "",
+        valueId: spec?.value_id ?? spec?.valueId ?? "",
+        valueName: spec?.value_name ?? spec?.valueName ?? "",
+      })).filter((spec: any) => spec.specId || spec.valueId)
+    : [];
+  const priceRefs = item.price_refs ?? item.priceRefs;
+  const salePrice = typeof item.sale_price === "number" ? item.sale_price : typeof item.salePrice === "number" ? item.salePrice : undefined;
+  const currency = typeof item.currency === "string" ? item.currency : typeof item.currencyCode === "string" ? item.currencyCode : undefined;
+  const fallbackPriceRefs =
+    !priceRefs && typeof salePrice === "number" && Number.isFinite(salePrice) && salePrice > 0
+      ? [
+          {
+            priceListId: "base",
+            currency: currency || "CNY",
+            tiers: [{ minQty: 1, price: salePrice }],
+          },
+        ]
+      : undefined;
   return {
     id: item.id ?? "",
     tenantUuid: item.tenant_uuid ?? item.tenantUuid ?? "",
     spuId: item.spu_id ?? item.spuId ?? "",
+    spuName: item.spu_name ?? item.spuName,
     skuCode: item.sku_code ?? item.skuCode ?? "",
-    specs: item.specs ?? [],
+    specs,
+    specDisplay: item.spec_display ?? item.specDisplay,
     barcode: item.barcode,
     status: item.status ?? "draft",
     minOrderQty: item.min_order_qty ?? item.minOrderQty,
-    priceRefs: item.price_refs ?? item.priceRefs,
+    priceRefs: priceRefs ?? fallbackPriceRefs,
     logistics: item.logistics ?? item.default_values ?? item.logisticsSnapshot,
     inventory: item.inventory ?? [],
     createdAt: item.created_at ?? item.createdAt,
@@ -821,7 +848,7 @@ const formatSkuRow = (rawItem: ProductSku | any): Sku => {
   const safetyStock = inventory?.safetyStock ?? 0;
   const priceRef = item.priceRefs?.[0];
   const priceTier = priceRef?.tiers?.[0];
-  const label = getSpuLabel(item.spuId) || item.spuId;
+  const label = item.spuName || getSpuLabel(item.spuId) || item.spuId;
   const weight = item.logistics?.weight ?? 0;
   const packageDimensions = item.logistics?.dimensions ?? "";
   return {
@@ -829,8 +856,9 @@ const formatSkuRow = (rawItem: ProductSku | any): Sku => {
     skuCode: item.skuCode,
     barcode: item.barcode ?? "",
     spuId: item.spuId,
+    spuName: item.spuName,
     spu: label,
-    specifications: formatSpecs(item.specs),
+    specifications: item.specDisplay || formatSpecs(item.specs),
     description: "",
     price: priceTier?.price ?? 0,
     availableStock,
@@ -852,6 +880,7 @@ const formatSkuRow = (rawItem: ProductSku | any): Sku => {
 const loadSkus = async () => {
   try {
     await skuStore.fetchList({
+      spuId: spuFilter.value === "__all__" ? undefined : spuFilter.value || undefined,
       status: mapUiStatusToApi(statusFilter.value) || undefined,
       page: page.value,
       pageSize: pageSize.value,
@@ -871,7 +900,6 @@ const loadSpuOptions = async () => {
   try {
     const response = await spuApi
       .listSpus({
-        status: "published",
         pageSize: 100,
       })
       .catch(() => null);
@@ -908,7 +936,7 @@ watch(
 );
 
 watch(
-  () => statusFilter.value,
+  () => [statusFilter.value, spuFilter.value],
   () => {
     const changed = page.value !== 1;
     page.value = 1;
@@ -926,11 +954,10 @@ const filteredSkus = computed(() => {
       sku.barcode.includes(searchQuery.value) ||
       sku.spu.toLowerCase().includes(searchQuery.value.toLowerCase());
 
-    const matchesStatus = !statusFilter.value || sku.status === statusFilter.value;
-    const matchesCategory = !categoryFilter.value || sku.spu.includes(categoryFilter.value);
-    const matchesBrand = !brandFilter.value || sku.spu.includes(brandFilter.value);
+    const matchesStatus = statusFilter.value === "__all__" || sku.status === statusFilter.value;
+    const matchesSpu = spuFilter.value === "__all__" || sku.spuId === spuFilter.value;
 
-    return matchesSearch && matchesStatus && matchesCategory && matchesBrand;
+    return matchesSearch && matchesStatus && matchesSpu;
   });
 });
 
@@ -1017,9 +1044,8 @@ const searchSkus = () => {
 
 const resetFilters = () => {
   searchQuery.value = "";
-  statusFilter.value = "";
-  categoryFilter.value = "";
-  brandFilter.value = "";
+  statusFilter.value = "__all__";
+  spuFilter.value = "__all__";
   const changed = page.value !== 1;
   page.value = 1;
   if (!changed) {
@@ -1131,7 +1157,6 @@ const saveSku = async () => {
   }
   savingSku.value = true;
   try {
-    const manualSpecs = buildManualSpecs(currentSku.value.specifications);
     const statusForApi = mapUiStatusToApi(currentSku.value.status) || "draft";
     const payload: SkuUpsertRequest = {
       skus: [
@@ -1142,7 +1167,7 @@ const saveSku = async () => {
           status: statusForApi,
           minOrderQty: currentSku.value.moq || undefined,
           defaultValues: buildDefaultValues(),
-          specs: manualSpecs,
+          specs: [],
         },
       ],
     };
@@ -1203,6 +1228,13 @@ const mapSkuToProductSku = (sku: Sku): ProductSku => {
       },
     ],
   };
+};
+
+const goToSpuSkuGenerator = (spuId: string) => {
+  if (!spuId) {
+    return;
+  }
+  router.push({ path: `/product/spus/edit/${spuId}`, query: { panel: "sku" } });
 };
 
 const bulkSelection = computed<ProductSku[]>(() =>

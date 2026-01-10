@@ -9,6 +9,21 @@
         <UButton
           color="neutral"
           variant="outline"
+          icon="i-heroicons-book-open"
+          @click="go('/pricing/pricebooks')"
+        >
+          去{{ $t("pricing.pricebooks") }}
+        </UButton>
+        <UButton
+          color="primary"
+          icon="i-heroicons-plus"
+          @click="go('/pricing/pricebooks?create=1')"
+        >
+          新增{{ $t("pricing.pricebooks") }}
+        </UButton>
+        <UButton
+          color="neutral"
+          variant="outline"
           icon="i-heroicons-arrow-path"
           @click="onRefresh"
         >
@@ -26,7 +41,7 @@
 
     <!-- 定价概览卡片 -->
     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-      <UCard>
+      <UCard class="cursor-pointer hover:shadow-md" @click="go('/pricing/pricebooks')">
         <div class="flex items-center">
           <UIcon name="i-heroicons-book-open" class="w-8 h-8 text-blue-500" />
           <div class="ml-4">
@@ -39,7 +54,7 @@
         </div>
       </UCard>
 
-      <UCard>
+      <UCard class="cursor-pointer hover:shadow-md" @click="go('/pricing/rules')">
         <div class="flex items-center">
           <UIcon
             name="i-heroicons-cog-6-tooth"
@@ -55,7 +70,7 @@
         </div>
       </UCard>
 
-      <UCard>
+      <UCard class="cursor-pointer hover:shadow-md" @click="go('/pricing/contracts')">
         <div class="flex items-center">
           <UIcon
             name="i-heroicons-document-text"
@@ -71,7 +86,7 @@
         </div>
       </UCard>
 
-      <UCard>
+      <UCard class="cursor-pointer hover:shadow-md">
         <div class="flex items-center">
           <UIcon name="i-heroicons-chart-bar" class="w-8 h-8 text-yellow-500" />
           <div class="ml-4">
@@ -334,6 +349,7 @@ import { useToastAlert } from "~/composables/useToastAlert";
 
 const { t } = useI18n();
 const toast = useToastAlert();
+const router = useRouter();
 
 /** ======================
  *  类型
@@ -477,6 +493,10 @@ function onRefresh() {
   calculatedPrice.value = null;
   priceTrace.value = [];
   toast.add({ title: "已刷新", color: "neutral" });
+}
+
+function go(path: string) {
+  router.push(path);
 }
 
 async function calculatePrice() {

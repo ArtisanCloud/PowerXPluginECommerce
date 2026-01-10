@@ -19,10 +19,9 @@ import (
 
 func main() {
 	if len(os.Args) < 2 {
-		log.Fatalf("Usage: %s [migrate|seed|refresh]", os.Args[0])
+		log.Fatalf("Usage: %s [migrate|seed|setup|refresh|pricing-base-upsert]", os.Args[0])
 	}
 	cmd := os.Args[1]
-	flag.Parse()
 
 	// 加载配置
 	cfg, err := config.Load()
@@ -43,12 +42,16 @@ func main() {
 
 	switch cmd {
 	case "migrate":
+		cmdFlags := flag.NewFlagSet(cmd, flag.ExitOnError)
+		_ = cmdFlags.Parse(os.Args[2:])
 		if err := migrate.MigratePluginModels(ctx, db, includeIAM); err != nil {
 			log.Fatal("migrate failed:", err)
 		}
 		fmt.Println("migrate ok")
 
 	case "seed":
+		cmdFlags := flag.NewFlagSet(cmd, flag.ExitOnError)
+		_ = cmdFlags.Parse(os.Args[2:])
 		if includeIAM {
 			if err := iamservice.SeedLocalAdmin(ctx, db, cfg); err != nil {
 				log.Fatal("iam seed failed:", err)
@@ -60,6 +63,8 @@ func main() {
 		fmt.Println("seed ok")
 
 	case "setup":
+		cmdFlags := flag.NewFlagSet(cmd, flag.ExitOnError)
+		_ = cmdFlags.Parse(os.Args[2:])
 		if err := migrate.MigratePluginModels(ctx, db, includeIAM); err != nil {
 			log.Fatal("migrate failed:", err)
 		}
@@ -76,6 +81,8 @@ func main() {
 		fmt.Println("seed ok")
 
 	case "refresh":
+		cmdFlags := flag.NewFlagSet(cmd, flag.ExitOnError)
+		_ = cmdFlags.Parse(os.Args[2:])
 		// 先 drop database（或 drop all tables）
 		if err := migrate.ResetDatabase(ctx, db, cfg.Database); err != nil {
 			log.Fatal("reset failed:", err)
@@ -98,6 +105,27 @@ func main() {
 			log.Fatal("seed failed:", err)
 		}
 		fmt.Println("seed ok")
+
+	case "pricing-base-upsert":
+		cmdFlags := flag.NewFlagSet(cmd, flag.ExitOnError)
+		currency := cmdFlags.String("currency", "USD", "base pricebook currency when created")
+		dryRun := cmdFlags.Bool("dry-run", false, "only print actions without writing to DB")
+		tenants := cmdFlags.String("tenant-uuids", "", "comma-separated tenant UUID list (optional)")
+		fromIAM := cmdFlags.Bool("from-iam", true, "discover tenants from iam_tenants (when available)")
+		fromData := cmdFlags.Bool("from-existing-data", true, "discover tenants from existing tenant_uuid columns in business tables")
+		if err := cmdFlags.Parse(os.Args[2:]); err != nil {
+			log.Fatal(err)
+		}
+		if err := upsertBasePricebooks(ctx, db, basePricebookUpsertOptions{
+			Currency:         *currency,
+			DryRun:           *dryRun,
+			TenantUUIDs:      *tenants,
+			DiscoverFromIAM:  *fromIAM,
+			DiscoverFromData: *fromData,
+		}); err != nil {
+			log.Fatal("pricing-base-upsert failed:", err)
+		}
+		fmt.Println("pricing-base-upsert ok")
 
 	default:
 		log.Fatalf("Unknown command: %s", cmd)

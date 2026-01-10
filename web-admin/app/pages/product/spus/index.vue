@@ -180,7 +180,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from 'vue'
+	import { computed, h, onMounted, reactive, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useRoute, useRouter, useToast } from '#imports'
 import type { TableColumn } from '@nuxt/ui'
@@ -272,6 +272,15 @@ const columns = computed<TableColumn<SpuSummary>[]>(() => [
 	{ accessorKey: 'code', header: '编码' },
 	{ accessorKey: 'name', header: '名称' },
 	{ accessorKey: 'type', header: '类型' },
+	{
+		accessorKey: 'skuCount',
+		header: 'SKU 数量',
+		meta: { class: { td: 'text-right' } },
+		cell: ({ row }) => {
+			const value = Number((row.original as any)?.skuCount ?? 0)
+			return h('span', { class: 'tabular-nums text-sm text-gray-200' }, String(Number.isFinite(value) ? value : 0))
+		},
+	},
 	{ accessorKey: 'status', header: '状态' },
 	{ accessorKey: 'updatedAt', header: '更新时间' },
 	{ id: 'actions', header: '操作' },

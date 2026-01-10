@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"sort"
 	"strconv"
@@ -11,6 +12,9 @@ import (
 	"time"
 
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/contracts"
+	pricingmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/pricing"
+	productmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product"
+	productskumodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_sku"
 	productspecmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_spec"
 	spuservice "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/product/spu"
 	skuservice "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/product_sku"
@@ -26,6 +30,26 @@ type Handler struct {
 	skuService *skuservice.Service
 	planSvc    *spuservice.SubscriptionPlanService
 	db         *gorm.DB
+}
+
+var miniAppVisibleSKUStatuses = []string{"online", "ready", "published"}
+
+func (h *Handler) beginTenantTx(ctx context.Context, tenantUUID string) (*gorm.DB, func()) {
+	if h == nil || h.db == nil {
+		return nil, func() {}
+	}
+	tx := h.db.WithContext(ctx).Begin()
+	if tx.Error != nil {
+		return nil, func() {}
+	}
+	cleanup := func() { _ = tx.Rollback() }
+	if tx.Dialector != nil && tx.Dialector.Name() != "sqlite" {
+		if err := tx.Exec("SELECT set_config('app.tenant_uuid', ?, true)", strings.TrimSpace(tenantUUID)).Error; err != nil {
+			cleanup()
+			return nil, func() {}
+		}
+	}
+	return tx, cleanup
 }
 
 // NewHandler wires SPU/SKU services for handlers.
@@ -142,15 +166,16 @@ func (h *Handler) ListProductTags(c *gin.Context) {
 			Count int    `gorm:"column:count"`
 		}
 		var rows []row
-		sql := `SELECT LOWER(tag) AS tag, COUNT(*) AS count
-FROM product_spus, UNNEST(tags) AS tag
-WHERE tenant_uuid = ? AND deleted_at IS NULL AND status = ?`
+		spuTable := productmodel.SPU{}.TableName()
+		sql := fmt.Sprintf(`SELECT LOWER(tag) AS tag, COUNT(*) AS count
+FROM %s AS spus, UNNEST(spus.tags) AS tag
+WHERE spus.tenant_uuid = ? AND spus.deleted_at IS NULL AND spus.status = ?`, spuTable)
 		args := []any{tenantUUID, "published"}
 		if categoryID != "" {
-			sql += " AND category_id = ?"
+			sql += " AND spus.category_id = ?"
 			args = append(args, categoryID)
 		} else if categoryPathPrefix != "" {
-			sql += " AND category_path LIKE ?"
+			sql += " AND spus.category_path LIKE ?"
 			args = append(args, categoryPathPrefix+"%")
 		}
 		sql += " GROUP BY LOWER(tag) ORDER BY count DESC, tag ASC LIMIT ?"
@@ -175,7 +200,7 @@ WHERE tenant_uuid = ? AND deleted_at IS NULL AND status = ?`
 	}
 	var rows []tagCell
 	tx := h.db.WithContext(c.Request.Context()).
-		Table("product_spus").
+		Table(productmodel.SPU{}.TableName()).
 		Select("tags").
 		Where("tenant_uuid = ? AND deleted_at IS NULL AND status = ?", tenantUUID, "published")
 	if categoryID != "" {
@@ -464,6 +489,11 @@ func (h *Handler) loadSkuDetailsForSpec(ctx context.Context, tenantUUID, spuID s
 	if h == nil || h.db == nil || strings.TrimSpace(tenantUUID) == "" || strings.TrimSpace(spuID) == "" {
 		return []miniAppSkuDetail{}
 	}
+	tx, done := h.beginTenantTx(ctx, tenantUUID)
+	if tx == nil {
+		return []miniAppSkuDetail{}
+	}
+	defer done()
 	type skuRow struct {
 		ID            string         `gorm:"column:id"`
 		SKUCode       string         `gorm:"column:sku_code"`
@@ -473,10 +503,10 @@ func (h *Handler) loadSkuDetailsForSpec(ctx context.Context, tenantUUID, spuID s
 		SpecSignature string         `gorm:"column:spec_signature"`
 	}
 	var rows []skuRow
-	if err := h.db.WithContext(ctx).
-		Table("product_skus").
+	if err := tx.
+		Table(productskumodel.ProductSKU{}.TableName()).
 		Select("id, sku_code, status, spec_values, default_values, spec_signature").
-		Where("tenant_uuid = ? AND spu_id = ? AND deleted_at IS NULL AND status = ?", tenantUUID, spuID, "published").
+		Where("tenant_uuid = ? AND spu_id = ? AND deleted_at IS NULL AND status IN ?", tenantUUID, spuID, miniAppVisibleSKUStatuses).
 		Order("created_at ASC").
 		Find(&rows).Error; err != nil {
 		return []miniAppSkuDetail{}
@@ -485,16 +515,12 @@ func (h *Handler) loadSkuDetailsForSpec(ctx context.Context, tenantUUID, spuID s
 	for _, r := range rows {
 		skuIDs = append(skuIDs, r.ID)
 	}
-	mediaBySKU := h.loadSkuCoverURLs(ctx, tenantUUID, skuIDs)
+	mediaBySKU := h.loadSkuCoverURLsTx(tx, tenantUUID, skuIDs)
+	priceBySKU := h.loadSkuPricesTx(tx, tenantUUID, skuIDs)
 
 	out := make([]miniAppSkuDetail, 0, len(rows))
 	for _, r := range rows {
-		price, currency, ok := extractPriceFromDefaultValues(r.DefaultValues)
-		var pricePtr *float64
-		if ok {
-			p := price
-			pricePtr = &p
-		}
+		p := priceBySKU[r.ID]
 		spec := map[string]string{}
 		var specs []skuservice.SkuSpec
 		if len(r.SpecValues) > 0 {
@@ -516,8 +542,8 @@ func (h *Handler) loadSkuDetailsForSpec(ctx context.Context, tenantUUID, spuID s
 		out = append(out, miniAppSkuDetail{
 			ID:            r.ID,
 			Code:          r.SKUCode,
-			Price:         pricePtr,
-			Currency:      strings.TrimSpace(currency),
+			Price:         p.Price,
+			Currency:      strings.TrimSpace(p.Currency),
 			ImageURL:      strings.TrimSpace(mediaBySKU[r.ID]),
 			Spec:          spec,
 			SpecSignature: strings.TrimSpace(r.SpecSignature),
@@ -544,10 +570,14 @@ func (h *Handler) ListSkus(c *gin.Context) {
 	}
 	status := strings.TrimSpace(query.Status)
 	if status == "" {
-		status = "published"
+		status = "online"
 	}
-	if !strings.EqualFold(status, "published") {
-		respondMiniAppError(c, http.StatusBadRequest, errors.New("only published skus are accessible via mini-app"))
+	if strings.EqualFold(status, "published") {
+		// Backward compatible alias; canonical SKU status is "online".
+		status = "online"
+	}
+	if !strings.EqualFold(status, "online") {
+		respondMiniAppError(c, http.StatusBadRequest, errors.New("only online skus are accessible via mini-app"))
 		return
 	}
 	result, err := h.skuService.ListSkus(c.Request.Context(), skuservice.SkuListQuery{
@@ -626,9 +656,9 @@ func (h *Handler) ListSubscriptionPlans(c *gin.Context) {
 }
 
 type skuRow struct {
-	ID            string         `json:"id"`
-	SPUID         string         `json:"spu_id"`
-	DefaultValues datatypes.JSON `json:"default_values"`
+	ID            string         `gorm:"column:id" json:"id"`
+	SPUID         string         `gorm:"column:spu_id" json:"spu_id"`
+	DefaultValues datatypes.JSON `gorm:"column:default_values" json:"default_values"`
 }
 
 type skuMediaRow struct {
@@ -724,21 +754,39 @@ func (h *Handler) loadSkuAgg(ctx context.Context, tenantUUID string, spuIDs []st
 	if h == nil || h.db == nil || len(spuIDs) == 0 || strings.TrimSpace(tenantUUID) == "" {
 		return out
 	}
+	tx, done := h.beginTenantTx(ctx, tenantUUID)
+	if tx == nil {
+		return out
+	}
+	defer done()
+
 	var rows []skuRow
-	if err := h.db.WithContext(ctx).
-		Table("product_skus").
+	if err := tx.
+		Table(productskumodel.ProductSKU{}.TableName()).
 		Select("id, spu_id, default_values").
-		Where("tenant_uuid = ? AND deleted_at IS NULL AND status = ? AND spu_id IN ?", tenantUUID, "published", spuIDs).
+		Where("tenant_uuid = ? AND deleted_at IS NULL AND status IN ? AND spu_id IN ?", tenantUUID, miniAppVisibleSKUStatuses, spuIDs).
 		Find(&rows).Error; err != nil {
 		return out
 	}
+
+	skuIDs := make([]string, 0, len(rows))
+	for _, r := range rows {
+		skuIDs = append(skuIDs, r.ID)
+	}
+	pricebookPrices, pbCurrency := h.loadBasePricebookSkuPricesTx(tx, tenantUUID, skuIDs)
+
 	for _, r := range rows {
 		agg := out[r.SPUID]
 		agg.SKUCount++
-		price, currency, ok := extractPriceFromDefaultValues(r.DefaultValues)
-		if ok {
-			agg.Currency = pickCurrency(agg.Currency, currency)
-			agg.MinPrice, agg.MaxPrice = mergeMinMax(agg.MinPrice, agg.MaxPrice, price)
+		if p, ok := pricebookPrices[r.ID]; ok && p != nil {
+			agg.Currency = pickCurrency(agg.Currency, pbCurrency)
+			agg.MinPrice, agg.MaxPrice = mergeMinMax(agg.MinPrice, agg.MaxPrice, *p)
+		} else {
+			price, currency, ok := extractPriceFromDefaultValues(r.DefaultValues)
+			if ok {
+				agg.Currency = pickCurrency(agg.Currency, currency)
+				agg.MinPrice, agg.MaxPrice = mergeMinMax(agg.MinPrice, agg.MaxPrice, price)
+			}
 		}
 		out[r.SPUID] = agg
 	}
@@ -758,7 +806,7 @@ func (h *Handler) loadPlanAgg(ctx context.Context, tenantUUID string, spuIDs []s
 	}
 	var rows []planRow
 	if err := h.db.WithContext(ctx).
-		Table("product_spu_subscription_plans").
+		Table(productmodel.SubscriptionPlan{}.TableName()).
 		Select("spu_id, price, currency, status").
 		Where("tenant_uuid = ? AND spu_id IN ?", tenantUUID, spuIDs).
 		Find(&rows).Error; err != nil {
@@ -783,12 +831,20 @@ func (h *Handler) loadCoverURLs(ctx context.Context, tenantUUID string, spuIDs [
 		return out
 	}
 	var rows []skuMediaRow
-	if err := h.db.WithContext(ctx).
-		Table("product_sku_media AS m").
+	tx, done := h.beginTenantTx(ctx, tenantUUID)
+	if tx == nil {
+		return out
+	}
+	defer done()
+
+	mediaTable := fmt.Sprintf("%s AS m", productskumodel.ProductSKUMedia{}.TableName())
+	skuTable := fmt.Sprintf("%s AS s", productskumodel.ProductSKU{}.TableName())
+	if err := tx.
+		Table(mediaTable).
 		Select("s.spu_id AS spu_id, m.sku_id AS sku_id, m.url, m.is_primary, m.sort_order, m.created_at").
-		Joins("JOIN product_skus AS s ON s.id = m.sku_id").
-		Where("m.tenant_uuid = ? AND s.tenant_uuid = ? AND m.deleted_at IS NULL AND s.deleted_at IS NULL AND s.status = ? AND s.spu_id IN ?",
-			tenantUUID, tenantUUID, "published", spuIDs).
+		Joins("JOIN "+skuTable+" ON s.id = m.sku_id").
+		Where("m.tenant_uuid = ? AND s.tenant_uuid = ? AND m.deleted_at IS NULL AND s.deleted_at IS NULL AND s.status IN ? AND s.spu_id IN ?",
+			tenantUUID, tenantUUID, miniAppVisibleSKUStatuses, spuIDs).
 		Order("s.spu_id ASC, m.is_primary DESC, m.sort_order ASC, m.created_at ASC").
 		Find(&rows).Error; err != nil {
 		return out
@@ -841,7 +897,7 @@ func (h *Handler) loadSPULocaleSnippet(ctx context.Context, tenantUUID, spuID, l
 	}
 	var r row
 	err := h.db.WithContext(ctx).
-		Table("product_spu_locales").
+		Table(productmodel.SPULocale{}.TableName()).
 		Select("subtitle, description, status").
 		Where("tenant_uuid = ? AND spu_id = ? AND locale = ?", tenantUUID, spuID, locale).
 		First(&r).Error
@@ -893,15 +949,38 @@ func (h *Handler) loadSkuPrices(ctx context.Context, tenantUUID string, skuIDs [
 	if h == nil || h.db == nil || len(skuIDs) == 0 || strings.TrimSpace(tenantUUID) == "" {
 		return out
 	}
+
+	tx, done := h.beginTenantTx(ctx, tenantUUID)
+	if tx == nil {
+		return out
+	}
+	defer done()
+
+	return h.loadSkuPricesTx(tx, tenantUUID, skuIDs)
+}
+
+func (h *Handler) loadSkuPricesTx(tx *gorm.DB, tenantUUID string, skuIDs []string) map[string]skuPriceInfo {
+	out := make(map[string]skuPriceInfo, len(skuIDs))
+	if h == nil || tx == nil || len(skuIDs) == 0 || strings.TrimSpace(tenantUUID) == "" {
+		return out
+	}
+
+	// Prefer base pricebook (if items exist) so mini-app can reflect pricing rules.
+	pricebookPrices, pbCurrency := h.loadBasePricebookSkuPricesTx(tx, tenantUUID, skuIDs)
+
 	var rows []skuRow
-	if err := h.db.WithContext(ctx).
-		Table("product_skus").
+	if err := tx.
+		Table(productskumodel.ProductSKU{}.TableName()).
 		Select("id, spu_id, default_values").
 		Where("tenant_uuid = ? AND deleted_at IS NULL AND id IN ?", tenantUUID, skuIDs).
 		Find(&rows).Error; err != nil {
 		return out
 	}
 	for _, r := range rows {
+		if p, ok := pricebookPrices[r.ID]; ok {
+			out[r.ID] = skuPriceInfo{Price: p, Currency: pbCurrency}
+			continue
+		}
 		price, currency, ok := extractPriceFromDefaultValues(r.DefaultValues)
 		if !ok {
 			continue
@@ -912,9 +991,91 @@ func (h *Handler) loadSkuPrices(ctx context.Context, tenantUUID string, skuIDs [
 	return out
 }
 
+func (h *Handler) loadBasePricebookSkuPrices(ctx context.Context, tenantUUID string, skuIDs []string) (map[string]*float64, string) {
+	out := make(map[string]*float64, len(skuIDs))
+	if h == nil || h.db == nil || len(skuIDs) == 0 || strings.TrimSpace(tenantUUID) == "" {
+		return out, ""
+	}
+
+	tx, done := h.beginTenantTx(ctx, tenantUUID)
+	if tx == nil {
+		return out, ""
+	}
+	defer done()
+	return h.loadBasePricebookSkuPricesTx(tx, tenantUUID, skuIDs)
+}
+
+func (h *Handler) loadBasePricebookSkuPricesTx(tx *gorm.DB, tenantUUID string, skuIDs []string) (map[string]*float64, string) {
+	out := make(map[string]*float64, len(skuIDs))
+	if h == nil || tx == nil || len(skuIDs) == 0 || strings.TrimSpace(tenantUUID) == "" {
+		return out, ""
+	}
+
+	type pbRow struct {
+		ID             string  `gorm:"column:id"`
+		Currency       string  `gorm:"column:currency"`
+		CurrentVersion *string `gorm:"column:current_version_id"`
+	}
+	var pb pbRow
+	if err := tx.Table(pricingmodel.Pricebook{}.TableName()).
+		Select("id, currency, current_version_id").
+		Where("tenant_uuid = ? AND deleted_at IS NULL AND code = ? AND status = ?", tenantUUID, "base", "active").
+		First(&pb).Error; err != nil {
+		return out, ""
+	}
+	versionID := ""
+	if pb.CurrentVersion != nil {
+		versionID = strings.TrimSpace(*pb.CurrentVersion)
+	}
+	if versionID == "" {
+		return out, strings.TrimSpace(pb.Currency)
+	}
+
+	type itemRow struct {
+		SKUID           string `gorm:"column:sku_id"`
+		BaseAmountMinor *int64 `gorm:"column:base_amount_minor"`
+		SaleAmountMinor *int64 `gorm:"column:sale_amount_minor"`
+	}
+	var items []itemRow
+	if err := tx.Table(pricingmodel.PricebookItem{}.TableName()).
+		Select("sku_id, base_amount_minor, sale_amount_minor").
+		Where("tenant_uuid = ? AND deleted_at IS NULL AND version_id = ? AND sku_id IN ?", tenantUUID, versionID, skuIDs).
+		Find(&items).Error; err != nil {
+		return out, strings.TrimSpace(pb.Currency)
+	}
+
+	for _, it := range items {
+		minor := (*int64)(nil)
+		if it.SaleAmountMinor != nil {
+			minor = it.SaleAmountMinor
+		} else if it.BaseAmountMinor != nil {
+			minor = it.BaseAmountMinor
+		}
+		if minor == nil {
+			continue
+		}
+		v := float64(*minor) / 100.0
+		out[strings.TrimSpace(it.SKUID)] = &v
+	}
+	return out, strings.TrimSpace(pb.Currency)
+}
+
 func (h *Handler) loadSkuCoverURLs(ctx context.Context, tenantUUID string, skuIDs []string) map[string]string {
 	out := make(map[string]string, len(skuIDs))
 	if h == nil || h.db == nil || len(skuIDs) == 0 || strings.TrimSpace(tenantUUID) == "" {
+		return out
+	}
+	tx, done := h.beginTenantTx(ctx, tenantUUID)
+	if tx == nil {
+		return out
+	}
+	defer done()
+	return h.loadSkuCoverURLsTx(tx, tenantUUID, skuIDs)
+}
+
+func (h *Handler) loadSkuCoverURLsTx(tx *gorm.DB, tenantUUID string, skuIDs []string) map[string]string {
+	out := make(map[string]string, len(skuIDs))
+	if h == nil || tx == nil || len(skuIDs) == 0 || strings.TrimSpace(tenantUUID) == "" {
 		return out
 	}
 	type row struct {
@@ -925,8 +1086,8 @@ func (h *Handler) loadSkuCoverURLs(ctx context.Context, tenantUUID string, skuID
 		CreatedAt time.Time `gorm:"column:created_at"`
 	}
 	var rows []row
-	if err := h.db.WithContext(ctx).
-		Table("product_sku_media").
+	if err := tx.
+		Table(productskumodel.ProductSKUMedia{}.TableName()).
 		Select("sku_id, url, is_primary, sort_order, created_at").
 		Where("tenant_uuid = ? AND deleted_at IS NULL AND sku_id IN ?", tenantUUID, skuIDs).
 		Order("sku_id ASC, is_primary DESC, sort_order ASC, created_at ASC").

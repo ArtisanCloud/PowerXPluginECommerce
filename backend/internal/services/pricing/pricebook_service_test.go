@@ -135,7 +135,7 @@ func TestBasePricebookCannotBeDeleted(t *testing.T) {
 	}
 }
 
-func TestCreateAllowsBaseCodeWhenMissing(t *testing.T) {
+func TestCreateRejectsBaseCode(t *testing.T) {
 	db := openPricingPricebookTestDB(t)
 	deps := &app.Deps{Ctx: context.Background(), DB: db}
 	svc := NewPricebookService(deps)
@@ -143,7 +143,7 @@ func TestCreateAllowsBaseCodeWhenMissing(t *testing.T) {
 	tenantUUID := uuid.NewString()
 	ctx := authx.ContextWithTenantUUID(context.Background(), tenantUUID)
 
-	pb, err := svc.Create(ctx, CreatePricebookInput{
+	_, err := svc.Create(ctx, CreatePricebookInput{
 		Code:     BasePricebookCode,
 		Name:     "Base Pricebook",
 		Type:     "sales",
@@ -151,21 +151,13 @@ func TestCreateAllowsBaseCodeWhenMissing(t *testing.T) {
 		Actor:    "tester",
 	})
 	if err != nil {
-		t.Fatalf("create base: %v", err)
+		var se *Error
+		if !errors.As(err, &se) || se.Code != CodeForbidden {
+			t.Fatalf("expected %s, got %v", CodeForbidden, err)
+		}
+		return
 	}
-	if pb == nil || pb.Code != BasePricebookCode {
-		t.Fatalf("unexpected created pricebook: %+v", pb)
-	}
-	if pb.CurrentVersionID == nil || *pb.CurrentVersionID == "" {
-		t.Fatalf("expected current_version_id set")
-	}
-	var v pricingModel.PricebookVersion
-	if err := db.Where("tenant_uuid = ? AND id = ?", tenantUUID, *pb.CurrentVersionID).First(&v).Error; err != nil {
-		t.Fatalf("load version: %v", err)
-	}
-	if v.State != "draft" {
-		t.Fatalf("expected draft version, got %s", v.State)
-	}
+	t.Fatalf("expected forbidden create for base code")
 }
 
 func openPricingPricebookTestDB(t *testing.T) *gorm.DB {

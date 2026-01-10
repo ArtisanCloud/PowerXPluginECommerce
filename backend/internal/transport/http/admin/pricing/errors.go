@@ -4,19 +4,11 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/contracts"
 	pricingsvc "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/pricing"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )
-
-type apiError struct {
-	Code    string `json:"code"`
-	Message string `json:"message"`
-}
-
-type errorResponse struct {
-	Error apiError `json:"error"`
-}
 
 func respondError(c *gin.Context, status int, code string, err error) {
 	if c == nil {
@@ -32,7 +24,7 @@ func respondError(c *gin.Context, status int, code string, err error) {
 	if code == "" {
 		code = "INTERNAL_ERROR"
 	}
-	c.JSON(status, errorResponse{Error: apiError{Code: code, Message: msg}})
+	contracts.ResponseError(c, status, code, msg)
 }
 
 func statusFromErr(err error) int {

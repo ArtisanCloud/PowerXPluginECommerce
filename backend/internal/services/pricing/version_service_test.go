@@ -27,8 +27,8 @@ func TestPublishNewVersionTerminatesOldVersion(t *testing.T) {
 	ctx := authx.ContextWithTenantUUID(context.Background(), tenantUUID)
 
 	pb, err := pbSvc.Create(ctx, CreatePricebookInput{
-		Code:     "base",
-		Name:     "Base",
+		Code:     "pb1",
+		Name:     "PB1",
 		Type:     "sales",
 		Currency: "CNY",
 		Actor:    "tester",
@@ -104,8 +104,8 @@ func TestPublishConcurrentKeepsSingleActiveVersion(t *testing.T) {
 	ctx := authx.ContextWithTenantUUID(context.Background(), tenantUUID)
 
 	pb, err := pbSvc.Create(ctx, CreatePricebookInput{
-		Code:     "base",
-		Name:     "Base",
+		Code:     "pb1",
+		Name:     "PB1",
 		Type:     "sales",
 		Currency: "CNY",
 		Actor:    "tester",
