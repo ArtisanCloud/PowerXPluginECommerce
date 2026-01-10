@@ -359,11 +359,3 @@ func filterCandidatesByCode(c []pricingRepo.ActiveCandidate, code string) []pric
 	}
 	return out
 }
-
-func ptrString(v string) *string {
-	if strings.TrimSpace(v) == "" {
-		return nil
-	}
-	s := v
-	return &s
-}

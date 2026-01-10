@@ -991,20 +991,6 @@ func (h *Handler) loadSkuPricesTx(tx *gorm.DB, tenantUUID string, skuIDs []strin
 	return out
 }
 
-func (h *Handler) loadBasePricebookSkuPrices(ctx context.Context, tenantUUID string, skuIDs []string) (map[string]*float64, string) {
-	out := make(map[string]*float64, len(skuIDs))
-	if h == nil || h.db == nil || len(skuIDs) == 0 || strings.TrimSpace(tenantUUID) == "" {
-		return out, ""
-	}
-
-	tx, done := h.beginTenantTx(ctx, tenantUUID)
-	if tx == nil {
-		return out, ""
-	}
-	defer done()
-	return h.loadBasePricebookSkuPricesTx(tx, tenantUUID, skuIDs)
-}
-
 func (h *Handler) loadBasePricebookSkuPricesTx(tx *gorm.DB, tenantUUID string, skuIDs []string) (map[string]*float64, string) {
 	out := make(map[string]*float64, len(skuIDs))
 	if h == nil || tx == nil || len(skuIDs) == 0 || strings.TrimSpace(tenantUUID) == "" {

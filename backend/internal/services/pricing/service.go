@@ -3,10 +3,8 @@ package pricing
 import (
 	"context"
 	"errors"
-	"strings"
 
 	pricingRepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/pricing"
-	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 )
 
@@ -48,14 +46,4 @@ func (s *Service) HealthProbe(ctx context.Context) error {
 		return errors.New("pricing service not ready")
 	}
 	return ctx.Err()
-}
-
-func (s *Service) tenantFromContext(ctx context.Context) (string, error) {
-	if ctx == nil {
-		return "", errors.New("request context missing")
-	}
-	if tid, ok := authx.TenantUUIDFromContext(ctx); ok && strings.TrimSpace(tid) != "" {
-		return tid, nil
-	}
-	return "", errors.New("tenant context missing")
 }
