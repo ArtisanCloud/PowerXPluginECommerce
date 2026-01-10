@@ -2,7 +2,7 @@
 
 import { resolveApiBase, getAuthToken, getTenantUuid } from "./_base";
 import { useAuth } from "~/composables/useAuth";
-import { useRouter } from "#imports";
+import { useRouter } from "vue-router";
 import { useToastAlert } from "../useToastAlert";
 import { useHostCtxStore } from "~/stores/hostCtx";
 import { PLUGIN_ID } from "~/utils/powerx-bridge";
@@ -20,7 +20,14 @@ export function useApiClient() {
   }
 
   const baseURL = resolveApiBase();
-  const router = useRouter();
+  const router = (() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return useRouter();
+    } catch {
+      return null;
+    }
+  })();
   _baseURL = baseURL;
 
   const baseClient = $fetch.create({

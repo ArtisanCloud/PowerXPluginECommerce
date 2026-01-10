@@ -10,8 +10,8 @@ const submitImportMock = vi.fn();
 const submitExportMock = vi.fn();
 const pollJobMock = vi.fn();
 
-vi.mock("../../app/composables/api/services/customerService", () => ({
-  useCustomerService: () => ({
+vi.mock("~/composables/api", () => ({
+  useCustomerApi: () => ({
     listCustomers: listCustomersMock,
     listMembers: listMembersMock,
   }),
@@ -57,12 +57,6 @@ describe("useCustomerStore", () => {
     submitImportMock.mockReset();
     submitExportMock.mockReset();
     pollJobMock.mockReset();
-    (globalThis as any).window = {
-      localStorage: {
-        getItem: vi.fn().mockReturnValue(null),
-        setItem: vi.fn(),
-      },
-    };
   });
 
   it("fetches customers and updates meta", async () => {

@@ -1,5 +1,4 @@
 import { getCurrentScope, onScopeDispose } from "vue";
-import { useRuntimeConfig } from "#imports";
 import type { LoginResponse } from "~/composables/api/services/authService";
 import { useAuthService } from "~/composables/api/services/authService";
 
@@ -105,7 +104,15 @@ const safeLocalStorage = {
 };
 
 export const useAuth = () => {
-  const runtimeConfig = useRuntimeConfig();
+  const runtimeConfig = (() => {
+    try {
+      // Nuxt runtime composable (auto-imported in app, mocked/absent in unit tests).
+      // eslint-disable-next-line no-undef
+      return useRuntimeConfig();
+    } catch {
+      return { public: {} } as any;
+    }
+  })();
   // Standalone 模式下宿主/脚手架可能只广播 access token（无 refresh token），允许继续维持会话。
   const allowRefreshlessSession = runtimeConfig.public?.insidePowerX !== true;
 
