@@ -28,6 +28,7 @@ func TestSubscriptionProductOnboardingFlow(t *testing.T) {
 	skuSvc := productsku.NewService(deps)
 
 	tenantCtx := middleware.ContextWithTenantUUID(ctx, "tenant-subscription-flow")
+	testutil.SeedProductCategories(t, db, "tenant-subscription-flow", "cat-sub")
 	spuReq := spu.UpsertSPURequest{
 		Code:            "SUB-PLAN-TEST",
 		Name:            "订阅型商品",

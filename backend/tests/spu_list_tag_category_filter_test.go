@@ -25,6 +25,7 @@ func TestSPUListSupportsCategoryAndTagFilters(t *testing.T) {
 	deps := &app.Deps{DB: db, Ctx: ctx}
 	spuSvc := spu.NewService(deps)
 	tenantCtx := middleware.ContextWithTenantUUID(ctx, "tenant-spu-list-filter")
+	testutil.SeedProductCategories(t, db, "tenant-spu-list-filter", "cat-a", "cat-b")
 
 	spuA := createPublishedSPU(t, spuSvc, tenantCtx, createPublishedSPUInput{
 		Code:         "TAG-CAT-001",
@@ -112,4 +113,3 @@ func createPublishedSPU(t *testing.T, svc *spu.Service, tenantCtx context.Contex
 	require.Equal(t, "published", published.Status)
 	return published.ID
 }
-
