@@ -13,6 +13,7 @@ import type {
 	SkuGeneratorRequest,
 	SkuGeneratorResponse,
 	SkuImportMode,
+	SkuInventoryAdjustRequest,
 	SkuInventorySnapshot,
 	SkuSerialQuery,
 	SkuSerialRecord,
@@ -87,6 +88,8 @@ export function useSkuApi() {
 			unwrap(apiPost<SkuBulkTask>(`${basePath}/${skuId}/channels/publish`, payload, init)),
 		getInventorySnapshot: (skuId: string, init?: any) =>
 			unwrap(apiGet<SkuInventorySnapshot>(`${basePath}/${skuId}/inventory`, undefined, init)),
+		adjustInventory: (skuId: string, payload: SkuInventoryAdjustRequest, init?: any) =>
+			unwrap(apiPost<SkuInventorySnapshot>(`${basePath}/${skuId}/inventory/adjust`, payload, init)),
 		generateBarcodes: (skuId: string, payload: SkuBarcodeGenerateRequest, init?: any) =>
 			unwrap(apiPost<SkuBarcodeBatchResult>(`${basePath}/${skuId}/barcodes`, payload, init)),
 		listSerials: (skuId: string, params?: SkuSerialQuery, init?: any) =>

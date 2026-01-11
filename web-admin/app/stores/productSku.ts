@@ -153,6 +153,19 @@ export const useProductSkuStore = defineStore('product-sku', {
 			this.inventorySnapshots[skuId] = snapshot
 			return snapshot
 		},
+		async adjustInventorySnapshot(skuId: string, delta: number) {
+			if (!skuId) {
+				throw new Error('skuId is required')
+			}
+			if (!Number.isFinite(delta) || delta === 0) {
+				throw new Error('delta must be a non-zero number')
+			}
+			const api = useSkuApi()
+			const response = await api.adjustInventory(skuId, { delta })
+			const snapshot = normalizeInventorySnapshot(response)
+			this.inventorySnapshots[skuId] = snapshot
+			return snapshot
+		},
 		async generateBarcodes(skuId: string, payload: SkuBarcodeGenerateRequest) {
 			if (!skuId) {
 				throw new Error('skuId is required')

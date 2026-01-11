@@ -48,11 +48,11 @@
 
 ### Implementation for User Story 2
 
-- [ ] T015 [P] [US2] 扩展 SKU API：新增库存调整方法（delta）并对齐类型（`web-admin/app/composables/api/useSku.ts`，`web-admin/app/types/product/sku.ts`）
-- [ ] T016 [US2] 扩展 SKU store：新增 `adjustInventory` action（调用 API → 刷新快照）（`web-admin/app/stores/productSku.ts`）
-- [ ] T017 [US2] 扩展库存卡片：在 `InventorySnapshotCard` 增加 delta 输入与保存按钮，并复用现有快照刷新（`web-admin/app/components/product/sku/InventorySnapshotCard.vue`）
-- [ ] T018 [US2] 校验 SKU 详情页 inventory tab 已挂载 `InventorySnapshotCard` 且 props 传递正确（`web-admin/app/pages/product/skus/[id].vue`）
-- [ ] T019 [P] [US2] 组件测试：快照渲染、保存成功刷新、保存失败提示（`web-admin/tests/component/inventory-snapshot-card.spec.ts`）
+- [x] T015 [P] [US2] 扩展 SKU API：新增库存调整方法（delta）并对齐类型（`web-admin/app/composables/api/useSku.ts`，`web-admin/app/types/product/sku.ts`）
+- [x] T016 [US2] 扩展 SKU store：新增 `adjustInventory` action（调用 API → 刷新快照）（`web-admin/app/stores/productSku.ts`）
+- [x] T017 [US2] 扩展库存卡片：在 `InventorySnapshotCard` 增加 delta 输入与保存按钮，并复用现有快照刷新（`web-admin/app/components/product/sku/InventorySnapshotCard.vue`）
+- [x] T018 [US2] 校验 SKU 详情页 inventory tab 已挂载 `InventorySnapshotCard` 且 props 传递正确（`web-admin/app/pages/product/skus/[id].vue`）
+- [x] T019 [P] [US2] 组件测试：快照渲染、保存成功刷新、保存失败提示（`web-admin/tests/component/inventory-snapshot-card.spec.ts`）
 
 ---
 

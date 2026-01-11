@@ -13,6 +13,38 @@
       </div>
     </div>
 
+    <UCard>
+      <template #header>
+        <h4 class="text-lg font-semibold text-gray-900 dark:text-white">{{ $t('product.sku.inventoryPanel.adjustTitle') }}</h4>
+      </template>
+      <div class="grid gap-4 md:grid-cols-12">
+        <UFormField :label="$t('product.sku.inventoryPanel.adjustDelta')" class="md:col-span-4">
+          <UInput
+            v-model="deltaText"
+            type="number"
+            inputmode="numeric"
+            step="1"
+            data-testid="inventory-delta"
+            :disabled="adjusting || loading"
+          />
+        </UFormField>
+        <div class="flex items-end md:col-span-2">
+          <UButton
+            color="primary"
+            :loading="adjusting"
+            :disabled="!canSubmitDelta || loading"
+            data-testid="inventory-apply"
+            @click="applyDelta"
+          >
+            {{ $t('product.sku.inventoryPanel.applyDelta') }}
+          </UButton>
+        </div>
+        <div v-if="errorMessage" class="md:col-span-12">
+          <UAlert color="error" variant="soft" :title="$t('common.error')" :description="errorMessage" />
+        </div>
+      </div>
+    </UCard>
+
     <div v-if="loading">
       <USkeleton class="h-24 w-full" />
     </div>
@@ -84,26 +116,54 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import { useI18n } from '#imports'
+import { computed, ref, watch } from 'vue'
 import { useProductSkuStore } from '~/stores/productSku'
 import type { SkuInventorySnapshot } from '~/types/product/sku'
 
 const props = defineProps<{ skuId: string }>()
 
 const store = useProductSkuStore()
-const { t } = useI18n()
 
 const loading = ref(false)
+const adjusting = ref(false)
+const deltaText = ref('')
+const errorMessage = ref('')
 const snapshot = computed<SkuInventorySnapshot | null>(() => store.inventorySnapshots[props.skuId] ?? null)
 
 const fetchSnapshot = async () => {
   if (!props.skuId) return
   loading.value = true
+  errorMessage.value = ''
   try {
     await store.fetchInventorySnapshot(props.skuId)
   } finally {
     loading.value = false
+  }
+}
+
+const canSubmitDelta = computed(() => {
+  const trimmed = deltaText.value.trim()
+  if (!trimmed) return false
+  const parsed = Number.parseInt(trimmed, 10)
+  return Number.isFinite(parsed) && parsed !== 0
+})
+
+const applyDelta = async () => {
+  if (!props.skuId) return
+  const parsed = Number.parseInt(deltaText.value.trim(), 10)
+  if (!Number.isFinite(parsed) || parsed === 0) {
+    errorMessage.value = 'delta 必须为非 0 整数'
+    return
+  }
+  adjusting.value = true
+  errorMessage.value = ''
+  try {
+    await store.adjustInventorySnapshot(props.skuId, parsed)
+    deltaText.value = ''
+  } catch (error: any) {
+    errorMessage.value = error?.message ? String(error.message) : String(error)
+  } finally {
+    adjusting.value = false
   }
 }
 
