@@ -1,9 +1,9 @@
 <template>
-  <div class="p-6">
-    <InventoryStockOverview />
-  </div>
+  <NuxtPage />
 </template>
 
 <script setup lang="ts">
-import InventoryStockOverview from "~/components/inventory/StockOverview.vue";
+definePageMeta({
+  name: "inventory",
+});
 </script>

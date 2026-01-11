@@ -7,43 +7,61 @@
         <p class="text-sm text-gray-500 dark:text-gray-400">{{ $t('product.sku.inventoryPanel.subtitle') }}</p>
       </div>
       <div class="flex gap-2">
+        <UButton
+          color="primary"
+          icon="i-heroicons-adjustments-horizontal"
+          data-testid="inventory-open-adjust"
+          @click="openAdjust"
+        >
+          {{ $t('product.sku.inventoryPanel.adjustTitle') }}
+        </UButton>
         <UButton icon="i-heroicons-arrow-path" variant="ghost" :loading="loading" @click="fetchSnapshot">
           {{ $t('common.refresh') }}
         </UButton>
       </div>
     </div>
 
-    <UCard>
-      <template #header>
-        <h4 class="text-lg font-semibold text-gray-900 dark:text-white">{{ $t('product.sku.inventoryPanel.adjustTitle') }}</h4>
+    <UModal
+      v-model:open="adjustOpen"
+      :title="$t('product.sku.inventoryPanel.adjustTitle')"
+      :description="$t('product.sku.inventoryPanel.subtitle')"
+      :prevent-close="adjusting"
+      :ui="{ content: 'max-w-3xl w-full max-h-[calc(100dvh-2rem)] overflow-hidden' }"
+    >
+      <template #body>
+        <UForm id="sku-inventory-adjust-form" :state="adjustForm" class="space-y-4 p-1" @submit.prevent="applyDelta">
+          <UFormField :label="$t('product.sku.inventoryPanel.adjustDelta')">
+            <UInput
+              v-model="adjustForm.deltaText"
+              type="number"
+              inputmode="numeric"
+              step="1"
+              data-testid="inventory-delta"
+              :disabled="adjusting || loading"
+            />
+          </UFormField>
+          <UAlert v-if="errorMessage" color="error" variant="soft" :title="$t('common.error')" :description="errorMessage" />
+        </UForm>
       </template>
-      <div class="grid gap-4 md:grid-cols-12">
-        <UFormField :label="$t('product.sku.inventoryPanel.adjustDelta')" class="md:col-span-4">
-          <UInput
-            v-model="deltaText"
-            type="number"
-            inputmode="numeric"
-            step="1"
-            data-testid="inventory-delta"
-            :disabled="adjusting || loading"
-          />
-        </UFormField>
-        <div class="flex items-end md:col-span-2">
+
+      <template #footer>
+        <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
+          <UButton color="neutral" variant="outline" :disabled="adjusting" @click="closeAdjust">
+            {{ $t('common.cancel') }}
+          </UButton>
           <UButton
+            type="button"
             color="primary"
+            data-testid="inventory-apply"
             :loading="adjusting"
             :disabled="!canSubmitDelta || loading"
-            data-testid="inventory-apply"
             @click="applyDelta"
           >
             {{ $t('product.sku.inventoryPanel.applyDelta') }}
           </UButton>
         </div>
-        <div v-if="errorMessage" class="md:col-span-12">
-          <UAlert color="error" variant="soft" :title="$t('common.error')" :description="errorMessage" />
-        </div>
-      </div>
-    </UCard>
+      </template>
+    </UModal>
 
     <div v-if="loading">
       <USkeleton class="h-24 w-full" />
@@ -116,7 +134,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { useProductSkuStore } from '~/stores/productSku'
 import type { SkuInventorySnapshot } from '~/types/product/sku'
 
@@ -126,7 +144,10 @@ const store = useProductSkuStore()
 
 const loading = ref(false)
 const adjusting = ref(false)
-const deltaText = ref('')
+const adjustOpen = ref(false)
+const adjustForm = reactive({
+  deltaText: '',
+})
 const errorMessage = ref('')
 const snapshot = computed<SkuInventorySnapshot | null>(() => store.inventorySnapshots[props.skuId] ?? null)
 
@@ -142,7 +163,7 @@ const fetchSnapshot = async () => {
 }
 
 const canSubmitDelta = computed(() => {
-  const trimmed = deltaText.value.trim()
+  const trimmed = adjustForm.deltaText.trim()
   if (!trimmed) return false
   const parsed = Number.parseInt(trimmed, 10)
   return Number.isFinite(parsed) && parsed !== 0
@@ -150,7 +171,7 @@ const canSubmitDelta = computed(() => {
 
 const applyDelta = async () => {
   if (!props.skuId) return
-  const parsed = Number.parseInt(deltaText.value.trim(), 10)
+  const parsed = Number.parseInt(adjustForm.deltaText.trim(), 10)
   if (!Number.isFinite(parsed) || parsed === 0) {
     errorMessage.value = 'delta 必须为非 0 整数'
     return
@@ -159,12 +180,25 @@ const applyDelta = async () => {
   errorMessage.value = ''
   try {
     await store.adjustInventorySnapshot(props.skuId, parsed)
-    deltaText.value = ''
+    adjustForm.deltaText = ''
+    closeAdjust()
   } catch (error: any) {
     errorMessage.value = error?.message ? String(error.message) : String(error)
   } finally {
     adjusting.value = false
   }
+}
+
+const openAdjust = () => {
+  errorMessage.value = ''
+  adjustOpen.value = true
+}
+
+const closeAdjust = () => {
+  if (typeof window !== 'undefined') {
+    ;(document.activeElement as HTMLElement | null)?.blur?.()
+  }
+  adjustOpen.value = false
 }
 
 const formatDateTime = (value?: string) => {

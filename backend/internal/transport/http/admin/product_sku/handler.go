@@ -70,6 +70,20 @@ type skuListQuery struct {
 	PageSize int    `form:"pageSize"`
 }
 
+func (h *Handler) Get(c *gin.Context) {
+	if h.service == nil {
+		respondError(c, errors.New("product SKU service unavailable"))
+		return
+	}
+	locale := strings.TrimSpace(c.Query("locale"))
+	item, err := h.service.GetSku(c.Request.Context(), c.Param("id"), locale)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, item)
+}
+
 func (h *Handler) List(c *gin.Context) {
 	if h.service == nil {
 		respondError(c, errors.New("product SKU service unavailable"))

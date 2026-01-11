@@ -1,7 +1,28 @@
 <template>
   <aside
+    ref="asideRef"
     :class="asideClass"
   >
+    <div class="pointer-events-none absolute right-1 top-12 bottom-2 w-1 rounded bg-gray-200/50 dark:bg-gray-800/60">
+      <div class="w-full rounded bg-primary-500/70" :style="scrollThumbStyle" />
+    </div>
+    <div
+      class="sticky top-0 z-10 border-b border-gray-200/70 bg-white/90 px-4 py-2 backdrop-blur dark:border-gray-800/70 dark:bg-slate-900/80"
+    >
+      <div class="flex items-center gap-2">
+        <span class="text-xs text-gray-500 dark:text-gray-400">当前：</span>
+        <span class="min-w-0 flex-1 truncate text-xs font-medium">
+          {{ currentPageLabel }}
+        </span>
+        <button
+          type="button"
+          class="text-xs text-gray-500 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-100"
+          @click="scrollToActive"
+        >
+          定位
+        </button>
+      </div>
+    </div>
     <nav class="p-4 space-y-4">
       <!-- 经营总览 -->
       <div>
@@ -878,7 +899,7 @@
             }"
           >
             <UIcon name="i-heroicons-building-office-2" class="w-4 h-4 mr-3"/>
-            仓库
+            仓库管理
           </UButton>
 
           <UButton
@@ -892,7 +913,7 @@
             }"
           >
             <UIcon name="i-heroicons-archive-box" class="w-4 h-4 mr-3"/>
-            库存总览
+            SKU 库存
           </UButton>
 
           <UButton
@@ -1224,6 +1245,8 @@
 
 <script setup lang="ts">
 const {t} = useI18n();
+const asideRef = ref<HTMLElement | null>(null);
+const scrollRatio = ref(0);
 
 // 控制各个子菜单的展开状态
 const showOrderManagement = ref(false);
@@ -1272,12 +1295,73 @@ const toggleReturns = () => {
 const colorMode = useColorMode();
 const asideClass = computed(() =>
   colorMode.value === "dark"
-    ? "w-64 min-w-64 max-w-64 bg-slate-900/90 text-slate-100 border-r border-gray-800 min-h-screen flex-shrink-0 overflow-y-auto backdrop-blur"
-    : "w-64 min-w-64 max-w-64 bg-white text-slate-900 border-r border-gray-200 min-h-screen flex-shrink-0 overflow-y-auto"
+    ? "relative w-64 min-w-64 max-w-64 bg-slate-900/90 text-slate-100 border-r border-gray-800 h-screen sticky top-0 flex-shrink-0 overflow-y-auto overscroll-contain backdrop-blur"
+    : "relative w-64 min-w-64 max-w-64 bg-white text-slate-900 border-r border-gray-200 h-screen sticky top-0 flex-shrink-0 overflow-y-auto overscroll-contain"
 );
 
 // 监听路由变化，自动展开相应的子菜单
 const route = useRoute();
+const currentPageLabel = computed(() => {
+  switch (route.path) {
+    case "/inventory/warehouses":
+      return "库存与仓储 / 仓库管理";
+    case "/inventory/stock":
+      return "库存与仓储 / SKU 库存";
+    case "/inventory/replenishment":
+      return "库存与仓储 / 补货与安全库存";
+    case "/inventory/stocktake":
+      return "库存与仓储 / 盘点";
+    case "/inventory/transfers":
+      return "库存与仓储 / 库存调拨";
+    default:
+      return route.path;
+  }
+});
+
+const scrollToActive = async () => {
+  await nextTick();
+  const selector = `a[href="${route.path}"]`;
+  const el = asideRef.value?.querySelector(selector) as HTMLElement | null;
+  el?.scrollIntoView({ block: "center" });
+};
+
+const updateScrollRatio = () => {
+  const el = asideRef.value;
+  if (!el) {
+    scrollRatio.value = 0;
+    return;
+  }
+  const max = el.scrollHeight - el.clientHeight;
+  if (max <= 0) {
+    scrollRatio.value = 0;
+    return;
+  }
+  scrollRatio.value = Math.min(1, Math.max(0, el.scrollTop / max));
+};
+
+const scrollThumbStyle = computed(() => {
+  const el = asideRef.value;
+  if (!el) {
+    return { height: "0%", transform: "translateY(0%)" };
+  }
+  const max = el.scrollHeight - el.clientHeight;
+  if (max <= 0) {
+    return { height: "0%", transform: "translateY(0%)" };
+  }
+  const ratio = scrollRatio.value;
+  const thumb = Math.max(0.12, el.clientHeight / el.scrollHeight); // min 12%
+  const top = ratio * (1 - thumb);
+  return { height: `${thumb * 100}%`, transform: `translateY(${top * 100}%)` };
+});
+
+onMounted(() => {
+  updateScrollRatio();
+  asideRef.value?.addEventListener("scroll", updateScrollRatio, { passive: true });
+});
+onBeforeUnmount(() => {
+  asideRef.value?.removeEventListener("scroll", updateScrollRatio);
+});
+
 watch(
   () => route.path,
   (newPath) => {
@@ -1323,5 +1407,14 @@ watch(
     }
   },
   {immediate: true}
+);
+
+watch(
+  () => route.path,
+  async () => {
+    await scrollToActive();
+    updateScrollRatio();
+  },
+  { immediate: true }
 );
 </script>

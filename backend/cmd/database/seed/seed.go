@@ -26,6 +26,7 @@ import (
 	"github.com/lib/pq"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 const defaultTenantUUID = "00000000-0000-0000-0000-000000000001"
@@ -365,6 +366,57 @@ func seedSportsCatalog(db *gorm.DB) error {
 	}
 	if err := seedSportsBasePricebookItems(db); err != nil {
 		return err
+	}
+	if err := seedSportsDefaultInventories(db); err != nil {
+		return err
+	}
+	return nil
+}
+
+func seedSportsDefaultInventories(db *gorm.DB) error {
+	if db == nil || db.Migrator() == nil {
+		return nil
+	}
+	if !db.Migrator().HasTable(&productsku.ProductSKU{}) || !db.Migrator().HasTable(&productsku.ProductSKUInventory{}) {
+		return nil
+	}
+
+	var skus []productsku.ProductSKU
+	if err := db.Where("tenant_uuid = ?", defaultTenantUUID).Order("created_at asc").Find(&skus).Error; err != nil {
+		return err
+	}
+	if len(skus) == 0 {
+		return nil
+	}
+
+	now := time.Now().UTC()
+	for idx, sku := range skus {
+		// Only seed inventory for SKUs that participate in seed pricing (sale_price > 0).
+		if extractSKUSalePrice(sku) <= 0 {
+			continue
+		}
+
+		available := int64(10)
+		// Keep a small variety for demo: make every 5th SKU out of stock.
+		if idx%5 == 0 {
+			available = 0
+		}
+		row := productsku.ProductSKUInventory{
+			ID:           utils.NewUUID(),
+			TenantUUID:   defaultTenantUUID,
+			SKUId:        sku.ID,
+			WarehouseID:  "default",
+			AvailableQty: available,
+			LockedQty:    0,
+			InTransitQty: 0,
+			SafetyStock:  0,
+			LastSyncedAt: &now,
+			CreatedAt:    now,
+			UpdatedAt:    now,
+		}
+		if err := db.Clauses(clause.OnConflict{DoNothing: true}).Create(&row).Error; err != nil {
+			return err
+		}
 	}
 	return nil
 }

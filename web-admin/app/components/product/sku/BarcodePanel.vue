@@ -6,46 +6,69 @@
         <h3 class="text-xl font-semibold text-gray-900 dark:text-white">{{ $t('product.sku.barcodePanel.title') }}</h3>
         <p class="text-sm text-gray-500 dark:text-gray-400">{{ $t('product.sku.barcodePanel.subtitle') }}</p>
       </div>
-      <UButton variant="ghost" icon="i-heroicons-arrow-path" :loading="loading" @click="resetResults">
-        {{ $t('common.reset') }}
-      </UButton>
+      <div class="flex gap-2">
+        <UButton color="primary" icon="i-heroicons-plus" @click="openDialog">
+          {{ $t('product.sku.barcodePanel.openDialog') }}
+        </UButton>
+        <UButton variant="ghost" icon="i-heroicons-arrow-path" :loading="loading" @click="resetResults">
+          {{ $t('common.reset') }}
+        </UButton>
+      </div>
     </div>
 
-    <UTabs v-model="mode" :items="tabItems" class="w-full">
-      <template #auto>
-        <UForm class="grid gap-4 md:grid-cols-3" @submit.prevent="handleGenerate">
-          <UFormGroup :label="$t('product.sku.barcodePanel.fields.prefix')">
-            <UInput v-model="autoForm.prefix" maxlength="8" />
-          </UFormGroup>
-          <UFormGroup :label="$t('product.sku.barcodePanel.fields.count')">
-            <UInput v-model.number="autoForm.count" type="number" min="1" max="100" />
-          </UFormGroup>
-          <UFormGroup :label="$t('product.sku.barcodePanel.fields.length')">
-            <UInput v-model.number="autoForm.length" type="number" min="6" max="18" />
-          </UFormGroup>
-          <div class="md:col-span-3 flex justify-end">
-            <UButton type="submit" color="primary" :loading="loading">
-              {{ $t('product.sku.barcodePanel.actions.generate') }}
-            </UButton>
-          </div>
-        </UForm>
+    <UModal
+      v-model:open="dialogOpen"
+      :title="$t('product.sku.barcodePanel.title')"
+      :description="$t('product.sku.barcodePanel.subtitle')"
+      :prevent-close="loading"
+      :ui="{ content: 'max-w-3xl w-full max-h-[calc(100dvh-2rem)] overflow-hidden' }"
+    >
+      <template #body>
+        <UTabs v-model="mode" :items="tabItems" class="w-full p-1">
+          <template #auto>
+            <UForm :state="autoForm" class="grid gap-4 md:grid-cols-3" @submit.prevent="handleGenerate">
+              <UFormField :label="$t('product.sku.barcodePanel.fields.prefix')">
+                <UInput v-model="autoForm.prefix" maxlength="8" />
+              </UFormField>
+              <UFormField :label="$t('product.sku.barcodePanel.fields.count')">
+                <UInput v-model.number="autoForm.count" type="number" min="1" max="100" />
+              </UFormField>
+              <UFormField :label="$t('product.sku.barcodePanel.fields.length')">
+                <UInput v-model.number="autoForm.length" type="number" min="6" max="18" />
+              </UFormField>
+              <div class="md:col-span-3 flex justify-end">
+                <UButton type="submit" color="primary" :loading="loading">
+                  {{ $t('product.sku.barcodePanel.actions.generate') }}
+                </UButton>
+              </div>
+            </UForm>
+          </template>
+          <template #manual>
+            <div class="space-y-3">
+              <UTextarea
+                v-model="manualCodes"
+                :rows="4"
+                :placeholder="$t('product.sku.barcodePanel.fields.codesPlaceholder')"
+              />
+              <div class="flex items-center justify-between text-xs text-gray-500">
+                <span>{{ $t('product.sku.barcodePanel.fields.codesHint', { count: manualCodeCount }) }}</span>
+                <UButton size="xs" variant="ghost" :loading="loading" @click="handleGenerate">
+                  {{ $t('product.sku.barcodePanel.actions.validate') }}
+                </UButton>
+              </div>
+            </div>
+          </template>
+        </UTabs>
       </template>
-      <template #manual>
-        <div class="space-y-3">
-          <UTextarea
-            v-model="manualCodes"
-            :rows="4"
-            :placeholder="$t('product.sku.barcodePanel.fields.codesPlaceholder')"
-          />
-          <div class="flex items-center justify-between text-xs text-gray-500">
-            <span>{{ $t('product.sku.barcodePanel.fields.codesHint', { count: manualCodeCount }) }}</span>
-            <UButton size="xs" variant="ghost" :loading="loading" @click="handleGenerate">
-              {{ $t('product.sku.barcodePanel.actions.validate') }}
-            </UButton>
-          </div>
+
+      <template #footer>
+        <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
+          <UButton color="neutral" variant="outline" :disabled="loading" @click="closeDialog">
+            {{ $t('common.cancel') }}
+          </UButton>
         </div>
       </template>
-    </UTabs>
+    </UModal>
 
     <UCard v-if="results.length">
       <template #header>
@@ -137,6 +160,7 @@ const { t } = useI18n()
 const toast = useToast()
 
 const loading = ref(false)
+const dialogOpen = ref(false)
 const mode = ref<'auto' | 'manual'>('auto')
 const autoForm = reactive({
   prefix: '',
@@ -177,6 +201,7 @@ const handleGenerate = async () => {
   try {
     await store.generateBarcodes(props.skuId, payload)
     toast.add({ title: t('product.sku.barcodePanel.toastSuccess') })
+    closeDialog()
   } catch (error: any) {
     toast.add({ title: t('common.error'), description: error?.message, color: 'red' })
   } finally {
@@ -227,6 +252,17 @@ const resetResults = () => {
   if (!props.skuId) return
   store.barcodeResults[props.skuId] = null
   manualCodes.value = ''
+}
+
+const openDialog = () => {
+  dialogOpen.value = true
+}
+
+const closeDialog = () => {
+  if (typeof window !== 'undefined') {
+    ;(document.activeElement as HTMLElement | null)?.blur?.()
+  }
+  dialogOpen.value = false
 }
 
 defineExpose({ handleGenerate })

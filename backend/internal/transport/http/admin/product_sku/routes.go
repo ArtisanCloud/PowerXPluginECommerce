@@ -27,14 +27,15 @@ func RegisterRoutes(productGroup *gin.RouterGroup, deps *app.Deps) {
 	barcodeHandler := NewBarcodeHandler(service)
 	generatorHandler := NewGeneratorHandler(service)
 
-	skus := productGroup.Group("/skus", httpmw.EnsureTenant())
-	{
-		skus.GET("", skuHandler.List)
-		skus.POST("", skuHandler.Upsert)
-		skus.PATCH("/:id", skuHandler.Update)
-		skus.DELETE("/:id", skuHandler.Delete)
-		skus.POST("/bulk-tasks", bulkHandler.Submit)
-		skus.GET("/bulk-tasks/:taskId", bulkHandler.Get)
+		skus := productGroup.Group("/skus", httpmw.EnsureTenant())
+		{
+			skus.GET("", skuHandler.List)
+			skus.GET("/:id", skuHandler.Get)
+			skus.POST("", skuHandler.Upsert)
+			skus.PATCH("/:id", skuHandler.Update)
+			skus.DELETE("/:id", skuHandler.Delete)
+			skus.POST("/bulk-tasks", bulkHandler.Submit)
+			skus.GET("/bulk-tasks/:taskId", bulkHandler.Get)
 		skus.POST("/bulk-tasks/:taskId/approval", bulkHandler.DecideApproval)
 		skus.POST("/bulk-tasks/:taskId/retry", bulkHandler.Retry)
 		skus.POST("/import", importHandler.Import)

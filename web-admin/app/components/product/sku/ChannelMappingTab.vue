@@ -7,6 +7,9 @@
         <p class="text-sm text-gray-500 dark:text-gray-400">{{ $t('product.sku.channel.subtitle') }}</p>
       </div>
       <div class="flex gap-2">
+        <UButton color="primary" icon="i-heroicons-plus" @click="openCreate">
+          {{ $t('common.add') }}
+        </UButton>
         <UButton :loading="loading" icon="i-heroicons-arrow-path" variant="ghost" @click="fetchChannels">
           {{ $t('common.refresh') }}
         </UButton>
@@ -39,7 +42,7 @@
               size="xs"
               variant="ghost"
               icon="i-heroicons-pencil"
-              @click="prefillForm(row)"
+              @click="openEdit(row)"
             >
               {{ $t('common.edit') }}
             </UButton>
@@ -65,31 +68,44 @@
       </UTable>
     </UCard>
 
-    <UCard>
-      <template #header>
-        <h4 class="text-lg font-semibold text-gray-900 dark:text-white">{{ $t('product.sku.channel.formTitle') }}</h4>
+    <UModal
+      v-model:open="formOpen"
+      :title="$t('product.sku.channel.formTitle')"
+      :description="$t('product.sku.channel.subtitle')"
+      :prevent-close="saving"
+      :ui="{ content: 'max-w-3xl w-full max-h-[calc(100dvh-2rem)] overflow-hidden' }"
+    >
+      <template #body>
+        <UForm id="sku-channel-mapping-form" :state="form" class="grid gap-4 md:grid-cols-2 p-1" @submit.prevent="handleSave">
+          <UFormField :label="$t('product.sku.channel.fields.channelCode')" required>
+            <UInput v-model="form.channelCode" placeholder="ec_shop" />
+          </UFormField>
+          <UFormField :label="$t('product.sku.channel.fields.channelSkuId')" required>
+            <UInput v-model="form.channelSkuId" placeholder="SKU-001" />
+          </UFormField>
+          <UFormField :label="$t('product.sku.channel.fields.syncMode')">
+            <USelect v-model="form.syncMode" :items="syncModeItems" class="w-full" />
+          </UFormField>
+          <UFormField :label="$t('product.sku.channel.fields.status')">
+            <USelect v-model="form.status" :items="statusItems" class="w-full" />
+          </UFormField>
+        </UForm>
       </template>
-      <UForm class="grid gap-4 md:grid-cols-2" @submit.prevent="handleSave">
-        <UFormGroup :label="$t('product.sku.channel.fields.channelCode')" required>
-          <UInput v-model="form.channelCode" placeholder="ec_shop" />
-        </UFormGroup>
-        <UFormGroup :label="$t('product.sku.channel.fields.channelSkuId')" required>
-          <UInput v-model="form.channelSkuId" placeholder="SKU-001" />
-        </UFormGroup>
-        <UFormGroup :label="$t('product.sku.channel.fields.syncMode')">
-          <USelect v-model="form.syncMode" :options="syncModeOptions" />
-        </UFormGroup>
-        <UFormGroup :label="$t('product.sku.channel.fields.status')">
-          <USelect v-model="form.status" :options="statusOptions" />
-        </UFormGroup>
-        <div class="md:col-span-2 flex justify-end gap-2">
-          <UButton variant="ghost" @click="resetForm">{{ $t('common.reset') }}</UButton>
-          <UButton type="submit" color="primary" :loading="saving">
+
+      <template #footer>
+        <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
+          <UButton color="neutral" variant="outline" :disabled="saving" @click="closeForm">
+            {{ $t('common.cancel') }}
+          </UButton>
+          <UButton variant="ghost" :disabled="saving" @click="resetForm">
+            {{ $t('common.reset') }}
+          </UButton>
+          <UButton type="submit" form="sku-channel-mapping-form" color="primary" :loading="saving">
             {{ $t('product.sku.channel.saveAction') }}
           </UButton>
         </div>
-      </UForm>
-    </UCard>
+      </template>
+    </UModal>
   </section>
 </template>
 
@@ -109,6 +125,7 @@ const { t } = useI18n()
 const loading = ref(false)
 const saving = ref(false)
 const publishingId = ref<string>('')
+const formOpen = ref(false)
 const form = ref<SkuChannelMappingPayload>({
   channelCode: '',
   channelSkuId: '',
@@ -118,18 +135,18 @@ const form = ref<SkuChannelMappingPayload>({
 
 const channels = computed<SkuChannelMapping[]>(() => store.channelMappings[props.skuId] ?? [])
 
-const syncModeOptions = [
+const syncModeItems = [
   { label: 'Push', value: 'push' },
   { label: 'Pull', value: 'pull' },
   { label: 'Hybrid', value: 'hybrid' },
 ]
 
-const statusOptions = [
+const statusItems = computed(() => [
   { label: t('product.sku.channel.status.pending'), value: 'pending' },
   { label: t('product.sku.channel.status.published'), value: 'published' },
   { label: t('product.sku.channel.status.failed'), value: 'failed' },
   { label: t('product.sku.channel.status.offline'), value: 'offline' },
-]
+])
 
 const tableColumns = computed<TableColumn<SkuChannelMapping>[]>(() => [
   { accessorKey: 'channelCode', header: t('product.sku.channel.table.channel') },
@@ -154,15 +171,21 @@ const handleSave = async () => {
   if (!props.skuId || !form.value.channelCode || !form.value.channelSkuId) {
     return
   }
+  let saved = false
   saving.value = true
   try {
     await store.saveChannelMapping(props.skuId, { ...form.value })
     toast.add({ title: t('product.sku.channel.toastSaved') })
-    resetForm()
+    await fetchChannels()
+    saved = true
   } catch (error: any) {
     toast.add({ title: t('common.error'), description: error?.message, color: 'red' })
   } finally {
     saving.value = false
+  }
+  if (saved) {
+    resetForm()
+    closeForm()
   }
 }
 
@@ -172,6 +195,7 @@ const handlePublish = async (mapping: SkuChannelMapping) => {
   try {
     await store.publishChannelMapping(props.skuId, { channelCode: mapping.channelCode })
     toast.add({ title: t('product.sku.channel.toastPublished', { channel: mapping.channelCode }) })
+    await fetchChannels()
   } catch (error: any) {
     toast.add({ title: t('common.error'), description: error?.message, color: 'red' })
   } finally {
@@ -195,6 +219,23 @@ const resetForm = () => {
     syncMode: 'push',
     status: 'pending',
   }
+}
+
+const openCreate = () => {
+  resetForm()
+  formOpen.value = true
+}
+
+const openEdit = (mapping: SkuChannelMapping) => {
+  prefillForm(mapping)
+  formOpen.value = true
+}
+
+const closeForm = () => {
+  if (typeof window !== 'undefined') {
+    ;(document.activeElement as HTMLElement | null)?.blur?.()
+  }
+  formOpen.value = false
 }
 
 const statusColor = (status?: SkuChannelStatus) => {

@@ -26,6 +26,7 @@ export interface SkuListParams {
 	spuId?: string
 	status?: string
 	channel?: string
+	locale?: string
 	page?: number
 	pageSize?: number
 }
@@ -52,6 +53,8 @@ export function useSkuApi() {
 	return {
 		list: (params?: SkuListParams, init?: any) =>
 			unwrap(apiGet<SkuListResponse>(basePath, params, init)),
+		get: (skuId: string, params?: { locale?: string }, init?: any) =>
+			unwrap(apiGet<any>(`${basePath}/${skuId}`, params, init)),
 		listBySpu: (spuId: string, params?: Omit<SkuListParams, 'spuId'>, init?: any) =>
 			unwrap(apiGet<SkuListResponse>(basePath, { ...params, spuId }, init)),
 		generate: (spuId: string, payload: SkuGeneratorRequest, init?: any) =>

@@ -95,12 +95,34 @@ const alertStub = defineComponent({
   },
 })
 
+const formStub = defineComponent({
+  name: 'UForm',
+  props: {
+    id: { type: String, default: '' },
+  },
+  setup(props, { slots, attrs }) {
+    return () => h('form', { ...attrs, id: props.id }, slots.default?.())
+  },
+})
+
+const modalStub = defineComponent({
+  name: 'UModal',
+  props: {
+    open: { type: Boolean, default: false },
+  },
+  setup(props, { slots }) {
+    return () => (props.open ? h('div', {}, [slots.body?.(), slots.footer?.()]) : h('div'))
+  },
+})
+
 const buildWrapper = (): VueWrapper =>
   mount(InventorySnapshotCard, {
     props: { skuId: 'sku-1' },
     global: {
       stubs: {
         UCard: cardStub,
+        UModal: modalStub,
+        UForm: formStub,
         UFormField: fieldStub,
         UInput: inputStub,
         UButton: buttonStub,
@@ -123,6 +145,8 @@ describe('InventorySnapshotCard', () => {
   it('submits delta adjustment', async () => {
     const wrapper = buildWrapper()
 
+    await wrapper.find('[data-testid="inventory-open-adjust"]').trigger('click')
+    await nextTick()
     wrapper.getComponent({ name: 'UInput' }).vm.$emit('update:modelValue', '10')
     await nextTick()
     await wrapper.find('[data-testid="inventory-apply"]').trigger('click')
