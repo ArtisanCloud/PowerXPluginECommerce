@@ -73,9 +73,9 @@
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T024 [P] 文档回写：在 `docs/plan/inventory/stock.md` 或相关 guide 补充“default 仓 + delta 调整 + 上架校验”落地说明
-- [ ] T025 运行 quickstart 验证清单并记录结果（`specs/006-sku-inventory-stock/quickstart.md`）
-- [ ] T026 [P] 确认 RBAC scope/manifest 输出（`/api/v1/admin/rbac`）包含库存相关权限点（对应库存调整与读取）
+- [x] T024 [P] 文档回写：在 `docs/plan/inventory/stock.md` 或相关 guide 补充“default 仓 + delta 调整 + 上架校验”落地说明
+- [x] T025 运行 quickstart 验证清单并记录结果（`specs/006-sku-inventory-stock/quickstart.md`）
+- [x] T026 [P] 确认 RBAC scope/manifest 输出（`/api/v1/admin/rbac`）包含库存相关权限点（对应库存调整与读取）
 
 ---
 
