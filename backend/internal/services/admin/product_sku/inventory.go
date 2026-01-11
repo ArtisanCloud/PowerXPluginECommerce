@@ -19,6 +19,7 @@ const defaultWarehouseID = "default"
 var (
 	ErrInventoryDeltaRequired   = errors.New("inventory delta is required")
 	ErrInventoryWouldBeNegative = errors.New("inventory would be negative")
+	ErrInventoryRequiredForPublish = errors.New("publish requires available inventory")
 )
 
 // SnapshotInventory will load the latest inventory state for a SKU.

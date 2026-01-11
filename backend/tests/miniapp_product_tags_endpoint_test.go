@@ -9,6 +9,7 @@ import (
 
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	spu "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/product/spu"
+	productsku "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/product_sku"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/miniapp"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/tests/testutil"
@@ -31,19 +32,20 @@ func TestMiniAppProductTagsEndpointReturnsDistinctTags(t *testing.T) {
 
 	deps := &app.Deps{DB: db, Ctx: ctx}
 	spuSvc := spu.NewService(deps)
+	skuSvc := productsku.NewService(deps)
 
 	tenantUUID := "00000000-0000-0000-0000-000000000111"
 	tenantCtx := middleware.ContextWithTenantUUID(ctx, tenantUUID)
 	testutil.SeedProductCategories(t, db, tenantUUID, "cat-a", "cat-b")
 
-	_ = createPublishedSPU(t, spuSvc, tenantCtx, createPublishedSPUInput{
+	_ = createPublishedSPU(t, spuSvc, skuSvc, tenantCtx, createPublishedSPUInput{
 		Code:         "TAGS-001",
 		Name:         "标签商品A",
 		CategoryID:   "cat-a",
 		CategoryPath: "root/cat-a",
 		Tags:         []string{"bestsellers", "imported"},
 	})
-	_ = createPublishedSPU(t, spuSvc, tenantCtx, createPublishedSPUInput{
+	_ = createPublishedSPU(t, spuSvc, skuSvc, tenantCtx, createPublishedSPUInput{
 		Code:         "TAGS-002",
 		Name:         "标签商品B",
 		CategoryID:   "cat-b",

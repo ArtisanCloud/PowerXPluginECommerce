@@ -64,10 +64,10 @@
 
 ### Implementation for User Story 3
 
-- [ ] T020 [US3] 在 SPU 发布流程中插入库存校验（定位发布 service：`backend/internal/services/admin/product/spu/`）
-- [ ] T021 [US3] 在渠道上架/同步发布流程中插入库存校验（定位渠道发布/同步 service：`backend/internal/services/admin/product_sku/channel.go` 或渠道发布相关 service）
-- [ ] T022 [P] [US3] 增加库存校验 service 方法：输入 tenant + spu_id（或 sku_ids），输出是否存在可售 SKU（`backend/internal/services/admin/product_sku/` 或 `backend/internal/services/admin/product/spu/`）
-- [ ] T023 [P] [US3] 增加集成测试：覆盖发布与渠道上架两个触发点（`backend/tests/` 下新增 `inventory_gate_publish_test.go` 等）
+- [x] T020 [US3] 在 SPU 发布流程中插入库存校验（定位发布 service：`backend/internal/services/admin/product/spu/`）
+- [x] T021 [US3] 在渠道上架/同步发布流程中插入库存校验（定位渠道发布/同步 service：`backend/internal/services/admin/product_sku/channel.go` 或渠道发布相关 service）
+- [x] T022 [P] [US3] 增加库存校验 service 方法：输入 tenant + spu_id（或 sku_ids），输出是否存在可售 SKU（`backend/internal/services/admin/product_sku/` 或 `backend/internal/services/admin/product/spu/`）
+- [x] T023 [P] [US3] 增加集成测试：覆盖发布与渠道上架两个触发点（`backend/tests/` 下新增 `inventory_gate_publish_test.go` 等）
 
 ---
 

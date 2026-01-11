@@ -19,19 +19,21 @@ func EnsureProductTables(t *testing.T, db *gorm.DB, isPostgres bool) {
 		tagsType = "TEXT[]"
 	}
 
-	tableNames := []string{
-		basemodels.TableProductSpus,
-		basemodels.TableProductSpuVersions,
-		basemodels.TableProductSpuLocales,
-		basemodels.TableProductSpuApprovals,
-		basemodels.TableProductSpuChannels,
-		basemodels.TableProductSpuAuditLogs,
-		basemodels.TableProductCategories,
-		basemodels.TableProductSpecGroups,
-		basemodels.TableProductSpecOptions,
-		basemodels.TableProductSkus,
-		basemodels.TableProductSkuAttributes,
-	}
+		tableNames := []string{
+			basemodels.TableProductSpus,
+			basemodels.TableProductSpuVersions,
+			basemodels.TableProductSpuLocales,
+			basemodels.TableProductSpuApprovals,
+			basemodels.TableProductSpuChannels,
+			basemodels.TableProductSpuAuditLogs,
+			basemodels.TableProductCategories,
+			basemodels.TableProductSpecGroups,
+			basemodels.TableProductSpecOptions,
+			basemodels.TableProductSkus,
+			basemodels.TableProductSkuAttributes,
+			basemodels.TableProductSkuInventories,
+			basemodels.TableProductSkuAuditLogs,
+		}
 	for _, table := range tableNames {
 		_ = db.Exec("DROP TABLE IF EXISTS " + table).Error
 	}
@@ -186,20 +188,50 @@ func EnsureProductTables(t *testing.T, db *gorm.DB, isPostgres bool) {
 			updated_at TIMESTAMP,
 			deleted_at TIMESTAMP
 		)`,
-		`CREATE TABLE IF NOT EXISTS product_sku_attributes (
-			id TEXT PRIMARY KEY,
-			tenant_uuid TEXT NOT NULL,
-			sku_id TEXT NOT NULL,
-			spec_id TEXT NOT NULL,
-			spec_value_id TEXT NOT NULL,
-			spec_name TEXT,
-			value_name TEXT,
-			display_order INTEGER,
-			created_at TIMESTAMP,
-			updated_at TIMESTAMP,
-			deleted_at TIMESTAMP
-		)`,
-	}
+			`CREATE TABLE IF NOT EXISTS product_sku_attributes (
+				id TEXT PRIMARY KEY,
+				tenant_uuid TEXT NOT NULL,
+				sku_id TEXT NOT NULL,
+				spec_id TEXT NOT NULL,
+				spec_value_id TEXT NOT NULL,
+				spec_name TEXT,
+				value_name TEXT,
+				display_order INTEGER,
+				created_at TIMESTAMP,
+				updated_at TIMESTAMP,
+				deleted_at TIMESTAMP
+			)`,
+			`CREATE TABLE IF NOT EXISTS product_sku_inventories (
+				id TEXT PRIMARY KEY,
+				tenant_uuid TEXT NOT NULL,
+				sku_id TEXT NOT NULL,
+				warehouse_id TEXT NOT NULL,
+				available_qty INTEGER NOT NULL DEFAULT 0,
+				locked_qty INTEGER NOT NULL DEFAULT 0,
+				in_transit_qty INTEGER NOT NULL DEFAULT 0,
+				safety_stock INTEGER NOT NULL DEFAULT 0,
+				alert_threshold INTEGER NOT NULL DEFAULT 0,
+				last_synced_at TIMESTAMP,
+				created_at TIMESTAMP,
+				updated_at TIMESTAMP,
+				deleted_at TIMESTAMP,
+				UNIQUE(tenant_uuid, sku_id, warehouse_id)
+			)`,
+			`CREATE TABLE IF NOT EXISTS product_sku_audit_logs (
+				id TEXT PRIMARY KEY,
+				tenant_uuid TEXT NOT NULL,
+				sku_id TEXT NOT NULL,
+				warehouse_id TEXT NOT NULL,
+				action TEXT NOT NULL,
+				actor TEXT,
+				delta INTEGER NOT NULL,
+				before_available_qty INTEGER NOT NULL,
+				after_available_qty INTEGER NOT NULL,
+				request_id TEXT,
+				created_at TIMESTAMP,
+				deleted_at TIMESTAMP
+			)`,
+		}
 
 	for _, stmt := range statements {
 		require.NoError(t, db.Exec(stmt).Error)

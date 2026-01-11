@@ -116,6 +116,25 @@ func (s *Service) PublishChannelMapping(ctx context.Context, skuID string, paylo
 		return nil, fmt.Errorf("channel %s already published", mapping.ChannelCode)
 	}
 
+	// Inventory gate: do not allow publishing a SKU without saleable inventory.
+	if s.InventoryRepo == nil {
+		return nil, errors.New("inventory repository is not initialized")
+	}
+	rows, err := s.InventoryRepo.ListBySKU(ctx, tenantID, skuID)
+	if err != nil {
+		return nil, err
+	}
+	saleable := false
+	for _, row := range rows {
+		if strings.EqualFold(row.WarehouseID, defaultWarehouseID) && row.AvailableQty > 0 {
+			saleable = true
+			break
+		}
+	}
+	if !saleable {
+		return nil, ErrInventoryRequiredForPublish
+	}
+
 	scope := map[string]any{
 		"sku_id":       skuID,
 		"channel_code": mapping.ChannelCode,
