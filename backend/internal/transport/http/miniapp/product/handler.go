@@ -968,21 +968,6 @@ type skuPriceInfo struct {
 	Currency string
 }
 
-func (h *Handler) loadSkuPrices(ctx context.Context, tenantUUID string, skuIDs []string) map[string]skuPriceInfo {
-	out := make(map[string]skuPriceInfo, len(skuIDs))
-	if h == nil || h.db == nil || len(skuIDs) == 0 || strings.TrimSpace(tenantUUID) == "" {
-		return out
-	}
-
-	tx, done := h.beginTenantTx(ctx, tenantUUID)
-	if tx == nil {
-		return out
-	}
-	defer done()
-
-	return h.loadSkuPricesTx(tx, tenantUUID, skuIDs)
-}
-
 func (h *Handler) loadSkuPricesTx(tx *gorm.DB, tenantUUID string, skuIDs []string) map[string]skuPriceInfo {
 	out := make(map[string]skuPriceInfo, len(skuIDs))
 	if h == nil || tx == nil || len(skuIDs) == 0 || strings.TrimSpace(tenantUUID) == "" {
@@ -1068,19 +1053,6 @@ func (h *Handler) loadBasePricebookSkuPricesTx(tx *gorm.DB, tenantUUID string, s
 		out[strings.TrimSpace(it.SKUID)] = &v
 	}
 	return out, strings.TrimSpace(pb.Currency)
-}
-
-func (h *Handler) loadSkuCoverURLs(ctx context.Context, tenantUUID string, skuIDs []string) map[string]string {
-	out := make(map[string]string, len(skuIDs))
-	if h == nil || h.db == nil || len(skuIDs) == 0 || strings.TrimSpace(tenantUUID) == "" {
-		return out
-	}
-	tx, done := h.beginTenantTx(ctx, tenantUUID)
-	if tx == nil {
-		return out
-	}
-	defer done()
-	return h.loadSkuCoverURLsTx(tx, tenantUUID, skuIDs)
 }
 
 func (h *Handler) loadSkuCoverURLsTx(tx *gorm.DB, tenantUUID string, skuIDs []string) map[string]string {
