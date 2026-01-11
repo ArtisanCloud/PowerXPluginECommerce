@@ -34,8 +34,15 @@ func classifyError(err error) int {
 	}
 	msg := strings.ToLower(err.Error())
 	switch {
+	case strings.Contains(msg, "forbidden"),
+		strings.Contains(msg, "permission denied"),
+		strings.Contains(msg, "permission"):
+		return http.StatusForbidden
+	case strings.Contains(msg, "conflict"):
+		return http.StatusConflict
 	case strings.Contains(msg, "required"),
 		strings.Contains(msg, "invalid"),
+		strings.Contains(msg, "negative"),
 		strings.Contains(msg, "too many"),
 		strings.Contains(msg, "not found"):
 		return http.StatusBadRequest

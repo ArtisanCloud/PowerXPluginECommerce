@@ -25,6 +25,7 @@ type Service struct {
 	AttributeRepo    *repo.AttributeRepository
 	ChannelRepo      *repo.ChannelRepository
 	InventoryRepo    *repo.InventoryRepository
+	AuditLogRepo     *repo.AuditLogRepository
 	MediaRepo        *repo.MediaRepository
 	BulkTaskRepo     *repo.BulkTaskRepository
 	BulkTaskItemRepo *repo.BulkTaskItemRepository
@@ -47,6 +48,7 @@ func NewService(deps *app.Deps) *Service {
 		AttributeRepo:    repo.NewAttributeRepository(deps.DB),
 		ChannelRepo:      repo.NewChannelRepository(deps.DB),
 		InventoryRepo:    repo.NewInventoryRepository(deps.DB),
+		AuditLogRepo:     repo.NewAuditLogRepository(deps.DB),
 		MediaRepo:        repo.NewMediaRepository(deps.DB),
 		BulkTaskRepo:     repo.NewBulkTaskRepository(deps.DB),
 		BulkTaskItemRepo: repo.NewBulkTaskItemRepository(deps.DB),

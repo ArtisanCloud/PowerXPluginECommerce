@@ -12,13 +12,13 @@
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-- [ ] T003 定义库存调整请求/响应 DTO（`backend/internal/services/admin/product_sku/types.go`）
-- [ ] T004 [P] 扩展库存仓储：所有读写通过 `BeginTenantTx/WithTenantTx` 注入 `app.tenant_uuid`，并提供按（tenant, sku, warehouse）读取与 adjust（delta）能力（`backend/internal/entity/repository/product_sku/inventory_repository.go`）
-- [ ] T005 [P] 新增库存审计模型（ProductSKUAuditLog）并注册表名（`backend/internal/entity/models/product_sku/`，`backend/internal/entity/models/model.go` 已有常量可复用）
-- [ ] T006 [P] 新增库存审计仓储（`backend/internal/entity/repository/product_sku/`）
-- [ ] T007 在 SKU Service 中实现库存增量调整用例：在同一 `WithTenantTx` 内完成“读取当前值→校验→更新库存→写审计→提交”，default 仓、delta 整数、结果不可为负、返回快照（`backend/internal/services/admin/product_sku/inventory.go`）
-- [ ] T008 在库存调整用例中写入审计记录（与库存更新同一事务）（`backend/internal/services/admin/product_sku/` + `backend/internal/entity/repository/product_sku/`）
-- [ ] T009 统一错误语义：sku 不存在/权限不足/并发冲突/结果为负（`backend/internal/transport/http/admin/product_sku/` 的 respondError 映射）
+- [x] T003 定义库存调整请求/响应 DTO（`backend/internal/services/admin/product_sku/types.go`）
+- [x] T004 [P] 扩展库存仓储：所有读写通过 `BeginTenantTx/WithTenantTx` 注入 `app.tenant_uuid`，并提供按（tenant, sku, warehouse）读取与 adjust（delta）能力（`backend/internal/entity/repository/product_sku/inventory_repository.go`）
+- [x] T005 [P] 新增库存审计模型（ProductSKUAuditLog）并注册表名（`backend/internal/entity/models/product_sku/`，`backend/cmd/database/migrate/migrations/002_product_sku.go`）
+- [x] T006 [P] 新增库存审计仓储（`backend/internal/entity/repository/product_sku/audit_log_repository.go`）
+- [x] T007 在 SKU Service 中实现库存增量调整用例：在同一 `WithTenantTx` 内完成“读取当前值→校验→更新库存→写审计→提交”，default 仓、delta 整数、结果不可为负、返回快照（`backend/internal/services/admin/product_sku/inventory.go`）
+- [x] T008 在库存调整用例中写入审计记录（与库存更新同一事务）（`backend/internal/services/admin/product_sku/inventory.go`，`backend/internal/entity/repository/product_sku/audit_log_repository.go`）
+- [x] T009 统一错误语义：sku 不存在/权限不足/并发冲突/结果为负（`backend/internal/transport/http/admin/product_sku/handler.go`）
 
 **Checkpoint**: Foundational 完成后，可独立完成 US1/US2/US3 的实现与验收。
 
