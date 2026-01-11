@@ -28,6 +28,12 @@
 - 后端：`make test`（`go test ./...`），覆盖率：`make test-coverage` 生成 `backend/coverage.html`；集成测试在 `backend/internal/services/integration`。
 - 前端：`make test-admin`（`npm run test`）；新增测试尽量就近放置，并使用清晰的 Arrange-Act-Assert 命名。
 
+## Codex/沙箱注意事项（必读）
+
+- 运行后端 `go test`/`go build` 时**不要**把 `GOCACHE`/`GOTMPDIR` 指向仓库目录（例如 `mini-app/.gocache`），以免在前端目录生成大量 Go 缓存文件。
+- 在沙箱/只读目录导致默认 Go 缓存不可写（常见报错：`operation not permitted`）时，统一使用系统临时目录：
+  - 示例：`mkdir -p /tmp/powerx-go-cache /tmp/powerx-go-tmp && GOCACHE=/tmp/powerx-go-cache GOTMPDIR=/tmp/powerx-go-tmp go test ./...`
+
 ## mini-app ↔ 后端联动（必须了解）
 
 - API Base：插件内部基路径为 ` /api/v1`（注意：与标准模板常见的 `/v1` 不同），mini-app 前缀为 `/api/v1/mini-app`。

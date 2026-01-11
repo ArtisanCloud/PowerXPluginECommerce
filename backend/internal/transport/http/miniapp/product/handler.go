@@ -52,6 +52,18 @@ func (h *Handler) beginTenantTx(ctx context.Context, tenantUUID string) (*gorm.D
 	return tx, cleanup
 }
 
+func clampInt64ToIntPtr(v int64) *int {
+	if v < 0 {
+		v = 0
+	}
+	maxInt := int64(^uint(0) >> 1)
+	if v > maxInt {
+		v = maxInt
+	}
+	n := int(v)
+	return &n
+}
+
 // NewHandler wires SPU/SKU services for handlers.
 func NewHandler(spuSvc *spuservice.Service, skuSvc *skuservice.Service, planSvc *spuservice.SubscriptionPlanService, db *gorm.DB) *Handler {
 	return &Handler{
@@ -517,6 +529,7 @@ func (h *Handler) loadSkuDetailsForSpec(ctx context.Context, tenantUUID, spuID s
 	}
 	mediaBySKU := h.loadSkuCoverURLsTx(tx, tenantUUID, skuIDs)
 	priceBySKU := h.loadSkuPricesTx(tx, tenantUUID, skuIDs)
+	stockBySKU := h.loadSkuStockQtyTx(tx, tenantUUID, skuIDs)
 
 	out := make([]miniAppSkuDetail, 0, len(rows))
 	for _, r := range rows {
@@ -545,6 +558,7 @@ func (h *Handler) loadSkuDetailsForSpec(ctx context.Context, tenantUUID, spuID s
 			Price:         p.Price,
 			Currency:      strings.TrimSpace(p.Currency),
 			ImageURL:      strings.TrimSpace(mediaBySKU[r.ID]),
+			StockQty:      stockBySKU[r.ID],
 			Spec:          spec,
 			SpecSignature: strings.TrimSpace(r.SpecSignature),
 		})
@@ -917,7 +931,7 @@ func (h *Handler) enrichSkuSummaries(ctx context.Context, tenantUUID string, ite
 	out := make([]miniAppSkuSummary, 0, len(items))
 	if h == nil || h.db == nil || strings.TrimSpace(tenantUUID) == "" {
 		for _, item := range items {
-			out = append(out, toMiniAppSkuSummary(item, "", nil, ""))
+			out = append(out, toMiniAppSkuSummary(item, "", nil, "", nil))
 		}
 		return out
 	}
@@ -928,12 +942,22 @@ func (h *Handler) enrichSkuSummaries(ctx context.Context, tenantUUID string, ite
 		spuID = it.SPUID
 	}
 
-	mediaBySKU := h.loadSkuCoverURLs(ctx, tenantUUID, ids)
-	priceBySKU := h.loadSkuPrices(ctx, tenantUUID, ids)
+	tx, done := h.beginTenantTx(ctx, tenantUUID)
+	if tx == nil {
+		for _, item := range items {
+			out = append(out, toMiniAppSkuSummary(item, "", nil, "", nil))
+		}
+		return out
+	}
+	defer done()
+
+	mediaBySKU := h.loadSkuCoverURLsTx(tx, tenantUUID, ids)
+	priceBySKU := h.loadSkuPricesTx(tx, tenantUUID, ids)
+	stockBySKU := h.loadSkuStockQtyTx(tx, tenantUUID, ids)
 
 	for _, item := range items {
 		p := priceBySKU[item.ID]
-		out = append(out, toMiniAppSkuSummary(item, mediaBySKU[item.ID], p.Price, p.Currency))
+		out = append(out, toMiniAppSkuSummary(item, mediaBySKU[item.ID], p.Price, p.Currency, stockBySKU[item.ID]))
 	}
 	_ = spuID
 	return out
@@ -1092,7 +1116,34 @@ func (h *Handler) loadSkuCoverURLsTx(tx *gorm.DB, tenantUUID string, skuIDs []st
 	return out
 }
 
-func toMiniAppSkuSummary(item skuservice.SkuListItem, imageURL string, price *float64, currency string) miniAppSkuSummary {
+func (h *Handler) loadSkuStockQtyTx(tx *gorm.DB, tenantUUID string, skuIDs []string) map[string]*int {
+	out := make(map[string]*int, len(skuIDs))
+	if h == nil || tx == nil || len(skuIDs) == 0 || strings.TrimSpace(tenantUUID) == "" {
+		return out
+	}
+	type row struct {
+		SKUID string `gorm:"column:sku_id"`
+		Qty   int64  `gorm:"column:qty"`
+	}
+	var rows []row
+	if err := tx.Table(productskumodel.ProductSKUInventory{}.TableName()).
+		Select("sku_id, SUM(available_qty) AS qty").
+		Where("tenant_uuid = ? AND deleted_at IS NULL AND sku_id IN ?", tenantUUID, skuIDs).
+		Group("sku_id").
+		Scan(&rows).Error; err != nil {
+		return out
+	}
+	for _, r := range rows {
+		id := strings.TrimSpace(r.SKUID)
+		if id == "" {
+			continue
+		}
+		out[id] = clampInt64ToIntPtr(r.Qty)
+	}
+	return out
+}
+
+func toMiniAppSkuSummary(item skuservice.SkuListItem, imageURL string, price *float64, currency string, stockQty *int) miniAppSkuSummary {
 	var createdAt, updatedAt *time.Time
 	if item.CreatedAt != nil {
 		c := *item.CreatedAt
@@ -1113,6 +1164,7 @@ func toMiniAppSkuSummary(item skuservice.SkuListItem, imageURL string, price *fl
 		ImageURL:  strings.TrimSpace(imageURL),
 		Price:     price,
 		Currency:  strings.TrimSpace(currency),
+		StockQty:  stockQty,
 	}
 }
 

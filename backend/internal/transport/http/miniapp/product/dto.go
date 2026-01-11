@@ -129,6 +129,7 @@ type miniAppSkuSummary struct {
 	ImageURL  string     `json:"imageUrl,omitempty"`
 	Price     *float64   `json:"price,omitempty"`
 	Currency  string     `json:"currency,omitempty"`
+	StockQty  *int       `json:"stockQty,omitempty"`
 }
 
 type miniAppSkuDetail struct {

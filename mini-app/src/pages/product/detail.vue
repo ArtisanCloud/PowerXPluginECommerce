@@ -398,7 +398,14 @@ const commissionText = computed(() => {
 });
 
 const soldText = computed(() => "2k+");
-const stockText = computed(() => (typeof product.value?.skuCount === "number" ? String(Math.max(1, product.value.skuCount * 10)) : "—"));
+const stockText = computed(() => {
+  if (isSubscription.value) return "—";
+  const s = skus.value.find((x) => x.id === selectedSkuId.value);
+  if (typeof s?.stockQty === "number") return String(Math.max(0, s.stockQty));
+  const total = skus.value.reduce((acc, x) => acc + (typeof x.stockQty === "number" ? Math.max(0, x.stockQty) : 0), 0);
+  if (total > 0) return String(total);
+  return "—";
+});
 const locationText = computed(() => "广东");
 
 const gallery = computed(() => {
