@@ -1,0 +1,144 @@
+openapi: 3.0.3
+info:
+  title: PowerX Plugin - SKU Inventory Stock API (MVP)
+  version: 1.0.0
+servers:
+  - url: /
+
+paths:
+  /api/v1/admin/product/skus/{skuId}/inventory:
+    get:
+      summary: Get SKU inventory snapshot (read-only)
+      parameters:
+        - in: path
+          name: skuId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Inventory snapshot
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventorySnapshot'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: SKU not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/admin/product/skus/{skuId}/inventory/adjust:
+    post:
+      summary: Adjust SKU available inventory in default warehouse (delta, integer)
+      parameters:
+        - in: path
+          name: skuId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InventoryAdjustRequest'
+      responses:
+        '200':
+          description: Updated inventory snapshot after adjustment
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InventorySnapshot'
+        '400':
+          description: Invalid request (e.g., negative result)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: SKU not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Conflict (concurrent adjustment)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+      required: [error]
+
+    InventoryAdjustRequest:
+      type: object
+      properties:
+        delta:
+          type: integer
+          description: Integer delta (units)
+      required: [delta]
+
+    InventoryWarehouseSnapshot:
+      type: object
+      properties:
+        warehouse_id:
+          type: string
+        available_qty:
+          type: integer
+          format: int64
+        locked_qty:
+          type: integer
+          format: int64
+        in_transit_qty:
+          type: integer
+          format: int64
+        safety_stock:
+          type: integer
+          format: int64
+        alert_level:
+          type: string
+        last_synced_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    InventorySnapshot:
+      type: object
+      properties:
+        warehouses:
+          type: array
+          items:
+            $ref: '#/components/schemas/InventoryWarehouseSnapshot'
+        summary:
+          $ref: '#/components/schemas/InventoryWarehouseSnapshot'
+        last_synced_at:
+          type: string
+          format: date-time
+          nullable: true
+        is_stale:
+          type: boolean
+      required: [warehouses, summary, is_stale]
+

@@ -48,6 +48,7 @@ Always respond in Chinese-simplified
 - PostgreSQL（schema: `powerx_plugin_base`） (004-product-categories)
 - Go 1.24 + Gin、GORM（postgres driver）、PowerX plugin framework（RBAC/tenant context/STS） (005-pricing-pricebook)
 - PostgreSQL（schema：`powerx_plugin_base`，RLS 强制，所有表带 `tenant_uuid`） (005-pricing-pricebook)
+- Go 1.24 + Node 20（Nuxt 4） + Gin、GORM（postgres driver）、PowerX plugin framework（RBAC/tenant context/STS）；Nuxt 4 + TypeScript 5.9 + Nuxt UI 3.3.x (006-sku-inventory-stock)
 
 ## Recent Changes
 - 003-channels-subscription: Added Backend Go 1.24; Frontend Node 20 + TypeScript 5.9 + Nuxt 4 + Gin, GORM (postgres driver), PowerX plugin framework, JWT、grpc/protobuf、Redis 客户端；前端 @nuxt/ui 3.3.x、Pinia、i18n、Nuxt Icon
