@@ -18,6 +18,7 @@ export interface SpuSummary {
   code: string
   status: string
   type: string
+  skuCount?: number
   updatedAt?: string
 }
 

@@ -34,6 +34,7 @@ func TestMiniAppProductTagsEndpointReturnsDistinctTags(t *testing.T) {
 
 	tenantUUID := "00000000-0000-0000-0000-000000000111"
 	tenantCtx := middleware.ContextWithTenantUUID(ctx, tenantUUID)
+	testutil.SeedProductCategories(t, db, tenantUUID, "cat-a", "cat-b")
 
 	_ = createPublishedSPU(t, spuSvc, tenantCtx, createPublishedSPUInput{
 		Code:         "TAGS-001",

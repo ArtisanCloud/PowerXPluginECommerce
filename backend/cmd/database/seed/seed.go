@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"sort"
 	"strings"
 	"time"
@@ -12,11 +13,15 @@ import (
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models"
 	customermodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/customer"
 	iammodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/iam"
+	pricingmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/pricing"
 	productmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product"
 	productcategory "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_category"
 	productsku "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_sku"
 	productspec "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_spec"
 	templatemodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/template"
+	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
+	pricingsvc "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/pricing"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"github.com/lib/pq"
 	"gorm.io/datatypes"
@@ -312,16 +317,16 @@ type categorySeedSpec struct {
 }
 
 type spuSeedSpec struct {
-	ID           string
-	Code         string
-	Name         string
-	Type         string
-	CategoryCode string
-	Status       string
+	ID            string
+	Code          string
+	Name          string
+	Type          string
+	CategoryCode  string
+	Status        string
 	DefaultLocale string
-	Responsible  string
-	Tags         []string
-	Description  string
+	Responsible   string
+	Tags          []string
+	Description   string
 }
 
 type skuSeedSpec struct {
@@ -356,6 +361,9 @@ func seedSportsCatalog(db *gorm.DB) error {
 		return err
 	}
 	if err := seedSportsSKUs(db); err != nil {
+		return err
+	}
+	if err := seedSportsBasePricebookItems(db); err != nil {
 		return err
 	}
 	return nil
@@ -909,85 +917,85 @@ func seedSportsSKUs(db *gorm.DB) error {
 	}
 	specs := []skuSeedSpec{
 		{
-			ID:      "8a8a8a8a-1111-4f0d-8c3e-0b9a4d7e1c30",
-			SPUCode: "BALL-BASKET-001",
-			SKUCode: "BALL-BASKET-001-STD",
-			Status:  "published",
-			Barcode: "6900000000001",
-			Tags:    []string{"basketball", "ball"},
-			Spec:    map[string]any{"size": "7", "material": "composite"},
+			ID:        "8a8a8a8a-1111-4f0d-8c3e-0b9a4d7e1c30",
+			SPUCode:   "BALL-BASKET-001",
+			SKUCode:   "BALL-BASKET-001-STD",
+			Status:    "published",
+			Barcode:   "6900000000001",
+			Tags:      []string{"basketball", "ball"},
+			Spec:      map[string]any{"size": "7", "material": "composite"},
 			SalePrice: 199,
 			Currency:  "CNY",
 			MediaID:   "9a8a8a8a-1111-4f0d-8c3e-0b9a4d7e1c30",
 		},
 		{
-			ID:      "8a8a8a8a-2222-4f0d-8c3e-0b9a4d7e1c31",
-			SPUCode: "BALL-BASKET-001",
-			SKUCode: "BALL-BASKET-001-PRO",
-			Status:  "published",
-			Barcode: "6900000000002",
-			Tags:    []string{"basketball", "ball", "premium"},
-			Spec:    map[string]any{"size": "7", "material": "leather"},
+			ID:        "8a8a8a8a-2222-4f0d-8c3e-0b9a4d7e1c31",
+			SPUCode:   "BALL-BASKET-001",
+			SKUCode:   "BALL-BASKET-001-PRO",
+			Status:    "published",
+			Barcode:   "6900000000002",
+			Tags:      []string{"basketball", "ball", "premium"},
+			Spec:      map[string]any{"size": "7", "material": "leather"},
 			SalePrice: 399,
 			Currency:  "CNY",
 			MediaID:   "9a8a8a8a-2222-4f0d-8c3e-0b9a4d7e1c31",
 		},
 		{
-			ID:      "8a8a8a8a-3333-4f0d-8c3e-0b9a4d7e1c32",
-			SPUCode: "BALL-SOCCER-001",
-			SKUCode: "BALL-SOCCER-001-STD",
-			Status:  "published",
-			Barcode: "6900000000003",
-			Tags:    []string{"football", "ball"},
-			Spec:    map[string]any{"size": "5", "surface": "training"},
+			ID:        "8a8a8a8a-3333-4f0d-8c3e-0b9a4d7e1c32",
+			SPUCode:   "BALL-SOCCER-001",
+			SKUCode:   "BALL-SOCCER-001-STD",
+			Status:    "published",
+			Barcode:   "6900000000003",
+			Tags:      []string{"football", "ball"},
+			Spec:      map[string]any{"size": "5", "surface": "training"},
 			SalePrice: 169,
 			Currency:  "CNY",
 			MediaID:   "9a8a8a8a-3333-4f0d-8c3e-0b9a4d7e1c32",
 		},
 		{
-			ID:      "8a8a8a8a-4444-4f0d-8c3e-0b9a4d7e1c33",
-			SPUCode: "SHOE-BASKET-001",
-			SKUCode: "SHOE-BASKET-001-42",
-			Status:  "published",
-			Barcode: "6900000000004",
-			Tags:    []string{"basketball", "shoes"},
-			Spec:    map[string]any{"size": "42", "color": "black"},
+			ID:        "8a8a8a8a-4444-4f0d-8c3e-0b9a4d7e1c33",
+			SPUCode:   "SHOE-BASKET-001",
+			SKUCode:   "SHOE-BASKET-001-42",
+			Status:    "published",
+			Barcode:   "6900000000004",
+			Tags:      []string{"basketball", "shoes"},
+			Spec:      map[string]any{"size": "42", "color": "black"},
 			SalePrice: 699,
 			Currency:  "CNY",
 			MediaID:   "9a8a8a8a-4444-4f0d-8c3e-0b9a4d7e1c33",
 		},
 		{
-			ID:      "8a8a8a8a-5555-4f0d-8c3e-0b9a4d7e1c34",
-			SPUCode: "SHOE-BASKET-001",
-			SKUCode: "SHOE-BASKET-001-43",
-			Status:  "published",
-			Barcode: "6900000000005",
-			Tags:    []string{"basketball", "shoes"},
-			Spec:    map[string]any{"size": "43", "color": "white"},
+			ID:        "8a8a8a8a-5555-4f0d-8c3e-0b9a4d7e1c34",
+			SPUCode:   "SHOE-BASKET-001",
+			SKUCode:   "SHOE-BASKET-001-43",
+			Status:    "published",
+			Barcode:   "6900000000005",
+			Tags:      []string{"basketball", "shoes"},
+			Spec:      map[string]any{"size": "43", "color": "white"},
 			SalePrice: 699,
 			Currency:  "CNY",
 			MediaID:   "9a8a8a8a-5555-4f0d-8c3e-0b9a4d7e1c34",
 		},
 		{
-			ID:      "8a8a8a8a-6666-4f0d-8c3e-0b9a4d7e1c35",
-			SPUCode: "APP-JERSEY-001",
-			SKUCode: "APP-JERSEY-001-M",
-			Status:  "published",
-			Barcode: "6900000000006",
-			Tags:    []string{"basketball", "apparel"},
-			Spec:    map[string]any{"size": "M", "color": "blue"},
+			ID:        "8a8a8a8a-6666-4f0d-8c3e-0b9a4d7e1c35",
+			SPUCode:   "APP-JERSEY-001",
+			SKUCode:   "APP-JERSEY-001-M",
+			Status:    "published",
+			Barcode:   "6900000000006",
+			Tags:      []string{"basketball", "apparel"},
+			Spec:      map[string]any{"size": "M", "color": "blue"},
 			SalePrice: 299,
 			Currency:  "CNY",
 			MediaID:   "9a8a8a8a-6666-4f0d-8c3e-0b9a4d7e1c35",
 		},
 		{
-			ID:      "8a8a8a8a-7777-4f0d-8c3e-0b9a4d7e1c36",
-			SPUCode: "APP-JERSEY-001",
-			SKUCode: "APP-JERSEY-001-L",
-			Status:  "published",
-			Barcode: "6900000000007",
-			Tags:    []string{"basketball", "apparel"},
-			Spec:    map[string]any{"size": "L", "color": "blue"},
+			ID:        "8a8a8a8a-7777-4f0d-8c3e-0b9a4d7e1c36",
+			SPUCode:   "APP-JERSEY-001",
+			SKUCode:   "APP-JERSEY-001-L",
+			Status:    "published",
+			Barcode:   "6900000000007",
+			Tags:      []string{"basketball", "apparel"},
+			Spec:      map[string]any{"size": "L", "color": "blue"},
 			SalePrice: 299,
 			Currency:  "CNY",
 			MediaID:   "9a8a8a8a-7777-4f0d-8c3e-0b9a4d7e1c36",
@@ -1087,18 +1095,18 @@ func seedSportsSKUs(db *gorm.DB) error {
 		switch {
 		case errors.Is(err, gorm.ErrRecordNotFound):
 			sku = productsku.ProductSKU{
-				ID:         spec.ID,
-				TenantUUID: defaultTenantUUID,
-				SPUID:      spuID,
-				SKUCode:    spec.SKUCode,
-				Barcode:    spec.Barcode,
-				Status:     spec.Status,
-				SpecValues: datatypes.JSON(specBytes),
+				ID:            spec.ID,
+				TenantUUID:    defaultTenantUUID,
+				SPUID:         spuID,
+				SKUCode:       spec.SKUCode,
+				Barcode:       spec.Barcode,
+				Status:        spec.Status,
+				SpecValues:    datatypes.JSON(specBytes),
 				SpecSignature: strings.TrimSpace(specSignature),
 				DefaultValues: datatypes.JSON(defaultValuesBytes),
-				Tags:       pq.StringArray(spec.Tags),
-				CreatedAt:  now,
-				UpdatedAt:  now,
+				Tags:          pq.StringArray(spec.Tags),
+				CreatedAt:     now,
+				UpdatedAt:     now,
 			}
 			if err := db.Create(&sku).Error; err != nil {
 				return err
@@ -1107,14 +1115,14 @@ func seedSportsSKUs(db *gorm.DB) error {
 			return err
 		default:
 			updates := map[string]any{
-				"spu_id":      spuID,
-				"barcode":     spec.Barcode,
-				"status":      spec.Status,
-				"spec_values": datatypes.JSON(specBytes),
+				"spu_id":         spuID,
+				"barcode":        spec.Barcode,
+				"status":         spec.Status,
+				"spec_values":    datatypes.JSON(specBytes),
 				"spec_signature": strings.TrimSpace(specSignature),
 				"default_values": datatypes.JSON(defaultValuesBytes),
-				"tags":        pq.StringArray(spec.Tags),
-				"updated_at":  now,
+				"tags":           pq.StringArray(spec.Tags),
+				"updated_at":     now,
 			}
 			if err := db.Model(&sku).Updates(updates).Error; err != nil {
 				return err
@@ -1154,10 +1162,10 @@ func seedSportsSKUs(db *gorm.DB) error {
 					return err
 				default:
 					updates := map[string]any{
-						"spec_name":      p.SpecName,
-						"value_name":     p.ValueName,
-						"display_order":  idx,
-						"updated_at":     now,
+						"spec_name":     p.SpecName,
+						"value_name":    p.ValueName,
+						"display_order": idx,
+						"updated_at":    now,
 					}
 					if err := db.Model(&existingAttr).Updates(updates).Error; err != nil {
 						return err
@@ -1206,6 +1214,182 @@ func seedSportsSKUs(db *gorm.DB) error {
 		}
 	}
 	return nil
+}
+
+func seedSportsBasePricebookItems(db *gorm.DB) error {
+	if db == nil || db.Migrator() == nil {
+		return nil
+	}
+	if !db.Migrator().HasTable(&productsku.ProductSKU{}) {
+		return nil
+	}
+	if !db.Migrator().HasTable(&pricingmodel.Pricebook{}) ||
+		!db.Migrator().HasTable(&pricingmodel.PricebookVersion{}) ||
+		!db.Migrator().HasTable(&pricingmodel.PricebookItem{}) {
+		return nil
+	}
+
+	var skus []productsku.ProductSKU
+	if err := db.Where("tenant_uuid = ?", defaultTenantUUID).Order("created_at asc").Find(&skus).Error; err != nil {
+		return err
+	}
+	if len(skus) == 0 {
+		return nil
+	}
+
+	tenantCtx := authx.ContextWithTenantUUID(context.Background(), defaultTenantUUID)
+	deps := &app.Deps{DB: db}
+	pbSvc := pricingsvc.NewPricebookService(deps)
+	verSvc := pricingsvc.NewVersionService(deps)
+	itemSvc := pricingsvc.NewItemService(deps)
+
+	currencyHint := "CNY"
+	if cur := strings.TrimSpace(extractSKUCurrency(skus[0])); cur != "" {
+		currencyHint = cur
+	}
+
+	pb, err := pbSvc.EnsureBasePricebook(tenantCtx, currencyHint, "seed")
+	if err != nil {
+		return err
+	}
+
+	draft, err := verSvc.CreateDraft(tenantCtx, pricingsvc.CreateVersionInput{
+		PricebookID: pb.ID,
+		Actor:       "seed",
+	})
+	if err != nil {
+		return err
+	}
+
+	toMinor := func(price float64) *int64 {
+		if price <= 0 {
+			return nil
+		}
+		minor := int64(math.Round(price * 100))
+		if minor < 0 {
+			return nil
+		}
+		return &minor
+	}
+
+	buildSpecDisplay := func(raw datatypes.JSON) string {
+		if len(raw) == 0 {
+			return ""
+		}
+		var pairs []skuSpecJSON
+		if err := json.Unmarshal(raw, &pairs); err != nil {
+			return ""
+		}
+		parts := make([]string, 0, len(pairs))
+		for _, p := range pairs {
+			k := strings.TrimSpace(p.SpecName)
+			v := strings.TrimSpace(p.ValueName)
+			if k == "" || v == "" {
+				continue
+			}
+			parts = append(parts, k+"="+v)
+		}
+		return strings.Join(parts, " | ")
+	}
+
+	falsePtr := func() *bool {
+		v := false
+		return &v
+	}
+
+	items := make([]pricingsvc.ItemInput, 0, len(skus))
+	for _, sku := range skus {
+		salePrice := extractSKUSalePrice(sku)
+		if salePrice <= 0 {
+			continue
+		}
+		basePrice := salePrice * 1.1
+		meta := map[string]any{
+			"sku_code":        sku.SKUCode,
+			"spec_signature":  strings.TrimSpace(sku.SpecSignature),
+			"spec_display":    buildSpecDisplay(sku.SpecValues),
+			"seed_sale_price": salePrice,
+		}
+		items = append(items, pricingsvc.ItemInput{
+			SKUID:           sku.ID,
+			BaseAmountMinor: toMinor(basePrice),
+			SaleAmountMinor: toMinor(salePrice),
+			TaxIncluded:     falsePtr(),
+			Meta:            meta,
+		})
+	}
+
+	const batchSize = 200
+	for i := 0; i < len(items); i += batchSize {
+		end := i + batchSize
+		if end > len(items) {
+			end = len(items)
+		}
+		if _, err := itemSvc.UpsertItems(tenantCtx, pricingsvc.UpsertItemsInput{
+			PricebookID: pb.ID,
+			VersionID:   draft.ID,
+			Items:       items[i:end],
+			Actor:       "seed",
+		}); err != nil {
+			return err
+		}
+	}
+
+	note := "seed base pricebook items"
+	if _, err := verSvc.Publish(tenantCtx, pricingsvc.PublishVersionInput{
+		PricebookID: pb.ID,
+		VersionID:   draft.ID,
+		Note:        &note,
+		Actor:       "seed",
+	}); err != nil {
+		return err
+	}
+	return nil
+}
+
+func extractSKUSalePrice(sku productsku.ProductSKU) float64 {
+	if len(sku.DefaultValues) == 0 {
+		return 0
+	}
+	var m map[string]any
+	if err := json.Unmarshal(sku.DefaultValues, &m); err != nil {
+		return 0
+	}
+	v, ok := m["sale_price"]
+	if !ok || v == nil {
+		return 0
+	}
+	switch n := v.(type) {
+	case float64:
+		return n
+	case int:
+		return float64(n)
+	case int64:
+		return float64(n)
+	case json.Number:
+		f, _ := n.Float64()
+		return f
+	case string:
+		f, _ := json.Number(strings.TrimSpace(n)).Float64()
+		return f
+	default:
+		f, _ := json.Number(strings.TrimSpace(fmt.Sprintf("%v", v))).Float64()
+		return f
+	}
+}
+
+func extractSKUCurrency(sku productsku.ProductSKU) string {
+	if len(sku.DefaultValues) == 0 {
+		return ""
+	}
+	var m map[string]any
+	if err := json.Unmarshal(sku.DefaultValues, &m); err != nil {
+		return ""
+	}
+	if v, ok := m["currency"]; ok && v != nil {
+		return strings.ToUpper(strings.TrimSpace(fmt.Sprintf("%v", v)))
+	}
+	return ""
 }
 
 func loadCategoriesByCode(db *gorm.DB) (map[string]productcategory.ProductCategory, error) {
@@ -1340,15 +1524,15 @@ func upsertSPUWithVersionAndLocale(db *gorm.DB, spec spuSeedSpec, cat productcat
 	switch {
 	case errors.Is(err, gorm.ErrRecordNotFound):
 		locale = productmodel.SPULocale{
-			ID:         spu.ID,
-			TenantUUID: defaultTenantUUID,
-			SPUID:      spu.ID,
-			Locale:     "zh-CN",
-			Title:      spec.Name,
+			ID:          spu.ID,
+			TenantUUID:  defaultTenantUUID,
+			SPUID:       spu.ID,
+			Locale:      "zh-CN",
+			Title:       spec.Name,
 			Description: spec.Description,
-			Status:     "active",
-			CreatedAt:  now,
-			UpdatedAt:  now,
+			Status:      "active",
+			CreatedAt:   now,
+			UpdatedAt:   now,
 		}
 		if err := db.Create(&locale).Error; err != nil {
 			return err

@@ -117,6 +117,11 @@ export interface LoginResponse {
   token_type: string;
   access_token: string;
   expires_in: number;
+  /**
+   * 后端在部分模式下会额外返回 expires_at（UnixMilli）。
+   * 前端优先使用它判断有效期，避免 expires_in=0 导致“刚登录就过期”。
+   */
+  expires_at?: number;
   refresh_token: string;
   scope: string;
 }

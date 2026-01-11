@@ -84,6 +84,7 @@ var businessTables = func() []interface{} {
 	tables = append(tables, migrations.ProductSPUTables...)
 	tables = append(tables, migrations.ProductCategoryTables...)
 	tables = append(tables, migrations.ChannelMasterTables...)
+	tables = append(tables, migrations.PricingPricebookTables...)
 	tables = append(tables, marketplaceTables...)
 	tables = append(tables, runtimeOpsTables...)
 	tables = append(tables, operationsTables...)
@@ -130,7 +131,10 @@ func MigratePluginModels(ctx context.Context, db *gorm.DB, includeIAM bool) erro
 	if err := ensureChannelMetricUniqueIndex(ctx, db); err != nil {
 		return err
 	}
-	return ensureChannelRLSPolicies(ctx, db)
+	if err := ensureChannelRLSPolicies(ctx, db); err != nil {
+		return err
+	}
+	return ensurePricingRLSPolicies(ctx, db)
 }
 
 func safeAutoMigrate(ctx context.Context, db *gorm.DB, tables []interface{}) error {

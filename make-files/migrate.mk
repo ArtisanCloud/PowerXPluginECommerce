@@ -3,7 +3,7 @@
 .PHONY: migrate
 migrate: ## 运行数据库迁移
 	@echo "运行数据库迁移..."
-	cd $(BACKEND_DIR) && go run ./cmd/database/main.go migrate
+	cd $(BACKEND_DIR) && go run ./cmd/database migrate
 
 .PHONY: migrate-cmd
 migrate-cmd: migrate ## 兼容旧命令，内部调用 migrate 目标
@@ -12,12 +12,17 @@ migrate-cmd: migrate ## 兼容旧命令，内部调用 migrate 目标
 .PHONY: seed
 seed: ## 运行数据种子脚本
 	@echo "运行数据种子..."
-	cd $(BACKEND_DIR) && go run ./cmd/database/main.go seed
+	cd $(BACKEND_DIR) && go run ./cmd/database seed
 
 .PHONY: setup-db
 setup-db: ## 执行迁移并填充初始数据
 	@echo "运行迁移并填充初始数据..."
-	cd $(BACKEND_DIR) && go run ./cmd/database/main.go setup
+	cd $(BACKEND_DIR) && go run ./cmd/database setup
+
+.PHONY: pricing-base-upsert
+pricing-base-upsert: ## 为所有租户补齐/修复基础价目表(base)
+	@echo "补齐/修复基础价目表(base)..."
+	cd $(BACKEND_DIR) && go run ./cmd/database pricing-base-upsert
 
 .PHONY: reset-db
 reset-db: ## 重置数据库（危险操作）
@@ -25,7 +30,7 @@ reset-db: ## 重置数据库（危险操作）
 	@read -p "确定要继续吗？[y/N] " confirm; \
 	if [ "$$confirm" = "y" ] || [ "$$confirm" = "Y" ]; then \
 		echo "重置数据库..."; \
-		cd $(BACKEND_DIR) && go run ./cmd/database/main.go refresh; \
+		cd $(BACKEND_DIR) && go run ./cmd/database refresh; \
 	else \
 		echo "操作已取消"; \
 	fi

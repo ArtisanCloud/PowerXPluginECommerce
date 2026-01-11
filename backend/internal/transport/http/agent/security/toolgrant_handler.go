@@ -14,6 +14,9 @@ type ToolGrantHandler struct {
 }
 
 func NewToolGrantHandler(deps *app.Deps) *ToolGrantHandler {
+	if deps == nil || deps.DB == nil || deps.Config == nil || deps.Config.Security == nil || deps.Config.Security.ToolGrantSecret == "" {
+		return &ToolGrantHandler{service: nil}
+	}
 	signingKey := []byte(deps.Config.Security.ToolGrantSecret)
 	logger := deps.RuntimeLogger(deps.Ctx, "agent_toolgrant", nil)
 	svc := toolgrantservice.NewService(deps.DB, deps.Config, logger, signingKey)
@@ -21,6 +24,10 @@ func NewToolGrantHandler(deps *app.Deps) *ToolGrantHandler {
 }
 
 func (h *ToolGrantHandler) Verify(c *gin.Context) {
+	if h == nil || h.service == nil {
+		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "toolgrant is not configured"})
+		return
+	}
 	var payload struct {
 		Token string `json:"token" binding:"required"`
 	}

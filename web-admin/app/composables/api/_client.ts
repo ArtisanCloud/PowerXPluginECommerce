@@ -2,7 +2,7 @@
 
 import { resolveApiBase, getAuthToken, getTenantUuid } from "./_base";
 import { useAuth } from "~/composables/useAuth";
-import { useRouter } from "#imports";
+import { useRouter } from "vue-router";
 import { useToastAlert } from "../useToastAlert";
 import { useHostCtxStore } from "~/stores/hostCtx";
 import { PLUGIN_ID } from "~/utils/powerx-bridge";
@@ -20,7 +20,14 @@ export function useApiClient() {
   }
 
   const baseURL = resolveApiBase();
-  const router = useRouter();
+  const router = (() => {
+    if (typeof window === "undefined") return null;
+    try {
+      return useRouter();
+    } catch {
+      return null;
+    }
+  })();
   _baseURL = baseURL;
 
   const baseClient = $fetch.create({
@@ -66,11 +73,12 @@ export function useApiClient() {
     if (!skipAuth) {
       authToken = (next as any).authToken || (next as any).token;
       if (!authToken) {
-        authToken = (await auth.ensureFreshToken()) || getAuthToken();
+        authToken = (await auth.ensureFreshToken()) || getAuthToken() || null;
       }
     }
 
-    if (authToken && !headers.has("Authorization")) {
+    const existingAuthHeader = headers.get("Authorization");
+    if (authToken && (!existingAuthHeader || !existingAuthHeader.trim())) {
       headers.set(
         "Authorization",
         /^Bearer\\s/i.test(String(authToken))
@@ -111,6 +119,25 @@ export function useApiClient() {
       if (tenant) {
         headers.set("X-Tenant-UUID", String(tenant));
       }
+    }
+
+    const debugAuth =
+      process.env.NUXT_PUBLIC_BRIDGE_DEBUG === "true" ||
+      (typeof window !== "undefined" && (window as any).__PX_DEBUG_AUTH__);
+    if (debugAuth && typeof window !== "undefined") {
+      const lsToken = (() => {
+        try {
+          return window.localStorage?.getItem("access_token") || "";
+        } catch {
+          return "";
+        }
+      })();
+      console.info("[Plugin][api] auth header prepared", {
+        hasAuthorization: Boolean(headers.get("Authorization")?.trim()),
+        hasLocalStorageToken: Boolean(lsToken),
+        tokenPreview: lsToken ? `${lsToken.slice(0, 4)}...${lsToken.slice(-4)}` : "",
+        url: String((next as any)?.url || ""),
+      });
     }
 
     return next;

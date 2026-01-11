@@ -28,6 +28,7 @@ func TestStandardProductOnboardingFlow(t *testing.T) {
 	skuSvc := productsku.NewService(deps)
 
 	tenantCtx := middleware.ContextWithTenantUUID(ctx, "tenant-standard-flow")
+	testutil.SeedProductCategories(t, db, "tenant-standard-flow", "cat-std")
 	spuReq := spu.UpsertSPURequest{
 		Code:            "STD-PRODUCT-001",
 		Name:            "常规商品",

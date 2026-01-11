@@ -786,6 +786,12 @@ func loadEnvConfig(cfg *Config) {
 	if audience := resolveConfigValue(os.Getenv("POWERX_CTX_AUDIENCE")); audience != "" {
 		cfg.Context.Audience = audience
 	}
+	// IAM 模式（可选）：兼容 .env 里常用的 IAM_MODE=local/delegated
+	if iamMode := resolveConfigValue(os.Getenv("IAM_MODE")); iamMode != "" {
+		cfg.Context.IAMMode = iamMode
+	} else if iamMode := resolveConfigValue(os.Getenv("POWERX_IAM_MODE")); iamMode != "" {
+		cfg.Context.IAMMode = iamMode
+	}
 	if ttlStr := resolveConfigValue(os.Getenv("POWERX_CTX_TTL")); ttlStr != "" {
 		if ttl, err := time.ParseDuration(ttlStr); err == nil {
 			cfg.Context.TTL = ttl

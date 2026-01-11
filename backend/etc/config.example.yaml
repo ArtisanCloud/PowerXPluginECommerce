@@ -68,6 +68,9 @@ context:
   jwks_url: ""
   issuer: ""
   audience: ""
+  # IAM 模式解析优先级：context.iam_mode > POWERX_RBAC_DELEGATE > POWERX_PROXY
+  # 可选值：local / delegated；留空表示 auto（按环境推断）
+  iam_mode: ""
   ttl: "5m"
 
 customer_auth:

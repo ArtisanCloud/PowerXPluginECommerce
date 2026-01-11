@@ -1,0 +1,605 @@
+openapi: 3.0.3
+info:
+  title: PowerX Plugin - Pricing Pricebook API
+  version: 1.0.0
+servers:
+  - url: /
+
+paths:
+  /api/v1/admin/pricing/pricebooks:
+    get:
+      summary: List pricebooks
+      parameters:
+        - in: query
+          name: keyword
+          schema:
+            type: string
+        - in: query
+          name: type
+          schema:
+            type: string
+            enum: [sales, purchase]
+        - in: query
+          name: currency
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [active, archived]
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - in: query
+          name: page_size
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 20
+      responses:
+        '200':
+          description: Pricebook collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PricebookListResponse'
+    post:
+      summary: Create a pricebook (also creates draft version v1)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PricebookCreateRequest'
+      responses:
+        '201':
+          description: Created pricebook
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pricebook'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/admin/pricing/pricebooks/{pricebookId}:
+    patch:
+      summary: Update a pricebook
+      parameters:
+        - in: path
+          name: pricebookId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PricebookUpdateRequest'
+      responses:
+        '200':
+          description: Updated pricebook
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pricebook'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/admin/pricing/pricebooks/{pricebookId}/versions:
+    post:
+      summary: Create a new draft version
+      parameters:
+        - in: path
+          name: pricebookId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VersionCreateRequest'
+      responses:
+        '201':
+          description: Created version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PricebookVersion'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/admin/pricing/pricebooks/{pricebookId}/versions/{versionId}/items:
+    put:
+      summary: Bulk upsert items for a draft version
+      parameters:
+        - in: path
+          name: pricebookId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: versionId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemsUpsertRequest'
+      responses:
+        '200':
+          description: Upsert result summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemsUpsertResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Version not editable or conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/admin/pricing/pricebooks/{pricebookId}/versions/{versionId}/publish:
+    post:
+      summary: Publish a version (becomes active at effective_at)
+      parameters:
+        - in: path
+          name: pricebookId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: versionId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VersionPublishRequest'
+      responses:
+        '200':
+          description: Published version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PricebookVersion'
+        '409':
+          description: Publish conflict
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/admin/pricing/pricebooks/{pricebookId}/versions/{versionId}/archive:
+    post:
+      summary: Archive (offline) a version
+      parameters:
+        - in: path
+          name: pricebookId
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: versionId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VersionArchiveRequest'
+      responses:
+        '200':
+          description: Archived version
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PricebookVersion'
+
+  /v1/pricing/query:
+    post:
+      summary: Query base price for a SKU under context
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PricingQueryRequest'
+      responses:
+        '200':
+          description: Pricing quote (may be priced or no-price)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PricingQueryResponse'
+        '400':
+          description: Invalid argument
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /api/v1/pricing/query:
+    post:
+      summary: Query base price for a SKU under context (compat alias)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PricingQueryRequest'
+      responses:
+        '200':
+          description: Pricing quote (may be priced or no-price)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PricingQueryResponse'
+        '400':
+          description: Invalid argument
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/Error'
+      required: [error]
+
+    Error:
+      type: object
+      properties:
+        code:
+          type: string
+          example: PRICEBOOK_NOT_FOUND
+        message:
+          type: string
+          example: pricebook not found
+      required: [code, message]
+
+    PageMeta:
+      type: object
+      properties:
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total:
+          type: integer
+          format: int64
+      required: [page, page_size, total]
+
+    PricebookListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/Pricebook'
+        meta:
+          $ref: '#/components/schemas/PageMeta'
+      required: [items, meta]
+
+    Pricebook:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+          example: base
+        name:
+          type: string
+        type:
+          type: string
+          enum: [sales, purchase]
+        currency:
+          type: string
+          example: CNY
+        status:
+          type: string
+          enum: [active, archived]
+        description:
+          type: string
+          nullable: true
+        current_version_id:
+          type: string
+          nullable: true
+        scopes:
+          $ref: '#/components/schemas/PricebookScopes'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required: [id, code, name, type, currency, status]
+
+    PricebookScopes:
+      type: object
+      properties:
+        channel_ids:
+          type: array
+          items:
+            type: string
+        customer_group_ids:
+          type: array
+          items:
+            type: string
+        supplier_ids:
+          type: array
+          items:
+            type: string
+
+    PricebookCreateRequest:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+          enum: [sales, purchase]
+          default: sales
+        currency:
+          type: string
+          example: CNY
+        description:
+          type: string
+        scopes:
+          $ref: '#/components/schemas/PricebookScopes'
+      required: [code, name, currency]
+
+    PricebookUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        status:
+          type: string
+          enum: [active, archived]
+        scopes:
+          $ref: '#/components/schemas/PricebookScopes'
+
+    VersionCreateRequest:
+      type: object
+      properties:
+        copy_from_version_id:
+          type: string
+          description: Optional source version to copy items from
+
+    PricebookVersion:
+      type: object
+      properties:
+        id:
+          type: string
+        pricebook_id:
+          type: string
+        version:
+          type: integer
+        state:
+          type: string
+          enum: [draft, active, archived, expired]
+        effective_at:
+          type: string
+          format: date-time
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        published_at:
+          type: string
+          format: date-time
+          nullable: true
+        published_by:
+          type: string
+          nullable: true
+        note:
+          type: string
+          nullable: true
+      required: [id, pricebook_id, version, state, effective_at]
+
+    VersionPublishRequest:
+      type: object
+      properties:
+        effective_at:
+          type: string
+          format: date-time
+          description: Defaults to now if omitted
+        expires_at:
+          type: string
+          format: date-time
+          nullable: true
+        note:
+          type: string
+          nullable: true
+
+    VersionArchiveRequest:
+      type: object
+      properties:
+        note:
+          type: string
+          nullable: true
+
+    Money:
+      type: object
+      properties:
+        amount_minor:
+          type: integer
+          format: int64
+          example: 19900
+        amount:
+          type: string
+          example: "199.00"
+      required: [amount_minor, amount]
+
+    PricebookItemInput:
+      type: object
+      properties:
+        sku_id:
+          type: string
+        base_amount_minor:
+          type: integer
+          format: int64
+          nullable: true
+        sale_amount_minor:
+          type: integer
+          format: int64
+          nullable: true
+        msrp_amount_minor:
+          type: integer
+          format: int64
+          nullable: true
+        cost_amount_minor:
+          type: integer
+          format: int64
+          nullable: true
+        min_amount_minor:
+          type: integer
+          format: int64
+          nullable: true
+        max_amount_minor:
+          type: integer
+          format: int64
+          nullable: true
+        tax_included:
+          type: boolean
+          default: false
+        meta:
+          type: object
+          additionalProperties: true
+      required: [sku_id]
+
+    ItemsUpsertRequest:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PricebookItemInput'
+      required: [items]
+
+    ItemsUpsertResponse:
+      type: object
+      properties:
+        upserted:
+          type: integer
+        skipped:
+          type: array
+          items:
+            type: string
+          description: sku_ids skipped due to duplicate entries in the same request payload
+      required: [upserted]
+
+    PricingQueryRequest:
+      type: object
+      properties:
+        sku_id:
+          type: string
+        currency:
+          type: string
+          example: CNY
+        channel_id:
+          type: string
+          nullable: true
+        customer_group_id:
+          type: string
+          nullable: true
+        supplier_id:
+          type: string
+          nullable: true
+        as_of:
+          type: string
+          format: date-time
+          nullable: true
+      required: [sku_id, currency]
+
+    PricingMatched:
+      type: object
+      properties:
+        pricebook_id:
+          type: string
+        pricebook_code:
+          type: string
+        version_id:
+          type: string
+        version:
+          type: integer
+        sku_id:
+          type: string
+
+    PricingTrace:
+      type: object
+      properties:
+        fallback:
+          type: string
+          enum: [none, base_item_fallback]
+        no_price_reason:
+          type: string
+          nullable: true
+          example: SCOPE_MISMATCH
+
+    PricingQueryResponse:
+      type: object
+      properties:
+        currency:
+          type: string
+        priced:
+          type: boolean
+          description: true if price is available
+        source_field:
+          type: string
+          nullable: true
+          description: Which field produced the final price (when priced=true)
+          enum: [sale, base, msrp]
+        price:
+          $ref: '#/components/schemas/Money'
+        matched:
+          $ref: '#/components/schemas/PricingMatched'
+        fields:
+          type: object
+          additionalProperties: true
+        trace:
+          $ref: '#/components/schemas/PricingTrace'
+      required: [currency, priced, trace]

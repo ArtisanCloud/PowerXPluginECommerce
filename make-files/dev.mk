@@ -4,10 +4,11 @@
 run: ## 启动后端服务（开发模式）
 	@echo "启动后端服务..."
 	cd $(BACKEND_DIR) && \
-		POWERX_BIND_ADDR=":8086" \
-		POWERX_DB_SCHEMA="$(POWERX_DB_SCHEMA)" \
-		POWERX_LOG_LEVEL="debug" \
-		POWERX_DEV_MODE=1 \
+		set -a && { [ -f ./.env ] && . ./.env || true; } && set +a && \
+		: "$${POWERX_BIND_ADDR:=:8086}" && \
+		: "$${POWERX_DB_SCHEMA:=$(POWERX_DB_SCHEMA)}" && \
+		: "$${POWERX_LOG_LEVEL:=debug}" && \
+		: "$${POWERX_DEV_MODE:=1}" && \
 		go run ./cmd/plugin
 
 .PHONY: dev

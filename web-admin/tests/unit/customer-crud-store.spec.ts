@@ -13,8 +13,8 @@ const bulkActionMocks = {
   pollJobUntilFinished: vi.fn(),
 };
 
-vi.mock("../../app/composables/api/services/customerService", () => ({
-  useCustomerService: () => ({
+vi.mock("~/composables/api", () => ({
+  useCustomerApi: () => ({
     listCustomers: listCustomersMock,
     createCustomer: createCustomerMock,
     updateCustomer: updateCustomerMock,

@@ -15,6 +15,7 @@
     "submit": "提交",
     "reset": "重置",
     "close": "关闭",
+    "copy": "复制",
     "refresh": "刷新",
     "error": "发生错误",
     "retry": "重试",
@@ -192,7 +193,7 @@
         "username": "用户名",
         "phone": "手机号",
         "department": "所属部门",
-        "status": "状态",
+    "status": "状态",
         "noDepartment": "未分配部门"
       },
       "table": {
@@ -1503,5 +1504,17 @@
     "noData": "暂无数据",
     "networkError": "网络异常，请检查连接",
     "templateCreated": "模板创建成功"
+  },
+  "pricing": {
+    "overview": "定价概览",
+    "pricebooks": "价格手册",
+    "rules": "定价规则",
+    "contracts": "合同价",
+    "region": "地区",
+    "priceSimulation": "价格模拟",
+    "marginAnalysis": "毛利分析",
+    "priceCalculation": "价格计算",
+    "priceTrace": "查价轨迹",
+    "priceHistory": "价格历史"
   }
 }

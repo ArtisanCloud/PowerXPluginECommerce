@@ -455,97 +455,19 @@
             品牌
           </UButton>
 
-          <NuxtLink 
-            to="/product/attributes" 
-            class="block w-full"
-            @click="toggleAttributeAndSpec"
+          <UButton
+            to="/product/category-templates"
+            variant="ghost"
+            color="neutral"
+            class="w-full justify-start"
+            :class="{
+              'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
+                $route.path.startsWith('/product/category-templates'),
+            }"
           >
-            <UButton
-              variant="ghost"
-              color="neutral"
-              class="w-full justify-start"
-              :class="{
-                'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
-                  $route.path.startsWith('/product/attributes'),
-              }"
-            >
-              <UIcon
-                name="i-heroicons-adjustments-horizontal"
-                class="w-4 h-4 mr-3"
-              />
-              属性和规格
-              <UIcon
-                :name="
-                  showAttributeAndSpec
-                    ? 'i-heroicons-chevron-down'
-                    : 'i-heroicons-chevron-right'
-                "
-                class="w-4 h-4 ml-auto"
-              />
-            </UButton>
-          </NuxtLink>
-
-          <div v-show="showAttributeAndSpec" class="ml-6 mt-1 space-y-1">
-            <UButton
-              to="/product/attributes"
-              variant="ghost"
-              color="neutral"
-              size="sm"
-              class="w-full justify-start text-sm"
-              :class="{
-                'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
-                  $route.path === '/product/attributes',
-              }"
-            >
-              <UIcon name="i-heroicons-tag" class="w-3 h-3 mr-2"/>
-              属性
-            </UButton>
-            
-            <UButton
-              to="/product/specifications"
-              variant="ghost"
-              color="neutral"
-              size="sm"
-              class="w-full justify-start text-sm"
-              :class="{
-                'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
-                  $route.path === '/product/specifications',
-              }"
-            >
-              <UIcon name="i-heroicons-wrench" class="w-3 h-3 mr-2"/>
-              规格
-            </UButton>
-            
-            <UButton
-              to="/product/attribute-groups"
-              variant="ghost"
-              color="neutral"
-              size="sm"
-              class="w-full justify-start text-sm"
-              :class="{
-                'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
-                  $route.path === '/product/attribute-groups',
-              }"
-            >
-              <UIcon name="i-heroicons-folder" class="w-3 h-3 mr-2"/>
-              属性组
-            </UButton>
-            
-            <UButton
-              to="/product/category-templates"
-              variant="ghost"
-              color="neutral"
-              size="sm"
-              class="w-full justify-start text-sm"
-              :class="{
-                'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
-                  $route.path === '/product/category-templates',
-              }"
-            >
-              <UIcon name="i-heroicons-rectangle-stack" class="w-3 h-3 mr-2"/>
-              类目模板
-            </UButton>
-          </div>
+            <UIcon name="i-heroicons-rectangle-stack" class="w-4 h-4 mr-3"/>
+            类目模板
+          </UButton>
 
           <UButton
             to="/product/media"
@@ -595,8 +517,22 @@
                 $route.path === '/pricing',
             }"
           >
+            <UIcon name="i-heroicons-squares-2x2" class="w-4 h-4 mr-3"/>
+            定价概览
+          </UButton>
+
+          <UButton
+            to="/pricing/pricebooks"
+            variant="ghost"
+            color="neutral"
+            class="w-full justify-start"
+            :class="{
+              'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
+                $route.path.startsWith('/pricing/pricebooks'),
+            }"
+          >
             <UIcon name="i-heroicons-currency-dollar" class="w-4 h-4 mr-3"/>
-            价目表
+            价格手册
           </UButton>
 
           <UButton
@@ -1297,7 +1233,6 @@ const showMembershipTiers = ref(false);
 const showMembershipPointsAndGrowth = ref(false);
 const showAffiliates = ref(false);
 const showReturns = ref(false);
-const showAttributeAndSpec = ref(false);
 
 // 切换订单管理子菜单
 const toggleOrderManagement = () => {
@@ -1322,11 +1257,6 @@ const toggleMembershipTiers = () => {
 // 切换积分与成长值子菜单
 const toggleMembershipPointsAndGrowth = () => {
   showMembershipPointsAndGrowth.value = !showMembershipPointsAndGrowth.value;
-};
-
-// 切换属性和规格子菜单
-const toggleAttributeAndSpec = () => {
-  showAttributeAndSpec.value = !showAttributeAndSpec.value;
 };
 
 // 切换推荐/分销子菜单
@@ -1390,13 +1320,6 @@ watch(
     // 客户自助退换货门户相关路由
     if (newPath.startsWith("/customer/returns")) {
       showReturns.value = true;
-    }
-    // 属性和规格相关路由
-    if (newPath.startsWith("/product/attributes") || 
-        newPath.startsWith("/product/specifications") || 
-        newPath.startsWith("/product/attribute-groups") || 
-        newPath.startsWith("/product/category-templates")) {
-      showAttributeAndSpec.value = true;
     }
   },
   {immediate: true}

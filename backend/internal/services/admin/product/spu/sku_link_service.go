@@ -86,11 +86,13 @@ func (s *SKULinkService) List(ctx context.Context, spuID string) ([]LinkedSKU, e
 	var versionPayload struct {
 		Payload []byte
 	}
+	spuTable := productmodel.SPU{}.TableName()
+	versionTable := productmodel.SPUVersion{}.TableName()
 	err = s.versionRepo.DB.WithContext(ctx).
-		Table("product_spus").
-		Select("product_spu_versions.payload").
-		Joins("JOIN product_spu_versions ON product_spus.current_version_id = product_spu_versions.id").
-		Where("product_spus.tenant_uuid = ? AND product_spus.id = ?", tenantID, spuID).
+		Table(spuTable+" AS spus").
+		Select("versions.payload").
+		Joins("JOIN "+versionTable+" AS versions ON spus.current_version_id = versions.id").
+		Where("spus.tenant_uuid = ? AND spus.id = ?", tenantID, spuID).
 		Limit(1).
 		Take(&versionPayload).Error
 	if err != nil {
@@ -173,7 +175,7 @@ func (s *SKULinkService) syncProductSkus(ctx context.Context, tenantID, spuID st
 			continue
 		}
 		keepCodes[strings.ToLower(code)] = struct{}{}
-		payload := s.composeSkuPayloadFromLink(spuID, item)
+		payload := s.composeSkuPayloadFromLink(ctx, tenantID, spuID, item)
 		req.SKUs = append(req.SKUs, payload)
 	}
 	if len(req.SKUs) > 0 {
@@ -184,13 +186,14 @@ func (s *SKULinkService) syncProductSkus(ctx context.Context, tenantID, spuID st
 	return s.pruneProductSkus(ctx, tenantID, spuID, keepCodes)
 }
 
-func (s *SKULinkService) composeSkuPayloadFromLink(spuID string, item LinkedSKU) productskuservice.SkuUpsertPayload {
+func (s *SKULinkService) composeSkuPayloadFromLink(ctx context.Context, tenantID, spuID string, item LinkedSKU) productskuservice.SkuUpsertPayload {
 	specs, defaults, minOrderQty, barcode := parseLinkedSKUMetadata(item)
+	status := resolveSKUStatusForSPU(ctx, s, tenantID, spuID)
 	payload := productskuservice.SkuUpsertPayload{
 		SPUID:         spuID,
 		SKUCode:       strings.TrimSpace(item.Code),
 		Barcode:       barcode,
-		Status:        "draft",
+		Status:        status,
 		MinOrderQty:   minOrderQty,
 		Specs:         specs,
 		DefaultValues: defaults,
@@ -202,6 +205,24 @@ func (s *SKULinkService) composeSkuPayloadFromLink(spuID string, item LinkedSKU)
 		payload.DefaultValues.MinOrderQty = payload.MinOrderQty
 	}
 	return payload
+}
+
+func resolveSKUStatusForSPU(ctx context.Context, s *SKULinkService, tenantID, spuID string) string {
+	tenantID = strings.TrimSpace(tenantID)
+	spuID = strings.TrimSpace(spuID)
+	if tenantID == "" || spuID == "" || s == nil || s.deps == nil || s.deps.DB == nil {
+		return "draft"
+	}
+	var status string
+	_ = s.deps.DB.WithContext(ctx).
+		Model(&productmodel.SPU{}).
+		Select("status").
+		Where("tenant_uuid = ? AND id = ?", tenantID, spuID).
+		Scan(&status).Error
+	if strings.EqualFold(strings.TrimSpace(status), "published") {
+		return "online"
+	}
+	return "draft"
 }
 
 func (s *SKULinkService) pruneProductSkus(ctx context.Context, tenantID, spuID string, keep map[string]struct{}) error {

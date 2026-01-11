@@ -17,6 +17,9 @@
 				<UButton variant="outline" color="primary" @click="openSkuModal" :disabled="!spu?.id">
 					关联 SKU
 				</UButton>
+				<UButton variant="outline" color="primary" @click="openSpecModal" :disabled="!spu?.id">
+					规格定义
+				</UButton>
 				<UButton variant="soft" color="primary" @click="openVersionModal">版本时间线</UButton>
 				<UButton variant="soft" color="secondary" @click="openApprovalModal">审批记录</UButton>
 				<UButton v-if="spu?.status === 'draft'" variant="soft" color="primary" @click="openEditModal">
@@ -327,6 +330,22 @@
 		</template>
 	</UModal>
 	<UModal
+		v-model:open="specModalOpen"
+		title="规格定义"
+		description="配置变体规格（颜色/尺码等），用于批量生成 SKU 组合"
+		:close="{ onClick: closeSpecModal }"
+		:ui="panelModalUi"
+	>
+		<template #body>
+			<SpuSpecEditor
+				v-if="spu"
+				:spu-id="spu.id"
+				:editable="(spu.status || '').toLowerCase() === 'draft'"
+				@updated="handleSpecUpdated"
+			/>
+		</template>
+	</UModal>
+	<UModal
 		v-model:open="withdrawModalOpen"
 		title="下架渠道"
 		description="选择需要下架的渠道并填写原因"
@@ -382,9 +401,11 @@ import type { SpuDetail, SpuSkuLink } from '~/composables/api/useSpu'
 import { useSpuApi } from '~/composables/api/useSpu'
 import { useSkuApi } from '~/composables/api/useSku'
 import { useCategoryApi, type CategoryNode } from '~/composables/api/useCategory'
+import { useProductSpecApi, type ProductSpecGroup } from '~/composables/api/useProductSpec'
 import SpuWizardStepBasic from '~/components/product/SpuWizardStepBasic.vue'
 import SpuWizardStepLocale from '~/components/product/SpuWizardStepLocale.vue'
 import SpuSkuLinker from '~/pages/product/spus/components/SpuSkuLinker.vue'
+import SpuSpecEditor from '~/pages/product/spus/components/SpuSpecEditor.vue'
 import VersionDiff from '~/pages/product/spus/components/VersionDiff.vue'
 import SpuAuditTimeline from '~/components/product/SpuAuditTimeline.vue'
 import ChannelVisibilityForm from '~/components/product/ChannelVisibilityForm.vue'
@@ -407,8 +428,10 @@ const toast = useToast()
 const api = useSpuApi()
 const skuApi = useSkuApi()
 const categoryApi = useCategoryApi()
+const productSpecApi = useProductSpecApi()
 const store = useSpuStore()
 const spu = ref<SpuDetail | null>(null)
+const specGroups = ref<ProductSpecGroup[]>([])
 const categoryTreeLoaded = ref(false)
 const categoryMap = ref<Record<string, CategoryNode>>({})
 const loading = computed(() => store.detailLoading)
@@ -473,6 +496,7 @@ const approvalModalOpen = ref(false)
 const channelModalOpen = ref(false)
 const subscriptionModalOpen = ref(false)
 const skuModalOpen = ref(false)
+const specModalOpen = ref(false)
 const deleteModalOpen = ref(false)
 const deleteReason = ref('')
 const canDelete = computed(() => {
@@ -501,6 +525,19 @@ const auditEvents = computed(() => {
 })
 
 const spuSpecs = computed(() => {
+	if (specGroups.value.length) {
+		return specGroups.value
+			.map((g) => ({
+				id: g.id,
+				name: g.name || g.code,
+				values: (g.options || []).map((val) => ({
+					id: val.id,
+					name: val.name || val.code,
+					code: val.code,
+				})),
+			}))
+			.filter((spec) => spec.values.length)
+	}
 	const detail = spu.value as any
 	const specs = detail?.specs || detail?.attributes?.specs
 	if (!Array.isArray(specs)) {
@@ -574,6 +611,16 @@ const approvalStatusLabel = (status?: string) => {
 	}
 }
 
+const refreshSpecGroups = async (spuId: string) => {
+	if (!spuId) return
+	try {
+		const data = await productSpecApi.list(spuId)
+		specGroups.value = data.groups ?? []
+	} catch {
+		specGroups.value = []
+	}
+}
+
 const load = async () => {
 	const currentId = route.params.id as string
 	const detail = await store.fetchDetail(currentId)
@@ -588,7 +635,15 @@ const load = async () => {
 		await store.fetchVersionDetail(currentId, selectedVersionId.value)
 	}
 	if (detail?.id) {
+		await refreshSpecGroups(detail.id)
 		await loadSkuSummary(detail.id)
+	}
+
+	if (route.query.panel === 'sku' && detail?.id) {
+		openSkuModal()
+		const nextQuery = { ...route.query }
+		delete (nextQuery as any).panel
+		router.replace({ query: nextQuery })
 	}
 }
 
@@ -620,6 +675,7 @@ const refreshSpuDetail = async () => {
 		if (detail.categoryId) {
 			await ensureCategoryMapLoaded()
 		}
+		await refreshSpecGroups(detail.id)
 	}
 }
 
@@ -688,6 +744,12 @@ const openSubscriptionModal = () => {
 const openSkuModal = () => {
 	if (!spu.value) return
 	skuModalOpen.value = true
+}
+
+const openSpecModal = async () => {
+	if (!spu.value) return
+	await refreshSpecGroups(spu.value.id)
+	specModalOpen.value = true
 }
 
 const openEditModal = () => {
@@ -807,6 +869,15 @@ const closeSubscriptionModal = () => {
 const closeSkuModal = () => {
 	blurActiveElement()
 	skuModalOpen.value = false
+}
+
+const closeSpecModal = () => {
+	blurActiveElement()
+	specModalOpen.value = false
+}
+
+const handleSpecUpdated = (groups: ProductSpecGroup[]) => {
+	specGroups.value = groups ?? []
 }
 
 const buildSkuSummaryRows = (officialItems: any[], linkedItems: SpuSkuLink[]): SkuSummaryRow[] => {
