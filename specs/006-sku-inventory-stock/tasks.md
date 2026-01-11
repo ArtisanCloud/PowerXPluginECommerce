@@ -32,11 +32,11 @@
 
 ### Implementation for User Story 1
 
-- [ ] T010 [P] [US1] 增加库存调整路由与 handler，并补齐对应 RBAC 映射（`backend/internal/transport/http/admin/product_sku/`，`backend/internal/transport/http/admin/product/rbac.go`）
-- [ ] T011 [US1] 实现 `POST /api/v1/admin/product/skus/{skuId}/inventory/adjust`：解析 delta、调用 service、返回快照（`backend/internal/transport/http/admin/product_sku/inventory_handler.go`）
-- [ ] T012 [US1] 补齐/调整路由注册（`backend/internal/transport/http/admin/product_sku/routes.go`）
-- [ ] T013 [P] [US1] 增加 service 单测：delta 正/负、禁止负结果、tenant 缺失（`backend/internal/services/admin/product_sku/inventory_test.go`）
-- [ ] T014 [P] [US1] 增加 repository 单测：upsert/adjust 与唯一性（`backend/internal/entity/repository/product_sku/inventory_repository_test.go`）
+- [x] T010 [P] [US1] 增加库存调整路由与 handler，并补齐对应 RBAC 映射（`backend/internal/transport/http/admin/product_sku/inventory_handler.go`，`backend/internal/transport/http/admin/product_sku/routes.go`，`backend/internal/transport/http/admin/product/rbac.go`）
+- [x] T011 [US1] 实现 `POST /api/v1/admin/product/skus/{skuId}/inventory/adjust`：解析 delta、调用 service、返回快照（`backend/internal/transport/http/admin/product_sku/inventory_handler.go`）
+- [x] T012 [US1] 补齐/调整路由注册（`backend/internal/transport/http/admin/product_sku/routes.go`）
+- [x] T013 [P] [US1] 增加 service 单测：delta 正/负、禁止负结果、tenant 缺失（`backend/internal/services/admin/product_sku/inventory_test.go`）
+- [x] T014 [P] [US1] 增加 repository 单测：upsert/adjust 与唯一性（`backend/internal/entity/repository/product_sku/inventory_repository_test.go`）
 
 ---
 

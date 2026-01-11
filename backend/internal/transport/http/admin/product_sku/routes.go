@@ -40,6 +40,7 @@ func RegisterRoutes(productGroup *gin.RouterGroup, deps *app.Deps) {
 		skus.POST("/import", importHandler.Import)
 		skus.POST("/export", importHandler.Export)
 		skus.GET("/:id/inventory", inventoryHandler.Get)
+		skus.POST("/:id/inventory/adjust", inventoryHandler.Adjust)
 		skus.GET("/:id/channels", channelHandler.List)
 		skus.POST("/:id/channels", channelHandler.Upsert)
 		skus.POST("/:id/channels/publish", channelHandler.Publish)

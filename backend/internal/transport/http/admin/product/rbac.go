@@ -29,6 +29,7 @@ func RBACEntries(prefix string) map[string]authx.Permission {
 		"POST:" + skuBase + "/import":                      {Resource: resource("product.sku.bulk"), Action: "manage"},
 		"POST:" + skuBase + "/export":                      {Resource: resource("product.sku.bulk"), Action: "manage"},
 		"GET:" + skuBase + "/:id/inventory":                {Resource: resource("product.sku.inventory"), Action: "read"},
+		"POST:" + skuBase + "/:id/inventory/adjust":        {Resource: resource("product.sku.inventory"), Action: "manage"},
 		"GET:" + skuBase + "/:id/channels":                 {Resource: resource("product.sku.channel"), Action: "read"},
 		"POST:" + skuBase + "/:id/channels":                {Resource: resource("product.sku.channel"), Action: "manage"},
 		"POST:" + skuBase + "/:id/channels/publish":        {Resource: resource("product.sku.channel"), Action: "manage"},

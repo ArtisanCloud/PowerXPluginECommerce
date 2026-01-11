@@ -9,6 +9,7 @@ import (
 
 	productskumodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_sku"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -134,6 +135,7 @@ func (s *Service) AdjustInventory(ctx context.Context, skuID string, delta int64
 
 		if s.AuditLogRepo != nil {
 			log := &productskumodel.ProductSKUAuditLog{
+				ID:               uuid.NewString(),
 				TenantUUID:      tenantID,
 				SKUId:           skuID,
 				WarehouseID:     defaultWarehouseID,

@@ -7,6 +7,7 @@ import (
 
 	productskumodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_sku"
 	repo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository"
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -58,6 +59,7 @@ func (r *InventoryRepository) EnsureWarehouseRowForUpdate(
 	}
 
 	seed := &productskumodel.ProductSKUInventory{
+		ID:           uuid.NewString(),
 		TenantUUID:   tenantID,
 		SKUId:        skuID,
 		WarehouseID:  warehouseID,
