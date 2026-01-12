@@ -61,6 +61,23 @@
 
 ---
 
+### User Story 4 - mini-app 可售性聚合（价格/库存/渠道可见性）(Priority: P1)
+
+为实现“能上线开始做购买”的最短闭环，mini-app 不应在列表/详情/规格选择/下单按钮等位置重复拼装可售性判断；后端需要提供统一的聚合结果：`sellable + reasons[] + price + availableQty`（并按 `channel` 维度评估），前端仅依赖该结果决定“隐藏/置灰/禁用下单”。
+
+**Why this priority**: 没有统一的可售性口径，前端会出现重复判断与口径不一致，导致“看得见但下不了单/提示不一致”等线上问题；该能力是从“可展示”走向“可购买”的硬门槛之一。
+
+**Independent Test**: 构造一个 SPU 下 2 个 SKU：一个有价有库存、一个缺货/无价；调用 `sellability` 接口应返回每个 SKU 的可售标记与原因码，mini-app 按此禁用下单并可解释提示。
+
+**Acceptance Scenarios**:
+
+1. **Given** SKU 未配置对外价，**When** 评估可售性，**Then** `sellable=false` 且 `reasons` 包含 `NO_PUBLIC_PRICE`。
+2. **Given** SKU 可用库存为 0，**When** 评估可售性，**Then** `sellable=false` 且 `reasons` 包含 `OUT_OF_STOCK`，并返回 `availableQty=0`。
+3. **Given** SPU 已发布但渠道未启用或不在可售窗口，**When** 以该 `channel` 评估可售性，**Then** `sellable=false` 且 `reasons` 包含 `CHANNEL_DISABLED` 或 `NOT_IN_AVAILABILITY_WINDOW`。
+4. **Given** 可售性接口返回 `sellable=true` 的 SKU 集合，**When** mini-app 渲染列表/详情并点击下单，**Then** 仅对可售 SKU 启用下单按钮，不可售 SKU 提示原因且不触发下单请求。
+
+---
+
 ### Edge Cases
 
 - SPU 仅有一个规格或无规格：生成器需允许创建单一 SKU 并跳过矩阵视图。
@@ -68,6 +85,7 @@
 - 批量导入包含重复条码/编码：系统需逐条标记冲突并拒绝写入冲突项。
 - 渠道映射时目标渠道关闭或凭证失效：阻止发布并输出可执行的修复提示。
 - 库存同步延迟超过 SLA：在 SKU 详情展示“库存更新时间”并标橙提醒。
+- 可售性聚合原因码需稳定：新增原因码必须向后兼容（前端默认兜底为“暂不可售”）。
 
 ## Requirements *(mandatory)*
 
@@ -88,6 +106,8 @@
 - **FR-012**: Web Admin 中的 SKU 列表、矩阵视图以及 SPU 编辑页的“关联 SKU”区域必须读取真实 API 数据（`GET /api/v1/admin/product/skus` 等）并在保存后刷新，禁止继续使用 mock 数据或空白占位。
 - **FR-013**: “关联 SKU”弹窗/生成器产生的数据必须实时落地 `product_skus` 及关联表，摘要/列表均以该表为唯一数据源；版本 `payload` 仅用于审批、回滚与审计，不可再驱动前端展示或成为唯一存储。
 - **FR-014**: SKU 必须持久化 `spec_signature`（如 `color=red|size=m`），并在数据库层面做 `(tenant_uuid, spu_id, spec_signature)` 唯一约束，防止同一规格组合重复创建多个 SKU。
+- **FR-015**: 系统必须提供统一“可售性聚合”能力，按 `channel` 维度评估 SKU 的 `sellable + reasons[] + price + availableQty`，并输出稳定的原因码集合，供 mini-app 与后续下单链路复用。
+- **FR-016**: mini-app 必须以可售性聚合结果作为唯一门槛决定“隐藏/置灰/禁用下单”，禁止在前端散落价格/库存/渠道窗口等硬门槛判断逻辑。
 
 ### API Contract Additions
 
@@ -98,6 +118,9 @@
 - **MiniApp - 一次取齐用于规格选择**
   - `GET /api/v1/mini-app/products/{spuId}/detail`：返回 `spu + spec(groups/options) + skus(specSignature + spec映射)`，前端据此做禁用态与 skuId 匹配。
 
+- **MiniApp - 可售性聚合（购买闭环 MVP）**
+  - `GET /api/v1/mini-app/products/{spuId}/sellability?channel=xxx&locale=zh-CN`：返回该 SPU 下 SKU 的 `sellable + reasons[] + price + availableQty` 聚合结果，mini-app 用于“是否可下单”的统一判断。
+
 ### Key Entities *(include if feature involves data)*
 
 - **SPU（标准产品单元）**: 定义产品主信息及可选规格；驱动 SKU 生成器的规格集合。
@@ -107,6 +130,7 @@
 - **SKU 库存快照**: 保存实时库存、锁定量、在途量与最后更新时间，为预警与展示提供依据。
 - **批量任务**: 描述批量价格/库存/状态调整或导入/导出任务，含提交人、规则、影响范围、执行进度与结果。
 - **SKU 媒体**: 附着于 SKU 的图片或视频，标注渠道/主图属性及排序。
+- **可售性评估结果（Sellability Result）**: 面向前端/mini-app 的聚合输出，统一表达是否可下单及原因码，避免多处散落判断。
 
 ### Assumptions & Dependencies
 
@@ -125,3 +149,4 @@
 - **SC-004**: 库存数据展示与真实库存源之间的时延 ≤ 5 分钟，库存预警通知在异常发生后 2 分钟内出现。
 - **SC-005**: 导入校验可在 1 分钟内返回 1,000 行数据的错误报告，导出响应在 2 分钟内生成下载链接。
 - **SC-006**: 条码/编码重复率控制在 <0.5%，发现重复时阻止写入并提示冲突来源。
+- **SC-007**: mini-app 仅通过一次“可售性聚合”接口即可得到“可下单与否 + 可解释原因 + 价格 + 可用库存”，且不同页面的可售判断口径一致。

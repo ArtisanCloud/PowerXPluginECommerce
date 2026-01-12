@@ -63,7 +63,7 @@
               v-for="s in skus"
               :key="s.id"
               class="rounded-xl border px-4 py-3"
-              :style="skuChipStyle(s.id)"
+              :style="skuChipStyle(s.id) + (s.sellable === false ? 'opacity: 0.55; border-color: rgba(229, 231, 235, 1); background: rgba(243, 244, 246, 1);' : '')"
               hover-class="opacity-90"
               @tap="selectSkuLocal(s.id)"
             >
@@ -148,6 +148,9 @@ type SkuItem = {
   imageUrl?: string | null;
   status?: string | null;
   stockQty?: number | null;
+  sellable?: boolean | null;
+  sellabilityReasons?: string[] | null;
+  availableQty?: number | null;
   specSignature?: string | null;
   spec?: Record<string, string> | null;
 };
@@ -216,8 +219,7 @@ watch(
 
 const eligibleSkus = computed(() => {
   return (Array.isArray(props.skus) ? props.skus : []).filter((s) => {
-    const status = String(s.status || "").toLowerCase();
-    if (status && status !== "published") return false;
+    if (typeof s.sellable === "boolean") return s.sellable;
     const stock = s.stockQty;
     if (typeof stock === "number" && stock <= 0) return false;
     return true;
@@ -277,6 +279,12 @@ function close() {
 }
 
 function selectSkuLocal(id: string) {
+  const next = props.skus.find((x) => x.id === id);
+  if (next && typeof next.sellable === "boolean" && !next.sellable) {
+    const code = (next.sellabilityReasons || [])[0] || "";
+    uni.showToast({ title: sellabilityReasonToText(code), icon: "none" });
+    return;
+  }
   localSelectedSkuId.value = id;
   emit("update:selectedSkuId", id);
   const s = props.skus.find((x) => x.id === id);
@@ -299,6 +307,11 @@ function confirm(action: "cart" | "buy") {
   const skuId = localSelectedSkuId.value || selectedSku.value?.id || "";
   if (!skuId) {
     uni.showToast({ title: "请选择规格", icon: "none" });
+    return;
+  }
+  if (selectedSku.value && typeof selectedSku.value.sellable === "boolean" && !selectedSku.value.sellable) {
+    const code = (selectedSku.value.sellabilityReasons || [])[0] || "";
+    uni.showToast({ title: sellabilityReasonToText(code), icon: "none" });
     return;
   }
   if (orderedSpecGroups.value.length) {
@@ -346,8 +359,8 @@ function hydrateSelectionFromProps() {
 
 function matchSkuBySpec(spec: Record<string, string>) {
   const entries = Object.entries(spec || {}).filter(([_, v]) => Boolean(v));
-  if (!entries.length) return eligibleSkus.value[0] || null;
-  const list = eligibleSkus.value.length ? eligibleSkus.value : props.skus;
+  const list = eligibleSkus.value;
+  if (!entries.length) return list[0] || null;
   return (
     list.find((sku) => {
       const skuSpec = sku.spec || {};
@@ -357,7 +370,7 @@ function matchSkuBySpec(spec: Record<string, string>) {
 }
 
 function isSpecOptionDisabled(groupCode: string, optionCode: string) {
-  const list = eligibleSkus.value.length ? eligibleSkus.value : props.skus;
+  const list = eligibleSkus.value;
   const next = { ...(localSelectedSpec.value || {}), [groupCode]: optionCode };
   const entries = Object.entries(next).filter(([_, v]) => Boolean(v));
   if (!entries.length) return false;
@@ -397,6 +410,23 @@ function formatMoney(currency: string, price: number) {
   const c = String(currency || "").toUpperCase();
   const symbol = c === "CNY" || c === "RMB" ? "¥" : c === "USD" ? "$" : c === "EUR" ? "€" : `${c} `;
   return `${symbol}${price}`;
+}
+
+function sellabilityReasonToText(code: string) {
+  switch (String(code || "").toUpperCase()) {
+    case "NO_PUBLIC_PRICE":
+      return "暂无价格";
+    case "OUT_OF_STOCK":
+      return "缺货";
+    case "CHANNEL_DISABLED":
+    case "NOT_IN_AVAILABILITY_WINDOW":
+    case "CHANNEL_STATUS_BLOCKED":
+      return "暂不可售";
+    case "SKU_NOT_ONLINE":
+      return "未上架";
+    default:
+      return "暂不可售";
+  }
 }
 </script>
 

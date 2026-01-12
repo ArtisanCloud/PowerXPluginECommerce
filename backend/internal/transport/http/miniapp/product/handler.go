@@ -18,6 +18,7 @@ import (
 	productspecmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_spec"
 	spuservice "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/product/spu"
 	skuservice "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/product_sku"
+	sellabilitysvc "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/miniapp/sellability"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
 	"gorm.io/datatypes"
@@ -97,6 +98,18 @@ func (h *Handler) ListProducts(c *gin.Context) {
 	if keyword == "" {
 		keyword = strings.TrimSpace(query.Q)
 	}
+	// Purchase readiness defaults for mini-app list:
+	// - Hide products without any public price by default.
+	// - Hide products that are completely out of stock by default.
+	// Clients may override by explicitly providing query params.
+	if query.MinPrice == nil {
+		v := 0.01
+		query.MinPrice = &v
+	}
+	if query.InStock == nil {
+		v := true
+		query.InStock = &v
+	}
 	tags := parseTagQuery(query.Tags, query.Tag)
 	result, err := h.spuService.List(c.Request.Context(), spuservice.ListFilters{
 		Keyword:            keyword,
@@ -135,6 +148,32 @@ func (h *Handler) ListProducts(c *gin.Context) {
 
 	tenantUUID, _ := middleware.TenantUUIDFromContext(c)
 	enriched := h.enrichProductSummaries(c.Request.Context(), tenantUUID, result.Items)
+	includeSellability := query.IncludeSellability == 1 || query.Sellability == 1
+	sellabilityBySPU := map[string]sellabilitysvc.SummaryDTO{}
+	if includeSellability {
+		channel := strings.TrimSpace(query.Channel)
+		if channel == "" {
+			respondMiniAppError(c, http.StatusBadRequest, errors.New("channel is required when includeSellability=1"))
+			return
+		}
+		locale := strings.TrimSpace(query.Locale)
+		spuIDs := make([]string, 0, len(enriched))
+		for _, it := range enriched {
+			if strings.TrimSpace(it.ID) == "" {
+				continue
+			}
+			spuIDs = append(spuIDs, it.ID)
+		}
+		if len(spuIDs) > 0 {
+			svc := sellabilitysvc.NewService(h.db)
+			summaries, err := svc.EvaluateSummaries(c.Request.Context(), tenantUUID, spuIDs, channel, locale)
+			if err != nil {
+				respondMiniAppError(c, http.StatusInternalServerError, err)
+				return
+			}
+			sellabilityBySPU = summaries
+		}
+	}
 
 	resp := productListResponse{
 		Page:     result.Page,
@@ -142,7 +181,20 @@ func (h *Handler) ListProducts(c *gin.Context) {
 		Total:    result.Total,
 		Items:    make([]miniAppProductSummary, 0, len(enriched)),
 	}
-	resp.Items = append(resp.Items, enriched...)
+	if includeSellability {
+		for _, it := range enriched {
+			if summary, ok := sellabilityBySPU[it.ID]; ok {
+				reasons := summary.Reasons
+				if reasons == nil {
+					reasons = []string{}
+				}
+				it.Sellability = &miniAppSellabilitySummary{Sellable: summary.Sellable, Reasons: reasons}
+			}
+			resp.Items = append(resp.Items, it)
+		}
+	} else {
+		resp.Items = append(resp.Items, enriched...)
+	}
 	contracts.ResponseSuccess(c, resp)
 }
 

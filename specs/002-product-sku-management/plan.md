@@ -7,6 +7,8 @@
 
 围绕 SKU 生成、批量调整与渠道映射建立统一的后台+前端交互：后端提供生成器、批量任务、审批流、渠道映射及库存同步 API，并保障多租户审计；同时补齐“规格维度/取值（SpecGroup/SpecOption）”一等数据与 `spec_signature` 唯一约束，并提供 mini-app 的 `GET /mini-app/products/{id}/detail` 聚合接口供前端做规格选择/禁用态与 SKU 匹配；前端 web-admin 在 SKU 列表、矩阵与详情中提供 SKU 生成器、批量操作、渠道配置、库存可视与条码管理体验，确保 50 个 SKU 10 分钟内配置完成、批量任务 ≥98% 成功且库存同步 ≤5 分钟。
 
+为支撑“能上线开始做购买”的最短闭环，下一步建议补齐 **渠道可见性 + 可售性聚合**：后端提供统一的 `sellable + reasons[] + price + availableQty` 结果（按 `channel` 评估），mini-app 仅依赖该聚合结果决定“隐藏/置灰/禁用下单”，避免前端分散判断逻辑并降低上线风险（见 `docs/guides/features/product/sellability_purchase_mvp.md`）。
+
 ## Technical Context
 
 **Language/Version**: Backend Go 1.24（PowerX 插件栈），Frontend TypeScript 5.9 + Nuxt 4（Node 20）  
@@ -82,3 +84,4 @@ web-admin/
 ## Open Follow-ups
 
 - “关联 SKU”弹窗当前仍将 payload 数据直接渲染到 SPU 页面摘要，且 `listSpuSkus` API 仅返回版本 payload。需要新增真实的 `GET /admin/product/skus?spuId=` 查询并更新摘要组件只读 `product_skus` 数据源（新任务 T061）。
+- mini-app 购买闭环缺少统一“可售性聚合”API（价格/库存/状态/渠道窗口）。建议新增 `GET /api/v1/mini-app/products/{spuId}/sellability?channel=xxx&locale=zh-CN`，并定义稳定原因码集合用于解释提示（见 `docs/guides/features/product/miniapp_open_api.md` 与 `docs/guides/features/product/sellability_purchase_mvp.md`）。

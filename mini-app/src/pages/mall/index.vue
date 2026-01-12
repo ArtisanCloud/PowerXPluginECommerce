@@ -226,6 +226,8 @@ import { syncTabBarSelected } from "@/utils/tabbar";
   image: string;
   badge?: string;
   badgeColor?: "dark" | "primary";
+  disabled?: boolean;
+  disabledReason?: string;
 };
 
 const keyword = ref("");
@@ -263,6 +265,26 @@ const page = ref(1);
 const pageSize = ref(20);
 const total = ref(0);
 const noMore = computed(() => total.value > 0 && products.value.length >= total.value);
+
+const sellabilityChannel = ref(String(uni.getStorageSync("miniapp.channel") || "official").trim() || "official");
+const sellabilityLocale = ref(String(uni.getStorageSync("miniapp.locale") || "zh-CN").trim() || "zh-CN");
+
+function sellabilityReasonToText(code: string) {
+  switch (String(code || "").toUpperCase()) {
+    case "NO_PUBLIC_PRICE":
+      return "暂无价格";
+    case "OUT_OF_STOCK":
+      return "缺货";
+    case "CHANNEL_DISABLED":
+    case "NOT_IN_AVAILABILITY_WINDOW":
+    case "CHANNEL_STATUS_BLOCKED":
+      return "暂不可售";
+    case "SKU_NOT_ONLINE":
+      return "未上架";
+    default:
+      return "暂不可售";
+  }
+}
 
 const placeholderImages = [
   "https://lh3.googleusercontent.com/aida-public/AB6AXuCg6FsSWqWzgBZu6SO_586WS1dZZSLI_4FZg3AkMAKVJBgwQ1TP64nNujeYl2F1Cy90DXslNyCZ3luU22WAp7EqKZcNRwDUcXyekZ1SJNfXz-Ng326aaor1EkIa8HQ2NKnTIRtiKSk9TyqYy3QxFGiGxXGV9cAzNv28dpANZW3OciBxNEUHYUDWQcsHHtiV9SYBMiSywXyQKu9vZXIAN50f7HHDglzRaVYMhva6Z6z6nu3pJJZXqkgqbUXCT5ioqcj1mt58pkTc-RLD",
@@ -431,20 +453,32 @@ async function loadProducts(reset: boolean) {
       keyword: keyword.value || undefined,
       sort: sort.value,
       order: sort.value === "price" ? (priceAsc.value ? "asc" : "desc") : "desc",
+      channel: sellabilityChannel.value,
+      locale: sellabilityLocale.value,
+      includeSellability: 1,
       page: reset ? 1 : nextPage,
       pageSize: pageSize.value,
     });
     total.value = Number(resp?.total || 0);
     page.value = Number(resp?.page || (reset ? 1 : nextPage));
     const items = Array.isArray(resp?.items) ? resp.items : [];
-    const mapped: Product[] = items.map((it) => ({
-      id: it.id,
-      code: it.code,
-      title: it.name || it.code,
-      price: String(it.priceLabel || "--"),
-      meta: typeof it.skuCount === "number" && it.skuCount > 0 ? `${it.skuCount} 个规格` : "",
-      image: it.coverUrl || pickPlaceholderImage(it.id),
-    }));
+    const mapped: Product[] = items.map((it) => {
+      const sellability = it.sellability;
+      const disabled = sellability && sellability.sellable === false;
+      const reasonCode = (sellability?.reasons || [])[0] || "";
+      return {
+        id: it.id,
+        code: it.code,
+        title: it.name || it.code,
+        price: String(it.priceLabel || "--"),
+        meta: typeof it.skuCount === "number" && it.skuCount > 0 ? `${it.skuCount} 个规格` : "",
+        image: it.coverUrl || pickPlaceholderImage(it.id),
+        badge: disabled ? "暂不可售" : undefined,
+        badgeColor: disabled ? "dark" : undefined,
+        disabled,
+        disabledReason: disabled ? sellabilityReasonToText(reasonCode) : "",
+      };
+    });
     products.value = reset ? mapped : products.value.concat(mapped);
   } catch (e: any) {
     errorMsg.value = e?.message || "加载失败";
@@ -486,6 +520,10 @@ function openProduct(p: Product) {
 }
 
 function addToCart(p: Product) {
+  if (p?.disabled) {
+    uni.showToast({ title: p.disabledReason || "暂不可售", icon: "none" });
+    return;
+  }
   uni.showToast({ title: "购物车能力待接入", icon: "none" });
   void p;
 }

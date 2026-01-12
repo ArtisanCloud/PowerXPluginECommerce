@@ -58,6 +58,34 @@ paths:
                     items:
                       $ref: '#/components/schemas/SpecGroup'
 
+  /mini-app/products/{spuId}/sellability:
+    get:
+      summary: Get sellability aggregation for an SPU
+      parameters:
+        - in: path
+          name: spuId
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: channel
+          required: true
+          schema:
+            type: string
+        - in: query
+          name: locale
+          required: false
+          schema:
+            type: string
+            example: zh-CN
+      responses:
+        '200':
+          description: Sellability aggregation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SellabilityResult'
+
   /products/skus:
     get:
       summary: List SKUs with filters
@@ -493,6 +521,44 @@ components:
           items:
             $ref: '#/components/schemas/SpecOptionInput'
       required: [code, name]
+
+    Money:
+      type: object
+      properties:
+        amount:
+          type: number
+        currency:
+          type: string
+
+    SellabilityItem:
+      type: object
+      properties:
+        skuId:
+          type: string
+        sellable:
+          type: boolean
+        reasons:
+          type: array
+          items:
+            type: string
+        price:
+          nullable: true
+          oneOf:
+            - $ref: '#/components/schemas/Money'
+        availableQty:
+          type: integer
+
+    SellabilityResult:
+      type: object
+      properties:
+        spuId:
+          type: string
+        channel:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/SellabilityItem'
     SkuListResponse:
       type: object
       properties:

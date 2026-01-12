@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models"
+	channelmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/channel_master"
 	customermodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/customer"
 	iammodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/iam"
 	pricingmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/pricing"
@@ -50,8 +51,139 @@ func SeedPluginData(ctx context.Context, db *gorm.DB) error {
 	if err := seedSportsCatalog(ctxDB); err != nil {
 		return err
 	}
+	if err := seedSampleChannelMasters(ctxDB); err != nil {
+		return err
+	}
 	return nil
 }
+
+func seedSampleChannelMasters(db *gorm.DB) error {
+	if db == nil || db.Migrator() == nil {
+		return nil
+	}
+	if !db.Migrator().HasTable(&channelmodel.ChannelMaster{}) {
+		return nil
+	}
+
+	now := time.Now().UTC()
+	approver := "admin-01"
+	channels := []channelmodel.ChannelMaster{
+		{
+			ID:           "11111111-1111-4111-8111-111111111111",
+			TenantUUID:   defaultTenantUUID,
+			Platform:     "tmall",
+			ChannelType:  "platform_oauth",
+			StoreID:      "TM-SEED-001",
+			Name:         "天猫旗舰店（Seed）",
+			Domain:       "https://tmall.seed.powerx.example",
+			Region:       "cn-mainland",
+			Status:       "unauthorized",
+			Tags:         pq.StringArray{"seed", "tmall"},
+			OwnerUUID:    "ops-01",
+			ApproverUUID: &approver,
+			ContactName:  "渠道运营",
+			ContactPhone: "13800000000",
+			ContactEmail: "ops@demo.powerx",
+			HealthScore:  intPtr(80),
+			SyncStatus:   "unknown",
+			CreatedBy:    "seed",
+			UpdatedBy:    "seed",
+			Metadata:     datatypes.JSON([]byte(`{"seed":true}`)),
+			CreatedAt:    now,
+			UpdatedAt:    now,
+		},
+		{
+			ID:           "22222222-2222-4222-8222-222222222222",
+			TenantUUID:   defaultTenantUUID,
+			Platform:     "jd",
+			ChannelType:  "platform_manual",
+			StoreID:      "JD-SEED-001",
+			Name:         "京东自营（Seed）",
+			Domain:       "https://jd.seed.powerx.example",
+			Region:       "cn-mainland",
+			Status:       "pending_review",
+			Tags:         pq.StringArray{"seed", "jd"},
+			OwnerUUID:    "ops-02",
+			ApproverUUID: &approver,
+			ContactName:  "渠道经理",
+			ContactPhone: "13900000000",
+			ContactEmail: "owner@demo.powerx",
+			HealthScore:  intPtr(65),
+			SyncStatus:   "unknown",
+			CreatedBy:    "seed",
+			UpdatedBy:    "seed",
+			Metadata:     datatypes.JSON([]byte(`{"seed":true}`)),
+			CreatedAt:    now,
+			UpdatedAt:    now,
+		},
+		{
+			ID:           "33333333-3333-4333-8333-333333333333",
+			TenantUUID:   defaultTenantUUID,
+			Platform:     "offline",
+			ChannelType:  "offline",
+			StoreID:      "OFFLINE-SEED-001",
+			Name:         "线下直营（Seed）",
+			Domain:       "",
+			Region:       "cn-mainland",
+			Status:       "authorized",
+			Tags:         pq.StringArray{"seed", "offline"},
+			OwnerUUID:    "ops-03",
+			ApproverUUID: &approver,
+			ContactName:  "门店负责人",
+			ContactPhone: "13700000000",
+			ContactEmail: "store@demo.powerx",
+			HealthScore:  intPtr(92),
+			SyncStatus:   "unknown",
+			CreatedBy:    "seed",
+			UpdatedBy:    "seed",
+			Metadata:     datatypes.JSON([]byte(`{"seed":true,"offlineEvidenceUrl":"https://picsum.photos/seed/offline-evidence/600/400"}`)),
+			CreatedAt:    now,
+			UpdatedAt:    now,
+		},
+	}
+
+	for _, channel := range channels {
+		if strings.TrimSpace(channel.StoreID) == "" {
+			continue
+		}
+		var existing channelmodel.ChannelMaster
+		err := db.Where("tenant_uuid = ? AND store_id = ?", defaultTenantUUID, channel.StoreID).First(&existing).Error
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			if err := db.Create(&channel).Error; err != nil {
+				return err
+			}
+		case err != nil:
+			return err
+		default:
+			updates := map[string]any{
+				"platform":      channel.Platform,
+				"channel_type":  channel.ChannelType,
+				"name":          channel.Name,
+				"domain":        channel.Domain,
+				"region":        channel.Region,
+				"status":        channel.Status,
+				"tags":          channel.Tags,
+				"owner_uuid":    channel.OwnerUUID,
+				"approver_uuid": channel.ApproverUUID,
+				"contact_name":  channel.ContactName,
+				"contact_phone": channel.ContactPhone,
+				"contact_email": channel.ContactEmail,
+				"health_score":  channel.HealthScore,
+				"sync_status":   channel.SyncStatus,
+				"updated_by":    channel.UpdatedBy,
+				"metadata":      channel.Metadata,
+				"updated_at":    now,
+			}
+			if err := db.Model(&existing).Updates(updates).Error; err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func intPtr(v int) *int { return &v }
 
 func seedTemplates(db *gorm.DB) error {
 	seedTemplates := []struct {
@@ -358,6 +490,9 @@ func seedSportsCatalog(db *gorm.DB) error {
 	if err := seedSportsSPUs(db); err != nil {
 		return err
 	}
+	if err := seedSportsChannelVisibilities(db); err != nil {
+		return err
+	}
 	if err := seedSportsSpecs(db); err != nil {
 		return err
 	}
@@ -390,6 +525,7 @@ func seedSportsDefaultInventories(db *gorm.DB) error {
 	}
 
 	now := time.Now().UTC()
+	spuCounts := map[string]int{}
 	for idx, sku := range skus {
 		// Only seed inventory for SKUs that participate in seed pricing (sale_price > 0).
 		if extractSKUSalePrice(sku) <= 0 {
@@ -397,8 +533,12 @@ func seedSportsDefaultInventories(db *gorm.DB) error {
 		}
 
 		available := int64(10)
-		// Keep a small variety for demo: make every 5th SKU out of stock.
-		if idx%5 == 0 {
+		// Keep a small variety for demo, but ensure each SPU has at least one in-stock SKU.
+		spuKey := strings.TrimSpace(sku.SPUID)
+		spuIndex := spuCounts[spuKey]
+		spuCounts[spuKey] = spuIndex + 1
+		// Never make the first priced SKU of a SPU out of stock (otherwise the whole SPU disappears from list).
+		if spuIndex > 0 && idx%5 == 0 {
 			available = 0
 		}
 		row := productsku.ProductSKUInventory{
@@ -416,6 +556,65 @@ func seedSportsDefaultInventories(db *gorm.DB) error {
 		}
 		if err := db.Clauses(clause.OnConflict{DoNothing: true}).Create(&row).Error; err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+func seedSportsChannelVisibilities(db *gorm.DB) error {
+	if db == nil || db.Migrator() == nil {
+		return nil
+	}
+	if !db.Migrator().HasTable(&productmodel.ChannelVisibility{}) {
+		return nil
+	}
+
+	var spus []productmodel.SPU
+	if err := db.Where("tenant_uuid = ? AND deleted_at IS NULL AND status = ?", defaultTenantUUID, "published").
+		Order("created_at asc").
+		Find(&spus).Error; err != nil {
+		return err
+	}
+	if len(spus) == 0 {
+		return nil
+	}
+
+	now := time.Now().UTC()
+	for _, spu := range spus {
+		// Seed the default mini-app channel as enabled so purchase readiness works out-of-the-box.
+		var existing productmodel.ChannelVisibility
+		err := db.Where("tenant_uuid = ? AND spu_id = ? AND channel = ?", defaultTenantUUID, spu.ID, "official").
+			First(&existing).Error
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			row := productmodel.ChannelVisibility{
+				ID:              utils.NewUUID(),
+				TenantUUID:      defaultTenantUUID,
+				SPUID:           spu.ID,
+				Channel:         "official",
+				Availability:    "published",
+				PublishAt:       nil,
+				WithdrawAt:      nil,
+				ContentOverride: datatypes.JSON([]byte(`{}`)),
+				AuditState:      "approved",
+				LastFeedback:    datatypes.JSON([]byte(`{}`)),
+				CreatedAt:       now,
+				UpdatedAt:       now,
+			}
+			if err := db.Create(&row).Error; err != nil {
+				return err
+			}
+		case err != nil:
+			return err
+		default:
+			updates := map[string]any{
+				"availability": "published",
+				"audit_state":  "approved",
+				"updated_at":   now,
+			}
+			if err := db.Model(&existing).Updates(updates).Error; err != nil {
+				return err
+			}
 		}
 	}
 	return nil
@@ -1052,6 +1251,42 @@ func seedSportsSKUs(db *gorm.DB) error {
 			Currency:  "CNY",
 			MediaID:   "9a8a8a8a-7777-4f0d-8c3e-0b9a4d7e1c36",
 		},
+		{
+			ID:        "8a8a8a8a-8888-4f0d-8c3e-0b9a4d7e1c37",
+			SPUCode:   "APP-TRACK-001",
+			SKUCode:   "APP-TRACK-001-STD",
+			Status:    "published",
+			Barcode:   "6900000000008",
+			Tags:      []string{"apparel", "training", "pants"},
+			Spec:      map[string]any{},
+			SalePrice: 259,
+			Currency:  "CNY",
+			MediaID:   "9a8a8a8a-8888-4f0d-8c3e-0b9a4d7e1c37",
+		},
+		{
+			ID:        "8a8a8a8a-9999-4f0d-8c3e-0b9a4d7e1c38",
+			SPUCode:   "SHOE-SOCCER-001",
+			SKUCode:   "SHOE-SOCCER-001-42",
+			Status:    "published",
+			Barcode:   "6900000000009",
+			Tags:      []string{"football", "shoes", "cleats"},
+			Spec:      map[string]any{"size": "42", "color": "black"},
+			SalePrice: 629,
+			Currency:  "CNY",
+			MediaID:   "9a8a8a8a-9999-4f0d-8c3e-0b9a4d7e1c38",
+		},
+		{
+			ID:        "8a8a8a8a-aaaa-4f0d-8c3e-0b9a4d7e1c39",
+			SPUCode:   "SHOE-SOCCER-001",
+			SKUCode:   "SHOE-SOCCER-001-43",
+			Status:    "published",
+			Barcode:   "6900000000010",
+			Tags:      []string{"football", "shoes", "cleats"},
+			Spec:      map[string]any{"size": "43", "color": "white"},
+			SalePrice: 629,
+			Currency:  "CNY",
+			MediaID:   "9a8a8a8a-aaaa-4f0d-8c3e-0b9a4d7e1c39",
+		},
 	}
 	now := time.Now().UTC()
 	for _, spec := range specs {
@@ -1059,8 +1294,9 @@ func seedSportsSKUs(db *gorm.DB) error {
 		if !ok {
 			return fmt.Errorf("missing spu %s for sku %s", spec.SPUCode, spec.SKUCode)
 		}
+		fallbackSignature := buildSpecSignatureFallback(spec.Spec)
 		specBytes, _ := json.Marshal(spec.Spec)
-		specSignature := ""
+		specSignature := fallbackSignature
 		if hasSpecTables {
 			var groups []productspec.ProductSpecGroup
 			if err := db.Where("tenant_uuid = ? AND spu_id = ? AND deleted_at IS NULL AND status = 'active'", defaultTenantUUID, spuID).
@@ -1132,7 +1368,11 @@ func seedSportsSKUs(db *gorm.DB) error {
 			for _, p := range sorted {
 				signParts = append(signParts, p.Text)
 			}
-			specSignature = strings.Join(signParts, "|")
+			if len(signParts) > 0 {
+				specSignature = strings.Join(signParts, "|")
+			} else {
+				specSignature = fallbackSignature
+			}
 			if len(specPairs) > 0 {
 				specBytes, _ = json.Marshal(specPairs)
 			}
@@ -1266,6 +1506,42 @@ func seedSportsSKUs(db *gorm.DB) error {
 		}
 	}
 	return nil
+}
+
+func buildSpecSignatureFallback(spec map[string]any) string {
+	if len(spec) == 0 {
+		return ""
+	}
+	type kv struct {
+		k string
+		v string
+	}
+	pairs := make([]kv, 0, len(spec))
+	for rawKey, rawVal := range spec {
+		k := strings.ToLower(strings.TrimSpace(rawKey))
+		if k == "" {
+			continue
+		}
+		v := strings.ToLower(strings.TrimSpace(fmt.Sprintf("%v", rawVal)))
+		if v == "" {
+			continue
+		}
+		pairs = append(pairs, kv{k: k, v: v})
+	}
+	if len(pairs) == 0 {
+		return ""
+	}
+	sort.Slice(pairs, func(i, j int) bool {
+		if pairs[i].k == pairs[j].k {
+			return pairs[i].v < pairs[j].v
+		}
+		return pairs[i].k < pairs[j].k
+	})
+	parts := make([]string, 0, len(pairs))
+	for _, p := range pairs {
+		parts = append(parts, p.k+"="+p.v)
+	}
+	return strings.Join(parts, "|")
 }
 
 func seedSportsBasePricebookItems(db *gorm.DB) error {

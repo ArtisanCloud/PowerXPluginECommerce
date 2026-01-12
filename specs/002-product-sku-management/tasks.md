@@ -131,9 +131,25 @@
 
 ---
 
+## Phase 7: Purchase Readiness - 可售性聚合（价格/库存/渠道可见性）(Priority: P1)
+
+**Goal**: 打通“可上线开始做购买”的最短闭环：后端提供统一 `sellable + reasons[] + price + availableQty` 聚合结果（按 `channel` 评估），mini-app 仅依赖该结果做“隐藏/置灰/禁用下单”。
+**Independent Test**: 构造 SPU 下多 SKU（缺货/无价/不在渠道窗口等组合），调用 `sellability` 接口应返回可售判定；mini-app 列表/详情对不可售 SKU 禁用下单并可解释提示。
+
+### Implementation for User Story 4
+
+- [X] T065 [US4] 定义可售性原因码与响应 DTO（`backend/internal/services/miniapp/sellability/types.go`），并约定向后兼容策略（前端兜底 `UNKNOWN`）
+- [X] T066 [US4] 实现可售性聚合服务（`backend/internal/services/miniapp/sellability/service.go`）：聚合价格命中、库存可用量、SPU/SKU 状态、`product_spu_channels` 可售窗口与审核态
+- [X] T067 [US4] 暴露 mini-app sellability API（`backend/internal/transport/http/miniapp/product/sellability_handler.go`），对接 `GET /api/v1/mini-app/products/{spuId}/sellability?channel=xxx&locale=zh-CN`
+- [X] T068 [US4] （可选）在 `GET /api/v1/mini-app/products` 支持 `includeSellability=1` 或 `sellability=1`，返回每条商品的可售性摘要以便列表侧过滤/置灰
+- [X] T069 [P] [US4] mini-app 前端按 `sellable` 决定“隐藏/置灰/禁用下单”，并将 `reasons[]` 映射为可解释提示（策略二选一：隐藏或置灰）
+- [X] T070 [US4] 更新 OpenAPI 合同与文档（`specs/**/contracts/*.yaml`、`docs/guides/features/product/sellability_purchase_mvp.md`、`docs/guides/features/product/miniapp_open_api.md`）并补充验收步骤
+
+---
+
 ## Dependencies & Execution Order
 
-- Phase 1 → Phase 2 → 用户故事阶段 → Phase 6；任何用户故事必须在 Phase 2 完成后方可开始。
+- Phase 1 → Phase 2 → 用户故事阶段 → Phase 6 → Phase 7；任何用户故事必须在 Phase 2 完成后方可开始。
 - 用户故事之间按优先级 P1→P2→P3；若资源允许，可在各自依赖满足后并行推进（各 story 内 [P] 任务可同步执行）。
 - 关键依赖链：迁移/仓储 (T004-T006-T012) → 服务骨架 (T007) → 对应 Handler/前端实现；US3 的条码/序列功能依赖 T012。
 
@@ -148,4 +164,5 @@
 
 1. **MVP**：完成 US1（SKU 生成）即可对外 demo，满足“10 分钟生成 50 个 SKU”目标。
 2. **迭代**：在 MVP 稳定后开启 US2 批量任务（含审批、导入/导出），再实现 US3 渠道/库存/条码/序列闭环。
-3. **验证**：每个用户故事结束后运行相关 API/前端回归，最终在 Phase 6 执行全链路冒烟并更新文档。
+3. **购买闭环**：在 US1~US3 基础能力稳定后，补齐 US4（可售性聚合），让 mini-app 能可靠判断“可下单与否”并给出原因解释。
+4. **验证**：每个用户故事结束后运行相关 API/前端回归，最终在 Phase 6/7 执行全链路冒烟并更新文档。
