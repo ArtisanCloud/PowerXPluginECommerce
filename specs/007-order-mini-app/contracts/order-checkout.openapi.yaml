@@ -1,0 +1,380 @@
+openapi: 3.0.3
+info:
+  title: PowerX Plugin - Order Checkout API (MVP)
+  version: 1.0.0
+servers:
+  - url: /
+
+paths:
+  /api/v1/mini-app/orders:
+    post:
+      summary: Create order (mini-app, one_time)
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+          description: Idempotency key for order creation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MiniAppCreateOrderRequest'
+      responses:
+        '200':
+          description: Order created (or existing order returned for same idempotency key)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderSummary'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Sellability or inventory conflict (e.g., out of stock)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      summary: List orders (mini-app)
+      parameters:
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: pageSize
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Order list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderListResponse'
+
+  /api/v1/mini-app/orders/{id}:
+    get:
+      summary: Get order detail (mini-app)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/admin/orders:
+    post:
+      summary: Create order for customer (admin)
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+          description: Idempotency key for order creation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminCreateOrderRequest'
+      responses:
+        '200':
+          description: Order created (or existing order returned for same idempotency key)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderSummary'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Sellability or inventory conflict (e.g., out of stock)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      summary: List orders (admin)
+      parameters:
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: pageSize
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderListResponse'
+
+  /api/v1/admin/orders/{id}:
+    get:
+      summary: Get order detail (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/admin/orders/{id}/cancel:
+    post:
+      summary: Cancel order (admin, only pending_payment)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelOrderRequest'
+      responses:
+        '200':
+          description: Cancelled order summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderSummary'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Cannot cancel (status not allowed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+      required: [error]
+
+    Money:
+      type: object
+      properties:
+        currency:
+          type: string
+        subtotal:
+          type: integer
+          format: int64
+        total:
+          type: integer
+          format: int64
+      required: [currency, subtotal, total]
+
+    OrderItemInput:
+      type: object
+      properties:
+        skuId:
+          type: string
+        qty:
+          type: integer
+          format: int64
+          minimum: 1
+      required: [skuId, qty]
+
+    MiniAppCreateOrderRequest:
+      type: object
+      properties:
+        channel:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItemInput'
+        locale:
+          type: string
+          nullable: true
+      required: [channel, items]
+
+    AdminCreateOrderRequest:
+      type: object
+      properties:
+        customerId:
+          type: string
+        channel:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItemInput'
+        note:
+          type: string
+          nullable: true
+      required: [customerId, channel, items]
+
+    CancelOrderRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          nullable: true
+
+    OrderSummary:
+      type: object
+      properties:
+        orderId:
+          type: string
+        orderNo:
+          type: string
+        status:
+          type: string
+        amounts:
+          $ref: '#/components/schemas/Money'
+        createdAt:
+          type: string
+          format: date-time
+      required: [orderId, orderNo, status, amounts, createdAt]
+
+    OrderListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderSummary'
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+      required: [items, page, pageSize, total]
+
+    OrderItem:
+      type: object
+      properties:
+        skuId:
+          type: string
+        qty:
+          type: integer
+          format: int64
+        unitPrice:
+          type: integer
+          format: int64
+        lineAmount:
+          type: integer
+          format: int64
+      required: [skuId, qty, unitPrice, lineAmount]
+
+    OrderEvent:
+      type: object
+      properties:
+        eventType:
+          type: string
+        operatorType:
+          type: string
+        operator:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [eventType, operatorType, createdAt]
+
+    OrderDetail:
+      type: object
+      properties:
+        summary:
+          $ref: '#/components/schemas/OrderSummary'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderEvent'
+      required: [summary, items, events]
