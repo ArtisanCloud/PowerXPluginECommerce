@@ -119,4 +119,9 @@ const (
 	TablePricebookScopes    = "pricebook_scopes"
 	TablePricebookItems     = "pricebook_items"
 	TablePricebookAuditLogs = "pricebook_audit_logs"
+
+	// Order (Checkout MVP)
+	TableOrders      = "orders"
+	TableOrderItems  = "order_items"
+	TableOrderEvents = "order_events"
 )

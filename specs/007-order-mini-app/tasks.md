@@ -13,13 +13,13 @@
 
 ## Phase 2: Foundational (Blocking Prerequisites)
 
-- [ ] T004 新增订单域表名常量并集中管理（`backend/internal/entity/models/model.go`）
-- [ ] T005 [P] 新增订单域模型：Order / OrderItem / OrderEvent（`backend/internal/entity/models/order/order.go`，`backend/internal/entity/models/order/order_item.go`，`backend/internal/entity/models/order/order_event.go`）
-- [ ] T006 新增订单域仓储：创建订单（含明细/事件同事务）、按 customer/admin 查询列表、按 id 查询详情（`backend/internal/entity/repository/order/order_repository.go`，`backend/internal/entity/repository/order/order_item_repository.go`，`backend/internal/entity/repository/order/order_event_repository.go`）
-- [ ] T007 新增订单域数据库迁移注册（AutoMigrate + RLS/索引按宪章要求），并加入迁移列表（`backend/cmd/database/migrate/migrations/007_order.go`，`backend/cmd/database/migrate/migrate.go`）
-- [ ] T008 扩展库存仓储以支持“锁定/解锁”最小操作（在同一租户事务内、行锁/for update、更新 `locked_qty`），供订单服务复用（`backend/internal/entity/repository/product_sku/inventory_repository.go`）
-- [ ] T009 新增订单域错误语义与 DTO（请求/响应/列表分页）以便 miniapp/admin handler 复用（`backend/internal/services/admin/order/types.go`，`backend/internal/services/miniapp/order/types.go`）
-- [ ] T010 新增订单 RBAC 资源声明（默认 RBAC 资源列表）与路由级权限映射入口（`backend/internal/transport/http/admin/rbac_loader.go`，`backend/internal/transport/http/admin/order/rbac.go`）
+- [x] T004 新增订单域表名常量并集中管理（`backend/internal/entity/models/model.go`）
+- [x] T005 [P] 新增订单域模型：Order / OrderItem / OrderEvent（`backend/internal/entity/models/order/order.go`，`backend/internal/entity/models/order/order_item.go`，`backend/internal/entity/models/order/order_event.go`）
+- [x] T006 新增订单域仓储：创建订单（含明细/事件同事务）、按 customer/admin 查询列表、按 id 查询详情（`backend/internal/entity/repository/order/order_repository.go`，`backend/internal/entity/repository/order/order_item_repository.go`，`backend/internal/entity/repository/order/order_event_repository.go`）
+- [x] T007 新增订单域数据库迁移注册（AutoMigrate + RLS/索引按宪章要求），并加入迁移列表（`backend/cmd/database/migrate/migrations/007_order.go`，`backend/cmd/database/migrate/migrate.go`）
+- [x] T008 扩展库存仓储以支持“锁定/解锁”最小操作（在同一租户事务内、行锁/for update、更新 `locked_qty`），供订单服务复用（`backend/internal/entity/repository/product_sku/inventory_repository.go`）
+- [x] T009 新增订单域错误语义与 DTO（请求/响应/列表分页）以便 miniapp/admin handler 复用（`backend/internal/services/admin/order/types.go`，`backend/internal/services/miniapp/order/types.go`）
+- [x] T010 新增订单 RBAC 资源声明（默认 RBAC 资源列表）与路由级权限映射入口（`backend/internal/transport/http/admin/rbac_loader.go`，`backend/internal/transport/http/admin/order/rbac.go`）
 
 **Checkpoint**: Phase 2 完成后，可开始按用户故事并行实现接口与业务逻辑。
 
