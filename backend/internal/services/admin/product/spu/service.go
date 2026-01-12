@@ -33,6 +33,9 @@ var (
 	ErrInvalidSPUListOrder     = errors.New("invalid spu list order")
 	ErrUnsupportedSPUListSort  = errors.New("unsupported spu list sort")
 	ErrSPUListRequiresPostgres = errors.New("spu list sort/filter requires postgres")
+
+	// ErrPublishRequiresInventory indicates the SPU has no saleable SKU inventory for publishing.
+	ErrPublishRequiresInventory = errors.New("publish requires at least one sku with available inventory")
 )
 
 // Service orchestrates tenant-scoped SPU lifecycle operations.
@@ -825,6 +828,15 @@ func (s *Service) Publish(ctx context.Context, id string, req PublishRequest) (*
 		if spu.Status != "reviewing" && spu.Status != "draft" {
 			return fmt.Errorf("spu status %s cannot publish", spu.Status)
 		}
+
+		ok, err := hasSaleableInventoryForSPUTx(tx, tenantID, spu.ID, "default")
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return ErrPublishRequiresInventory
+		}
+
 		var version productmodel.SPUVersion
 		if err := tx.Where("tenant_uuid = ? AND id = ? AND spu_id = ?", tenantID, req.VersionID, spu.ID).First(&version).Error; err != nil {
 			return err
@@ -868,6 +880,37 @@ func (s *Service) Publish(ctx context.Context, id string, req PublishRequest) (*
 		s.metrics.ObserveLeadTime(leadTime)
 	}
 	return detail, nil
+}
+
+func hasSaleableInventoryForSPUTx(tx *gorm.DB, tenantID, spuID, warehouseID string) (bool, error) {
+	if tx == nil {
+		return false, errors.New("transaction is required")
+	}
+	tenantID = strings.TrimSpace(tenantID)
+	spuID = strings.TrimSpace(spuID)
+	warehouseID = strings.TrimSpace(warehouseID)
+	if tenantID == "" || spuID == "" || warehouseID == "" {
+		return false, errors.New("tenant/spu/warehouse is required")
+	}
+
+	var hit int
+	err := tx.
+		Table(productskumodel.ProductSKU{}.TableName() + " AS s").
+		Select("1").
+		Joins(
+			"JOIN "+productskumodel.ProductSKUInventory{}.TableName()+" AS i ON "+
+				"i.tenant_uuid = s.tenant_uuid AND i.sku_id = s.id AND i.deleted_at IS NULL",
+		).
+		Where(
+			"s.tenant_uuid = ? AND s.deleted_at IS NULL AND s.spu_id = ? AND i.warehouse_id = ? AND i.available_qty > 0",
+			tenantID, spuID, warehouseID,
+		).
+		Limit(1).
+		Scan(&hit).Error
+	if err != nil {
+		return false, err
+	}
+	return hit == 1, nil
 }
 
 // Withdraw marks specified channels as offboarded and optionally schedules the operation.

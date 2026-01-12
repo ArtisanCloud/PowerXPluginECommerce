@@ -338,3 +338,9 @@ type InventorySnapshot struct {
 	LastSyncedAt *time.Time                   `json:"last_synced_at,omitempty"`
 	IsStale      bool                         `json:"is_stale"`
 }
+
+// InventoryAdjustRequest represents an incremental adjustment payload for a SKU inventory.
+// Delta is an integer unit count and MUST NOT result in negative available inventory.
+type InventoryAdjustRequest struct {
+	Delta int64 `json:"delta"`
+}

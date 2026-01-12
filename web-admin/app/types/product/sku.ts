@@ -35,6 +35,10 @@ export interface SkuInventorySnapshot {
   isStale?: boolean
 }
 
+export interface SkuInventoryAdjustRequest {
+  delta: number
+}
+
 export type SkuBarcodeMode = 'auto' | 'manual'
 
 export interface SkuBarcodeGenerateRequest {

@@ -125,3 +125,21 @@ func (r *SKURepository) FindByBarcode(ctx context.Context, tenantID, barcode str
 	}
 	return &sku, nil
 }
+
+// FindByID locates a SKU by id scoped to the tenant.
+func (r *SKURepository) FindByID(ctx context.Context, tenantID, skuID string) (*productskumodel.ProductSKU, error) {
+	if r == nil || r.DB == nil {
+		return nil, errors.New("sku repository is not initialized")
+	}
+	skuID = strings.TrimSpace(skuID)
+	if skuID == "" {
+		return nil, errors.New("sku id is required")
+	}
+	var sku productskumodel.ProductSKU
+	if err := r.DB.WithContext(ctx).
+		Where("tenant_uuid = ? AND id = ? AND deleted_at IS NULL", tenantID, skuID).
+		First(&sku).Error; err != nil {
+		return nil, err
+	}
+	return &sku, nil
+}

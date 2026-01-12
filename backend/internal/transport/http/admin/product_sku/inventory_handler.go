@@ -28,3 +28,21 @@ func (h *InventoryHandler) Get(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, snapshot)
 }
+
+func (h *InventoryHandler) Adjust(c *gin.Context) {
+	if h.service == nil {
+		respondError(c, ErrServiceUnavailable)
+		return
+	}
+	var req productskuservice.InventoryAdjustRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondError(c, err)
+		return
+	}
+	snapshot, err := h.service.AdjustInventory(c.Request.Context(), c.Param("id"), req.Delta)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, snapshot)
+}

@@ -13,6 +13,7 @@ import type {
 	SkuGeneratorRequest,
 	SkuGeneratorResponse,
 	SkuImportMode,
+	SkuInventoryAdjustRequest,
 	SkuInventorySnapshot,
 	SkuSerialQuery,
 	SkuSerialRecord,
@@ -25,6 +26,7 @@ export interface SkuListParams {
 	spuId?: string
 	status?: string
 	channel?: string
+	locale?: string
 	page?: number
 	pageSize?: number
 }
@@ -51,6 +53,8 @@ export function useSkuApi() {
 	return {
 		list: (params?: SkuListParams, init?: any) =>
 			unwrap(apiGet<SkuListResponse>(basePath, params, init)),
+		get: (skuId: string, params?: { locale?: string }, init?: any) =>
+			unwrap(apiGet<any>(`${basePath}/${skuId}`, params, init)),
 		listBySpu: (spuId: string, params?: Omit<SkuListParams, 'spuId'>, init?: any) =>
 			unwrap(apiGet<SkuListResponse>(basePath, { ...params, spuId }, init)),
 		generate: (spuId: string, payload: SkuGeneratorRequest, init?: any) =>
@@ -87,6 +91,8 @@ export function useSkuApi() {
 			unwrap(apiPost<SkuBulkTask>(`${basePath}/${skuId}/channels/publish`, payload, init)),
 		getInventorySnapshot: (skuId: string, init?: any) =>
 			unwrap(apiGet<SkuInventorySnapshot>(`${basePath}/${skuId}/inventory`, undefined, init)),
+		adjustInventory: (skuId: string, payload: SkuInventoryAdjustRequest, init?: any) =>
+			unwrap(apiPost<SkuInventorySnapshot>(`${basePath}/${skuId}/inventory/adjust`, payload, init)),
 		generateBarcodes: (skuId: string, payload: SkuBarcodeGenerateRequest, init?: any) =>
 			unwrap(apiPost<SkuBarcodeBatchResult>(`${basePath}/${skuId}/barcodes`, payload, init)),
 		listSerials: (skuId: string, params?: SkuSerialQuery, init?: any) =>

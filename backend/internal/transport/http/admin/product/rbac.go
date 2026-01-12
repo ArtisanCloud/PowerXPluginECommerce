@@ -17,11 +17,12 @@ func RBACEntries(prefix string) map[string]authx.Permission {
 		return "com.powerx.plugin.ecommerce:" + suffix
 	}
 
-	entries := map[string]authx.Permission{
-		"GET:" + skuBase:                                   {Resource: resource("product.sku"), Action: "read"},
-		"POST:" + skuBase:                                  {Resource: resource("product.sku"), Action: "manage"},
-		"PATCH:" + skuBase + "/:id":                        {Resource: resource("product.sku"), Action: "manage"},
-		"DELETE:" + skuBase + "/:id":                       {Resource: resource("product.sku"), Action: "manage"},
+		entries := map[string]authx.Permission{
+			"GET:" + skuBase:                                   {Resource: resource("product.sku"), Action: "read"},
+			"GET:" + skuBase + "/:id":                          {Resource: resource("product.sku"), Action: "read"},
+			"POST:" + skuBase:                                  {Resource: resource("product.sku"), Action: "manage"},
+			"PATCH:" + skuBase + "/:id":                        {Resource: resource("product.sku"), Action: "manage"},
+			"DELETE:" + skuBase + "/:id":                       {Resource: resource("product.sku"), Action: "manage"},
 		"POST:" + skuBase + "/bulk-tasks":                  {Resource: resource("product.sku.bulk"), Action: "manage"},
 		"GET:" + skuBase + "/bulk-tasks/:taskId":           {Resource: resource("product.sku.bulk"), Action: "read"},
 		"POST:" + skuBase + "/bulk-tasks/:taskId/approval": {Resource: resource("product.sku.bulk"), Action: "manage"},
@@ -29,6 +30,7 @@ func RBACEntries(prefix string) map[string]authx.Permission {
 		"POST:" + skuBase + "/import":                      {Resource: resource("product.sku.bulk"), Action: "manage"},
 		"POST:" + skuBase + "/export":                      {Resource: resource("product.sku.bulk"), Action: "manage"},
 		"GET:" + skuBase + "/:id/inventory":                {Resource: resource("product.sku.inventory"), Action: "read"},
+		"POST:" + skuBase + "/:id/inventory/adjust":        {Resource: resource("product.sku.inventory"), Action: "manage"},
 		"GET:" + skuBase + "/:id/channels":                 {Resource: resource("product.sku.channel"), Action: "read"},
 		"POST:" + skuBase + "/:id/channels":                {Resource: resource("product.sku.channel"), Action: "manage"},
 		"POST:" + skuBase + "/:id/channels/publish":        {Resource: resource("product.sku.channel"), Action: "manage"},

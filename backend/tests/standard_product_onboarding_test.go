@@ -46,6 +46,35 @@ func TestStandardProductOnboardingFlow(t *testing.T) {
 	require.NoError(t, err)
 	require.Equal(t, "draft", draft.Status)
 
+	skuResult, err := skuSvc.UpsertSkus(tenantCtx, productsku.SkuUpsertRequest{
+		SKUs: []productsku.SkuUpsertPayload{
+			{
+				SPUID:       draft.ID,
+				SKUCode:     "STD-PRODUCT-001-A",
+				Status:      "online",
+				MinOrderQty: 1,
+				Specs: []productsku.SkuSpec{
+					{SpecID: "capacity", SpecName: "Capacity", ValueID: "single", ValueName: "单件"},
+				},
+			},
+			{
+				SPUID:       draft.ID,
+				SKUCode:     "STD-PRODUCT-001-B",
+				Status:      "offline",
+				MinOrderQty: 10,
+				Specs: []productsku.SkuSpec{
+					{SpecID: "capacity", SpecName: "Capacity", ValueID: "bundle", ValueName: "十件装"},
+				},
+			},
+		},
+	})
+	require.NoError(t, err)
+	require.Equal(t, 2, skuResult.Created)
+	require.Len(t, skuResult.Summaries, 2)
+
+	_, err = skuSvc.AdjustInventory(tenantCtx, skuResult.Summaries[0].ID, 10)
+	require.NoError(t, err)
+
 	submitted, err := spuSvc.Submit(tenantCtx, draft.ID, spu.SubmitRequest{
 		Comment: "提交初版",
 	})
@@ -58,31 +87,6 @@ func TestStandardProductOnboardingFlow(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Equal(t, "published", published.Status)
-
-	result, err := skuSvc.UpsertSkus(tenantCtx, productsku.SkuUpsertRequest{
-		SKUs: []productsku.SkuUpsertPayload{
-			{
-				SPUID:       published.ID,
-				SKUCode:     "STD-PRODUCT-001-A",
-				Status:      "online",
-				MinOrderQty: 1,
-				Specs: []productsku.SkuSpec{
-					{SpecID: "capacity", SpecName: "Capacity", ValueID: "single", ValueName: "单件"},
-				},
-			},
-			{
-				SPUID:       published.ID,
-				SKUCode:     "STD-PRODUCT-001-B",
-				Status:      "offline",
-				MinOrderQty: 10,
-				Specs: []productsku.SkuSpec{
-					{SpecID: "capacity", SpecName: "Capacity", ValueID: "bundle", ValueName: "十件装"},
-				},
-			},
-		},
-	})
-	require.NoError(t, err)
-	require.Equal(t, 2, result.Created)
 
 	listAll, err := skuSvc.ListSkus(tenantCtx, productsku.SkuListQuery{
 		SPUID: published.ID,

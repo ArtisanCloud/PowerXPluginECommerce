@@ -2,6 +2,36 @@
 
 > 覆盖页面：`web-admin/app/pages/inventory/stock.vue`，并在商品详情、渠道上架、订单、售后等场景提供库存组件。该模块用于提供统一的库存总览、状态视图（可用、锁定、在途、预留、损耗）、告警与数据接口。
 
+## 0. MVP（已落地）：SKU 可用库存闭环 + 上架前置校验（库存部分）
+
+为了先把“产品能上架”这条链路跑通，我们先落地最小库存闭环（SKU 维度、默认仓），后续再扩展仓库/调拨/盘点/锁定等完整能力。
+
+### 0.1 数据落地（当前实现）
+- 库存快照表：`product_sku_inventories`（按 `tenant_uuid + sku_id + warehouse_id` 唯一）
+- 审计表：`product_sku_audit_logs`（记录 `inventory.adjust` 的 delta、前后值、操作者等）
+
+### 0.2 可售口径（当前实现）
+- 仅使用默认仓：`warehouse_id = "default"`
+- 可售判断（MVP）：`available_qty > 0`
+
+### 0.3 后端 API（当前实现）
+- 读取库存快照：`GET /api/v1/admin/product/skus/{skuId}/inventory`
+- 调整可用库存（增量）：`POST /api/v1/admin/product/skus/{skuId}/inventory/adjust`
+  - body：`{"delta": 10}`（整数；禁止 delta=0；禁止调整后为负数）
+
+### 0.4 前端入口（当前实现）
+- SKU 详情页库存卡片：`web-admin/app/pages/product/skus/[id].vue`
+  - 组件：`web-admin/app/components/product/sku/InventorySnapshotCard.vue`
+  - 支持展示快照 + 输入 delta 并“应用”
+
+### 0.5 上架/发布门禁（当前实现）
+- SPU 发布（Publish）时：要求该 SPU 至少存在 1 个 SKU 在默认仓 `available_qty > 0`，否则阻止发布。
+- SKU 渠道上架（PublishChannelMapping）时：要求该 SKU 在默认仓 `available_qty > 0`，否则阻止上架。
+
+### 0.6 权限（当前实现）
+- `product.sku.inventory:read`：读取库存快照（GET）
+- `product.sku.inventory:manage`：调整库存（POST adjust）
+
 ## 1. 背景与目标
 - 当前库存页面仅显示示例数据，缺乏实时多维视图、锁定/释放逻辑、批次追踪、告警。需要一个统一的库存之眼，供不同角色查询和操作。
 

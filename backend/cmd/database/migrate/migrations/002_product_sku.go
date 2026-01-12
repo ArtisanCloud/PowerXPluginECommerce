@@ -17,4 +17,5 @@ var ProductSkuTables = []interface{}{
 	&productskumodel.ProductSKUBulkTask{},
 	&productskumodel.ProductSKUBulkTaskItem{},
 	&productskumodel.ProductSKUSerialRecord{},
+	&productskumodel.ProductSKUAuditLog{},
 }

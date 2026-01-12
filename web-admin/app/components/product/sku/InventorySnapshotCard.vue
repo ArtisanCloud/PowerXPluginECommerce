@@ -7,11 +7,61 @@
         <p class="text-sm text-gray-500 dark:text-gray-400">{{ $t('product.sku.inventoryPanel.subtitle') }}</p>
       </div>
       <div class="flex gap-2">
+        <UButton
+          color="primary"
+          icon="i-heroicons-adjustments-horizontal"
+          data-testid="inventory-open-adjust"
+          @click="openAdjust"
+        >
+          {{ $t('product.sku.inventoryPanel.adjustTitle') }}
+        </UButton>
         <UButton icon="i-heroicons-arrow-path" variant="ghost" :loading="loading" @click="fetchSnapshot">
           {{ $t('common.refresh') }}
         </UButton>
       </div>
     </div>
+
+    <UModal
+      v-model:open="adjustOpen"
+      :title="$t('product.sku.inventoryPanel.adjustTitle')"
+      :description="$t('product.sku.inventoryPanel.subtitle')"
+      :prevent-close="adjusting"
+      :ui="{ content: 'max-w-3xl w-full max-h-[calc(100dvh-2rem)] overflow-hidden' }"
+    >
+      <template #body>
+        <UForm id="sku-inventory-adjust-form" :state="adjustForm" class="space-y-4 p-1" @submit.prevent="applyDelta">
+          <UFormField :label="$t('product.sku.inventoryPanel.adjustDelta')">
+            <UInput
+              v-model="adjustForm.deltaText"
+              type="number"
+              inputmode="numeric"
+              step="1"
+              data-testid="inventory-delta"
+              :disabled="adjusting || loading"
+            />
+          </UFormField>
+          <UAlert v-if="errorMessage" color="error" variant="soft" :title="$t('common.error')" :description="errorMessage" />
+        </UForm>
+      </template>
+
+      <template #footer>
+        <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
+          <UButton color="neutral" variant="outline" :disabled="adjusting" @click="closeAdjust">
+            {{ $t('common.cancel') }}
+          </UButton>
+          <UButton
+            type="button"
+            color="primary"
+            data-testid="inventory-apply"
+            :loading="adjusting"
+            :disabled="!canSubmitDelta || loading"
+            @click="applyDelta"
+          >
+            {{ $t('product.sku.inventoryPanel.applyDelta') }}
+          </UButton>
+        </div>
+      </template>
+    </UModal>
 
     <div v-if="loading">
       <USkeleton class="h-24 w-full" />
@@ -84,27 +134,71 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
-import { useI18n } from '#imports'
+import { computed, reactive, ref, watch } from 'vue'
 import { useProductSkuStore } from '~/stores/productSku'
 import type { SkuInventorySnapshot } from '~/types/product/sku'
 
 const props = defineProps<{ skuId: string }>()
 
 const store = useProductSkuStore()
-const { t } = useI18n()
 
 const loading = ref(false)
+const adjusting = ref(false)
+const adjustOpen = ref(false)
+const adjustForm = reactive({
+  deltaText: '',
+})
+const errorMessage = ref('')
 const snapshot = computed<SkuInventorySnapshot | null>(() => store.inventorySnapshots[props.skuId] ?? null)
 
 const fetchSnapshot = async () => {
   if (!props.skuId) return
   loading.value = true
+  errorMessage.value = ''
   try {
     await store.fetchInventorySnapshot(props.skuId)
   } finally {
     loading.value = false
   }
+}
+
+const canSubmitDelta = computed(() => {
+  const trimmed = adjustForm.deltaText.trim()
+  if (!trimmed) return false
+  const parsed = Number.parseInt(trimmed, 10)
+  return Number.isFinite(parsed) && parsed !== 0
+})
+
+const applyDelta = async () => {
+  if (!props.skuId) return
+  const parsed = Number.parseInt(adjustForm.deltaText.trim(), 10)
+  if (!Number.isFinite(parsed) || parsed === 0) {
+    errorMessage.value = 'delta 必须为非 0 整数'
+    return
+  }
+  adjusting.value = true
+  errorMessage.value = ''
+  try {
+    await store.adjustInventorySnapshot(props.skuId, parsed)
+    adjustForm.deltaText = ''
+    closeAdjust()
+  } catch (error: any) {
+    errorMessage.value = error?.message ? String(error.message) : String(error)
+  } finally {
+    adjusting.value = false
+  }
+}
+
+const openAdjust = () => {
+  errorMessage.value = ''
+  adjustOpen.value = true
+}
+
+const closeAdjust = () => {
+  if (typeof window !== 'undefined') {
+    ;(document.activeElement as HTMLElement | null)?.blur?.()
+  }
+  adjustOpen.value = false
 }
 
 const formatDateTime = (value?: string) => {

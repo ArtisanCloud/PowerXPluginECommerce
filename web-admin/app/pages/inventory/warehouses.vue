@@ -2,17 +2,17 @@
   <div class="p-6 space-y-6">
     <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
       <div>
-        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">仓库</h1>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white">{{ $t("inventory.warehouseTitle") }}</h1>
         <p class="text-gray-500 dark:text-gray-400">
-          管理全国仓库的容量、运营状态与负责人。
+          {{ $t("inventory.warehouseSubtitle") }}
         </p>
       </div>
       <div class="flex gap-2">
         <UButton color="neutral" variant="ghost" icon="i-heroicons-arrow-down-tray">
-          导出
+          {{ $t("common.export") }}
         </UButton>
         <UButton color="primary" icon="i-heroicons-plus">
-          新建仓库
+          {{ $t("inventory.createWarehouse") }}
         </UButton>
       </div>
     </div>
@@ -28,7 +28,7 @@
             {{ card.trend >= 0 ? '+' : '' }}{{ card.trend }}% vs 上周
           </div>
         </template>
-        <UProgress v-if="card.progress !== undefined" :value="card.progress" size="sm" />
+        <UProgress v-if="card.progress !== undefined" :model-value="card.progress" size="sm" :ui="progressUi" />
       </UCard>
     </div>
 
@@ -36,29 +36,29 @@
       <template #header>
         <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">仓库列表</h3>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">{{ $t("inventory.warehouseListTitle") }}</h3>
             <p class="text-sm text-gray-500 dark:text-gray-400">
-              支持按区域与状态快速筛选。
+              {{ $t("inventory.warehouseListSubtitle") }}
             </p>
           </div>
           <div class="flex flex-wrap gap-2">
             <UInput
               v-model="searchQuery"
               class="w-52"
-              placeholder="搜索仓库/负责人"
+              :placeholder="$t('inventory.warehouseSearchPlaceholder')"
               icon="i-heroicons-magnifying-glass"
             />
             <USelect
               v-model="regionFilter"
               class="w-40"
-              :options="regionOptions"
-              placeholder="全部区域"
+              :items="regionItems"
+              :placeholder="$t('inventory.allRegions')"
             />
             <USelect
               v-model="statusFilter"
               class="w-40"
-              :options="statusOptions"
-              placeholder="运营状态"
+              :items="statusItems"
+              :placeholder="$t('inventory.warehouseStatusPlaceholder')"
             />
           </div>
         </div>
@@ -76,7 +76,7 @@
               <span>{{ getValue() }}%</span>
               <span>100%</span>
             </div>
-            <UProgress :value="getValue()" size="xs" />
+            <UProgress :model-value="getValue()" size="xs" :ui="progressUi" />
           </div>
         </template>
         <template #actions-cell="{ row }">
@@ -96,6 +96,12 @@ import type { TableColumn } from "@nuxt/ui";
 definePageMeta({
   name: "inventory-warehouses",
 });
+
+// 关闭进度条的默认过渡动画（避免看起来像“在动”）
+const progressUi = {
+  indicator: "transition-none duration-0 ease-linear",
+  status: "transition-none duration-0",
+};
 
 type WarehouseStatus = "operational" | "maintenance" | "paused";
 
@@ -176,11 +182,13 @@ const warehouses = ref<Warehouse[]>([
 ]);
 
 const searchQuery = ref("");
-const regionFilter = ref("");
-const statusFilter = ref<WarehouseStatus | "">("");
+const ALL_REGION = "__all__";
+const ALL_STATUS = "__all__";
+const regionFilter = ref<string>(ALL_REGION);
+const statusFilter = ref<WarehouseStatus | typeof ALL_STATUS>(ALL_STATUS);
 
-const regionOptions = computed(() =>
-  [{ label: "全部区域", value: "" }].concat(
+const regionItems = computed(() =>
+  [{ label: "全部区域", value: ALL_REGION }].concat(
     Array.from(new Set(warehouses.value.map((item) => item.region))).map((region) => ({
       label: region,
       value: region,
@@ -188,14 +196,15 @@ const regionOptions = computed(() =>
   ),
 );
 
-const statusOptions = [
-  { label: "全部状态", value: "" },
+const statusItems = [
+  // reka-ui SelectItem 不允许 value 为空字符串（空字符串用于“清空选择并显示 placeholder”）
+  { label: "全部状态", value: ALL_STATUS },
   { label: "运营中", value: "operational" },
   { label: "维护中", value: "maintenance" },
   { label: "暂停", value: "paused" },
 ];
 
-const getStatusMeta = (status: WarehouseStatus | "") => {
+const getStatusMeta = (status: WarehouseStatus) => {
   switch (status) {
     case "operational":
       return { label: "运营中", color: "success" as const };
@@ -215,9 +224,9 @@ const filteredWarehouses = computed(() => {
       item.name.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
       item.manager.includes(searchQuery.value);
     const matchesRegion =
-      !regionFilter.value || item.region === regionFilter.value;
+      regionFilter.value === ALL_REGION || item.region === regionFilter.value;
     const matchesStatus =
-      !statusFilter.value || item.status === statusFilter.value;
+      statusFilter.value === ALL_STATUS || item.status === statusFilter.value;
     return matchesSearch && matchesRegion && matchesStatus;
   });
 });

@@ -45,6 +45,11 @@ func TestSPULifecycleCreateSubmitPublish(t *testing.T) {
 	require.Equal(t, "draft", draft.Status)
 	require.NotEmpty(t, draft.CurrentVersion)
 
+	require.NoError(t, db.Exec(`INSERT INTO product_skus (id, tenant_uuid, spu_id, sku_code, status) VALUES (?, ?, ?, ?, ?)`,
+		"sku-1", "tenant-test", draft.ID, "SPU-001-SKU-1", "online").Error)
+	require.NoError(t, db.Exec(`INSERT INTO product_sku_inventories (id, tenant_uuid, sku_id, warehouse_id, available_qty) VALUES (?, ?, ?, ?, ?)`,
+		"inv-1", "tenant-test", "sku-1", "default", 1).Error)
+
 	updateReq := req
 	updateReq.Name = "更新后的商品"
 	updated, err := svc.UpdateDraft(tenantCtx, draft.ID, updateReq)
@@ -66,7 +71,7 @@ func TestSPULifecycleCreateSubmitPublish(t *testing.T) {
 }
 
 func createTables(t *testing.T, db *gorm.DB) {
-	stmts := []string{
+		stmts := []string{
 		`CREATE TABLE IF NOT EXISTS product_spus (
 			id TEXT PRIMARY KEY,
 			tenant_uuid TEXT NOT NULL,
@@ -132,16 +137,42 @@ func createTables(t *testing.T, db *gorm.DB) {
 			created_at DATETIME,
 			updated_at DATETIME
 		)`,
-		`CREATE TABLE IF NOT EXISTS product_spu_audit_logs (
-			id TEXT PRIMARY KEY,
-			tenant_uuid TEXT NOT NULL,
-			spu_id TEXT NOT NULL,
-			event_type TEXT NOT NULL,
-			payload TEXT,
-			operator TEXT,
-			created_at DATETIME
-		)`,
-	}
+			`CREATE TABLE IF NOT EXISTS product_spu_audit_logs (
+				id TEXT PRIMARY KEY,
+				tenant_uuid TEXT NOT NULL,
+				spu_id TEXT NOT NULL,
+				event_type TEXT NOT NULL,
+				payload TEXT,
+				operator TEXT,
+				created_at DATETIME
+			)`,
+			`CREATE TABLE IF NOT EXISTS product_skus (
+				id TEXT PRIMARY KEY,
+				tenant_uuid TEXT NOT NULL,
+				spu_id TEXT NOT NULL,
+				sku_code TEXT NOT NULL,
+				status TEXT NOT NULL,
+				created_at DATETIME,
+				updated_at DATETIME,
+				deleted_at DATETIME
+			)`,
+			`CREATE TABLE IF NOT EXISTS product_sku_inventories (
+				id TEXT PRIMARY KEY,
+				tenant_uuid TEXT NOT NULL,
+				sku_id TEXT NOT NULL,
+				warehouse_id TEXT NOT NULL,
+				available_qty INTEGER NOT NULL DEFAULT 0,
+				locked_qty INTEGER NOT NULL DEFAULT 0,
+				in_transit_qty INTEGER NOT NULL DEFAULT 0,
+				safety_stock INTEGER NOT NULL DEFAULT 0,
+				alert_threshold INTEGER NOT NULL DEFAULT 0,
+				last_synced_at DATETIME,
+				created_at DATETIME,
+				updated_at DATETIME,
+				deleted_at DATETIME,
+				UNIQUE(tenant_uuid, sku_id, warehouse_id)
+			)`,
+		}
 	for _, stmt := range stmts {
 		require.NoError(t, db.Exec(stmt).Error)
 	}

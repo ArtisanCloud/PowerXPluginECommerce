@@ -25,6 +25,7 @@ type Service struct {
 	AttributeRepo    *repo.AttributeRepository
 	ChannelRepo      *repo.ChannelRepository
 	InventoryRepo    *repo.InventoryRepository
+	AuditLogRepo     *repo.AuditLogRepository
 	MediaRepo        *repo.MediaRepository
 	BulkTaskRepo     *repo.BulkTaskRepository
 	BulkTaskItemRepo *repo.BulkTaskItemRepository
@@ -47,6 +48,7 @@ func NewService(deps *app.Deps) *Service {
 		AttributeRepo:    repo.NewAttributeRepository(deps.DB),
 		ChannelRepo:      repo.NewChannelRepository(deps.DB),
 		InventoryRepo:    repo.NewInventoryRepository(deps.DB),
+		AuditLogRepo:     repo.NewAuditLogRepository(deps.DB),
 		MediaRepo:        repo.NewMediaRepository(deps.DB),
 		BulkTaskRepo:     repo.NewBulkTaskRepository(deps.DB),
 		BulkTaskItemRepo: repo.NewBulkTaskItemRepository(deps.DB),
@@ -181,6 +183,65 @@ func (s *Service) ListSkus(ctx context.Context, query SkuListQuery) (*SkuListRes
 		PageSize: filters.PageSize,
 		Total:    total,
 	}, nil
+}
+
+// GetSku returns a single SKU summary by id.
+func (s *Service) GetSku(ctx context.Context, skuID string, locale string) (*SkuListItem, error) {
+	if s == nil || !s.Ready() {
+		return nil, errors.New("product SKU service not ready")
+	}
+	tenantID, err := s.tenantFromContext(ctx)
+	if err != nil {
+		return nil, err
+	}
+	skuID = strings.TrimSpace(skuID)
+	if skuID == "" {
+		return nil, errors.New("sku id is required")
+	}
+	locale = strings.TrimSpace(locale)
+	if locale == "" {
+		locale = "zh-CN"
+	}
+
+	row, err := s.SKURepo.FindByID(ctx, tenantID, skuID)
+	if err != nil {
+		return nil, err
+	}
+	rows := []productskumodel.ProductSKU{*row}
+
+	spuNameMap, err := s.resolveSPUNames(ctx, tenantID, rows, locale)
+	if err != nil {
+		return nil, err
+	}
+	skuPrices, pbCurrency, err := s.resolveSKUPrices(ctx, tenantID, rows)
+	if err != nil {
+		return nil, err
+	}
+	specs := parseSkuSpecs(row.SpecValues)
+	price := skuPrices[row.ID]
+	currency := ""
+	if pbCurrency != "" && price != nil {
+		currency = pbCurrency
+	} else if c, ok := extractCurrencyFromDefaultValues(row.DefaultValues); ok {
+		currency = c
+	}
+	createdAt := row.CreatedAt
+	updatedAt := row.UpdatedAt
+	item := &SkuListItem{
+		ID:          row.ID,
+		SPUID:       row.SPUID,
+		SPUName:     spuNameMap[row.SPUID],
+		SKUCode:     row.SKUCode,
+		Status:      row.Status,
+		Barcode:     row.Barcode,
+		Specs:       specs,
+		SpecDisplay: formatSkuSpecsDisplay(specs),
+		SalePrice:   price,
+		Currency:    currency,
+		CreatedAt:   &createdAt,
+		UpdatedAt:   &updatedAt,
+	}
+	return item, nil
 }
 
 type spuNameRow struct {

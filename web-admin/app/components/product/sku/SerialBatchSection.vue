@@ -9,10 +9,13 @@
       <div class="flex gap-2">
         <USelect
           v-model="filters.status"
-          :options="statusOptions"
+          :items="statusItems"
           class="min-w-[160px]"
           :placeholder="$t('product.sku.serialPanel.filters.status')"
         />
+        <UButton color="primary" icon="i-heroicons-plus" @click="openForm">
+          {{ $t('common.add') }}
+        </UButton>
         <UButton icon="i-heroicons-arrow-path" variant="ghost" :loading="loading" @click="fetchRecords">
           {{ $t('common.refresh') }}
         </UButton>
@@ -57,36 +60,49 @@
           </tbody>
         </table>
       </div>
-      <div v-else class="text-sm text-gray-500 dark:text-gray-400">
-        {{ $t('product.sku.serialPanel.empty') }}
-      </div>
-    </UCard>
+    <div v-else class="text-sm text-gray-500 dark:text-gray-400">
+      {{ $t('product.sku.serialPanel.empty') }}
+    </div>
+  </UCard>
 
-    <UCard>
-      <template #header>
-        <h4 class="text-lg font-semibold text-gray-900 dark:text-white">{{ $t('product.sku.serialPanel.form.title') }}</h4>
+    <UModal
+      v-model:open="formOpen"
+      :title="$t('product.sku.serialPanel.form.title')"
+      :description="$t('product.sku.serialPanel.subtitle')"
+      :prevent-close="saving"
+      :ui="{ content: 'max-w-3xl w-full max-h-[calc(100dvh-2rem)] overflow-hidden' }"
+    >
+      <template #body>
+        <UForm id="sku-serial-form" :state="form" class="grid gap-4 md:grid-cols-2 p-1" @submit.prevent="handleSubmit">
+          <UFormField :label="$t('product.sku.serialPanel.form.serial')" required>
+            <UInput v-model="form.serialNo" />
+          </UFormField>
+          <UFormField :label="$t('product.sku.serialPanel.form.batch')">
+            <UInput v-model="form.batchNo" />
+          </UFormField>
+          <UFormField :label="$t('product.sku.serialPanel.form.status')">
+            <USelect v-model="form.status" :items="statusItems" class="w-full" />
+          </UFormField>
+          <UFormField :label="$t('product.sku.serialPanel.form.expires')">
+            <UInput v-model="form.expiresAt" type="date" />
+          </UFormField>
+        </UForm>
       </template>
-      <UForm class="grid gap-4 md:grid-cols-2" @submit.prevent="handleSubmit">
-        <UFormGroup :label="$t('product.sku.serialPanel.form.serial')" required>
-          <UInput v-model="form.serialNo" />
-        </UFormGroup>
-        <UFormGroup :label="$t('product.sku.serialPanel.form.batch')">
-          <UInput v-model="form.batchNo" />
-        </UFormGroup>
-        <UFormGroup :label="$t('product.sku.serialPanel.form.status')">
-          <USelect v-model="form.status" :options="statusOptions" />
-        </UFormGroup>
-        <UFormGroup :label="$t('product.sku.serialPanel.form.expires')">
-          <UInput v-model="form.expiresAt" type="date" />
-        </UFormGroup>
-        <div class="md:col-span-2 flex justify-end gap-2">
-          <UButton variant="ghost" @click="resetForm">{{ $t('common.reset') }}</UButton>
-          <UButton type="submit" color="primary" :loading="saving">
+
+      <template #footer>
+        <div class="flex w-full flex-col-reverse gap-2 sm:flex-row sm:items-center sm:justify-end sm:gap-3">
+          <UButton color="neutral" variant="outline" :disabled="saving" @click="closeForm">
+            {{ $t('common.cancel') }}
+          </UButton>
+          <UButton variant="ghost" :disabled="saving" @click="resetForm">
+            {{ $t('common.reset') }}
+          </UButton>
+          <UButton type="submit" form="sku-serial-form" color="primary" :loading="saving">
             {{ $t('product.sku.serialPanel.form.submit') }}
           </UButton>
         </div>
-      </UForm>
-    </UCard>
+      </template>
+    </UModal>
   </section>
 </template>
 
@@ -104,6 +120,7 @@ const toast = useToast()
 
 const loading = ref(false)
 const saving = ref(false)
+const formOpen = ref(false)
 const filters = reactive<{ status: string | null }>({
   status: null,
 })
@@ -114,11 +131,11 @@ const form = reactive({
   expiresAt: '',
 })
 
-const statusOptions = [
+const statusItems = computed(() => [
   { label: t('product.sku.serialPanel.status.available'), value: 'available' },
   { label: t('product.sku.serialPanel.status.allocated'), value: 'allocated' },
   { label: t('product.sku.serialPanel.status.consumed'), value: 'consumed' },
-]
+])
 
 const records = computed<SkuSerialRecord[]>(() => store.serialRecords[props.skuId] ?? [])
 
@@ -150,6 +167,7 @@ const handleSubmit = async () => {
     })
     toast.add({ title: t('product.sku.serialPanel.toastSaved') })
     resetForm()
+    closeForm()
   } catch (error: any) {
     toast.add({ title: t('common.error'), description: error?.message, color: 'red' })
   } finally {
@@ -162,6 +180,18 @@ const resetForm = () => {
   form.batchNo = ''
   form.status = 'available'
   form.expiresAt = ''
+}
+
+const openForm = () => {
+  resetForm()
+  formOpen.value = true
+}
+
+const closeForm = () => {
+  if (typeof window !== 'undefined') {
+    ;(document.activeElement as HTMLElement | null)?.blur?.()
+  }
+  formOpen.value = false
 }
 
 const formatDate = (value?: string) => {

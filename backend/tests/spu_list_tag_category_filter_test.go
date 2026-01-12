@@ -6,6 +6,7 @@ import (
 
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	spu "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/product/spu"
+	productsku "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/product_sku"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/tests/testutil"
 	"github.com/stretchr/testify/require"
@@ -24,17 +25,18 @@ func TestSPUListSupportsCategoryAndTagFilters(t *testing.T) {
 
 	deps := &app.Deps{DB: db, Ctx: ctx}
 	spuSvc := spu.NewService(deps)
+	skuSvc := productsku.NewService(deps)
 	tenantCtx := middleware.ContextWithTenantUUID(ctx, "tenant-spu-list-filter")
 	testutil.SeedProductCategories(t, db, "tenant-spu-list-filter", "cat-a", "cat-b")
 
-	spuA := createPublishedSPU(t, spuSvc, tenantCtx, createPublishedSPUInput{
+	spuA := createPublishedSPU(t, spuSvc, skuSvc, tenantCtx, createPublishedSPUInput{
 		Code:         "TAG-CAT-001",
 		Name:         "带标签与类目商品A",
 		CategoryID:   "cat-a",
 		CategoryPath: "root/cat-a",
 		Tags:         []string{"bestsellers", "imported"},
 	})
-	spuB := createPublishedSPU(t, spuSvc, tenantCtx, createPublishedSPUInput{
+	spuB := createPublishedSPU(t, spuSvc, skuSvc, tenantCtx, createPublishedSPUInput{
 		Code:         "TAG-CAT-002",
 		Name:         "带标签商品B",
 		CategoryID:   "cat-b",
@@ -83,8 +85,9 @@ type createPublishedSPUInput struct {
 	Tags         []string
 }
 
-func createPublishedSPU(t *testing.T, svc *spu.Service, tenantCtx context.Context, input createPublishedSPUInput) string {
+func createPublishedSPU(t *testing.T, svc *spu.Service, skuSvc *productsku.Service, tenantCtx context.Context, input createPublishedSPUInput) string {
 	t.Helper()
+	require.NotNil(t, skuSvc)
 
 	req := spu.UpsertSPURequest{
 		Code:            input.Code,
@@ -100,6 +103,22 @@ func createPublishedSPU(t *testing.T, svc *spu.Service, tenantCtx context.Contex
 		},
 	}
 	draft, err := svc.CreateDraft(tenantCtx, req)
+	require.NoError(t, err)
+
+	skuResult, err := skuSvc.UpsertSkus(tenantCtx, productsku.SkuUpsertRequest{
+		SKUs: []productsku.SkuUpsertPayload{
+			{
+				SPUID:       draft.ID,
+				SKUCode:     input.Code + "-SKU",
+				Status:      "online",
+				MinOrderQty: 1,
+				Specs:       []productsku.SkuSpec{{SpecID: "default", SpecName: "Default", ValueID: "default", ValueName: "默认"}},
+			},
+		},
+	})
+	require.NoError(t, err)
+	require.Len(t, skuResult.Summaries, 1)
+	_, err = skuSvc.AdjustInventory(tenantCtx, skuResult.Summaries[0].ID, 1)
 	require.NoError(t, err)
 
 	submitted, err := svc.Submit(tenantCtx, draft.ID, spu.SubmitRequest{Comment: "提交"})

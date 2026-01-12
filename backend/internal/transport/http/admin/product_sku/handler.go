@@ -34,8 +34,15 @@ func classifyError(err error) int {
 	}
 	msg := strings.ToLower(err.Error())
 	switch {
+	case strings.Contains(msg, "forbidden"),
+		strings.Contains(msg, "permission denied"),
+		strings.Contains(msg, "permission"):
+		return http.StatusForbidden
+	case strings.Contains(msg, "conflict"):
+		return http.StatusConflict
 	case strings.Contains(msg, "required"),
 		strings.Contains(msg, "invalid"),
+		strings.Contains(msg, "negative"),
 		strings.Contains(msg, "too many"),
 		strings.Contains(msg, "not found"):
 		return http.StatusBadRequest
@@ -61,6 +68,20 @@ type skuListQuery struct {
 	Locale   string `form:"locale"`
 	Page     int    `form:"page"`
 	PageSize int    `form:"pageSize"`
+}
+
+func (h *Handler) Get(c *gin.Context) {
+	if h.service == nil {
+		respondError(c, errors.New("product SKU service unavailable"))
+		return
+	}
+	locale := strings.TrimSpace(c.Query("locale"))
+	item, err := h.service.GetSku(c.Request.Context(), c.Param("id"), locale)
+	if err != nil {
+		respondError(c, err)
+		return
+	}
+	c.JSON(http.StatusOK, item)
 }
 
 func (h *Handler) List(c *gin.Context) {
