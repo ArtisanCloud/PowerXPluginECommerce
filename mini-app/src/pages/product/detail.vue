@@ -300,7 +300,7 @@
           <view class="flex flex-1 items-center" style="gap: 8px; height: 40px;">
             <view
               class="flex-1 rounded-full border"
-              style="border-color: #386657; background: rgba(56,102,87,0.10);"
+              :style="!isSubscription && !hasAnySellableSku ? 'border-color: #d1d5db; background: rgba(107,114,128,0.08); opacity: 0.6;' : 'border-color: #386657; background: rgba(56,102,87,0.10);'"
               hover-class="opacity-90"
               @tap="onAddToCart"
             >
@@ -310,6 +310,7 @@
             </view>
             <view
               class="flex-1 rounded-full bg-primary"
+              :style="!isSubscription && !hasAnySellableSku ? 'opacity: 0.6;' : ''"
               hover-class="opacity-90"
               @tap="onBuyNow"
             >
@@ -342,6 +343,7 @@ import SkuPickerSheet from "@/components/product/sku-picker-sheet.vue";
 import {
   miniAppGetProduct,
   miniAppGetProductDetailWithSpec,
+  miniAppGetSellability,
   miniAppListSkus,
   miniAppListSubscriptionPlans,
   type MiniAppProductDetail,
@@ -352,6 +354,8 @@ import {
 
 const topInset = ref(40);
 const spuId = ref("");
+const sellabilityChannel = ref(String(uni.getStorageSync("miniapp.channel") || "official").trim() || "official");
+const sellabilityLocale = ref(String(uni.getStorageSync("miniapp.locale") || "zh-CN").trim() || "zh-CN");
 
 const loading = ref(false);
 const errorMsg = ref("");
@@ -401,12 +405,38 @@ const soldText = computed(() => "2k+");
 const stockText = computed(() => {
   if (isSubscription.value) return "—";
   const s = skus.value.find((x) => x.id === selectedSkuId.value);
+  if (typeof s?.availableQty === "number") return String(Math.max(0, s.availableQty));
   if (typeof s?.stockQty === "number") return String(Math.max(0, s.stockQty));
-  const total = skus.value.reduce((acc, x) => acc + (typeof x.stockQty === "number" ? Math.max(0, x.stockQty) : 0), 0);
+  const total = skus.value.reduce((acc, x) => acc + (typeof x.availableQty === "number" ? Math.max(0, x.availableQty) : 0), 0);
   if (total > 0) return String(total);
   return "—";
 });
 const locationText = computed(() => "广东");
+
+function sellabilityReasonToText(code: string) {
+  switch (String(code || "").toUpperCase()) {
+    case "NO_PUBLIC_PRICE":
+      return "暂无价格";
+    case "OUT_OF_STOCK":
+      return "缺货";
+    case "CHANNEL_DISABLED":
+    case "NOT_IN_AVAILABILITY_WINDOW":
+    case "CHANNEL_STATUS_BLOCKED":
+      return "暂不可售";
+    case "SKU_NOT_ONLINE":
+      return "未上架";
+    default:
+      return "暂不可售";
+  }
+}
+
+const selectedSku = computed(() => skus.value.find((x) => x.id === selectedSkuId.value) || null);
+const selectedSkuSellable = computed(() => Boolean(selectedSku.value && selectedSku.value.sellable === true));
+const hasAnySellableSku = computed(() => skus.value.some((s) => s.sellable === true));
+const selectedSkuDisableReason = computed(() => {
+  const code = (selectedSku.value?.sellabilityReasons || [])[0] || "";
+  return sellabilityReasonToText(code);
+});
 
 const gallery = computed(() => {
   const urls = new Set<string>();
@@ -525,6 +555,10 @@ function onAddToCart() {
     uni.showToast({ title: "暂无可选 SKU", icon: "none" });
     return;
   }
+  if (!hasAnySellableSku.value) {
+    uni.showToast({ title: selectedSkuDisableReason.value || "暂不可售", icon: "none" });
+    return;
+  }
   skuSheetOpen.value = true;
 }
 
@@ -535,6 +569,10 @@ function onBuyNow() {
   }
   if (!skus.value.length) {
     uni.showToast({ title: "暂无可选 SKU", icon: "none" });
+    return;
+  }
+  if (!hasAnySellableSku.value) {
+    uni.showToast({ title: selectedSkuDisableReason.value || "暂不可售", icon: "none" });
     return;
   }
   skuSheetOpen.value = true;
@@ -644,7 +682,59 @@ async function loadAll() {
       specGroups.value = [];
     }
 
-    if (!selectedSkuId.value && skus.value.length) selectedSkuId.value = skus.value[0].id;
+    if (skus.value.length) {
+      try {
+        const sellability = await miniAppGetSellability(spuId.value, {
+          channel: sellabilityChannel.value,
+          locale: sellabilityLocale.value,
+        });
+        const items = Array.isArray(sellability?.items) ? sellability.items : [];
+        const bySku = new Map<string, (typeof items)[number]>();
+        items.forEach((it) => {
+          if (!it?.skuId) return;
+          bySku.set(String(it.skuId), it);
+        });
+        skus.value = skus.value.map((s) => {
+          const it = bySku.get(String(s.id));
+          if (!it) {
+            return {
+              ...s,
+              sellable: false,
+              sellabilityReasons: ["UNKNOWN"],
+              availableQty: 0,
+            };
+          }
+          const price = it.price?.amount;
+          const currency = it.price?.currency;
+          return {
+            ...s,
+            sellable: Boolean(it.sellable),
+            sellabilityReasons: Array.isArray(it.reasons) ? it.reasons : [],
+            availableQty: Number.isFinite(it.availableQty) ? Math.max(0, Number(it.availableQty)) : 0,
+            price: typeof price === "number" ? price : s.price,
+            currency: typeof currency === "string" && currency ? currency : s.currency,
+          };
+        });
+      } catch {
+        skus.value = skus.value.map((s) => ({
+          ...s,
+          sellable: false,
+          sellabilityReasons: ["UNKNOWN"],
+          availableQty: typeof s.stockQty === "number" ? Math.max(0, s.stockQty) : 0,
+        }));
+      }
+    }
+
+    if (!selectedSkuId.value && skus.value.length) {
+      const firstSellable = skus.value.find((s) => s.sellable === true);
+      selectedSkuId.value = (firstSellable || skus.value[0]).id;
+    } else if (selectedSkuId.value) {
+      const current = skus.value.find((s) => s.id === selectedSkuId.value);
+      if (current && current.sellable === false) {
+        const firstSellable = skus.value.find((s) => s.sellable === true);
+        if (firstSellable) selectedSkuId.value = firstSellable.id;
+      }
+    }
   } catch (e: any) {
     errorMsg.value = e?.message || "加载失败";
   } finally {

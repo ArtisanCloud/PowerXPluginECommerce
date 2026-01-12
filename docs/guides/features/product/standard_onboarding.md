@@ -86,6 +86,14 @@
 4. 调用 `/api/v1/mini-app/products/{id}/skus`（mini-app 仅返回 `published` SKU）确认返回列表与正式 `product_skus` 一致。
 5. **验证**：四个接口返回的 `status`、`inventoryRef`、`minOrderQty`、`code` 等字段应彼此一致；mini-app 响应字段精简但需包含 `id/code/status/updatedAt`。
 
+### 5.1 上线购买前的“可售性”校验（建议）
+
+为实现“能上线开始做购买”的最短闭环，建议在客户端统一使用后端的“可售性聚合”结果（价格+库存+状态+渠道窗口），而不是在多个页面散落判断：
+
+- **拟新增**：`GET /api/v1/mini-app/products/{spuId}/sellability?channel=xxx&locale=zh-CN`
+- 前端策略二选一：不可售 SKU **隐藏** 或 **置灰禁用下单**（并用 `reasons[]` 做可解释提示）
+- 详见：`docs/guides/features/product/sellability_purchase_mvp.md`
+
 ## 回归测试提示
 
 - **后端集成**：在仓库根运行 `go test ./backend/tests -run TestStandardProductOnboardingFlow`；若已经 `cd backend`，请改用 `go test ./tests -run TestStandardProductOnboardingFlow`。命令流程：

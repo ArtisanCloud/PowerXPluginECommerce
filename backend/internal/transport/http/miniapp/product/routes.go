@@ -30,6 +30,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	group.GET("/tags", handler.ListProductTags)
 	group.GET("/:id", handler.GetProduct)
 	group.GET("/:id/detail", handler.GetProductDetail)
+	group.GET("/:id/sellability", handler.GetSellability)
 	group.GET("/:id/skus", handler.ListSkus)
 	group.GET("/:id/plans", handler.ListSubscriptionPlans)
 

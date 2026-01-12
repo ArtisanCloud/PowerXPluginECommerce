@@ -20,6 +20,11 @@ type miniAppProductListQuery struct {
 	HasPlans *bool    `form:"hasPlans"`
 	Page     int      `form:"page"`
 	PageSize int      `form:"pageSize"`
+	// Sellability controls optional purchase readiness aggregation (per channel).
+	Channel            string `form:"channel"`
+	Locale             string `form:"locale"`
+	IncludeSellability int    `form:"includeSellability"`
+	Sellability        int    `form:"sellability"`
 }
 
 type miniAppProductTagListQuery struct {
@@ -51,18 +56,24 @@ type productTagItem struct {
 }
 
 type miniAppProductSummary struct {
-	ID         string     `json:"id"`
-	Code       string     `json:"code"`
-	Name       string     `json:"name"`
-	Type       string     `json:"type,omitempty"`
-	Status     string     `json:"status,omitempty"`
-	UpdatedAt  *time.Time `json:"updatedAt,omitempty"`
-	CoverURL   string     `json:"coverUrl,omitempty"`
-	MinPrice   *float64   `json:"minPrice,omitempty"`
-	MaxPrice   *float64   `json:"maxPrice,omitempty"`
-	Currency   string     `json:"currency,omitempty"`
-	PriceLabel string     `json:"priceLabel,omitempty"`
-	SKUCount   int        `json:"skuCount,omitempty"`
+	ID          string                     `json:"id"`
+	Code        string                     `json:"code"`
+	Name        string                     `json:"name"`
+	Type        string                     `json:"type,omitempty"`
+	Status      string                     `json:"status,omitempty"`
+	UpdatedAt   *time.Time                 `json:"updatedAt,omitempty"`
+	CoverURL    string                     `json:"coverUrl,omitempty"`
+	MinPrice    *float64                   `json:"minPrice,omitempty"`
+	MaxPrice    *float64                   `json:"maxPrice,omitempty"`
+	Currency    string                     `json:"currency,omitempty"`
+	PriceLabel  string                     `json:"priceLabel,omitempty"`
+	SKUCount    int                        `json:"skuCount,omitempty"`
+	Sellability *miniAppSellabilitySummary `json:"sellability,omitempty"`
+}
+
+type miniAppSellabilitySummary struct {
+	Sellable bool     `json:"sellable"`
+	Reasons  []string `json:"reasons"`
 }
 
 type miniAppProductDetail struct {

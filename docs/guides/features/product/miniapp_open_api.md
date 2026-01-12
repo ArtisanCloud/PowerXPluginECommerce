@@ -222,6 +222,65 @@ curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products/{spuId}/skus?page=1&pag
   -H 'X-Tenant-UUID: 00000000-0000-0000-0000-000000000001'
 ```
 
+## 4.1) 获取可售性聚合结果（价格/库存/渠道可见性）
+
+当你要实现“能开始做购买”的最短闭环时，前端不应在多个页面/组件里重复拼装可售性判断（价格、库存、状态、渠道窗口等）。推荐由后端提供统一的聚合结果：
+
+- `sellable`: 是否允许下单
+- `reasons[]`: 不可售原因码（用于可解释提示）
+- `price`: 命中对外价（用于展示与排序）
+- `availableQty`: 可下单库存（用于禁用下单/缺货提示）
+
+**接口**
+
+- `GET /api/v1/mini-app/products/{spuId}/sellability?channel=xxx&locale=zh-CN`
+
+**查询参数**
+
+| 参数 | 类型 | 是否必填 | 说明 |
+| --- | --- | --- | --- |
+| `channel` | string | 是 | 渠道标识（如 `official` / `reseller` / `miniapp`，以宿主与渠道中心定义为准） |
+| `locale` | string | 否 | 语言（如 `zh-CN`），用于 reasons 文案本地化或价格展示策略（可选） |
+
+**返回示例**
+
+```json
+{
+  "code": 0,
+  "message": "ok",
+  "data": {
+    "spuId": "…",
+    "channel": "official",
+    "items": [
+      {
+        "skuId": "…",
+        "sellable": true,
+        "reasons": [],
+        "price": { "amount": 199, "currency": "CNY" },
+        "availableQty": 12
+      },
+      {
+        "skuId": "…",
+        "sellable": false,
+        "reasons": ["OUT_OF_STOCK", "NO_PUBLIC_PRICE"],
+        "price": null,
+        "availableQty": 0
+      }
+    ]
+  }
+}
+```
+
+**可选：列表接口附带可售性摘要**
+
+当列表页需要“置灰/过滤”时，可使用：
+
+- `GET /api/v1/mini-app/products?includeSellability=1&channel=official`
+
+返回的每条 `items[]` 将包含 `sellability: { sellable, reasons[] }`（摘要 reasons 仅返回 0~1 个主原因码）。
+
+> 详细优先级与原因码建议见：`docs/guides/features/product/sellability_purchase_mvp.md`。
+
 ## 5) 获取订阅计划（Subscription Plans）
 
 **接口**

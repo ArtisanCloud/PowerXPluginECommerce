@@ -13,6 +13,10 @@ export type MiniAppProductSummary = {
   currency?: string;
   priceLabel?: string;
   skuCount?: number;
+  sellability?: {
+    sellable: boolean;
+    reasons: string[];
+  };
 };
 
 export type MiniAppProductListResponse = {
@@ -54,7 +58,7 @@ export type MiniAppSkuSummary = {
   id: string;
   spuId: string;
   code: string;
-  status: string;
+  status?: string;
   barcode?: string;
   createdAt?: string;
   updatedAt?: string;
@@ -64,6 +68,9 @@ export type MiniAppSkuSummary = {
   specSignature?: string;
   spec?: Record<string, string>;
   stockQty?: number;
+  sellable?: boolean;
+  sellabilityReasons?: string[];
+  availableQty?: number;
 };
 
 export type MiniAppSkuListResponse = {
@@ -113,6 +120,9 @@ export type MiniAppProductListParams = {
   maxPrice?: number;
   inStock?: boolean;
   hasPlans?: boolean;
+  channel?: string;
+  locale?: string;
+  includeSellability?: 0 | 1;
   page?: number;
   pageSize?: number;
 };
@@ -155,6 +165,9 @@ export async function miniAppListProducts(params: MiniAppProductListParams = {})
     maxPrice: params.maxPrice,
     inStock: params.inStock,
     hasPlans: params.hasPlans,
+    channel: params.channel,
+    locale: params.locale,
+    includeSellability: params.includeSellability,
     page: params.page ?? 1,
     pageSize: params.pageSize ?? 20,
   });
@@ -195,6 +208,36 @@ export async function miniAppListSkus(spuId: string, page = 1, pageSize = 50) {
   return await miniAppRequest<MiniAppSkuListResponse>({
     method: "GET",
     path: `/products/${encodeURIComponent(String(spuId))}/skus${query}`,
+  });
+}
+
+export type MiniAppSellabilityPrice = {
+  amount: number;
+  currency: string;
+};
+
+export type MiniAppSellabilityItem = {
+  skuId: string;
+  sellable: boolean;
+  reasons: string[];
+  price: MiniAppSellabilityPrice | null;
+  availableQty: number;
+};
+
+export type MiniAppSellabilityResponse = {
+  spuId: string;
+  channel: string;
+  items: MiniAppSellabilityItem[];
+};
+
+export async function miniAppGetSellability(spuId: string, params: { channel: string; locale?: string }) {
+  const query = buildQuery({
+    channel: params.channel,
+    locale: params.locale,
+  });
+  return await miniAppRequest<MiniAppSellabilityResponse>({
+    method: "GET",
+    path: `/products/${encodeURIComponent(String(spuId))}/sellability${query}`,
   });
 }
 
