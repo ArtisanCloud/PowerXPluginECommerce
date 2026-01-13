@@ -6,6 +6,7 @@ import (
 	httpmw "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/middleware"
 	miniappauth "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/miniapp/auth"
 	miniappcategory "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/miniapp/category"
+	miniapporder "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/miniapp/order"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/miniapp/product"
 	"github.com/gin-gonic/gin"
 )
@@ -29,5 +30,6 @@ func RegisterRoutes(rg *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	// Protected (customer token required): 预留给后续订单、收藏等需要用户态的能力。
 	protected := group.Group("")
 	protected.Use(httpmw.CustomerAuthenticate(authenticator))
+	miniapporder.RegisterRoutes(protected, deps)
 	return group
 }

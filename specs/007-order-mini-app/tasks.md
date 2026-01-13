@@ -33,11 +33,11 @@
 
 ### Implementation for User Story 1
 
-- [ ] T011 [P] [US1] 在 sellability 服务中增加“按 SKU 列表评估”的复用入口（输出 price + availableQty + reasons），并让现有按 SPU 的 Evaluate 复用该能力（`backend/internal/services/miniapp/sellability/service.go`，`backend/internal/services/miniapp/sellability/service_test.go`）
-- [ ] T012 [US1] 实现 miniapp 订单创建 Service：校验入参、幂等 claim、调用 sellability 做二次可售校验、校验 `availableQty >= qty`、计算金额快照、写订单/明细/事件、锁库存、保存幂等响应（`backend/internal/services/miniapp/order/service.go`）
-- [ ] T013 [US1] 实现 miniapp 订单查询 Service：列表分页与详情读取，强制 customer_id 过滤（`backend/internal/services/miniapp/order/query.go`）
-- [ ] T014 [P] [US1] 增加 miniapp 订单 handler 与路由（POST/GET list/GET detail），并挂载到 protected 组（`backend/internal/transport/http/miniapp/order/handler.go`，`backend/internal/transport/http/miniapp/order/routes.go`，`backend/internal/transport/http/miniapp/router.go`）
-- [ ] T015 [P] [US1] 增加 service 单测：幂等重复提交、库存不足整单失败无副作用、不可售失败无副作用（`backend/internal/services/miniapp/order/service_test.go`）
+- [x] T011 [P] [US1] 在 sellability 服务中增加“按 SKU 列表评估”的复用入口（输出 price + availableQty + reasons），并让现有按 SPU 的 Evaluate 复用该能力（`backend/internal/services/miniapp/sellability/service.go`，`backend/internal/services/miniapp/sellability/service_test.go`）
+- [x] T012 [US1] 实现 miniapp 订单创建 Service：校验入参、幂等 claim、调用 sellability 做二次可售校验、校验 `availableQty >= qty`、计算金额快照、写订单/明细/事件、锁库存、保存幂等响应（`backend/internal/services/miniapp/order/service.go`）
+- [x] T013 [US1] 实现 miniapp 订单查询 Service：列表分页与详情读取，强制 customer_id 过滤（`backend/internal/services/miniapp/order/query.go`）
+- [x] T014 [P] [US1] 增加 miniapp 订单 handler 与路由（POST/GET list/GET detail），并挂载到 protected 组（`backend/internal/transport/http/miniapp/order/handler.go`，`backend/internal/transport/http/miniapp/order/routes.go`，`backend/internal/transport/http/miniapp/router.go`）
+- [x] T015 [P] [US1] 增加 service 单测：幂等重复提交、库存不足整单失败无副作用、不可售失败无副作用（`backend/internal/services/miniapp/order/service_test.go`）
 
 ---
 

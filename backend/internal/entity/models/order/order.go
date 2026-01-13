@@ -20,7 +20,7 @@ type Order struct {
 	SubtotalAmount  int64          `gorm:"not null;default:0" json:"subtotal_amount"`
 	TotalAmount     int64          `gorm:"not null;default:0" json:"total_amount"`
 	PriceSnapshot   datatypes.JSON `gorm:"type:jsonb" json:"price_snapshot,omitempty"`
-	SellabilitySnap datatypes.JSON `gorm:"type:jsonb" json:"sellability_snapshot,omitempty"`
+	SellabilitySnap datatypes.JSON `gorm:"column:sellability_snapshot;type:jsonb" json:"sellability_snapshot,omitempty"`
 	CreatedByType   string         `gorm:"type:varchar(16);not null;default:'system'" json:"created_by_type"`
 	CreatedBy       string         `gorm:"type:varchar(128)" json:"created_by,omitempty"`
 	CreatedAt       time.Time      `gorm:"autoCreateTime" json:"created_at"`
