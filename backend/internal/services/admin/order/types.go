@@ -35,6 +35,26 @@ type OrderListResponse struct {
 	Total    int64             `json:"total"`
 }
 
+type OrderItemDTO struct {
+	SKUID      string `json:"skuId"`
+	Qty        int64  `json:"qty"`
+	UnitPrice  int64  `json:"unitPrice"`
+	LineAmount int64  `json:"lineAmount"`
+}
+
+type OrderEventDTO struct {
+	EventType    string    `json:"eventType"`
+	OperatorType string    `json:"operatorType"`
+	Operator     string    `json:"operator,omitempty"`
+	CreatedAt    time.Time `json:"createdAt"`
+}
+
+type OrderDetailDTO struct {
+	Summary OrderSummaryDTO `json:"summary"`
+	Items   []OrderItemDTO  `json:"items"`
+	Events  []OrderEventDTO `json:"events"`
+}
+
 type CancelOrderRequest struct {
 	Reason string `json:"reason,omitempty"`
 }

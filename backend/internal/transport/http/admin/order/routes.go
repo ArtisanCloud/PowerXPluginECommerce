@@ -17,6 +17,9 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 		return rg
 	}
 	handler := NewHandler(ordersvc.NewService(deps))
+	rg.GET("", handler.ListOrders)
+	rg.GET("/:id", handler.GetOrder)
 	rg.POST("", handler.CreateOrder)
+	rg.POST("/:id/cancel", handler.CancelOrder)
 	return rg
 }

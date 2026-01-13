@@ -40,6 +40,8 @@ var (
 	ErrIdempotencyInProgress   = errors.New("idempotency request in progress")
 	ErrCustomerRequired        = errors.New("customer id is required")
 	ErrCustomerNotFound        = errors.New("customer not found")
+	ErrOrderNotFound           = errors.New("order not found")
+	ErrOrderNotCancellable     = errors.New("order cannot be cancelled")
 	ErrAdminRequired           = errors.New("admin id is required")
 	ErrChannelRequired         = errors.New("channel is required")
 	ErrItemsRequired           = errors.New("items are required")

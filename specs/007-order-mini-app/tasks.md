@@ -64,11 +64,11 @@
 
 ### Implementation for User Story 3
 
-- [ ] T020 [US3] 实现 admin 订单列表与详情查询接口（GET /admin/orders，GET /admin/orders/{id}），支持分页与基础筛选（`backend/internal/transport/http/admin/order/handler.go`）
-- [ ] T021 [US3] 实现取消订单 Service：仅后台、仅 `pending_payment` 可取消；同事务内更新订单状态、写取消事件、释放库存锁定（`backend/internal/services/admin/order/cancel.go`）
-- [ ] T022 [US3] 实现取消订单接口（POST /admin/orders/{id}/cancel）并将错误语义对齐（`backend/internal/transport/http/admin/order/handler.go`）
-- [ ] T023 [P] [US3] 增加 repository/service 单测：取消状态机约束、库存解锁下限为 0、事件写入（`backend/internal/services/admin/order/cancel_test.go`，`backend/internal/entity/repository/order/order_repository_test.go`）
-- [ ] T024 [P] [US3] web-admin 最小订单管理页：订单列表、订单详情、取消按钮与错误提示（`web-admin/app/pages/orders/index.vue`，`web-admin/app/pages/orders/[id].vue`，`web-admin/app/composables/api/useOrder.ts`）
+- [x] T020 [US3] 实现 admin 订单列表与详情查询接口（GET /admin/orders，GET /admin/orders/{id}），支持分页与基础筛选（`backend/internal/transport/http/admin/order/handler.go`）
+- [x] T021 [US3] 实现取消订单 Service：仅后台、仅 `pending_payment` 可取消；同事务内更新订单状态、写取消事件、释放库存锁定（`backend/internal/services/admin/order/cancel.go`）
+- [x] T022 [US3] 实现取消订单接口（POST /admin/orders/{id}/cancel）并将错误语义对齐（`backend/internal/transport/http/admin/order/handler.go`）
+- [x] T023 [P] [US3] 增加 repository/service 单测：取消状态机约束、库存解锁下限为 0、事件写入（`backend/internal/services/admin/order/cancel_test.go`，`backend/internal/entity/repository/order/order_repository_test.go`）
+- [x] T024 [P] [US3] web-admin 最小订单管理页：订单列表、订单详情、取消按钮与错误提示（`web-admin/app/pages/orders/index.vue`，`web-admin/app/pages/orders/[id].vue`，`web-admin/app/composables/api/useOrder.ts`）
 
 ---
 

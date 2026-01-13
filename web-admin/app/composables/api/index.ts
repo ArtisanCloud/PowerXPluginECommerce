@@ -6,6 +6,7 @@ export * from "./useCategory";
 export * from "./useCategoryTemplate";
 export * from "./useCategoryMapping";
 export * from "./useCustomer";
+export * from "./useOrder";
 export * from "./usePricebook";
 export * from "./useProductSpec";
 export {

@@ -30,7 +30,8 @@ func httpStatusForOrderError(err error) (status int, code string) {
 		return http.StatusServiceUnavailable, contracts.ErrCodeInternalError
 	case errors.Is(err, ordersvc.ErrAdminRequired):
 		return http.StatusUnauthorized, contracts.ErrCodeUnauthorized
-	case errors.Is(err, ordersvc.ErrCustomerNotFound):
+	case errors.Is(err, ordersvc.ErrOrderNotFound),
+		errors.Is(err, ordersvc.ErrCustomerNotFound):
 		return http.StatusNotFound, contracts.ErrCodeNotFound
 	case errors.Is(err, ordersvc.ErrIdempotencyKeyRequired),
 		errors.Is(err, ordersvc.ErrCustomerRequired),
@@ -41,6 +42,7 @@ func httpStatusForOrderError(err error) (status int, code string) {
 		return http.StatusBadRequest, contracts.ErrCodeInvalidRequest
 	case errors.Is(err, ordersvc.ErrIdempotencyConflict),
 		errors.Is(err, ordersvc.ErrIdempotencyInProgress),
+		errors.Is(err, ordersvc.ErrOrderNotCancellable),
 		errors.Is(err, ordersvc.ErrOutOfStock),
 		errors.Is(err, ordersvc.ErrSellabilityFailed):
 		return http.StatusConflict, contracts.ErrCodeConflict
