@@ -49,10 +49,10 @@
 
 ### Implementation for User Story 2
 
-- [ ] T016 [US2] 实现 admin 代客下单 Service：复用通用创建逻辑，但以 customerId 为目标客户，记录 created_by 为 admin（`backend/internal/services/admin/order/service.go`）
-- [ ] T017 [P] [US2] 增加 admin 订单 handler 与路由（POST /admin/orders），并注册到 admin API（`backend/internal/transport/http/admin/order/handler.go`，`backend/internal/transport/http/admin/order/routes.go`，`backend/internal/transport/http/admin/routes.go`）
-- [ ] T018 [P] [US2] 补齐 route-level RBAC 映射（create/read/cancel）并更新默认 RBAC 资源列表（`backend/internal/transport/http/admin/order/rbac.go`，`backend/internal/transport/http/admin/rbac_loader.go`）
-- [ ] T019 [P] [US2] 增加 service 单测：幂等、库存不足、不可售、customer 不存在（`backend/internal/services/admin/order/service_test.go`）
+- [x] T016 [US2] 实现 admin 代客下单 Service：复用通用创建逻辑，但以 customerId 为目标客户，记录 created_by 为 admin（`backend/internal/services/admin/order/service.go`）
+- [x] T017 [P] [US2] 增加 admin 订单 handler 与路由（POST /admin/orders），并注册到 admin API（`backend/internal/transport/http/admin/order/handler.go`，`backend/internal/transport/http/admin/order/routes.go`，`backend/internal/transport/http/admin/routes.go`）
+- [x] T018 [P] [US2] 补齐 route-level RBAC 映射（create/read/cancel）并更新默认 RBAC 资源列表（`backend/internal/transport/http/admin/order/rbac.go`，`backend/internal/transport/http/admin/rbac_loader.go`）
+- [x] T019 [P] [US2] 增加 service 单测：幂等、库存不足、不可售、customer 不存在（`backend/internal/services/admin/order/service_test.go`）
 
 ---
 
