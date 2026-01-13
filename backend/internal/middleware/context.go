@@ -45,6 +45,7 @@ type customerContextKey struct{}
 
 var ctxKeyTenantUUID = tenantUUIDContextKey{}
 var ctxKeyCustomerCtx = customerContextKey{}
+var ctxKeyRequestID = struct{}{}
 
 var ErrTenantMissing = errors.New("tenant context missing")
 
@@ -205,6 +206,33 @@ func RequireTenantUUID(ctx context.Context) (string, error) {
 		return tenantUUID, nil
 	}
 	return "", ErrTenantMissing
+}
+
+// ContextWithRequestID stores request id into a standard context.
+func ContextWithRequestID(ctx context.Context, requestID string) context.Context {
+	if ctx == nil || strings.TrimSpace(requestID) == "" {
+		return ctx
+	}
+	return context.WithValue(ctx, ctxKeyRequestID, strings.TrimSpace(requestID))
+}
+
+// RequestIDFromContext extracts request id from a standard context.
+func RequestIDFromContext(ctx context.Context) (string, bool) {
+	if ctx == nil {
+		return "", false
+	}
+	if v := ctx.Value(ctxKeyRequestID); v != nil {
+		if s, ok := v.(string); ok && strings.TrimSpace(s) != "" {
+			return strings.TrimSpace(s), true
+		}
+	}
+	// Backward compatibility with gin key usage.
+	if v := ctx.Value("request_id"); v != nil {
+		if s, ok := v.(string); ok && strings.TrimSpace(s) != "" {
+			return strings.TrimSpace(s), true
+		}
+	}
+	return "", false
 }
 
 // CustomerFromContext returns customer context if exists.

@@ -14,10 +14,7 @@ func respondAdminOrderError(c *gin.Context, err error) {
 		return
 	}
 	status, code := httpStatusForOrderError(err)
-	msg := "unknown error"
-	if err != nil {
-		msg = err.Error()
-	}
+	msg := messageForOrderError(err)
 	contracts.ResponseError(c, status, code, msg)
 }
 
@@ -48,5 +45,45 @@ func httpStatusForOrderError(err error) (status int, code string) {
 		return http.StatusConflict, contracts.ErrCodeConflict
 	default:
 		return http.StatusInternalServerError, contracts.ErrCodeInternalError
+	}
+}
+
+func messageForOrderError(err error) string {
+	if err == nil {
+		return ""
+	}
+	switch {
+	case errors.Is(err, ordersvc.ErrOrderServiceUnavailable):
+		return "订单服务不可用"
+	case errors.Is(err, ordersvc.ErrAdminRequired):
+		return "未授权"
+	case errors.Is(err, ordersvc.ErrOrderNotFound):
+		return "订单不存在"
+	case errors.Is(err, ordersvc.ErrCustomerNotFound):
+		return "客户不存在"
+	case errors.Is(err, ordersvc.ErrIdempotencyKeyRequired):
+		return "缺少幂等键（Idempotency-Key）"
+	case errors.Is(err, ordersvc.ErrIdempotencyConflict):
+		return "幂等键冲突：请求参数与历史不一致"
+	case errors.Is(err, ordersvc.ErrIdempotencyInProgress):
+		return "请求处理中，请稍后重试"
+	case errors.Is(err, ordersvc.ErrCustomerRequired):
+		return "customerId 必填"
+	case errors.Is(err, ordersvc.ErrChannelRequired):
+		return "channel 必填"
+	case errors.Is(err, ordersvc.ErrItemsRequired):
+		return "items 不能为空"
+	case errors.Is(err, ordersvc.ErrInvalidQty):
+		return "购买数量必须大于 0"
+	case errors.Is(err, ordersvc.ErrDuplicateSKU):
+		return "同一订单中 SKU 不可重复"
+	case errors.Is(err, ordersvc.ErrSellabilityFailed):
+		return "商品不可售"
+	case errors.Is(err, ordersvc.ErrOutOfStock):
+		return "库存不足"
+	case errors.Is(err, ordersvc.ErrOrderNotCancellable):
+		return "当前订单状态不允许取消"
+	default:
+		return err.Error()
 	}
 }

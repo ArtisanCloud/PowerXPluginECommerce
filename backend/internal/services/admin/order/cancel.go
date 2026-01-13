@@ -72,7 +72,8 @@ func (s *Service) CancelOrder(ctx context.Context, tenantUUID, adminID, orderID,
 		}
 
 		eventPayload, _ := json.Marshal(map[string]any{
-			"reason": reason,
+			"requestId": requestIDFromContext(ctx),
+			"reason":    reason,
 		})
 		event := &ordermodel.OrderEvent{
 			ID:           uuid.NewString(),

@@ -74,9 +74,9 @@
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [ ] T025 [P] 统一错误码与可解释错误消息（参数错误/不可售/库存不足/幂等冲突/禁止取消/权限不足），并确保前端可直接展示（`backend/internal/services/**/order/*.go`，`backend/internal/transport/http/**/order/*.go`）
-- [ ] T026 [P] 结构化日志与审计字段补齐（包含 request_id/tenant_uuid/operator），确保问题可追踪（`backend/internal/entity/models/order/order_event.go`，`backend/internal/services/**/order/*.go`）
-- [ ] T027 运行 quickstart 验证清单并更新“已执行记录”（`specs/007-order-mini-app/quickstart.md`）
+- [x] T025 [P] 统一错误码与可解释错误消息（参数错误/不可售/库存不足/幂等冲突/禁止取消/权限不足），并确保前端可直接展示（`backend/internal/services/**/order/*.go`，`backend/internal/transport/http/**/order/*.go`）
+- [x] T026 [P] 结构化日志与审计字段补齐（包含 request_id/tenant_uuid/operator），确保问题可追踪（`backend/internal/entity/models/order/order_event.go`，`backend/internal/services/**/order/*.go`）
+- [x] T027 运行 quickstart 验证清单并更新“已执行记录”（`specs/007-order-mini-app/quickstart.md`）
 
 ---
 

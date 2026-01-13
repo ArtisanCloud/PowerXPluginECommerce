@@ -44,7 +44,8 @@ func (h *Handler) CreateOrder(c *gin.Context) {
 	adminID := strconv.FormatInt(tc.UserID, 10)
 
 	idemKey := strings.TrimSpace(c.GetHeader("Idempotency-Key"))
-	resp, err := h.service.CreateOrder(c.Request.Context(), tenantUUID, adminID, idemKey, req)
+	ctx := authx.ContextWithRequestID(c.Request.Context(), requestIDFromRequest(c))
+	resp, err := h.service.CreateOrder(ctx, tenantUUID, adminID, idemKey, req)
 	if err != nil {
 		respondAdminOrderError(c, err)
 		return
@@ -61,12 +62,13 @@ func (h *Handler) ListOrders(c *gin.Context) {
 	if _, ok := requireAdminUser(c); !ok {
 		return
 	}
+	ctx := authx.ContextWithRequestID(c.Request.Context(), requestIDFromRequest(c))
 	page, _ := strconv.Atoi(strings.TrimSpace(c.Query("page")))
 	pageSize, _ := strconv.Atoi(strings.TrimSpace(c.Query("pageSize")))
 	status := strings.TrimSpace(c.Query("status"))
 	customerID := strings.TrimSpace(c.Query("customerId"))
 
-	resp, err := h.service.ListOrders(c.Request.Context(), tenantUUID, orderrepo.OrderListFilter{
+	resp, err := h.service.ListOrders(ctx, tenantUUID, orderrepo.OrderListFilter{
 		CustomerID: customerID,
 		Status:     status,
 	}, page, pageSize)
@@ -86,8 +88,9 @@ func (h *Handler) GetOrder(c *gin.Context) {
 	if _, ok := requireAdminUser(c); !ok {
 		return
 	}
+	ctx := authx.ContextWithRequestID(c.Request.Context(), requestIDFromRequest(c))
 	orderID := strings.TrimSpace(c.Param("id"))
-	resp, err := h.service.GetOrderDetail(c.Request.Context(), tenantUUID, orderID)
+	resp, err := h.service.GetOrderDetail(ctx, tenantUUID, orderID)
 	if err != nil {
 		respondAdminOrderError(c, err)
 		return
@@ -113,7 +116,8 @@ func (h *Handler) CancelOrder(c *gin.Context) {
 		return
 	}
 
-	resp, err := h.service.CancelOrder(c.Request.Context(), tenantUUID, adminID, orderID, req.Reason)
+	ctx := authx.ContextWithRequestID(c.Request.Context(), requestIDFromRequest(c))
+	resp, err := h.service.CancelOrder(ctx, tenantUUID, adminID, orderID, req.Reason)
 	if err != nil {
 		respondAdminOrderError(c, err)
 		return
@@ -128,4 +132,17 @@ func requireAdminUser(c *gin.Context) (string, bool) {
 		return "", false
 	}
 	return strconv.FormatInt(tc.UserID, 10), true
+}
+
+func requestIDFromRequest(c *gin.Context) string {
+	if c == nil {
+		return ""
+	}
+	if v := strings.TrimSpace(c.GetHeader("X-Request-ID")); v != "" {
+		return v
+	}
+	if v := strings.TrimSpace(c.GetHeader("Request-ID")); v != "" {
+		return v
+	}
+	return ""
 }

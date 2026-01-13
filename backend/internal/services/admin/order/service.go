@@ -320,6 +320,7 @@ func (s *Service) createOrderWithIdempotencyTx(
 		}
 
 		eventPayload, _ := json.Marshal(map[string]any{
+			"requestId":      requestIDFromContext(ctx),
 			"idempotencyKey": idempotencyKey,
 			"channel":        req.Channel,
 			"customerId":     req.CustomerID,
@@ -362,6 +363,13 @@ func (s *Service) createOrderWithIdempotencyTx(
 		return nil, err
 	}
 	return summary, nil
+}
+
+func requestIDFromContext(ctx context.Context) string {
+	if v, ok := authx.RequestIDFromContext(ctx); ok {
+		return v
+	}
+	return ""
 }
 
 func hashCreatePayload(req CreateOrderRequest) (string, error) {

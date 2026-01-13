@@ -61,3 +61,8 @@
 
 - 后端：`cd backend && GOCACHE=$PWD/.gocache GOMODCACHE=$PWD/.gomodcache go test ./...`
 - 后端 lint：`cd backend && GOLANGCI_LINT_CACHE=$PWD/.cache/golangci-lint ./bin/golangci-lint run --timeout 5m`
+
+### 已执行记录
+
+- 2026-01-13：`cd backend && go test ./...`
+- 2026-01-13：`cd web-admin && npm run test:ci`

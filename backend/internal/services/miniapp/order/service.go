@@ -17,6 +17,7 @@ import (
 	idrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/integration"
 	orderrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/order"
 	skurepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/product_sku"
+	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	sellabilitysvc "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/miniapp/sellability"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/google/uuid"
@@ -283,6 +284,7 @@ func (s *Service) createOrderWithIdempotencyTx(
 		}
 
 		eventPayload, _ := json.Marshal(map[string]any{
+			"requestId":      requestIDFromContext(ctx),
 			"idempotencyKey": idempotencyKey,
 			"channel":        req.Channel,
 		})
@@ -344,4 +346,11 @@ func generateOrderNo(now time.Time) string {
 	t := now.UTC().Format("20060102150405")
 	suffix := strings.ToUpper(strings.ReplaceAll(uuid.NewString(), "-", ""))[:8]
 	return fmt.Sprintf("O%s%s", t, suffix)
+}
+
+func requestIDFromContext(ctx context.Context) string {
+	if v, ok := authx.RequestIDFromContext(ctx); ok {
+		return v
+	}
+	return ""
 }
