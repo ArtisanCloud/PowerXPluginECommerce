@@ -28,6 +28,8 @@ func setupOrderRepoTestDB(t *testing.T) *gorm.DB {
 		currency TEXT NOT NULL,
 		subtotal_amount BIGINT NOT NULL DEFAULT 0,
 		total_amount BIGINT NOT NULL DEFAULT 0,
+		shipping_address_id TEXT,
+		shipping_address_snapshot TEXT,
 		price_snapshot TEXT,
 		sellability_snapshot TEXT,
 		created_by_type TEXT,

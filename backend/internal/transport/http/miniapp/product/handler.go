@@ -677,6 +677,135 @@ func (h *Handler) ListSkus(c *gin.Context) {
 	contracts.ResponseSuccess(c, resp)
 }
 
+// BatchSkus returns lightweight SKU info for cart enrichment (image/price/title).
+// Endpoint: POST /api/v1/mini-app/skus/batch (open, tenant scoped).
+func (h *Handler) BatchSkus(c *gin.Context) {
+	if h == nil || h.db == nil {
+		respondMiniAppError(c, http.StatusServiceUnavailable, errors.New("sku service unavailable"))
+		return
+	}
+	var req skuBatchRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		respondMiniAppError(c, http.StatusBadRequest, err)
+		return
+	}
+	raw := req.SKUIDs
+	if len(raw) == 0 {
+		contracts.ResponseSuccess(c, skuBatchResponse{Items: []miniAppSkuBatchItem{}})
+		return
+	}
+	if len(raw) > 100 {
+		respondMiniAppError(c, http.StatusBadRequest, errors.New("too many skuIds (max 100)"))
+		return
+	}
+
+	seen := make(map[string]struct{}, len(raw))
+	ids := make([]string, 0, len(raw))
+	for _, v := range raw {
+		id := strings.TrimSpace(v)
+		if id == "" {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		ids = append(ids, id)
+	}
+	if len(ids) == 0 {
+		contracts.ResponseSuccess(c, skuBatchResponse{Items: []miniAppSkuBatchItem{}})
+		return
+	}
+
+	tenantUUID, _ := middleware.TenantUUIDFromContext(c)
+	tx, done := h.beginTenantTx(c.Request.Context(), tenantUUID)
+	if tx == nil {
+		respondMiniAppError(c, http.StatusInternalServerError, errors.New("db unavailable"))
+		return
+	}
+	defer done()
+
+	type skuRow struct {
+		ID     string `gorm:"column:id"`
+		SPUID  string `gorm:"column:spu_id"`
+		Code   string `gorm:"column:sku_code"`
+		Status string `gorm:"column:status"`
+	}
+	var rows []skuRow
+	if err := tx.Table(productskumodel.ProductSKU{}.TableName()).
+		Select("id, spu_id, sku_code, status").
+		Where("tenant_uuid = ? AND deleted_at IS NULL AND id IN ?", tenantUUID, ids).
+		Find(&rows).Error; err != nil {
+		respondMiniAppError(c, http.StatusInternalServerError, err)
+		return
+	}
+	if len(rows) == 0 {
+		contracts.ResponseSuccess(c, skuBatchResponse{Items: []miniAppSkuBatchItem{}})
+		return
+	}
+
+	spuIDs := make([]string, 0, len(rows))
+	spuSeen := make(map[string]struct{}, len(rows))
+	for _, r := range rows {
+		id := strings.TrimSpace(r.SPUID)
+		if id == "" {
+			continue
+		}
+		if _, ok := spuSeen[id]; ok {
+			continue
+		}
+		spuSeen[id] = struct{}{}
+		spuIDs = append(spuIDs, id)
+	}
+
+	spuNameByID := map[string]string{}
+	if len(spuIDs) > 0 {
+		type spuRow struct {
+			ID   string `gorm:"column:id"`
+			Name string `gorm:"column:name"`
+		}
+		var spus []spuRow
+		if err := tx.Table(productmodel.SPU{}.TableName()).
+			Select("id, name").
+			Where("tenant_uuid = ? AND deleted_at IS NULL AND id IN ?", tenantUUID, spuIDs).
+			Find(&spus).Error; err == nil {
+			for _, s := range spus {
+				spuNameByID[strings.TrimSpace(s.ID)] = strings.TrimSpace(s.Name)
+			}
+		}
+	}
+
+	mediaBySKU := h.loadSkuCoverURLsTx(tx, tenantUUID, ids)
+	priceBySKU := h.loadSkuPricesTx(tx, tenantUUID, ids)
+
+	byID := make(map[string]miniAppSkuBatchItem, len(rows))
+	for _, r := range rows {
+		id := strings.TrimSpace(r.ID)
+		if id == "" {
+			continue
+		}
+		p := priceBySKU[id]
+		byID[id] = miniAppSkuBatchItem{
+			ID:       id,
+			SPUID:    strings.TrimSpace(r.SPUID),
+			Code:     strings.TrimSpace(r.Code),
+			SPUName:  spuNameByID[strings.TrimSpace(r.SPUID)],
+			ImageURL: strings.TrimSpace(mediaBySKU[id]),
+			Price:    p.Price,
+			Currency: strings.TrimSpace(p.Currency),
+			Status:   strings.TrimSpace(r.Status),
+		}
+	}
+
+	out := make([]miniAppSkuBatchItem, 0, len(ids))
+	for _, id := range ids {
+		if it, ok := byID[id]; ok {
+			out = append(out, it)
+		}
+	}
+	contracts.ResponseSuccess(c, skuBatchResponse{Items: out})
+}
+
 // ListSubscriptionPlans returns active subscription plans for a subscription SPU.
 func (h *Handler) ListSubscriptionPlans(c *gin.Context) {
 	if h == nil || h.planSvc == nil {

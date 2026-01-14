@@ -24,6 +24,17 @@
 - 对应 SKU 的 `locked_qty` 增加
 - 使用同一 `Idempotency-Key` 重试，返回同一订单结果且 `locked_qty` 不再重复增加
 
+## 3.5) 小程序购物车同步（混合模式，本期新增）
+
+- `GET /api/v1/mini-app/cart`
+- `POST /api/v1/mini-app/cart/sync`
+  - body：`{"items":[{"skuId":"<sku-uuid>","qty":2}],"strategy":"max"}`
+
+预期：
+- 未登录调用返回 401；登录后可读写
+- sync 返回合并后的 `items` 与 `updatedAt`
+- 购物车不锁库存（不会改动 `locked_qty`）
+
 ## 4) 小程序查询订单
 
 - `GET /api/v1/mini-app/orders`

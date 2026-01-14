@@ -80,6 +80,39 @@
 
 ---
 
+## Phase 7: User Story 0 - 小程序购物车（混合模式）(Priority: P1)
+
+**Goal**: 小程序提供购物车（本地 + 服务端同步），支持多端合并；购物车不锁库存，结算仍走订单创建的二次校验与锁库存。
+
+**Independent Test**: 登录后调用 `GET /api/v1/mini-app/cart` 与 `POST /api/v1/mini-app/cart/sync`，验证合并策略生效且不影响库存；从小程序购物车发起下单成功后清空购物车。
+
+- [x] T028 [US0] 新增 cart 表常量/模型/仓储，并加入迁移与 RLS（`backend/internal/entity/models/model.go`，`backend/internal/entity/models/cart/cart.go`，`backend/internal/entity/repository/cart/cart_repository.go`，`backend/cmd/database/migrate/migrations/008_cart.go`，`backend/cmd/database/migrate/migrate.go`，`backend/cmd/database/migrate/rls_order.go`）
+- [x] T029 [US0] 实现 miniapp cart service（Get/Sync，默认 max 合并）（`backend/internal/services/miniapp/cart/service.go`，`backend/internal/services/miniapp/cart/types.go`）
+- [x] T030 [US0] 增加 miniapp cart handler 与路由（GET /cart，POST /cart/sync），挂载到 protected 组（`backend/internal/transport/http/miniapp/cart/handler.go`，`backend/internal/transport/http/miniapp/cart/routes.go`，`backend/internal/transport/http/miniapp/router.go`）
+- [x] T031 [US0] 更新 OpenAPI 合同（cart endpoints + schemas）（`specs/007-order-mini-app/contracts/order-checkout.openapi.yaml`）
+- [x] T032 [US0] mini-app：实现本地购物车 + 同步（混合模式）并替换占位提示（`mini-app/src/pages/cart/index.vue`，`mini-app/src/pages/product/detail.vue`，`mini-app/src/pages/mall/index.vue`，`mini-app/src/services/cart.ts`，`mini-app/src/services/miniapp-cart.ts`）
+- [x] T033 [US0] mini-app：从购物车发起下单（复用现有订单创建 API）并下单后清空购物车（`mini-app/src/services/miniapp-order.ts`，`mini-app/src/pages/cart/index.vue`）
+
+---
+
+## Phase 8: User Story 4 - 收货地址（地址簿 + 订单地址快照）(Priority: P1)
+
+**Goal**: 小程序与后台均可维护客户收货地址簿（多地址 + 默认地址）；创建订单时必须带收货地址并在订单中保存地址快照；订单详情返回快照以供展示与追溯。
+
+**Independent Test**:
+1) 小程序创建 2 条地址并设置默认；2) 下单时传 `shippingAddressId` 创建订单，订单详情返回 `shippingAddressSnapshot`；3) 修改/删除原地址不影响历史订单快照；4) 后台可为指定客户维护地址并代客下单。
+
+### Implementation for User Story 4
+
+- [x] T034 [P] [US4] 新增 customer_addresses 表常量/模型/仓储，并加入迁移与 RLS（`backend/internal/entity/models/model.go`，`backend/internal/entity/models/customer/customer_address.go`，`backend/internal/entity/repository/customer/customer_address_repository.go`，`backend/cmd/database/migrate/migrations/009_customer_addresses.go`，`backend/cmd/database/migrate/migrate.go`）
+- [x] T035 [US4] 订单模型增加收货地址字段（`shipping_address_id` + `shipping_address_snapshot`），并在创建订单 Service 中写入快照（miniapp/admin 两端复用）（`backend/internal/entity/models/order/order.go`，`backend/internal/services/miniapp/order/service.go`，`backend/internal/services/admin/order/service.go`）
+- [x] T036 [P] [US4] 小程序地址簿 Service + Handler：CRUD + 设置默认（`backend/internal/services/miniapp/customer_address/*`，`backend/internal/transport/http/miniapp/customer_address/*`，`backend/internal/transport/http/miniapp/router.go`）
+- [x] T037 [P] [US4] 后台地址簿 Service + Handler：按 customerId CRUD + 设置默认（`backend/internal/services/admin/customer_address/*`，`backend/internal/transport/http/admin/customer_address/*`）
+- [x] T038 [US4] 更新 OpenAPI 合同：新增地址簿 endpoints + 订单创建/详情包含收货地址字段（`specs/007-order-mini-app/contracts/order-checkout.openapi.yaml`）
+- [x] T039 [P] [US4] 增加单测：默认地址唯一性、RLS/tenant 约束、订单快照不可变（`backend/internal/entity/repository/customer/customer_address_repository_test.go`，`backend/internal/services/**/customer_address/*_test.go`，`backend/internal/services/**/order/*_test.go`）
+- [x] T040 [US4] mini-app：地址管理页 + 下单选择地址（仅 UI + API 串联，履约/运费后续）（`mini-app/src/pages/address/index.vue`，`mini-app/src/pages/order/confirm.vue`，`mini-app/src/services/miniapp-address.ts`）
+- [x] T041 [US4] web-admin：客户详情抽屉增加“收货地址”Tab（CRUD + 设默认）（`web-admin/app/components/customer/CustomerDetailDrawer.vue`，`web-admin/app/components/customer/CustomerAddressBookPanel.vue`，`web-admin/app/composables/api/services/customerAddressService.ts`）
+
 ## Dependencies & Execution Order
 
 - Phase 1（T001-T003）→ Phase 2（T004-T010）为所有 User Story 的阻塞前置

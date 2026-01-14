@@ -213,6 +213,7 @@ import { onShow } from "@dcloudio/uni-app";
 import { miniAppGetCategoryTreeItems, type MiniAppCategoryNode } from "@/services/miniapp-category";
 import { miniAppListProducts, miniAppListProductTags, type MiniAppProductTagItem } from "@/services/miniapp-product";
 import { syncTabBarSelected } from "@/utils/tabbar";
+import { pickPlaceholderImage } from "@/utils/product-images";
 
 	type Chip = { key: string; label: string };
 	type Sidebar = { key: string; label: string; icon: string; pathPrefix?: string; id?: string };
@@ -286,13 +287,6 @@ function sellabilityReasonToText(code: string) {
   }
 }
 
-const placeholderImages = [
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuCg6FsSWqWzgBZu6SO_586WS1dZZSLI_4FZg3AkMAKVJBgwQ1TP64nNujeYl2F1Cy90DXslNyCZ3luU22WAp7EqKZcNRwDUcXyekZ1SJNfXz-Ng326aaor1EkIa8HQ2NKnTIRtiKSk9TyqYy3QxFGiGxXGV9cAzNv28dpANZW3OciBxNEUHYUDWQcsHHtiV9SYBMiSywXyQKu9vZXIAN50f7HHDglzRaVYMhva6Z6z6nu3pJJZXqkgqbUXCT5ioqcj1mt58pkTc-RLD",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuBiNZa5UJR3RHZr_Vv8Re2D4zWPjBB4XtBV3lAj2ONg6WWhTwRbRLNQyd-xk2kpqkSOyqtRKbcNTKWCMrTocj_4IP_VvgkD1xThCVs9A9ppYiNT2HXG60wMqEbWRtKz9FGMu7VRB4GWy4A9orsa-b0163c_R6bUxiiybfMM2Lop90aSwU0d3eePRmoYR_XBOop54DRn1EBnHbB5I6ZaEM5h0XYcOEfecyhsQI8BfIWiBwzTZSvXvnMzVN1JtV90Ohi9BClg3UQH4YPI",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuBYw5AQ01Azh1QEqbFKaklXCWDwMoIdv8HElP-whtGag--GXku6J3a6JO2sDY4dh3dKDgVUTjFnsD7J69s0WftgLV3ylA7zvRe9n3IbHcFtzQ1KmYxuriZZwLk-Z31iJxQUGnzPoOzoBXK-t-Hkf8AR8Ttzb0rWNPt7M32Dk93AGBLtI8XieV27ASYobj8qQgTzGW3LnEiyoZHjDr3pmrap_dFPgHoGDIZ8WC7KnIkvGeZJ9wAaHyYzXbLcRjxIvM58pdfeAr8sImA_",
-  "https://lh3.googleusercontent.com/aida-public/AB6AXuC0NG4gIgXiKUK5XTBGTd0dX15JofDOGcpTEAqoNpcUMWX8CSRoeObkzmbjrOJF-dNM3EVyb7i-nHoGZ8PSek3sW2Mujt4SgWcgMh4DLUFDaC6yScZqkT-NL1mQIcjy4sepye-i2LLgcBwONBqN-AkhM9K7B06-Q8nrnYYNyquZuUQkY6N8QcoFva-J0bBvsFy3LDc_kcS9cIxOIHGFor1-nzYlJ_ukDYnRBzEjXCQ3v8sXuvRdGaZYy_-wBVtTn1pXEsA9JoTuexlE",
-];
-
 function ensureTopInset() {
   try {
     const wxAny = (globalThis as any).wx;
@@ -308,13 +302,6 @@ function ensureTopInset() {
   } catch {
     topInset.value = 44;
   }
-}
-
-function pickPlaceholderImage(id: string) {
-  const s = String(id || "");
-  let sum = 0;
-  for (let i = 0; i < s.length; i++) sum = (sum + s.charCodeAt(i)) % 997;
-  return placeholderImages[sum % placeholderImages.length];
 }
 
 function chipLabelForTag(tag: string) {
@@ -524,8 +511,8 @@ function addToCart(p: Product) {
     uni.showToast({ title: p.disabledReason || "暂不可售", icon: "none" });
     return;
   }
-  uni.showToast({ title: "购物车能力待接入", icon: "none" });
-  void p;
+  uni.showToast({ title: "请进入商品详情选择规格加入购物车", icon: "none" });
+  openProduct(p);
 }
 
 function onReachBottom() {

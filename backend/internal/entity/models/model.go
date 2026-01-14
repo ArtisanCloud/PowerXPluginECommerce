@@ -120,8 +120,14 @@ const (
 	TablePricebookItems     = "pricebook_items"
 	TablePricebookAuditLogs = "pricebook_audit_logs"
 
+	// Customer Address Book (Checkout MVP)
+	TableCustomerAddresses = "customer_addresses"
+
 	// Order (Checkout MVP)
 	TableOrders      = "orders"
 	TableOrderItems  = "order_items"
 	TableOrderEvents = "order_events"
+
+	// Cart (Checkout MVP)
+	TableCarts = "carts"
 )

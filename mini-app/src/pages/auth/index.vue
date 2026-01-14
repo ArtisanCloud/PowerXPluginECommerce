@@ -62,7 +62,7 @@
         </view>
       </view>
 
-      <view class="flex flex-col gap-5">
+	      <view class="flex flex-col gap-5">
         <view v-if="activeTab === 'signup'" class="flex flex-col gap-2">
           <text class="text-sm font-semibold">{{ t("auth.name") }}</text>
           <input
@@ -72,20 +72,15 @@
           />
         </view>
 
-        <view class="flex flex-col gap-2">
-          <text class="text-sm font-semibold">{{ t("auth.phone") }}</text>
-          <view class="flex gap-3">
-            <view class="w-24 rounded-xl border border-line-5 bg-white px-3 py-4 text-base font-medium">
-              <text>{{ form.countryCode }}</text>
-            </view>
-            <input
-              v-model="form.phone"
-              class="h-14 flex-1 rounded-xl border border-line-5 bg-white px-4 text-base"
-              :placeholder="t('auth.phonePlaceholder')"
-              type="number"
-            />
-          </view>
-        </view>
+	        <view class="flex flex-col gap-2">
+	          <text class="text-sm font-semibold">{{ t("auth.phone") }}</text>
+	          <input
+	            v-model="form.phone"
+	            class="h-14 w-full rounded-xl border border-line-5 bg-white px-4 text-base"
+	            :placeholder="t('auth.phonePlaceholder')"
+	            type="number"
+	          />
+	        </view>
 
 	        <view class="flex flex-col gap-2">
 	          <text class="text-sm font-semibold">{{ t("auth.password") }}</text>
@@ -97,13 +92,17 @@
 	          />
 	        </view>
 
-	        <view class="mt-1 flex items-start gap-3" @tap="toggleAgree">
-	          <view
-	            class="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-line-5 bg-white"
-	            :class="form.agree ? 'bg-primary border-primary' : ''"
-	          >
-	            <text v-if="form.agree" class="font-black" style="color:#fff;font-size:14px;line-height:1;">√</text>
-	          </view>
+		        <view class="mt-1 flex items-start gap-3" @tap="toggleAgree">
+		          <view
+		            class="flex h-5 w-5 shrink-0 items-center justify-center rounded-md border border-line-5 bg-white"
+		            :style="form.agree ? 'background:#4F8A7E;border-color:#4F8A7E;' : ''"
+		          >
+		            <view
+		              v-if="form.agree"
+		              class="checkmark"
+			              style="width: 10px; height: 6px; border-left: 2px solid #fff; border-bottom: 2px solid #fff; transform: rotate(-45deg); margin-top: -1px;"
+			            />
+			          </view>
 	          <view class="flex-1 text-sm text-muted">
 	            {{ t("auth.agreePrefix") }}
 	            <text class="text-primary" @tap.stop="onUserAgreement">{{ t("auth.userAgreement") }}</text>
@@ -165,13 +164,12 @@ type Tab = "login" | "signup";
 const bannerImage =
   "https://lh3.googleusercontent.com/aida-public/AB6AXuBjdUQHdpVa5nxh9kcfSdw01j9JQOzjPazG9mVP5DJ-rADq7EeTNV2uxq7Nv0D3cqoYIh7eXn8lAxJySYGFg-meAilBMA01hY7BQciiZcF4AztCYK2DkCtmWBy0MF83KpzkPsYh-aFLz7JdAxsKqpegxU6WBct3qoNQADLxdTcC5stSkvO6UuC1x_OURIUQovzD_l1pb77buafwbcCD8idP_KURyJcl-sUizeQV6zxn3BVGM6NK2CkA519EiJryOcZAcrgF6x1CWdN1";
 
-	const form = reactive({
-	  name: "",
-	  countryCode: "+86",
-	  phone: "",
-	  password: "",
-	  agree: false,
-	});
+		const form = reactive({
+		  name: "",
+		  phone: "",
+		  password: "",
+		  agree: false,
+		});
 
 function goBack() {
   try {
@@ -209,53 +207,71 @@ function onSupport() {
 	  form.agree = !form.agree;
 	}
 
-		function fullIdentifier() {
-		  const phone = String(form.phone).trim();
-		  return `${form.countryCode}${phone}`;
-		}
+			function fullIdentifier() {
+			  const phone = String(form.phone).trim();
+			  return phone;
+			}
 
-		async function submit() {
-	  if (!form.agree) {
-	    uni.showToast({ title: t("auth.mustAgree"), icon: "none" });
-	    return;
-	  }
+			async function submit() {
+		  if (!form.agree) {
+		    uni.showToast({ title: t("auth.mustAgree"), icon: "none" });
+		    return;
+		  }
   if (!String(form.phone).trim() || !String(form.password).trim()) {
     uni.showToast({ title: t("auth.missingFields"), icon: "none" });
     return;
   }
 
-		  try {
-		    if (activeTab.value === "login") {
-		      const auth = await miniAppAuthLogin({
-		        identifier: fullIdentifier(),
-		        password: String(form.password),
-		      });
-		      // 受保护接口联通校验：确认 token 已生效
-		      await miniAppGetCategoryTree();
-	      uni.showToast({ title: t("auth.loginSuccess"), icon: "none" });
-	      uni.reLaunch({ url: "/pages/index/index" });
-	      return;
-	    }
+			  try {
+			    if (activeTab.value === "login") {
+			      const auth = await miniAppAuthLogin({
+			        identifier: fullIdentifier(),
+			        password: String(form.password),
+			      });
+			      // 受保护接口联通校验：确认 token 已生效
+			      await miniAppGetCategoryTree();
+		      uni.showToast({ title: t("auth.loginSuccess"), icon: "none" });
+		      const redirect = String(uni.getStorageSync("miniapp.auth.redirect") || "").trim();
+		      if (redirect) {
+		        uni.removeStorageSync("miniapp.auth.redirect");
+		        const url = redirect.startsWith("/") ? redirect : `/${redirect}`;
+		        const tabPages = new Set(["/pages/index/index", "/pages/mall/index", "/pages/cart/index", "/pages/profile/index"]);
+		        if (tabPages.has(url)) uni.switchTab({ url });
+		        else uni.redirectTo({ url });
+		      } else {
+		        uni.reLaunch({ url: "/pages/index/index" });
+		      }
+		      return;
+		    }
 
     if (!String(form.name).trim()) {
       uni.showToast({ title: t("auth.missingFields"), icon: "none" });
       return;
     }
 
-	    await miniAppAuthRegister({
-	      name: String(form.name),
-	      identifier: fullIdentifier(),
-	      password: String(form.password),
-	      phone: String(form.phone),
-	    });
-	    // 注册后同样做一次联通校验（注册接口也会返回 token）
-	    await miniAppGetCategoryTree();
-	    uni.showToast({ title: t("auth.signupSuccess"), icon: "none" });
-	    activeTab.value = "login";
-		  } catch (err: any) {
-		    uni.showToast({ title: err?.message || t("auth.failed"), icon: "none" });
-		  }
-		}
+		    await miniAppAuthRegister({
+		      name: String(form.name),
+		      identifier: fullIdentifier(),
+		      password: String(form.password),
+		      phone: String(form.phone),
+		    });
+		    // 注册后同样做一次联通校验（注册接口也会返回 token）
+		    await miniAppGetCategoryTree();
+		    uni.showToast({ title: t("auth.signupSuccess"), icon: "none" });
+		    const redirect = String(uni.getStorageSync("miniapp.auth.redirect") || "").trim();
+		    if (redirect) {
+		      uni.removeStorageSync("miniapp.auth.redirect");
+		      const url = redirect.startsWith("/") ? redirect : `/${redirect}`;
+		      const tabPages = new Set(["/pages/index/index", "/pages/mall/index", "/pages/cart/index", "/pages/profile/index"]);
+		      if (tabPages.has(url)) uni.switchTab({ url });
+		      else uni.redirectTo({ url });
+		      return;
+		    }
+		    activeTab.value = "login";
+			  } catch (err: any) {
+			    uni.showToast({ title: err?.message || t("auth.failed"), icon: "none" });
+			  }
+			}
 
 		onLoad((query) => {
 		  try {

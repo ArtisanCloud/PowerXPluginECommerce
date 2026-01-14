@@ -7,6 +7,9 @@ export type Money = {
 export type OrderSummary = {
   orderId: string;
   orderNo: string;
+  customerId?: string;
+  channel?: string;
+  createdByType?: string;
   status: string;
   amounts: Money;
   createdAt: string;
@@ -42,4 +45,3 @@ export type OrderDetail = {
 export type CancelOrderRequest = {
   reason?: string;
 };
-

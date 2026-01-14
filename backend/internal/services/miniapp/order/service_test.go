@@ -32,8 +32,13 @@ func TestServiceCreateOrder_Idempotency(t *testing.T) {
 	svc := NewService(&app.Deps{DB: db})
 	req := CreateOrderRequest{
 		Channel: "official",
-		Items:   []CreateOrderItemInput{{SKUID: skuID, Qty: 1}},
-		Locale:  "zh-CN",
+		ShippingAddress: &ShippingAddress{
+			RecipientName:  "张三",
+			RecipientPhone: "13800138000",
+			Address1:       "北京市朝阳区",
+		},
+		Items:  []CreateOrderItemInput{{SKUID: skuID, Qty: 1}},
+		Locale: "zh-CN",
 	}
 
 	first, err := svc.CreateOrder(ctx, tenant, customerID, "idem-1", req)
@@ -72,7 +77,12 @@ func TestServiceCreateOrder_OutOfStock_IsAtomic(t *testing.T) {
 	svc := NewService(&app.Deps{DB: db})
 	req := CreateOrderRequest{
 		Channel: "official",
-		Items:   []CreateOrderItemInput{{SKUID: skuID, Qty: 1}},
+		ShippingAddress: &ShippingAddress{
+			RecipientName:  "张三",
+			RecipientPhone: "13800138000",
+			Address1:       "北京市朝阳区",
+		},
+		Items: []CreateOrderItemInput{{SKUID: skuID, Qty: 1}},
 	}
 
 	_, err := svc.CreateOrder(ctx, tenant, customerID, "idem-2", req)
@@ -110,7 +120,12 @@ func TestServiceCreateOrder_NotSellable_NoSideEffects(t *testing.T) {
 	svc := NewService(&app.Deps{DB: db})
 	req := CreateOrderRequest{
 		Channel: "official",
-		Items:   []CreateOrderItemInput{{SKUID: skuID, Qty: 1}},
+		ShippingAddress: &ShippingAddress{
+			RecipientName:  "张三",
+			RecipientPhone: "13800138000",
+			Address1:       "北京市朝阳区",
+		},
+		Items: []CreateOrderItemInput{{SKUID: skuID, Qty: 1}},
 	}
 
 	_, err := svc.CreateOrder(ctx, tenant, customerID, "idem-3", req)
@@ -123,6 +138,48 @@ func TestServiceCreateOrder_NotSellable_NoSideEffects(t *testing.T) {
 	var locked int64
 	require.NoError(t, db.Raw(`SELECT locked_qty FROM product_sku_inventories WHERE tenant_uuid = ? AND sku_id = ? AND warehouse_id = ?`, tenant, skuID, "default").Scan(&locked).Error)
 	require.Equal(t, int64(0), locked)
+}
+
+func TestServiceCreateOrder_ShippingSnapshot_Immutable(t *testing.T) {
+	ctx := context.Background()
+	models.ForceSchemaForTests("")
+
+	db := newTestDB(t)
+	createOrderTables(t, db)
+
+	const tenant = "tenant-test"
+	const customerID = "cust-1"
+	const spuID = "spu-1"
+	const skuID = "sku-1"
+	const addrID = "addr-1"
+
+	seedSellabilityFixtures(t, db, tenant, spuID, skuID, 10, 0, true)
+
+	require.NoError(t, db.Exec(
+		`INSERT INTO customer_addresses (id, tenant_uuid, customer_id, is_default, recipient_name, recipient_phone, address1, created_at, updated_at)
+		 VALUES (?, ?, ?, 1, ?, ?, ?, datetime('now'), datetime('now'))`,
+		addrID, tenant, customerID, "张三", "13800138000", "北京市朝阳区",
+	).Error)
+
+	svc := NewService(&app.Deps{DB: db})
+	req := CreateOrderRequest{
+		Channel:           "official",
+		ShippingAddressID: addrID,
+		Items:             []CreateOrderItemInput{{SKUID: skuID, Qty: 1}},
+	}
+	created, err := svc.CreateOrder(ctx, tenant, customerID, "idem-ship-1", req)
+	require.NoError(t, err)
+	require.NotNil(t, created)
+
+	// Update address record after order creation.
+	require.NoError(t, db.Exec(
+		`UPDATE customer_addresses SET recipient_name = ?, updated_at = datetime('now') WHERE tenant_uuid = ? AND customer_id = ? AND id = ?`,
+		"李四", tenant, customerID, addrID,
+	).Error)
+
+	var snapshotRaw string
+	require.NoError(t, db.Raw(`SELECT shipping_address_snapshot FROM orders WHERE tenant_uuid = ? AND id = ?`, tenant, created.OrderID).Scan(&snapshotRaw).Error)
+	require.Contains(t, snapshotRaw, "张三")
 }
 
 func newTestDB(t *testing.T) *gorm.DB {
@@ -141,6 +198,26 @@ func newTestDB(t *testing.T) *gorm.DB {
 func createOrderTables(t *testing.T, db *gorm.DB) {
 	t.Helper()
 	stmts := []string{
+		`CREATE TABLE IF NOT EXISTS customer_addresses (
+			id TEXT PRIMARY KEY,
+			tenant_uuid TEXT NOT NULL,
+			customer_id TEXT NOT NULL,
+			is_default BOOLEAN NOT NULL DEFAULT 0,
+			label TEXT,
+			recipient_name TEXT NOT NULL,
+			recipient_phone TEXT NOT NULL,
+			country_code TEXT,
+			province TEXT,
+			city TEXT,
+			district TEXT,
+			address1 TEXT NOT NULL,
+			address2 TEXT,
+			postal_code TEXT,
+			metadata TEXT,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME
+		)`,
 		`CREATE TABLE IF NOT EXISTS product_spus (
 			id TEXT PRIMARY KEY,
 			tenant_uuid TEXT NOT NULL,
@@ -225,6 +302,8 @@ func createOrderTables(t *testing.T, db *gorm.DB) {
 			currency TEXT NOT NULL,
 			subtotal_amount BIGINT NOT NULL DEFAULT 0,
 			total_amount BIGINT NOT NULL DEFAULT 0,
+			shipping_address_id TEXT,
+			shipping_address_snapshot TEXT,
 			price_snapshot TEXT,
 			sellability_snapshot TEXT,
 			created_by_type TEXT,

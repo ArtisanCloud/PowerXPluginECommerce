@@ -276,22 +276,25 @@
       </view>
 
       <!-- 底部操作栏 -->
-      <view class="fixed bottom-0 left-0 right-0 z-40 mx-auto max-w-md border-t bg-white safe-pb" style="border-color: rgba(243,244,246,1);">
-        <view class="flex items-center justify-between px-3 py-2" style="gap: 12px; height: 60px;">
-          <view class="flex items-center px-3" style="gap: 18px;">
-            <view class="flex flex-col items-center" hover-class="opacity-80" @tap="onStore">
-              <text style="font-size: 12px; font-weight: 900; color: #6b7280;">店铺</text>
-            </view>
-            <view class="flex flex-col items-center" hover-class="opacity-80" @tap="onChat">
-              <text style="font-size: 12px; font-weight: 900; color: #6b7280;">客服</text>
-            </view>
-            <view class="relative flex flex-col items-center" hover-class="opacity-80" @tap="toCart">
-              <text style="font-size: 12px; font-weight: 900; color: #6b7280;">购物车</text>
-              <view
-                v-if="cartCount > 0"
-                class="absolute -top-1 -right-2 flex items-center justify-center rounded-full bg-red-500 px-1"
-                style="min-width: 14px; height: 14px;"
-              >
+	      <view class="fixed bottom-0 left-0 right-0 z-40 mx-auto max-w-md border-t bg-white safe-pb" style="border-color: rgba(243,244,246,1);">
+	        <view class="flex items-center justify-between px-3 py-2" style="gap: 12px; height: 60px;">
+	          <view class="flex items-center px-3" style="gap: 18px;">
+	            <view class="flex flex-col items-center" hover-class="opacity-80" @tap="onStore">
+	              <image class="mb-1" style="width: 22px; height: 22px;" mode="aspectFit" src="/static/icons/shop.svg" />
+	              <text style="font-size: 10px; line-height: 1; font-weight: 800; color: #6b7280;">店铺</text>
+	            </view>
+	            <view class="flex flex-col items-center" hover-class="opacity-80" @tap="onChat">
+	              <image class="mb-1" style="width: 22px; height: 22px;" mode="aspectFit" src="/static/icons/chat.svg" />
+	              <text style="font-size: 10px; line-height: 1; font-weight: 800; color: #6b7280;">客服</text>
+	            </view>
+	            <view class="relative flex flex-col items-center" hover-class="opacity-80" @tap="toCart">
+	              <image class="mb-1" style="width: 22px; height: 22px;" mode="aspectFit" src="/static/icons/cart.svg" />
+	              <text style="font-size: 10px; line-height: 1; font-weight: 800; color: #6b7280;">购物车</text>
+	              <view
+	                v-if="cartCount > 0"
+	                class="absolute -top-1 -right-2 flex items-center justify-center rounded-full bg-red-500 px-1"
+	                style="min-width: 14px; height: 14px;"
+	              >
                 <text style="font-size: 9px; font-weight: 900; color: #fff;">{{ cartCount }}</text>
               </view>
             </view>
@@ -329,7 +332,7 @@
         :skus="skus"
         :spec-groups="specGroups"
         :cover-url="coverUrl"
-        :max-qty="5"
+        :max-qty="10"
         @confirm="onSkuSheetConfirm"
       />
     </view>
@@ -351,6 +354,8 @@ import {
   type MiniAppSkuSummary,
   type MiniAppSubscriptionPlan,
 } from "@/services/miniapp-product";
+import { addCartItem, cartCount as countCart, getLocalCart } from "@/services/cart";
+import { isLikelyPlaceholderUrl } from "@/utils/product-images";
 
 const topInset = ref(40);
 const spuId = ref("");
@@ -444,12 +449,10 @@ const gallery = computed(() => {
   skus.value.forEach((s) => {
     if (s.imageUrl) urls.add(s.imageUrl);
   });
-  const list = Array.from(urls).filter(Boolean);
-  while (list.length < 3) {
-    list.push(`https://picsum.photos/seed/powerx-spu-${list.length + 1}/600/750`);
-  }
-  return list.slice(0, 6);
-});
+	  const list = Array.from(urls).filter(Boolean);
+	  if (!list.length && coverUrl.value) list.push(coverUrl.value);
+	  return list.slice(0, 6);
+	});
 
 const detailImages = computed(() => gallery.value.slice(0, 2));
 
@@ -619,10 +622,31 @@ function onGalleryChange(e: any) {
 function onSkuSheetConfirm(payload: { action: "cart" | "buy"; skuId: string; qty: number }) {
   selectSku(payload.skuId);
   if (payload.action === "cart") {
-    uni.showToast({ title: `已选 ${payload.qty} 件，购物车能力待接入`, icon: "none" });
+    const sku = skus.value.find((x) => x.id === payload.skuId);
+    const rawMax = Number(sku?.availableQty ?? sku?.stockQty ?? 10);
+    const stockMax = Number.isFinite(rawMax) && rawMax > 0 ? Math.max(1, Math.floor(rawMax)) : 10;
+    const maxQty = Math.min(10, stockMax);
+    const currency = String((sku as any)?.currency || product.value?.currency || "CNY").trim() || "CNY";
+    const unitPriceRaw = Number((sku as any)?.price ?? 0);
+    const unitPrice = Number.isFinite(unitPriceRaw) && unitPriceRaw >= 0 ? unitPriceRaw : undefined;
+    const skuImageUrl = String((sku as any)?.imageUrl || "").trim();
+    const cover = String(coverUrl.value || "").trim();
+    addCartItem(payload.skuId, payload.qty, {
+      spuId: String(spuId.value || "").trim() || undefined,
+      title: String(product.value?.name || "").trim() || "商品",
+      imageUrl: (skuImageUrl && !isLikelyPlaceholderUrl(skuImageUrl) ? skuImageUrl : cover) || undefined,
+      skuLabel: selectedSpecText.value,
+      skuCode: String((sku as any)?.code || "").trim() || undefined,
+      maxQty,
+      currency,
+      unitPrice,
+    });
+    cartCount.value = countCart(getLocalCart().items);
+    uni.showToast({ title: `已加入购物车 x${payload.qty}`, icon: "none" });
     return;
   }
-  uni.showToast({ title: `已选 ${payload.qty} 件，下单能力待接入`, icon: "none" });
+  uni.showToast({ title: `已选 ${payload.qty} 件，请到购物车结算`, icon: "none" });
+  uni.switchTab({ url: "/pages/cart/index" });
 }
 
 function openSpecPicker() {
@@ -660,7 +684,7 @@ async function loadAll() {
   try {
     const p = await miniAppGetProduct(spuId.value);
     product.value = p;
-    coverUrl.value = p?.coverUrl || "https://picsum.photos/seed/powerx-spu/600/750";
+	    coverUrl.value = p?.coverUrl || "/static/icons/image-placeholder.svg";
     isSubscription.value = String(p?.type || "").toLowerCase() === "subscription";
 
     if (isSubscription.value) {
@@ -673,7 +697,7 @@ async function loadAll() {
     try {
       const detail = await miniAppGetProductDetailWithSpec(spuId.value);
       if (detail?.spu) product.value = detail.spu;
-      coverUrl.value = (detail?.spu?.coverUrl || product.value?.coverUrl) ?? coverUrl.value;
+	      coverUrl.value = (detail?.spu?.coverUrl || product.value?.coverUrl) ?? coverUrl.value;
       specGroups.value = Array.isArray(detail?.spec?.groups) ? detail.spec!.groups : [];
       skus.value = Array.isArray(detail?.skus) ? detail.skus : [];
     } catch {
@@ -748,6 +772,7 @@ onLoad((query: any) => {
 
 onMounted(() => {
   ensureTopInset();
+  cartCount.value = countCart(getLocalCart().items);
   loadAll();
 });
 </script>

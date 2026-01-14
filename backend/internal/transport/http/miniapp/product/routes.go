@@ -34,5 +34,8 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	group.GET("/:id/skus", handler.ListSkus)
 	group.GET("/:id/plans", handler.ListSubscriptionPlans)
 
+	skuGroup := router.Group("/skus")
+	skuGroup.POST("/batch", handler.BatchSkus)
+
 	return group
 }

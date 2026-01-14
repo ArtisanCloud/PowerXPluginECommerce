@@ -1535,6 +1535,39 @@
     "networkError": "网络异常，请检查连接",
     "templateCreated": "模板创建成功"
   },
+  "orders": {
+    "title": "订单",
+    "allStatus": "全部状态",
+    "orderNo": "订单号",
+    "orderId": "订单ID",
+    "customer": "客户",
+    "source": "来源",
+    "amount": "金额",
+    "status": "状态",
+    "createdAt": "创建时间",
+    "actions": "操作",
+    "delete": "删除",
+    "deleteConfirmTitle": "确认删除订单？",
+    "deleteConfirmDesc": "仅未支付订单允许删除，删除后订单将变更为已取消。",
+    "deleteReason": "未支付订单删除",
+    "deleteSuccess": "删除成功",
+    "deleteFailedTitle": "删除失败",
+    "deleteFailedDesc": "请稍后重试",
+    "sources": {
+      "admin": "后台",
+      "customer": "小程序",
+      "system": "系统"
+    },
+    "statuses": {
+      "pending_payment": "待支付",
+      "paid": "已支付",
+      "shipped": "已发货",
+      "cancelled": "已取消",
+      "draft": "草稿"
+    },
+    "loadFailedTitle": "加载订单失败",
+    "loadFailedDesc": "请稍后重试"
+  },
   "pricing": {
     "overview": "定价概览",
     "pricebooks": "价格手册",

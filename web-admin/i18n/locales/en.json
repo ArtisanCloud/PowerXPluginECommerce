@@ -924,5 +924,38 @@
         "failed": "Failed to submit reminder"
       }
     }
+  },
+  "orders": {
+    "title": "Orders",
+    "allStatus": "All status",
+    "orderNo": "Order No.",
+    "orderId": "Order ID",
+    "customer": "Customer",
+    "source": "Source",
+    "amount": "Amount",
+    "status": "Status",
+    "createdAt": "Created at",
+    "actions": "Actions",
+    "delete": "Delete",
+    "deleteConfirmTitle": "Delete this order?",
+    "deleteConfirmDesc": "Only unpaid orders can be deleted. The order will be cancelled.",
+    "deleteReason": "Delete unpaid order",
+    "deleteSuccess": "Deleted",
+    "deleteFailedTitle": "Delete failed",
+    "deleteFailedDesc": "Please try again later",
+    "sources": {
+      "admin": "Admin",
+      "customer": "Mini-app",
+      "system": "System"
+    },
+    "statuses": {
+      "pending_payment": "Pending payment",
+      "paid": "Paid",
+      "shipped": "Shipped",
+      "cancelled": "Cancelled",
+      "draft": "Draft"
+    },
+    "loadFailedTitle": "Failed to load orders",
+    "loadFailedDesc": "Please try again later"
   }
 }

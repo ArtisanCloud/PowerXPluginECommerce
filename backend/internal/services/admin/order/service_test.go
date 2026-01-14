@@ -35,8 +35,13 @@ func TestServiceCreateOrder_Idempotency(t *testing.T) {
 	req := CreateOrderRequest{
 		CustomerID: customerID,
 		Channel:    "official",
-		Items:      []CreateOrderItemInput{{SKUID: skuID, Qty: 1}},
-		Note:       "manual order",
+		ShippingAddress: &ShippingAddress{
+			RecipientName:  "张三",
+			RecipientPhone: "13800138000",
+			Address1:       "北京市朝阳区",
+		},
+		Items: []CreateOrderItemInput{{SKUID: skuID, Qty: 1}},
+		Note:  "manual order",
 	}
 
 	first, err := svc.CreateOrder(ctx, tenant, adminID, "idem-1", req)
@@ -78,7 +83,12 @@ func TestServiceCreateOrder_OutOfStock_IsAtomic(t *testing.T) {
 	req := CreateOrderRequest{
 		CustomerID: customerID,
 		Channel:    "official",
-		Items:      []CreateOrderItemInput{{SKUID: skuID, Qty: 1}},
+		ShippingAddress: &ShippingAddress{
+			RecipientName:  "张三",
+			RecipientPhone: "13800138000",
+			Address1:       "北京市朝阳区",
+		},
+		Items: []CreateOrderItemInput{{SKUID: skuID, Qty: 1}},
 	}
 
 	_, err := svc.CreateOrder(ctx, tenant, adminID, "idem-2", req)
@@ -118,7 +128,12 @@ func TestServiceCreateOrder_NotSellable_NoSideEffects(t *testing.T) {
 	req := CreateOrderRequest{
 		CustomerID: customerID,
 		Channel:    "official",
-		Items:      []CreateOrderItemInput{{SKUID: skuID, Qty: 1}},
+		ShippingAddress: &ShippingAddress{
+			RecipientName:  "张三",
+			RecipientPhone: "13800138000",
+			Address1:       "北京市朝阳区",
+		},
+		Items: []CreateOrderItemInput{{SKUID: skuID, Qty: 1}},
 	}
 
 	_, err := svc.CreateOrder(ctx, tenant, adminID, "idem-3", req)
@@ -272,6 +287,8 @@ func createOrderTables(t *testing.T, db *gorm.DB) {
 			currency TEXT NOT NULL,
 			subtotal_amount BIGINT NOT NULL DEFAULT 0,
 			total_amount BIGINT NOT NULL DEFAULT 0,
+			shipping_address_id TEXT,
+			shipping_address_snapshot TEXT,
 			price_snapshot TEXT,
 			sellability_snapshot TEXT,
 			created_by_type TEXT,

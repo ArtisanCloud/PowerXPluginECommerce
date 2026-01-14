@@ -29,7 +29,7 @@ export type OrderListQuery = {
 };
 
 export function useOrderApi() {
-  const basePath = "admin/orders";
+  const basePath = "/admin/orders";
 
   return {
     listOrders: (query?: OrderListQuery, init?: any) =>

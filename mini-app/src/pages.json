@@ -36,6 +36,20 @@
 			}
 		},
 		{
+			"path": "pages/order/confirm",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/order/success",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationStyle": "custom"
+			}
+		},
+		{
 			"path": "pages/profile/index",
 			"style": {
 				"navigationBarTitleText": "",
@@ -44,6 +58,13 @@
 		},
 		{
 			"path": "pages/auth/index",
+			"style": {
+				"navigationBarTitleText": "",
+				"navigationStyle": "custom"
+			}
+		},
+		{
+			"path": "pages/address/index",
 			"style": {
 				"navigationBarTitleText": "",
 				"navigationStyle": "custom"

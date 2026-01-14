@@ -9,6 +9,10 @@
 
 在 `one_time（一次性商品）` 范围内交付最小可用下单闭环：小程序与后台代客下单统一复用“可售校验”口径，创建订单时执行服务端二次校验并在同一租户事务内完成**整单原子**的库存锁定（写入 `product_sku_inventories.locked_qty`），同时记录订单事件审计；后台提供订单查询与取消（仅 `pending_payment` 可取消）能力；创建订单支持幂等键（同一幂等键重复提交返回同一订单结果且不得重复锁库存）；订单生成并对外展示租户内唯一的人可读订单号；订单价格以“提交时服务端计算的当前价”为准并保存价格/金额快照。
 
+同时交付 **小程序购物车（混合模式）**：购物车默认本地保存（离线可用），登录后与服务端购物车同步并合并（默认 `max` 合并避免数量翻倍）；购物车不锁库存，库存校验与锁定仅发生在创建订单的服务端事务内。
+
+补齐 **收货地址能力（地址簿 + 订单快照）**：提供客户收货地址簿（多条 + 默认地址），小程序与后台均可管理；创建订单时必须指定收货地址（通过地址簿 `shippingAddressId` 或直接提交 `shippingAddress`），并在订单中保存地址快照用于历史不可变追溯（可选保留 `shipping_address_id`）。
+
 ## Technical Context
 
 <!--
@@ -69,14 +73,24 @@ backend/
 ├── internal/
 │   ├── entity/
 │   │   ├── models/
+│   │   │   ├── cart/                # 购物车（carts）
+│   │   │   ├── customer/            # 客户域（customer_addresses）
 │   │   │   └── order/               # 订单域模型（orders/order_items/order_events）
 │   │   └── repository/
+│   │       ├── cart/                # 购物车仓储（按 customer 读写）
+│   │       ├── customer/            # 客户地址簿仓储（按 customer 读写、默认地址约束）
 │   │       └── order/               # 订单域仓储（写入、查询、行锁）
 │   ├── services/
 │   │   ├── admin/order/             # 后台：代客下单、查询、取消
+│   │   ├── admin/customer_address/  # 后台：按客户管理收货地址簿
+│   │   ├── miniapp/cart/            # 小程序：购物车（同步/合并）
+│   │   ├── miniapp/customer_address/# 小程序：我的收货地址簿
 │   │   └── miniapp/order/           # 小程序：下单、查询
 │   └── transport/http/
 │       ├── admin/order/             # /api/v1/admin/orders...
+│       ├── admin/customer_address/  # /api/v1/admin/customers/:id/addresses...
+│       ├── miniapp/cart/            # /api/v1/mini-app/cart...
+│       ├── miniapp/customer_address/# /api/v1/mini-app/me/addresses...
 │       └── miniapp/order/           # /api/v1/mini-app/orders...
 └── etc/                             # runtime config
 

@@ -7,7 +7,14 @@
       </div>
 
       <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-        <USelect v-model="status" :items="statusItems" class="w-48" placeholder="全部状态" />
+        <USelect
+          v-model="status"
+          :options="statusOptions"
+          option-attribute="label"
+          value-attribute="value"
+          class="w-48"
+          placeholder="全部状态"
+        />
         <UInput v-model.trim="customerId" class="w-56" placeholder="客户ID（可选）" />
         <UButton color="primary" :loading="loading" @click="refresh">查询</UButton>
       </div>
@@ -44,7 +51,13 @@
         >
           <span>共 {{ total }} 条订单</span>
           <div class="flex items-center gap-3">
-            <USelect v-model="pageSize" :items="pageSizeItems" class="w-24" />
+            <USelect
+              v-model="pageSize"
+              :options="pageSizeItems"
+              option-attribute="label"
+              value-attribute="value"
+              class="w-24"
+            />
             <UPagination v-model="page" :total="total" :page-count="pageSize" show-first show-last />
           </div>
         </div>
@@ -81,11 +94,11 @@ const total = ref(0);
 
 const page = ref(1);
 const pageSize = ref(20);
-const status = ref<string>("");
+// Nuxt UI Select 的 item value 不能是空字符串；用 undefined 表示“全部”
+const status = ref<string | undefined>(undefined);
 const customerId = ref<string>("");
 
-const statusItems = [
-  { label: "全部状态", value: "" },
+const statusOptions = [
   { label: "待支付", value: "pending_payment" },
   { label: "已支付", value: "paid" },
   { label: "已取消", value: "cancelled" },

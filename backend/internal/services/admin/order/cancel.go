@@ -88,11 +88,23 @@ func (s *Service) CancelOrder(ctx context.Context, tenantUUID, adminID, orderID,
 			return err
 		}
 
+		var shippingSnap *ShippingAddress
+		if len(order.ShippingAddressSnap) > 0 {
+			var snap ShippingAddress
+			if err := json.Unmarshal([]byte(order.ShippingAddressSnap), &snap); err == nil {
+				shippingSnap = &snap
+			}
+		}
+
 		summary = &OrderSummaryDTO{
-			OrderID: orderID,
-			OrderNo: order.OrderNo,
-			Status:  "cancelled",
-			Amounts: MoneyDTO{Currency: order.Currency, Subtotal: order.SubtotalAmount, Total: order.TotalAmount},
+			OrderID:                 orderID,
+			OrderNo:                 order.OrderNo,
+			CustomerID:              order.CustomerID,
+			Channel:                 order.Channel,
+			CreatedByType:           order.CreatedByType,
+			Status:                  "cancelled",
+			Amounts:                 MoneyDTO{Currency: order.Currency, Subtotal: order.SubtotalAmount, Total: order.TotalAmount},
+			ShippingAddressSnapshot: shippingSnap,
 			// Keep the original created timestamp.
 			CreatedAt: order.CreatedAt,
 		}

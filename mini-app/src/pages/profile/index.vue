@@ -1,20 +1,199 @@
 <template>
-  <view class="min-h-screen w-full bg-background-light font-display text-text-dark" style="padding-bottom: 96px;">
+  <view class="min-h-screen w-full bg-background-light font-display text-text-dark" style="padding-bottom: 120px;">
     <view :style="`padding-top:${topInset}px;`" class="sticky top-0 z-10 w-full bg-background-light">
-      <view class="px-4 pt-4 pb-2">
-        <view class="text-xl font-extrabold">我的</view>
+      <view class="flex items-center justify-between px-4 pt-4 pb-2">
+        <view class="text-lg font-extrabold">个人中心</view>
+        <view class="flex items-center gap-3">
+          <view class="h-9 w-9 rounded-full bg-white shadow-sm flex items-center justify-center" hover-class="opacity-80" @tap="noop">
+            <text class="text-base font-black">✉</text>
+          </view>
+          <view class="h-9 w-9 rounded-full bg-white shadow-sm flex items-center justify-center" hover-class="opacity-80" @tap="noop">
+            <text class="text-base font-black">⚙</text>
+          </view>
+        </view>
       </view>
     </view>
-    <view class="px-4 py-6 text-sm text-muted">占位页：后续接入订单、地址、设置。</view>
+
+    <view class="px-4">
+      <view class="relative rounded-3xl bg-white p-4 shadow-sm overflow-hidden">
+        <view class="absolute -top-8 -right-12 h-40 w-40 rounded-full" style="background: rgba(79, 138, 126, 0.12);"></view>
+        <view class="absolute top-14 -right-6 h-28 w-28 rounded-full" style="background: rgba(79, 138, 126, 0.10);"></view>
+
+        <view v-if="loggedIn" class="relative flex items-center gap-4">
+          <view class="relative">
+            <image class="h-20 w-20 rounded-full bg-gray-100" mode="aspectFill" :src="avatarUrl" />
+            <view class="absolute bottom-0 right-0 rounded-full border border-white px-2 py-1" style="background: #4F8A7E;">
+              <text class="font-extrabold text-white" style="font-size: 10px;">LV.5</text>
+            </view>
+          </view>
+          <view class="flex-1 min-w-0">
+            <view class="flex items-center gap-2">
+              <text class="truncate text-xl font-extrabold">{{ displayName }}</text>
+              <text class="text-sm text-muted" @tap="noop">✎</text>
+            </view>
+            <view class="mt-1 text-sm text-muted">Gold Member Distributor</view>
+          </view>
+        </view>
+
+        <view v-else class="relative flex items-center justify-between gap-4">
+          <view class="flex items-center gap-3">
+            <image class="h-14 w-14 rounded-full bg-gray-100" mode="aspectFill" src="/static/icons/image-placeholder.svg" />
+            <view>
+              <view class="text-base font-extrabold">未登录</view>
+              <view class="mt-1 text-xs text-muted">登录后查看订单、地址与更多服务</view>
+            </view>
+          </view>
+          <button class="rounded-full bg-primary px-4 py-2 text-xs font-extrabold text-white" @tap="goLogin">
+            去登录
+          </button>
+        </view>
+      </view>
+
+      <view class="mt-3 rounded-3xl bg-white p-4 shadow-sm">
+        <view class="flex justify-between gap-3">
+          <view class="flex flex-1 flex-col items-center">
+            <view class="text-xl font-extrabold">¥2,450</view>
+            <view class="mt-1 text-xs text-muted">余额</view>
+          </view>
+          <view class="my-auto h-8 w-px bg-gray-100"></view>
+          <view class="flex flex-1 flex-col items-center">
+            <view class="text-xl font-extrabold">1,204</view>
+            <view class="mt-1 text-xs text-muted">积分</view>
+          </view>
+          <view class="my-auto h-8 w-px bg-gray-100"></view>
+          <view class="flex flex-1 flex-col items-center">
+            <view class="text-xl font-extrabold">5</view>
+            <view class="mt-1 text-xs text-muted">优惠券</view>
+          </view>
+        </view>
+      </view>
+
+      <view class="mt-3 rounded-3xl bg-white p-4 shadow-sm">
+        <view class="flex items-center justify-between">
+          <view class="text-base font-extrabold">我的订单</view>
+          <view class="text-xs text-muted" hover-class="opacity-70" @tap="noop">查看全部 ›</view>
+        </view>
+        <view class="mt-4 flex items-start justify-between">
+          <view class="flex flex-1 flex-col items-center gap-2" hover-class="opacity-80" @tap="noop">
+            <view class="relative">
+              <text class="text-2xl text-gray-500">💳</text>
+              <view class="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500"></view>
+            </view>
+            <text class="text-muted" style="font-size: 11px;">待付款</text>
+          </view>
+          <view class="flex flex-1 flex-col items-center gap-2" hover-class="opacity-80" @tap="noop">
+            <text class="text-2xl text-gray-500">📦</text>
+            <text class="text-muted" style="font-size: 11px;">待发货</text>
+          </view>
+          <view class="flex flex-1 flex-col items-center gap-2" hover-class="opacity-80" @tap="noop">
+            <view class="relative">
+              <text class="text-2xl text-gray-500">🚚</text>
+              <view class="absolute -top-2 -right-2 h-4 w-4 rounded-full bg-red-500 flex items-center justify-center">
+                <text class="font-extrabold text-white" style="font-size: 9px;">2</text>
+              </view>
+            </view>
+            <text class="text-muted" style="font-size: 11px;">待收货</text>
+          </view>
+          <view class="flex flex-1 flex-col items-center gap-2" hover-class="opacity-80" @tap="noop">
+            <text class="text-2xl text-gray-500">💬</text>
+            <text class="text-muted" style="font-size: 11px;">评价</text>
+          </view>
+          <view class="flex flex-1 flex-col items-center gap-2" hover-class="opacity-80" @tap="noop">
+            <text class="text-2xl text-gray-500">↩</text>
+            <text class="text-muted" style="font-size: 11px;">售后</text>
+          </view>
+        </view>
+      </view>
+
+      <view class="mt-4 px-1 text-base font-extrabold">更多服务</view>
+      <view class="mt-2 rounded-3xl bg-white p-4 shadow-sm">
+        <view class="grid grid-cols-4 gap-y-6">
+          <view class="flex flex-col items-center gap-2" hover-class="opacity-80" @tap="noop">
+            <view class="h-10 w-10 rounded-full flex items-center justify-center" style="background: rgba(79, 138, 126, 0.10);">
+              <text class="text-xl text-primary">📍</text>
+            </view>
+            <text class="font-medium" style="font-size: 11px;">地址</text>
+          </view>
+          <view class="flex flex-col items-center gap-2" hover-class="opacity-80" @tap="noop">
+            <view class="h-10 w-10 rounded-full flex items-center justify-center" style="background: rgba(79, 138, 126, 0.10);">
+              <text class="text-xl text-primary">❤</text>
+            </view>
+            <text class="font-medium" style="font-size: 11px;">收藏</text>
+          </view>
+          <view class="flex flex-col items-center gap-2" hover-class="opacity-80" @tap="noop">
+            <view class="h-10 w-10 rounded-full flex items-center justify-center" style="background: rgba(79, 138, 126, 0.10);">
+              <text class="text-xl text-primary">🎁</text>
+            </view>
+            <text class="font-medium" style="font-size: 11px;">邀请</text>
+          </view>
+          <view class="flex flex-col items-center gap-2" hover-class="opacity-80" @tap="noop">
+            <view class="h-10 w-10 rounded-full flex items-center justify-center" style="background: rgba(79, 138, 126, 0.10);">
+              <text class="text-xl text-primary">🎧</text>
+            </view>
+            <text class="font-medium" style="font-size: 11px;">客服</text>
+          </view>
+          <view class="flex flex-col items-center gap-2" hover-class="opacity-80" @tap="noop">
+            <view class="h-10 w-10 rounded-full flex items-center justify-center" style="background: rgba(79, 138, 126, 0.10);">
+              <text class="text-xl text-primary">🕒</text>
+            </view>
+            <text class="font-medium" style="font-size: 11px;">浏览记录</text>
+          </view>
+          <view class="flex flex-col items-center gap-2" hover-class="opacity-80" @tap="noop">
+            <view class="h-10 w-10 rounded-full flex items-center justify-center" style="background: rgba(79, 138, 126, 0.10);">
+              <text class="text-xl text-primary">❓</text>
+            </view>
+            <text class="font-medium" style="font-size: 11px;">帮助</text>
+          </view>
+        </view>
+      </view>
+
+      <view v-if="loggedIn" class="mt-4 pb-6">
+        <button class="w-full rounded-2xl bg-red-50 py-3 text-sm font-extrabold text-red-600" @tap="logout">
+          退出登录
+        </button>
+      </view>
+    </view>
   </view>
 </template>
 
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import { onShow } from "@dcloudio/uni-app";
 import { syncTabBarSelected } from "@/utils/tabbar";
+import { clearSession, getCustomerIdentifier, getCustomerName, isLoggedIn } from "@/services/session";
 
 const topInset = ref<number>(40);
+
+const loggedIn = computed(() => isLoggedIn());
+const displayName = computed(() => getCustomerName() || getCustomerIdentifier() || "用户");
+const avatarUrl = "/static/icons/image-placeholder.svg";
+
+function goLogin() {
+  uni.setStorageSync("miniapp.auth.redirect", "/pages/profile/index");
+  uni.navigateTo({ url: "/pages/auth/index?tab=login" });
+}
+
+function noop() {
+  uni.showToast({ title: "功能完善中", icon: "none" });
+}
+
+async function logout() {
+  const ok = await new Promise<boolean>((resolve) => {
+    uni.showModal({
+      title: "退出登录",
+      content: "确认退出当前账号？",
+      confirmText: "退出",
+      confirmColor: "#ef4444",
+      cancelText: "取消",
+      success: (res) => resolve(Boolean(res?.confirm)),
+      fail: () => resolve(false),
+    });
+  });
+  if (!ok) return;
+  clearSession();
+  uni.showToast({ title: "已退出", icon: "none" });
+  goLogin();
+}
 
 onMounted(() => {
   try {
@@ -35,5 +214,8 @@ onMounted(() => {
 
 onShow(() => {
   syncTabBarSelected("pages/profile/index");
+  if (!loggedIn.value) {
+    goLogin();
+  }
 });
 </script>

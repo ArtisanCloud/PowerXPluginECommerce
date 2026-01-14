@@ -2,6 +2,7 @@ package order
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"strings"
 
@@ -25,12 +26,23 @@ func (s *Service) ListOrders(ctx context.Context, tenantUUID string, filter orde
 
 	items := make([]OrderSummaryDTO, 0, len(result.Items))
 	for _, it := range result.Items {
+		var shippingSnap *ShippingAddress
+		if len(it.ShippingAddressSnap) > 0 {
+			var snap ShippingAddress
+			if err := json.Unmarshal([]byte(it.ShippingAddressSnap), &snap); err == nil {
+				shippingSnap = &snap
+			}
+		}
 		items = append(items, OrderSummaryDTO{
-			OrderID:   it.ID,
-			OrderNo:   it.OrderNo,
-			Status:    it.Status,
-			Amounts:   MoneyDTO{Currency: it.Currency, Subtotal: it.SubtotalAmount, Total: it.TotalAmount},
-			CreatedAt: it.CreatedAt,
+			OrderID:                 it.ID,
+			OrderNo:                 it.OrderNo,
+			CustomerID:              it.CustomerID,
+			Channel:                 it.Channel,
+			CreatedByType:           it.CreatedByType,
+			Status:                  it.Status,
+			Amounts:                 MoneyDTO{Currency: it.Currency, Subtotal: it.SubtotalAmount, Total: it.TotalAmount},
+			ShippingAddressSnapshot: shippingSnap,
+			CreatedAt:               it.CreatedAt,
 		})
 	}
 
@@ -91,13 +103,25 @@ func (s *Service) GetOrderDetail(ctx context.Context, tenantUUID, orderID string
 		})
 	}
 
+	var shippingSnap *ShippingAddress
+	if len(ord.ShippingAddressSnap) > 0 {
+		var snap ShippingAddress
+		if err := json.Unmarshal([]byte(ord.ShippingAddressSnap), &snap); err == nil {
+			shippingSnap = &snap
+		}
+	}
+
 	return &OrderDetailDTO{
 		Summary: OrderSummaryDTO{
-			OrderID:   ord.ID,
-			OrderNo:   ord.OrderNo,
-			Status:    ord.Status,
-			Amounts:   MoneyDTO{Currency: ord.Currency, Subtotal: ord.SubtotalAmount, Total: ord.TotalAmount},
-			CreatedAt: ord.CreatedAt,
+			OrderID:                 ord.ID,
+			OrderNo:                 ord.OrderNo,
+			CustomerID:              ord.CustomerID,
+			Channel:                 ord.Channel,
+			CreatedByType:           ord.CreatedByType,
+			Status:                  ord.Status,
+			Amounts:                 MoneyDTO{Currency: ord.Currency, Subtotal: ord.SubtotalAmount, Total: ord.TotalAmount},
+			ShippingAddressSnapshot: shippingSnap,
+			CreatedAt:               ord.CreatedAt,
 		},
 		Items:  items,
 		Events: evs,

@@ -100,7 +100,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref, watch } from "vue";
 import { storeToRefs } from "pinia";
-import { useI18n, useToast } from "#imports";
+import { useI18n, useRoute, useToast } from "#imports";
 import CustomerFilterBar from "~/components/customer/CustomerFilterBar.vue";
 import CustomerTable from "~/components/customer/CustomerTable.vue";
 import CustomerBulkActions from "~/components/customer/CustomerBulkActions.vue";
@@ -118,6 +118,7 @@ const store = useCustomerStore();
 const { loading, error, filters } = storeToRefs(store);
 const { t } = useI18n();
 const toast = useToast();
+const route = useRoute();
 const metrics = useCustomerMetrics();
 const { hasPermission } = usePermissions();
 
@@ -182,6 +183,35 @@ const handleViewCustomer = async (customer: Customer) => {
   }
 };
 
+const openCustomerById = async (id: string) => {
+  const customerId = String(id || "").trim();
+  if (!customerId) return;
+  if (viewingCustomerId.value === customerId && detailOpen.value) return;
+
+  blurActiveElement();
+  detailOpen.value = true;
+  detailLoading.value = true;
+  viewingCustomerId.value = customerId;
+  activeCustomer.value = null;
+
+  try {
+    const full = await store.fetchCustomerById(customerId);
+    if (viewingCustomerId.value === customerId && full) {
+      activeCustomer.value = full as Customer;
+    }
+  } catch (err: any) {
+    toast.add({
+      title: t("customer.directory.errors.toastTitle"),
+      description: err?.message ?? t("customer.directory.errors.generic"),
+      color: "error",
+    });
+  } finally {
+    if (viewingCustomerId.value === customerId) {
+      detailLoading.value = false;
+    }
+  }
+};
+
 const handleEditCustomer = (customer: Customer) => {
   if (!customer) return;
   editingCustomer.value = customer;
@@ -197,6 +227,16 @@ const handleEditModalClose = (payload?: EditClosePayload) => {
   }
   editingCustomer.value = null;
 };
+
+watch(
+  () => route.query.customerId,
+  (val) => {
+    if (typeof val === "string" && val.trim()) {
+      openCustomerById(val);
+    }
+  },
+  { immediate: true },
+);
 
 const handleCustomerUpdated = (customer: Customer) => {
   if (customer) {

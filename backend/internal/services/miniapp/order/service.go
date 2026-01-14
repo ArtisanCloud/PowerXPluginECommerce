@@ -11,9 +11,11 @@ import (
 	"strings"
 	"time"
 
+	customermodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/customer"
 	integrationmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/integration"
 	ordermodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/order"
 	productskumodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_sku"
+	customerrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/customer"
 	idrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/integration"
 	orderrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/order"
 	skurepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/product_sku"
@@ -41,6 +43,9 @@ var (
 	ErrItemsRequired           = errors.New("items are required")
 	ErrInvalidQty              = errors.New("qty must be positive")
 	ErrDuplicateSKU            = errors.New("duplicate sku in request")
+	ErrShippingAddressRequired = errors.New("shipping address is required")
+	ErrShippingAddressNotFound = errors.New("shipping address not found")
+	ErrInvalidShippingAddress  = errors.New("invalid shipping address")
 	ErrOrderNotFound           = errors.New("order not found")
 	ErrSellabilityFailed       = errors.New("sku not sellable")
 	ErrOutOfStock              = errors.New("out of stock")
@@ -55,6 +60,7 @@ type Service struct {
 	InventoryRepo   *skurepo.InventoryRepository
 	IdempotencyRepo *idrepo.IdempotencyRepository
 	SellabilitySvc  *sellabilitysvc.Service
+	AddressRepo     *customerrepo.CustomerAddressRepository
 }
 
 func NewService(deps *app.Deps) *Service {
@@ -76,11 +82,12 @@ func NewService(deps *app.Deps) *Service {
 		InventoryRepo:   skurepo.NewInventoryRepository(deps.DB),
 		IdempotencyRepo: repository,
 		SellabilitySvc:  sellabilitysvc.NewService(deps.DB),
+		AddressRepo:     customerrepo.NewCustomerAddressRepository(deps.DB),
 	}
 }
 
 func (s *Service) Ready() bool {
-	return s != nil && s.deps != nil && s.deps.DB != nil && s.OrderRepo != nil && s.InventoryRepo != nil && s.IdempotencyRepo != nil && s.SellabilitySvc != nil
+	return s != nil && s.deps != nil && s.deps.DB != nil && s.OrderRepo != nil && s.InventoryRepo != nil && s.IdempotencyRepo != nil && s.SellabilitySvc != nil && s.AddressRepo != nil
 }
 
 func (s *Service) CreateOrder(ctx context.Context, tenantUUID, customerID, idempotencyKey string, req CreateOrderRequest) (*OrderSummaryDTO, error) {
@@ -168,6 +175,28 @@ func (s *Service) createOrderWithIdempotencyTx(
 	skuIDs []string,
 	req CreateOrderRequest,
 ) (*OrderSummaryDTO, error) {
+	shippingAddrID := strings.TrimSpace(req.ShippingAddressID)
+	var shippingSnap *ShippingAddress
+	switch {
+	case shippingAddrID != "":
+		addr, err := s.AddressRepo.GetByID(ctx, tenantUUID, customerID, shippingAddrID)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				return nil, ErrShippingAddressNotFound
+			}
+			return nil, err
+		}
+		shippingSnap = shippingSnapshotFromAddress(addr)
+	case req.ShippingAddress != nil:
+		if !isValidShippingAddress(req.ShippingAddress) {
+			return nil, ErrInvalidShippingAddress
+		}
+		shippingSnap = req.ShippingAddress
+	default:
+		return nil, ErrShippingAddressRequired
+	}
+	shippingSnapJSON, _ := json.Marshal(shippingSnap)
+
 	sellability, err := s.SellabilitySvc.EvaluateSKUs(ctx, tenantUUID, skuIDs, req.Channel, req.Locale)
 	if err != nil {
 		return nil, err
@@ -247,19 +276,21 @@ func (s *Service) createOrderWithIdempotencyTx(
 		}
 
 		order := &ordermodel.Order{
-			ID:              orderID,
-			TenantUUID:      tenantUUID,
-			OrderNo:         orderNo,
-			CustomerID:      customerID,
-			Channel:         req.Channel,
-			Status:          "pending_payment",
-			Currency:        currency,
-			SubtotalAmount:  subtotal,
-			TotalAmount:     total,
-			PriceSnapshot:   datatypes.JSON(priceSnapJSON),
-			SellabilitySnap: datatypes.JSON(sellSnapJSON),
-			CreatedByType:   "customer",
-			CreatedBy:       customerID,
+			ID:                  orderID,
+			TenantUUID:          tenantUUID,
+			OrderNo:             orderNo,
+			CustomerID:          customerID,
+			Channel:             req.Channel,
+			Status:              "pending_payment",
+			Currency:            currency,
+			SubtotalAmount:      subtotal,
+			TotalAmount:         total,
+			ShippingAddressID:   shippingAddrID,
+			ShippingAddressSnap: datatypes.JSON(shippingSnapJSON),
+			PriceSnapshot:       datatypes.JSON(priceSnapJSON),
+			SellabilitySnap:     datatypes.JSON(sellSnapJSON),
+			CreatedByType:       "customer",
+			CreatedBy:           customerID,
 		}
 		if err := s.OrderRepo.CreateWithTx(ctx, tx, order); err != nil {
 			return err
@@ -284,9 +315,10 @@ func (s *Service) createOrderWithIdempotencyTx(
 		}
 
 		eventPayload, _ := json.Marshal(map[string]any{
-			"requestId":      requestIDFromContext(ctx),
-			"idempotencyKey": idempotencyKey,
-			"channel":        req.Channel,
+			"requestId":         requestIDFromContext(ctx),
+			"idempotencyKey":    idempotencyKey,
+			"channel":           req.Channel,
+			"shippingAddressId": shippingAddrID,
 		})
 		event := &ordermodel.OrderEvent{
 			ID:           uuid.NewString(),
@@ -302,10 +334,11 @@ func (s *Service) createOrderWithIdempotencyTx(
 		}
 
 		summary = &OrderSummaryDTO{
-			OrderID: orderID,
-			OrderNo: orderNo,
-			Status:  order.Status,
-			Amounts: MoneyDTO{Currency: currency, Subtotal: subtotal, Total: total},
+			OrderID:                 orderID,
+			OrderNo:                 orderNo,
+			Status:                  order.Status,
+			Amounts:                 MoneyDTO{Currency: currency, Subtotal: subtotal, Total: total},
+			ShippingAddressSnapshot: shippingSnap,
 			// CreatedAt is not the DB-created timestamp, but deterministic enough for API response.
 			CreatedAt: now,
 		}
@@ -329,10 +362,12 @@ func (s *Service) createOrderWithIdempotencyTx(
 
 func hashCreatePayload(customerID string, req CreateOrderRequest) (string, error) {
 	payload := map[string]any{
-		"customerId": customerID,
-		"channel":    strings.TrimSpace(req.Channel),
-		"locale":     strings.TrimSpace(req.Locale),
-		"items":      req.Items,
+		"customerId":        customerID,
+		"channel":           strings.TrimSpace(req.Channel),
+		"shippingAddressId": strings.TrimSpace(req.ShippingAddressID),
+		"shippingAddress":   req.ShippingAddress,
+		"locale":            strings.TrimSpace(req.Locale),
+		"items":             req.Items,
 	}
 	raw, err := json.Marshal(payload)
 	if err != nil {
@@ -340,6 +375,45 @@ func hashCreatePayload(customerID string, req CreateOrderRequest) (string, error
 	}
 	sum := sha256.Sum256(raw)
 	return hex.EncodeToString(sum[:]), nil
+}
+
+func isValidShippingAddress(addr *ShippingAddress) bool {
+	if addr == nil {
+		return false
+	}
+	if strings.TrimSpace(addr.RecipientName) == "" {
+		return false
+	}
+	if strings.TrimSpace(addr.RecipientPhone) == "" {
+		return false
+	}
+	if strings.TrimSpace(addr.Address1) == "" {
+		return false
+	}
+	return true
+}
+
+func shippingSnapshotFromAddress(addr *customermodel.CustomerAddress) *ShippingAddress {
+	if addr == nil {
+		return nil
+	}
+	var metadata map[string]any
+	if len(addr.Metadata) > 0 {
+		_ = json.Unmarshal([]byte(addr.Metadata), &metadata)
+	}
+	return &ShippingAddress{
+		Label:          strings.TrimSpace(addr.Label),
+		RecipientName:  strings.TrimSpace(addr.RecipientName),
+		RecipientPhone: strings.TrimSpace(addr.RecipientPhone),
+		CountryCode:    strings.TrimSpace(addr.CountryCode),
+		Province:       strings.TrimSpace(addr.Province),
+		City:           strings.TrimSpace(addr.City),
+		District:       strings.TrimSpace(addr.District),
+		Address1:       strings.TrimSpace(addr.Address1),
+		Address2:       strings.TrimSpace(addr.Address2),
+		PostalCode:     strings.TrimSpace(addr.PostalCode),
+		Metadata:       metadata,
+	}
 }
 
 func generateOrderNo(now time.Time) string {

@@ -21,6 +21,8 @@ func ensureOrderRLSPolicies(ctx context.Context, db *gorm.DB) error {
 		{models.S(models.TableOrders), "order_tenant_rls"},
 		{models.S(models.TableOrderItems), "order_item_tenant_rls"},
 		{models.S(models.TableOrderEvents), "order_event_tenant_rls"},
+		{models.S(models.TableCarts), "cart_tenant_rls"},
+		{models.S(models.TableCustomerAddresses), "customer_address_tenant_rls"},
 	}
 	for _, p := range targets {
 		if err := db.WithContext(ctx).Exec(fmt.Sprintf("ALTER TABLE %s ENABLE ROW LEVEL SECURITY", p.table)).Error; err != nil {

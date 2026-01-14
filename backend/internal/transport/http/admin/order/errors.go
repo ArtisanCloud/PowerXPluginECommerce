@@ -33,10 +33,14 @@ func httpStatusForOrderError(err error) (status int, code string) {
 	case errors.Is(err, ordersvc.ErrIdempotencyKeyRequired),
 		errors.Is(err, ordersvc.ErrCustomerRequired),
 		errors.Is(err, ordersvc.ErrChannelRequired),
+		errors.Is(err, ordersvc.ErrShippingAddressRequired),
+		errors.Is(err, ordersvc.ErrInvalidShippingAddress),
 		errors.Is(err, ordersvc.ErrItemsRequired),
 		errors.Is(err, ordersvc.ErrInvalidQty),
 		errors.Is(err, ordersvc.ErrDuplicateSKU):
 		return http.StatusBadRequest, contracts.ErrCodeInvalidRequest
+	case errors.Is(err, ordersvc.ErrShippingAddressNotFound):
+		return http.StatusNotFound, contracts.ErrCodeNotFound
 	case errors.Is(err, ordersvc.ErrIdempotencyConflict),
 		errors.Is(err, ordersvc.ErrIdempotencyInProgress),
 		errors.Is(err, ordersvc.ErrOrderNotCancellable),
@@ -71,6 +75,12 @@ func messageForOrderError(err error) string {
 		return "customerId 必填"
 	case errors.Is(err, ordersvc.ErrChannelRequired):
 		return "channel 必填"
+	case errors.Is(err, ordersvc.ErrShippingAddressRequired):
+		return "收货地址必填"
+	case errors.Is(err, ordersvc.ErrInvalidShippingAddress):
+		return "收货地址不完整"
+	case errors.Is(err, ordersvc.ErrShippingAddressNotFound):
+		return "收货地址不存在"
 	case errors.Is(err, ordersvc.ErrItemsRequired):
 		return "items 不能为空"
 	case errors.Is(err, ordersvc.ErrInvalidQty):

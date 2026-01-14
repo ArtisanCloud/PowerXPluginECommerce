@@ -7,10 +7,12 @@ import (
 	"strings"
 
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/contracts"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	ordersvc "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/miniapp/order"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
+	"github.com/jackc/pgconn"
 )
 
 type Handler struct {
@@ -84,14 +86,25 @@ func httpStatusForOrderError(err error) (status int, code string) {
 		return http.StatusOK, ""
 	}
 	switch {
+	case isUndefinedTableError(err):
+		return http.StatusServiceUnavailable, contracts.ErrCodeInternalError
+	case isInvalidUUIDError(err):
+		return http.StatusBadRequest, contracts.ErrCodeInvalidRequest
+	case isSKUNotFoundError(err),
+		isMixedCurrencyError(err):
+		return http.StatusBadRequest, contracts.ErrCodeInvalidRequest
 	case errors.Is(err, ordersvc.ErrCustomerRequired):
 		return http.StatusUnauthorized, contracts.ErrCodeUnauthorized
 	case errors.Is(err, ordersvc.ErrIdempotencyKeyRequired),
 		errors.Is(err, ordersvc.ErrChannelRequired),
 		errors.Is(err, ordersvc.ErrItemsRequired),
 		errors.Is(err, ordersvc.ErrInvalidQty),
-		errors.Is(err, ordersvc.ErrDuplicateSKU):
+		errors.Is(err, ordersvc.ErrDuplicateSKU),
+		errors.Is(err, ordersvc.ErrShippingAddressRequired),
+		errors.Is(err, ordersvc.ErrInvalidShippingAddress):
 		return http.StatusBadRequest, contracts.ErrCodeInvalidRequest
+	case errors.Is(err, ordersvc.ErrShippingAddressNotFound):
+		return http.StatusNotFound, contracts.ErrCodeNotFound
 	case errors.Is(err, ordersvc.ErrIdempotencyConflict),
 		errors.Is(err, ordersvc.ErrIdempotencyInProgress),
 		errors.Is(err, ordersvc.ErrOutOfStock),
@@ -108,6 +121,11 @@ func respondMiniAppError(c *gin.Context, err error) {
 	if c == nil {
 		return
 	}
+	logger.WithError(err).WithFields(logger.Fields{
+		"request_id": requestIDFromRequest(c),
+		"path":       c.FullPath(),
+		"method":     c.Request.Method,
+	}).Error("mini-app order request failed")
 	status, code := httpStatusForOrderError(err)
 	msg := messageForOrderError(err)
 	contracts.ResponseError(c, status, code, msg)
@@ -118,6 +136,14 @@ func messageForOrderError(err error) string {
 		return ""
 	}
 	switch {
+	case isUndefinedTableError(err):
+		return "数据库未初始化/未迁移：请先执行 make migrate 并重启后端"
+	case isInvalidUUIDError(err):
+		return "客户ID格式不正确（期望 UUID），请重新登录后再试"
+	case isSKUNotFoundError(err):
+		return "SKU 不存在或不可用"
+	case isMixedCurrencyError(err):
+		return "同一订单不支持多币种"
 	case errors.Is(err, ordersvc.ErrOrderServiceUnavailable):
 		return "订单服务不可用"
 	case errors.Is(err, ordersvc.ErrCustomerRequired):
@@ -136,6 +162,12 @@ func messageForOrderError(err error) string {
 		return "购买数量必须大于 0"
 	case errors.Is(err, ordersvc.ErrDuplicateSKU):
 		return "同一订单中 SKU 不可重复"
+	case errors.Is(err, ordersvc.ErrShippingAddressRequired):
+		return "收货地址必填"
+	case errors.Is(err, ordersvc.ErrInvalidShippingAddress):
+		return "收货地址不完整"
+	case errors.Is(err, ordersvc.ErrShippingAddressNotFound):
+		return "收货地址不存在"
 	case errors.Is(err, ordersvc.ErrSellabilityFailed):
 		return "商品不可售"
 	case errors.Is(err, ordersvc.ErrOutOfStock):
@@ -145,6 +177,35 @@ func messageForOrderError(err error) string {
 	default:
 		return err.Error()
 	}
+}
+
+func isUndefinedTableError(err error) bool {
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) || pgErr == nil {
+		return false
+	}
+	// 42P01: undefined_table
+	return strings.TrimSpace(pgErr.Code) == "42P01"
+}
+
+func isInvalidUUIDError(err error) bool {
+	var pgErr *pgconn.PgError
+	if !errors.As(err, &pgErr) || pgErr == nil {
+		return false
+	}
+	// 22P02: invalid_text_representation (includes invalid input syntax for type uuid)
+	if strings.TrimSpace(pgErr.Code) != "22P02" {
+		return false
+	}
+	return strings.Contains(strings.ToLower(pgErr.Message), "uuid")
+}
+
+func isSKUNotFoundError(err error) bool {
+	return err != nil && strings.Contains(strings.ToLower(err.Error()), "sku not found")
+}
+
+func isMixedCurrencyError(err error) bool {
+	return err != nil && strings.Contains(strings.ToLower(err.Error()), "mixed currency")
 }
 
 func requestIDFromRequest(c *gin.Context) string {

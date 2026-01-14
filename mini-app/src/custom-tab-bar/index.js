@@ -51,6 +51,17 @@ Component({
     onTap(e) {
       const path = e.currentTarget.dataset.path;
       const url = `/${String(path || "").replace(/^\//, "")}`;
+      if (String(path) === "pages/profile/index") {
+        const token = String(wx.getStorageSync("miniapp.customer.token") || "").trim();
+        const exp = String(wx.getStorageSync("miniapp.customer.expiresAt") || "").trim();
+        const expMs = exp ? Date.parse(exp) : NaN;
+        const expired = Number.isFinite(expMs) ? Date.now() >= expMs - 10000 : false;
+        if (!token || expired) {
+          wx.setStorageSync("miniapp.auth.redirect", "/pages/profile/index");
+          wx.navigateTo({ url: "/pages/auth/index?tab=login" });
+          return;
+        }
+      }
       wx.switchTab({ url });
     },
     onFabTap() {

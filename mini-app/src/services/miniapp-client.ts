@@ -1,5 +1,7 @@
+import { clearSession } from "./session";
+
 type MiniAppRequestOptions = {
-  method: "GET" | "POST" | "PUT" | "DELETE";
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   path: string;
   data?: any;
   headers?: Record<string, string>;
@@ -49,18 +51,20 @@ function getCustomerToken() {
 
 export async function miniAppRequest<T>(opts: MiniAppRequestOptions): Promise<T> {
   const url = `${getBaseUrl()}${opts.path}`;
+  const isAuthEndpoint = String(opts.path || "").startsWith("/auth/");
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "X-Tenant-UUID": getTenantUUID(),
     ...(opts.headers || {}),
   };
   const token = getCustomerToken();
-  if (token) headers["Authorization"] = `Bearer ${token}`;
+  // 登录/注册接口不应携带旧 token，避免误导排查（401 也应被视为“凭证错误”，而非“未登录”）。
+  if (token && !isAuthEndpoint) headers["Authorization"] = `Bearer ${token}`;
 
   return await new Promise<T>((resolve, reject) => {
     uni.request({
       url,
-      method: opts.method,
+      method: opts.method as any,
       data: opts.data,
       header: headers,
       success: (res: any) => {
@@ -70,6 +74,11 @@ export async function miniAppRequest<T>(opts: MiniAppRequestOptions): Promise<T>
         if (body && typeof body === "object" && "code" in (body as any) && "data" in (body as any)) {
           const env = body as Envelope<T>;
           if ((env.code ?? 0) === 0) return resolve(env.data as T);
+          if ((env.code ?? 0) === 401) {
+            if (isAuthEndpoint) return reject(new Error("手机号或密码错误"));
+            clearSession();
+            return reject(new Error("请先登录"));
+          }
           return reject(new Error(env.message || "request failed"));
         }
 
@@ -81,10 +90,20 @@ export async function miniAppRequest<T>(opts: MiniAppRequestOptions): Promise<T>
             (typeof api.error === "string" ? api.error : "") ||
             api.message ||
             "request failed";
+          if (httpStatus === 401 || String(errMsg).toLowerCase().includes("unauthorized")) {
+            if (isAuthEndpoint) return reject(new Error("手机号或密码错误"));
+            clearSession();
+            return reject(new Error("请先登录"));
+          }
           return reject(new Error(errMsg));
         }
 
         if (httpStatus >= 200 && httpStatus < 300) return resolve(body as T);
+        if (httpStatus === 401) {
+          if (isAuthEndpoint) return reject(new Error("手机号或密码错误"));
+          clearSession();
+          return reject(new Error("请先登录"));
+        }
         reject(new Error((body as any)?.message || (body as any)?.error || "request failed"));
       },
       fail: (err: any) => reject(new Error(err?.errMsg || "request failed")),
