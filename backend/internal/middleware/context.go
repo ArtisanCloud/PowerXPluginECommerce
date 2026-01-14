@@ -42,10 +42,11 @@ const (
 
 type tenantUUIDContextKey struct{}
 type customerContextKey struct{}
+type requestIDContextKey struct{}
 
 var ctxKeyTenantUUID = tenantUUIDContextKey{}
 var ctxKeyCustomerCtx = customerContextKey{}
-var ctxKeyRequestID = struct{}{}
+var ctxKeyRequestID = requestIDContextKey{}
 
 var ErrTenantMissing = errors.New("tenant context missing")
 
