@@ -159,6 +159,7 @@
     <SkuPickerSheet
       v-model="skuSheetOpen"
       mode="cart"
+      :show-price="false"
       :show-qty="false"
       v-model:selectedSkuId="skuPickerSelectedSkuId"
       :skus="skuPickerSkus"
@@ -178,7 +179,7 @@ import { cartCount, clearLocalCart, getLocalCart, removeCartItem, setCartItemQty
 import { isLoggedIn } from "@/services/session";
 import { miniAppBatchSkus } from "@/services/miniapp-sku";
 import SkuPickerSheet from "@/components/product/sku-picker-sheet.vue";
-import { miniAppGetProductDetailWithSpec, miniAppGetSellability, type MiniAppSpecGroup, type MiniAppSkuSummary } from "@/services/miniapp-product";
+import { miniAppGetProduct, miniAppGetProductDetailWithSpec, miniAppGetSellability, type MiniAppSpecGroup, type MiniAppSkuSummary } from "@/services/miniapp-product";
 import { isLikelyPlaceholderUrl, pickPlaceholderImage } from "@/utils/product-images";
 
 type SellabilityMeta = {
@@ -190,7 +191,7 @@ type SellabilityMeta = {
 
 const topInset = ref<number>(40);
 const items = ref<LocalCartItem[]>([]);
-const fallbackThumb = "/static/icons/image-placeholder.svg";
+const fallbackThumb = "/static/icons/image-placeholder.png";
 const enriching = ref(false);
 const manageMode = ref(false);
 const sellabilityBySkuId = ref<Map<string, SellabilityMeta>>(new Map());
@@ -204,6 +205,7 @@ const skuPickerSkus = ref<MiniAppSkuSummary[]>([]);
 const skuPickerSpecGroups = ref<MiniAppSpecGroup[]>([]);
 const skuPickerCoverUrl = ref("");
 const spuDetailCache = new Map<string, { skus: MiniAppSkuSummary[]; specGroups: MiniAppSpecGroup[]; coverUrl: string }>();
+const spuCoverCache = new Map<string, string>();
 
 const totalCount = computed(() => cartCount(items.value));
 
@@ -344,8 +346,9 @@ function loadLocal() {
 }
 
 function cartThumb(it: LocalCartItem) {
-  if (brokenThumbSkuIds.value.has(String(it?.skuId || "").trim())) return "/static/logo.png";
+  if (brokenThumbSkuIds.value.has(String(it?.skuId || "").trim())) return fallbackThumb;
   const url = String(it?.imageUrl || "").trim();
+  // 过滤已知“占位域名”（如 picsum），统一回退到与商城一致的占位图池
   if (url && !isLikelyPlaceholderUrl(url)) return url;
   const key = String(it?.spuId || it?.skuId || "").trim();
   if (key) return pickPlaceholderImage(key);
@@ -445,10 +448,7 @@ async function openSkuPicker(it: LocalCartItem) {
 
 function buildSkuLabel(sku: MiniAppSkuSummary | undefined | null) {
   if (!sku) return "";
-  const code = String((sku as any)?.code || "").trim() || String(sku.id || "").trim();
-  if (sku.price == null) return code;
-  const currency = String(sku.currency || "CNY").trim() || "CNY";
-  return `${code} · ${formatMoney(currency, Number(sku.price))}`;
+  return String((sku as any)?.code || "").trim() || String(sku.id || "").trim();
 }
 
 function onSkuPicked(payload: { skuId: string }) {
@@ -521,6 +521,28 @@ async function enrichItemsFromServer() {
   try {
     const resp = await miniAppBatchSkus(current.map((x) => x.skuId));
     const map = new Map((resp?.items || []).map((x) => [String(x.id || "").trim(), x]));
+    // 购物车里如果 sku batch 没返回 imageUrl，则用商品 coverUrl（与商城列表一致）
+    const spuIdsForCover = Array.from(
+      new Set(
+        current
+          .map((it) => String(it?.spuId || "").trim())
+          .concat((resp?.items || []).map((x) => String((x as any)?.spuId || "").trim()))
+          .filter(Boolean),
+      ),
+    );
+    await Promise.all(
+      spuIdsForCover.map(async (spuId) => {
+        if (spuCoverCache.has(spuId)) return;
+        try {
+          const p = await miniAppGetProduct(spuId);
+          const coverUrl = String((p as any)?.coverUrl || "").trim();
+          if (coverUrl) spuCoverCache.set(spuId, coverUrl);
+        } catch {
+          // ignore
+        }
+      }),
+    );
+
     const next = current.map((it) => {
       const s = map.get(String(it.skuId || "").trim());
       if (!s) return it;
@@ -529,13 +551,18 @@ async function enrichItemsFromServer() {
       const spuId = String(it.spuId || "").trim() || String(s.spuId || "").trim() || undefined;
       const localImage = String(it.imageUrl || "").trim();
       const remoteImage = String(s.imageUrl || "").trim();
+      const coverImage = spuId ? String(spuCoverCache.get(spuId) || "").trim() : "";
+      // 与商城列表一致：优先用商品 coverUrl（而不是 sku 的 imageUrl），避免出现“购物车与商城图不一致”
       const imageUrl =
-        (localImage && !isLikelyPlaceholderUrl(localImage) ? localImage : "") ||
+        (coverImage && !isLikelyPlaceholderUrl(coverImage) ? coverImage : "") ||
         (remoteImage && !isLikelyPlaceholderUrl(remoteImage) ? remoteImage : "") ||
+        (localImage && !isLikelyPlaceholderUrl(localImage) ? localImage : "") ||
         undefined;
       const title = String(it.title || "").trim() || String(s.spuName || "").trim() || undefined;
       const skuCode = String(it.skuCode || "").trim() || String(s.code || "").trim() || undefined;
-      return { ...it, spuId, unitPrice, currency, imageUrl, title, skuCode };
+      const nextItem = { ...it, spuId, unitPrice, currency, imageUrl, title, skuCode };
+      if (imageUrl && imageUrl !== localImage) brokenThumbSkuIds.value.delete(String(it?.skuId || "").trim());
+      return nextItem;
     });
     items.value = next;
     const cart = getLocalCart();

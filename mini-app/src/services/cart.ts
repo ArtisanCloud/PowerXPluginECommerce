@@ -30,6 +30,44 @@ function nowIso() {
   return new Date().toISOString();
 }
 
+function stripPriceFromSkuLabel(input?: string) {
+  const raw = String(input || "").trim();
+  if (!raw) return undefined;
+
+  // 1) remove standalone currency lines like "¥299"/"￥299"/"CNY 299" (wrap may split into multiple lines)
+  const lines = raw
+    .split(/\r?\n/)
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .filter((line) => {
+      const l = line.trim();
+      if (!l) return false;
+      if (/^([¥￥$€])\s*\d/.test(l)) return false;
+      if (/^(CNY|RMB|USD|EUR)\s*[:：]?\s*\d/i.test(l)) return false;
+      // also strip lines that are only a currency+number (with optional decimals)
+      if (/^([¥￥$€])\s*\d+(\.\d+)?$/.test(l)) return false;
+      if (/^(CNY|RMB|USD|EUR)\s*\d+(\.\d+)?$/i.test(l)) return false;
+      return true;
+    });
+
+  let s = lines.join(" ").replace(/\s+/g, " ").trim();
+  if (!s) return undefined;
+
+  // 2) if label ends with "· <price>", strip the trailing price part (keep other content)
+  // examples:
+  //   "APP-JERSEY-001-M · ¥299" -> "APP-JERSEY-001-M"
+  //   "APP-JERSEY-001-M · 299"  -> "APP-JERSEY-001-M"
+  const parts = s.split("·").map((p) => p.trim()).filter(Boolean);
+  if (parts.length >= 2) {
+    const last = parts[parts.length - 1];
+    if (/^[¥￥$€]\s*\d/.test(last) || /^(CNY|RMB|USD|EUR)\s*\d/i.test(last) || /^\d+(\.\d+)?\s*(CNY|RMB|USD|EUR)?$/i.test(last)) {
+      parts.pop();
+      s = parts.join(" · ").trim();
+    }
+  }
+  return s || undefined;
+}
+
 function normalize(items: LocalCartItem[]) {
   const DEFAULT_MAX_QTY = 10;
   const map = new Map<string, LocalCartItem>();
@@ -39,7 +77,7 @@ function normalize(items: LocalCartItem[]) {
     if (!skuId || !Number.isFinite(qty) || qty <= 0) continue;
     const prev = map.get(skuId);
     if (!prev) {
-      map.set(skuId, { ...it, skuId, qty });
+      map.set(skuId, { ...it, skuId, qty, skuLabel: stripPriceFromSkuLabel(it.skuLabel) });
       continue;
     }
     map.set(skuId, {
@@ -49,7 +87,7 @@ function normalize(items: LocalCartItem[]) {
       spuId: it.spuId || prev.spuId,
       title: it.title || prev.title,
       imageUrl: it.imageUrl || prev.imageUrl,
-      skuLabel: it.skuLabel || prev.skuLabel,
+      skuLabel: stripPriceFromSkuLabel(it.skuLabel || prev.skuLabel),
       skuCode: it.skuCode || prev.skuCode,
       maxQty: Number.isFinite(Number(it.maxQty)) ? Number(it.maxQty) : prev.maxQty,
       currency: String(it.currency || "").trim() || prev.currency,
@@ -65,7 +103,7 @@ function normalize(items: LocalCartItem[]) {
     const normalizedPrice = Number.isFinite(unitPrice) && unitPrice >= 0 ? unitPrice : undefined;
     const currency = String(it.currency || "").trim() || undefined;
     const selected = typeof it.selected === "boolean" ? it.selected : true;
-    return { ...it, qty: nextQty, selected, maxQty: enforcedMax, unitPrice: normalizedPrice, currency };
+    return { ...it, qty: nextQty, selected, skuLabel: stripPriceFromSkuLabel(it.skuLabel), maxQty: enforcedMax, unitPrice: normalizedPrice, currency };
   });
 }
 
@@ -73,8 +111,16 @@ export function getLocalCart(): LocalCart {
   try {
     const raw = String(uni.getStorageSync(CART_ITEMS_KEY) || "").trim();
     const items = raw ? (JSON.parse(raw) as LocalCartItem[]) : [];
+    const normalized = normalize(items);
+    // one-time migration: persist normalized items (without touching updatedAt)
+    try {
+      const nextRaw = JSON.stringify(normalized);
+      if (raw && raw !== nextRaw) {
+        uni.setStorageSync(CART_ITEMS_KEY, nextRaw);
+      }
+    } catch {}
     return {
-      items: normalize(items),
+      items: normalized,
       updatedAt: String(uni.getStorageSync(CART_UPDATED_AT_KEY) || "").trim() || undefined,
       lastSyncAt: String(uni.getStorageSync(CART_LAST_SYNC_AT_KEY) || "").trim() || undefined,
     };

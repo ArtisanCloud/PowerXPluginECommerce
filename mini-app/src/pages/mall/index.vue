@@ -156,7 +156,7 @@
                 @tap="openProduct(p)"
               >
                 <view class="relative overflow-hidden" style="aspect-ratio: 4 / 5; background: #f3f4f6;">
-                  <image class="absolute inset-0 h-full w-full" mode="aspectFill" :src="p.image" />
+                  <image class="absolute inset-0 h-full w-full" mode="aspectFill" :src="p.image" @error="onProductImageError(p.id)" />
                   <view
                     v-if="p.badge"
                     class="absolute rounded-sm px-2 py-1"
@@ -513,6 +513,13 @@ function addToCart(p: Product) {
   }
   uni.showToast({ title: "请进入商品详情选择规格加入购物车", icon: "none" });
   openProduct(p);
+}
+
+function onProductImageError(productId: string) {
+  const id = String(productId || "").trim();
+  if (!id) return;
+  // 微信小程序对外网图片域名有白名单限制：失败时回退到本地占位图，避免“空白卡片”
+  products.value = products.value.map((p) => (p.id === id ? { ...p, image: "/static/icons/image-placeholder.png" } : p));
 }
 
 function onReachBottom() {

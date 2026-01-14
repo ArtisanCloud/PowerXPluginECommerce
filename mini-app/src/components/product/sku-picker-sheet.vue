@@ -13,7 +13,7 @@
         </view>
 
         <view class="flex-1 pt-1">
-          <view class="flex items-baseline gap-1 mb-1">
+          <view v-if="showPrice" class="flex items-baseline gap-1 mb-1">
             <text class="text-primary" style="font-size: 12px; font-weight: 900;">{{ displayCurrencySymbol }}</text>
             <text class="text-primary" style="font-size: 22px; font-weight: 900;">{{ displayPrice }}</text>
           </view>
@@ -68,7 +68,7 @@
               @tap="selectSkuLocal(s.id)"
             >
               <text :style="skuChipTextStyle(s.id)" style="font-size: 12px; font-weight: 900;">{{ s.code || s.id }}</text>
-              <text v-if="s.price != null" class="ml-1" :style="skuChipSubTextStyle(s.id)" style="font-size: 10px; font-weight: 800;">
+              <text v-if="showPrice && s.price != null" class="ml-1" :style="skuChipSubTextStyle(s.id)" style="font-size: 10px; font-weight: 800;">
                 {{ formatMoney(s.currency || 'CNY', s.price) }}
               </text>
             </view>
@@ -195,6 +195,7 @@ type SpecGroup = {
 	    maxQty?: number;
       mode?: "product" | "cart";
       showQty?: boolean;
+      showPrice?: boolean;
 	  }>(),
 	  {
 	    specGroups: () => [],
@@ -203,6 +204,7 @@ type SpecGroup = {
 	    maxQty: 10,
       mode: "product",
       showQty: true,
+      showPrice: true,
 	  },
 	);
 
@@ -379,6 +381,7 @@ function confirmCartPick() {
 
 const mode = computed(() => props.mode);
 const showQty = computed(() => props.showQty);
+const showPrice = computed(() => props.showPrice);
 
 function skuChipStyle(id: string) {
   const active = id === localSelectedSkuId.value;

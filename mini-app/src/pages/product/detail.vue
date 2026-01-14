@@ -634,8 +634,13 @@ function onSkuSheetConfirm(payload: { action: "cart" | "buy"; skuId: string; qty
     addCartItem(payload.skuId, payload.qty, {
       spuId: String(spuId.value || "").trim() || undefined,
       title: String(product.value?.name || "").trim() || "商品",
-      imageUrl: (skuImageUrl && !isLikelyPlaceholderUrl(skuImageUrl) ? skuImageUrl : cover) || undefined,
-      skuLabel: selectedSpecText.value,
+      // 与商城保持一致：避免把 picsum 这类“占位域名”写进购物车，统一走占位图池
+      imageUrl:
+        (cover && !isLikelyPlaceholderUrl(cover) ? cover : "") ||
+        (skuImageUrl && !isLikelyPlaceholderUrl(skuImageUrl) ? skuImageUrl : "") ||
+        undefined,
+      // 购物车里 skuLabel 用于“规格下拉”展示，这里只放 SKU code，价格在卡片主区域展示即可。
+      skuLabel: String((sku as any)?.code || "").trim() || undefined,
       skuCode: String((sku as any)?.code || "").trim() || undefined,
       maxQty,
       currency,

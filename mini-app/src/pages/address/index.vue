@@ -35,7 +35,7 @@
             </view>
           </view>
 
-          <text class="text-sm text-gray-600" style="line-height: 1.6;" :number-of-lines="2">{{ formatShippingAddress(a.shippingAddress) }}</text>
+          <text class="text-sm text-gray-600" style="line-height: 1.6;" :number-of-lines="2">{{ formatFullAddress(a.shippingAddress) }}</text>
 
           <view class="mt-4 flex items-center justify-end border-t" style="gap: 16px; border-color: rgba(0,0,0,0.04); padding-top: 12px;">
             <view class="flex items-center" style="gap: 4px;" hover-class="opacity-80" @tap.stop="openEdit(a.id)">
@@ -78,7 +78,13 @@
             <input v-model="form.phone" class="text-sm" placeholder="手机号" type="number" />
           </view>
           <view class="rounded-xl bg-gray-50 px-3 py-3" style="border: 1px solid rgba(0,0,0,0.04);">
-            <input v-model="form.region" class="text-sm" placeholder="省市区（如：广东省 深圳市 南山区）" />
+            <picker mode="region" :value="regionValue" @change="onRegionChange">
+              <view class="flex items-center justify-between">
+                <text v-if="regionText" class="text-sm text-gray-900">{{ regionText }}</text>
+                <text v-else class="text-sm text-gray-400">省市区（请选择）</text>
+                <text class="text-gray-400" style="font-size: 14px; font-weight: 900;">›</text>
+              </view>
+            </picker>
           </view>
           <view class="rounded-xl bg-gray-50 px-3 py-3" style="border: 1px solid rgba(0,0,0,0.04);">
             <input v-model="form.detail" class="text-sm" placeholder="详细地址（街道/门牌号）" />
@@ -107,13 +113,23 @@
 <script setup lang="ts">
 import { onLoad, onShow } from "@dcloudio/uni-app";
 import { onMounted, reactive, ref } from "vue";
-import { getSelectedAddressId, maskPhone, setSelectedAddressId } from "@/services/address";
-import { createMyAddress, deleteMyAddress, formatShippingAddress, listMyAddresses, updateMyAddress, type CustomerAddressDTO } from "@/services/miniapp-address";
+import {
+  formatFullAddress,
+  getSelectedAddressId,
+  maskPhone,
+  miniAppCreateMyAddress,
+  miniAppDeleteMyAddress,
+  miniAppListMyAddresses,
+  miniAppSetMyAddressDefault,
+  miniAppUpdateMyAddress,
+  setSelectedAddressId,
+  type MiniAppCustomerAddress,
+} from "@/services/miniapp-address";
 
 const topInset = ref(44);
 const from = ref<"order" | "manage">("manage");
 
-const list = ref<CustomerAddressDTO[]>([]);
+const list = ref<MiniAppCustomerAddress[]>([]);
 const selectedId = ref("");
 const loading = ref(false);
 const busy = ref(false);
@@ -127,16 +143,20 @@ const editingId = ref("");
 const form = reactive({
   name: "",
   phone: "",
-  region: "",
+  province: "",
+  city: "",
+  district: "",
   detail: "",
   isDefault: true,
 });
+const regionValue = ref<string[]>(["", "", ""]);
+const regionText = ref("");
 
 async function load() {
   if (loading.value) return;
   loading.value = true;
   try {
-    const items = await listMyAddresses();
+    const items = await miniAppListMyAddresses();
     list.value = (items || []).slice(0, 20);
     selectedId.value = getSelectedAddressId() || (list.value.find((x) => x.isDefault)?.id || list.value[0]?.id || "");
   } catch (e: any) {
@@ -168,9 +188,13 @@ function openCreate() {
   editingId.value = "";
   form.name = "";
   form.phone = "";
-  form.region = "";
+  form.province = "";
+  form.city = "";
+  form.district = "";
   form.detail = "";
   form.isDefault = list.value.length === 0;
+  regionValue.value = ["", "", ""];
+  regionText.value = "";
   sheetOpen.value = true;
 }
 
@@ -180,9 +204,13 @@ function openEdit(id: string) {
   editingId.value = a.id;
   form.name = a.shippingAddress.recipientName;
   form.phone = a.shippingAddress.recipientPhone;
-  form.region = [a.shippingAddress.province, a.shippingAddress.city, a.shippingAddress.district].filter(Boolean).join(" ");
+  form.province = String(a.shippingAddress.province || "").trim();
+  form.city = String(a.shippingAddress.city || "").trim();
+  form.district = String(a.shippingAddress.district || "").trim();
   form.detail = [a.shippingAddress.address1, a.shippingAddress.address2].filter(Boolean).join(" ");
   form.isDefault = Boolean(a.isDefault);
+  regionValue.value = [form.province, form.city, form.district];
+  regionText.value = [form.province, form.city, form.district].filter(Boolean).join(" ");
   sheetOpen.value = true;
 }
 
@@ -190,11 +218,14 @@ function closeSheet() {
   sheetOpen.value = false;
 }
 
-function parseRegion(s: string) {
-  const text = String(s || "").trim();
-  if (!text) return { province: "", city: "", district: "" };
-  const parts = text.split(/\s+/).filter(Boolean);
-  return { province: parts[0] || "", city: parts[1] || "", district: parts.slice(2).join(" ") || "" };
+function onRegionChange(e: any) {
+  const v = Array.isArray(e?.detail?.value) ? e.detail.value : [];
+  const next = [String(v?.[0] || "").trim(), String(v?.[1] || "").trim(), String(v?.[2] || "").trim()] as string[];
+  regionValue.value = next;
+  form.province = next[0] || "";
+  form.city = next[1] || "";
+  form.district = next[2] || "";
+  regionText.value = next.filter(Boolean).join(" ");
 }
 
 async function save() {
@@ -208,9 +239,14 @@ async function save() {
   const detail = String(form.detail || "").trim();
   if (!name) return uni.showToast({ title: "请填写收货人", icon: "none" });
   if (!phone) return uni.showToast({ title: "请填写手机号", icon: "none" });
+  if (!String(form.province || "").trim() || !String(form.city || "").trim()) {
+    return uni.showToast({ title: "请选择省市区", icon: "none" });
+  }
   if (!detail) return uni.showToast({ title: "请填写详细地址", icon: "none" });
 
-  const { province, city, district } = parseRegion(form.region);
+  const province = String(form.province || "").trim();
+  const city = String(form.city || "").trim();
+  const district = String(form.district || "").trim();
   const isDefault = Boolean(form.isDefault);
 
   busy.value = true;
@@ -227,9 +263,14 @@ async function save() {
         address1: detail,
       },
     };
-    const resp = editingId.value ? await updateMyAddress(editingId.value, req) : await createMyAddress(req);
+    const resp = editingId.value ? await miniAppUpdateMyAddress(editingId.value, req) : await miniAppCreateMyAddress(req);
     const id = String(resp?.id || "").trim();
     if (id) {
+      if (isDefault && !resp?.isDefault) {
+        try {
+          await miniAppSetMyAddressDefault(id);
+        } catch {}
+      }
       setSelectedAddressId(id);
       selectedId.value = id;
     }
@@ -261,7 +302,7 @@ async function remove(id: string) {
   if (!ok) return;
   busy.value = true;
   try {
-    await deleteMyAddress(target);
+    await miniAppDeleteMyAddress(target);
     await load();
     const curSel = getSelectedAddressId();
     if (curSel === target) {

@@ -147,8 +147,7 @@
 		import { createOrder } from "@/services/miniapp-order";
 		import { isLoggedIn } from "@/services/session";
 		import { clearLocalCart, getLocalCart } from "@/services/cart";
-		import { getSelectedAddressId, maskPhone, setSelectedAddressId } from "@/services/address";
-		import { formatShippingAddress, listMyAddresses, type CustomerAddressDTO } from "@/services/miniapp-address";
+		import { formatFullAddress, getSelectedAddressId, maskPhone, miniAppListMyAddresses, setSelectedAddressId, type MiniAppCustomerAddress } from "@/services/miniapp-address";
 		import { isLikelyPlaceholderUrl, pickPlaceholderImage } from "@/utils/product-images";
 
 type DraftItem = {
@@ -173,13 +172,13 @@ type DraftPayload = {
 		const submitting = ref(false);
 		const buyerNote = ref("");
 
-		const selectedAddress = ref<CustomerAddressDTO | null>(null);
+		const selectedAddress = ref<MiniAppCustomerAddress | null>(null);
 		const addressTitle = computed(() => selectedAddress.value?.shippingAddress?.recipientName || "收货人（待选择）");
 		const addressPhoneMasked = computed(() =>
 		  selectedAddress.value ? maskPhone(selectedAddress.value.shippingAddress?.recipientPhone) : "—",
 		);
 		const addressFull = computed(() =>
-		  selectedAddress.value ? formatShippingAddress(selectedAddress.value.shippingAddress) : "请选择收货地址",
+		  selectedAddress.value ? formatFullAddress(selectedAddress.value.shippingAddress) : "请选择收货地址",
 		);
 
 	const draft = ref<DraftPayload | null>(null);
@@ -275,8 +274,8 @@ function goBack() {
 		    return;
 		  }
 		  try {
-		    const list = await listMyAddresses();
-		    const items = Array.isArray(list) ? list : [];
+			    const list = await miniAppListMyAddresses();
+			    const items = Array.isArray(list) ? list : [];
 		    if (!items.length) {
 		      selectedAddress.value = null;
 		      return;
