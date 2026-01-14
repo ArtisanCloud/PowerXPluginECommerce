@@ -16,7 +16,14 @@ try {
 
 // 微信 WXSS 对选择器里的反斜杠转义（如 .py-0\\.5 / .hover\\:xxx / .text-\\[10px\\]）会直接报错
 // 目前已知：开发者工具会在遇到 `\` 时直接 WXSS 编译失败。
-if (content.includes("\\.") || content.includes("\\:") || content.includes("\\[") || content.includes("\\]") || content.includes("\\\\")) {
+if (
+  content.includes("\\.") ||
+  content.includes("\\:") ||
+  content.includes("\\[") ||
+  content.includes("\\]") ||
+  content.includes("\\/") ||
+  content.includes("\\\\")
+) {
   console.error(`WXSS contains unsupported backslash selector escaping: ${file}`);
   // 输出前几处位置，方便定位
   const needle = "\\";

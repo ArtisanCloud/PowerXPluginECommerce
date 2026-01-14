@@ -71,34 +71,39 @@
       <view class="mt-3 rounded-3xl bg-white p-4 shadow-sm">
         <view class="flex items-center justify-between">
           <view class="text-base font-extrabold">我的订单</view>
-          <view class="text-xs text-muted" hover-class="opacity-70" @tap="noop">查看全部 ›</view>
+          <view class="text-xs text-muted" hover-class="opacity-70" @tap="toOrders('all')">查看全部 ›</view>
         </view>
         <view class="mt-4 flex items-start justify-between">
-          <view class="flex flex-1 flex-col items-center gap-2" hover-class="opacity-80" @tap="noop">
+          <view class="flex flex-1 flex-col items-center gap-2" hover-class="opacity-80" @tap="toOrders('pending_payment')">
             <view class="relative">
               <text class="text-2xl text-gray-500">💳</text>
-              <view class="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500"></view>
+              <view v-if="orderBadges.pendingPayment" class="absolute -top-1 -right-1 h-2 w-2 rounded-full bg-red-500"></view>
             </view>
             <text class="text-muted" style="font-size: 11px;">待付款</text>
           </view>
-          <view class="flex flex-1 flex-col items-center gap-2" hover-class="opacity-80" @tap="noop">
+          <view class="flex flex-1 flex-col items-center gap-2" hover-class="opacity-80" @tap="toOrders('paid')">
             <text class="text-2xl text-gray-500">📦</text>
             <text class="text-muted" style="font-size: 11px;">待发货</text>
           </view>
-          <view class="flex flex-1 flex-col items-center gap-2" hover-class="opacity-80" @tap="noop">
+          <view class="flex flex-1 flex-col items-center gap-2" hover-class="opacity-80" @tap="toOrders('shipped')">
             <view class="relative">
               <text class="text-2xl text-gray-500">🚚</text>
-              <view class="absolute -top-2 -right-2 h-4 w-4 rounded-full bg-red-500 flex items-center justify-center">
-                <text class="font-extrabold text-white" style="font-size: 9px;">2</text>
+              <view
+                v-if="orderBadges.shippedCount > 0"
+                class="absolute -top-2 -right-2 h-4 w-4 rounded-full bg-red-500 flex items-center justify-center"
+              >
+                <text class="font-extrabold text-white" style="font-size: 9px;">
+                  {{ orderBadges.shippedCount > 9 ? "9+" : String(orderBadges.shippedCount) }}
+                </text>
               </view>
             </view>
             <text class="text-muted" style="font-size: 11px;">待收货</text>
           </view>
-          <view class="flex flex-1 flex-col items-center gap-2" hover-class="opacity-80" @tap="noop">
+          <view class="flex flex-1 flex-col items-center gap-2" hover-class="opacity-80" @tap="toOrders('completed')">
             <text class="text-2xl text-gray-500">💬</text>
             <text class="text-muted" style="font-size: 11px;">评价</text>
           </view>
-          <view class="flex flex-1 flex-col items-center gap-2" hover-class="opacity-80" @tap="noop">
+          <view class="flex flex-1 flex-col items-center gap-2" hover-class="opacity-80" @tap="toOrders('refund')">
             <text class="text-2xl text-gray-500">↩</text>
             <text class="text-muted" style="font-size: 11px;">售后</text>
           </view>
@@ -108,7 +113,7 @@
       <view class="mt-4 px-1 text-base font-extrabold">更多服务</view>
       <view class="mt-2 rounded-3xl bg-white p-4 shadow-sm">
         <view class="grid grid-cols-4 gap-y-6">
-          <view class="flex flex-col items-center gap-2" hover-class="opacity-80" @tap="noop">
+          <view class="flex flex-col items-center gap-2" hover-class="opacity-80" @tap="toAddress">
             <view class="h-10 w-10 rounded-full flex items-center justify-center" style="background: rgba(79, 138, 126, 0.10);">
               <text class="text-xl text-primary">📍</text>
             </view>
@@ -161,12 +166,14 @@ import { computed, onMounted, ref } from "vue";
 import { onShow } from "@dcloudio/uni-app";
 import { syncTabBarSelected } from "@/utils/tabbar";
 import { clearSession, getCustomerIdentifier, getCustomerName, isLoggedIn } from "@/services/session";
+import { miniAppListMyOrders } from "@/services/miniapp-order";
 
 const topInset = ref<number>(40);
 
 const loggedIn = computed(() => isLoggedIn());
 const displayName = computed(() => getCustomerName() || getCustomerIdentifier() || "用户");
 const avatarUrl = "/static/icons/image-placeholder.svg";
+const orderBadges = ref({ pendingPayment: false, shippedCount: 0 });
 
 function goLogin() {
   uni.setStorageSync("miniapp.auth.redirect", "/pages/profile/index");
@@ -175,6 +182,33 @@ function goLogin() {
 
 function noop() {
   uni.showToast({ title: "功能完善中", icon: "none" });
+}
+
+function toOrders(tab: string) {
+  if (!loggedIn.value) return goLogin();
+  const t = String(tab || "all").trim() || "all";
+  uni.navigateTo({ url: `/pages/order/list?tab=${encodeURIComponent(t)}` });
+}
+
+function toAddress() {
+  if (!loggedIn.value) return goLogin();
+  uni.navigateTo({ url: "/pages/address/index" });
+}
+
+async function refreshOrderBadges() {
+  if (!loggedIn.value) {
+    orderBadges.value = { pendingPayment: false, shippedCount: 0 };
+    return;
+  }
+  try {
+    const resp = await miniAppListMyOrders({ page: 1, pageSize: 50 });
+    const items = Array.isArray(resp?.items) ? resp.items : [];
+    const pending = items.filter((x) => String((x as any)?.status || "").trim() === "pending_payment").length;
+    const shipped = items.filter((x) => String((x as any)?.status || "").trim() === "shipped").length;
+    orderBadges.value = { pendingPayment: pending > 0, shippedCount: shipped };
+  } catch {
+    // ignore
+  }
 }
 
 async function logout() {
@@ -214,6 +248,7 @@ onMounted(() => {
 
 onShow(() => {
   syncTabBarSelected("pages/profile/index");
+  void refreshOrderBadges();
   if (!loggedIn.value) {
     goLogin();
   }

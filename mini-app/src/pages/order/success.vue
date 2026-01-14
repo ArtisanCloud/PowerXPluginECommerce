@@ -33,7 +33,7 @@
       <view class="mt-4 space-y-3">
         <button class="w-full rounded-full bg-primary py-3 text-sm font-extrabold text-white" @tap="toMall">继续逛逛</button>
         <button class="w-full rounded-full bg-white py-3 text-sm font-extrabold text-gray-900 shadow-sm" @tap="toProfile">
-          去我的（订单列表待接入）
+          查看我的订单
         </button>
       </view>
     </view>
@@ -91,7 +91,7 @@ function toMall() {
 }
 
 function toProfile() {
-  uni.switchTab({ url: "/pages/profile/index" });
+  uni.navigateTo({ url: "/pages/order/list" });
 }
 
 onLoad((options) => {
