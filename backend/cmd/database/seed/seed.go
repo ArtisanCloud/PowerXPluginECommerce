@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"os"
 	"sort"
 	"strings"
 	"time"
@@ -24,7 +25,9 @@ import (
 	pricingsvc "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/pricing"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
+	"github.com/google/uuid"
 	"github.com/lib/pq"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -435,7 +438,107 @@ func seedSampleCustomers(db *gorm.DB) error {
 			}
 		}
 	}
+	if err := seedDebugCustomerAccount(db); err != nil {
+		return err
+	}
 	return nil
+}
+
+// seedDebugCustomerAccount inserts a dev-only mini-app login account for local debugging.
+// Guarded by POWERX_DEV_MODE=1 to avoid shipping weak credentials into production data.
+func seedDebugCustomerAccount(db *gorm.DB) error {
+	// 不引入新的环境变量：仅在 Standalone + local 模式下写入弱密码调试账号。
+	// 约束条件：
+	// - POWERX_PROXY=0（非宿主代理）
+	// - IAM_MODE=local（本地模式）
+	// - POWERX_RBAC_DELEGATE=false（非 delegated）
+	if !shouldSeedDebugCustomerAccount() {
+		return nil
+	}
+	if db == nil || db.Migrator() == nil {
+		return nil
+	}
+	if !db.Migrator().HasTable(&customermodel.Customer{}) || !db.Migrator().HasTable(&customermodel.CustomerAccount{}) {
+		return nil
+	}
+
+	const phone = "13564674262"
+	const identifier = phone
+	const password = "111111"
+	customerID := uuid.NewSHA1(uuid.NameSpaceURL, []byte("seed-phone-"+phone)).String()
+
+	var existing customermodel.CustomerAccount
+	err := db.Where("tenant_uuid = ? AND LOWER(identifier) = ?", defaultTenantUUID, strings.ToLower(strings.TrimSpace(identifier))).
+		First(&existing).Error
+	switch {
+	case err == nil:
+		return nil
+	case errors.Is(err, gorm.ErrRecordNotFound):
+	default:
+		return err
+	}
+
+	var customer customermodel.Customer
+	err = db.Where("tenant_uuid = ? AND customer_id = ?", defaultTenantUUID, customerID).
+		First(&customer).Error
+	switch {
+	case errors.Is(err, gorm.ErrRecordNotFound):
+		customer = customermodel.Customer{
+			TenantUUID:     defaultTenantUUID,
+			CustomerID:     customerID,
+			Name:           "调试客户",
+			Type:           "individual",
+			Email:          "seed-debug-13564674262@demo.powerx",
+			Phone:          "+86" + phone,
+			Source:         "seed-data",
+			Status:         "active",
+			MembershipTier: "standard",
+		}
+		if err := db.Create(&customer).Error; err != nil {
+			return err
+		}
+	case err != nil:
+		return err
+	}
+
+	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+	if err != nil {
+		return err
+	}
+	account := customermodel.CustomerAccount{
+		TenantUUID:   defaultTenantUUID,
+		CustomerID:   customer.CustomerID,
+		Identifier:   strings.ToLower(strings.TrimSpace(identifier)),
+		PasswordHash: string(hash),
+		Status:       "active",
+	}
+	return db.Create(&account).Error
+}
+
+func shouldSeedDebugCustomerAccount() bool {
+	// 宿主代理模式下不写入调试账号
+	if v := strings.TrimSpace(os.Getenv("POWERX_PROXY")); v != "" {
+		if v != "0" && v != "false" && !strings.EqualFold(v, "false") {
+			return false
+		}
+	}
+
+	// IAM 非 local 时不写入（避免污染非本地环境）
+	if v := strings.ToLower(strings.TrimSpace(os.Getenv("IAM_MODE"))); v != "" && v != "local" {
+		return false
+	}
+
+	// delegated RBAC 环境不写入
+	if v := strings.ToLower(strings.TrimSpace(os.Getenv("POWERX_RBAC_DELEGATE"))); v == "1" || v == "true" {
+		return false
+	}
+
+	// Customer auth 明确 delegate 时不写入
+	if v := strings.ToLower(strings.TrimSpace(os.Getenv("POWERX_CUSTOMER_AUTH_MODE"))); v == "delegate" {
+		return false
+	}
+
+	return true
 }
 
 type categorySeedSpec struct {

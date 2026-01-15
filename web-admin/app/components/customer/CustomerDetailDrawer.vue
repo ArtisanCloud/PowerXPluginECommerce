@@ -174,8 +174,8 @@
 
         <section class="rounded-2xl border border-gray-100 bg-white/80 p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900/70">
           <UTabs v-model="activeTab" :items="tabs">
-            <template #item="{ item }">
-              <div v-if="item.key === 'overview'" class="space-y-4">
+            <template #content="{ item }">
+              <div v-if="item.value === 'overview'" class="space-y-4">
                 <div class="grid gap-4 md:grid-cols-2">
                   <div
                     v-for="row in overviewRows"
@@ -191,7 +191,7 @@
                   </div>
                 </div>
               </div>
-              <div v-else-if="item.key === 'orders'" class="space-y-3 rounded-xl border border-gray-100 p-4 dark:border-gray-800">
+              <div v-else-if="item.value === 'orders'" class="space-y-3 rounded-xl border border-gray-100 p-4 dark:border-gray-800">
                 <p class="text-sm text-gray-500 dark:text-gray-400">
                   {{ t('customer.directory.drawer.lastOrder') }}
                 </p>
@@ -202,13 +202,16 @@
                   {{ t('customer.directory.drawer.lastOrderAmount', { amount: formattedAmount }) }}
                 </p>
               </div>
+              <div v-else-if="item.value === 'addresses'" class="space-y-3">
+                <CustomerAddressBookPanel :customer-id="customer.id" :can-manage="allowWrite" />
+              </div>
               <div
-                v-else-if="item.key === 'afterSales'"
+                v-else-if="item.value === 'afterSales'"
                 class="rounded-xl border border-dashed border-gray-200 p-4 text-sm text-gray-500 dark:border-gray-800 dark:text-gray-400"
               >
                 {{ t('customer.directory.drawer.afterSalesPlaceholder') }}
               </div>
-              <div v-else-if="item.key === 'points'" class="grid gap-4 md:grid-cols-2">
+              <div v-else-if="item.value === 'points'" class="grid gap-4 md:grid-cols-2">
                 <div class="rounded-xl border border-gray-100 p-4 dark:border-gray-800">
                   <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                     {{ t('customer.directory.drawer.tabs.points') }}
@@ -235,13 +238,13 @@
                 </div>
               </div>
               <div
-                v-else-if="item.key === 'notes'"
+                v-else-if="item.value === 'notes'"
                 class="rounded-xl border border-gray-100 bg-gray-50/60 p-4 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-800/40 dark:text-gray-300"
               >
                 {{ notesContent }}
               </div>
               <div
-                v-else-if="item.key === 'audit'"
+                v-else-if="item.value === 'audit'"
                 class="rounded-xl border border-dashed border-gray-200 p-4 text-sm text-gray-500 dark:border-gray-800 dark:text-gray-400"
               >
                 {{ t('customer.directory.drawer.auditPlaceholder', { id: customer.id }) }}
@@ -260,10 +263,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
-import { useI18n } from '#imports'
-import type { Customer } from '~/types/customer'
-import { useCustomerStore } from '~/stores/customer'
+import { computed, ref, watch } from "vue";
+import { useI18n } from "#imports";
+import CustomerAddressBookPanel from "~/components/customer/CustomerAddressBookPanel.vue";
+import { useCustomerStore } from "~/stores/customer";
+import type { Customer } from "~/types/customer";
 
 const props = defineProps<{
   customer: Customer | null
@@ -289,13 +293,13 @@ const open = computed({
 const drawerTitle = computed(() => props.customer?.name || t('customer.directory.drawer.title'))
 const drawerDescription = computed(() => props.customer?.id || t('customer.directory.subtitle'))
 
-const activeTab = ref('overview')
+const activeTab = ref("overview");
 watch(
   () => props.customer?.id,
   () => {
-    activeTab.value = 'overview'
-  }
-)
+    activeTab.value = "overview";
+  },
+);
 const allowWrite = computed(() => Boolean(props.canManage))
 
 const isMasked = (field: string) => (props.customer ? store.isFieldMasked(props.customer, field) : false)
@@ -553,13 +557,14 @@ const handleDelete = () => {
 }
 
 const tabs = computed(() => [
-  { key: 'overview', label: t('customer.directory.drawer.tabs.overview') },
-  { key: 'orders', label: t('customer.directory.drawer.tabs.orders') },
-  { key: 'afterSales', label: t('customer.directory.drawer.tabs.afterSales') },
-  { key: 'points', label: t('customer.directory.drawer.tabs.points') },
-  { key: 'notes', label: t('customer.directory.drawer.tabs.notes') },
-  { key: 'audit', label: t('customer.directory.drawer.tabs.audit') },
-])
+  { label: t("customer.directory.drawer.tabs.overview"), value: "overview" },
+  { label: t("customer.directory.drawer.tabs.orders"), value: "orders" },
+  { label: locale.value === "en" ? "Addresses" : "收货地址", value: "addresses" },
+  { label: t("customer.directory.drawer.tabs.afterSales"), value: "afterSales" },
+  { label: t("customer.directory.drawer.tabs.points"), value: "points" },
+  { label: t("customer.directory.drawer.tabs.notes"), value: "notes" },
+  { label: t("customer.directory.drawer.tabs.audit"), value: "audit" },
+]);
 
 watch(
   () => props.customer?.id,

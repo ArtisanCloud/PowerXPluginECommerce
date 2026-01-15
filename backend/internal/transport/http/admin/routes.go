@@ -4,9 +4,11 @@ import (
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	adminchannels "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/channel_master"
 	adminconsole "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/console"
+	admincustomeraddress "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/customer_address"
 	adminintegration "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/integration"
 	adminmarketplace "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/marketplace"
 	adminoperations "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/operations"
+	adminorder "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/order"
 	adminpricing "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/pricing"
 	adminproduct "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/product"
 	adminproductcategory "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/product_category"
@@ -36,5 +38,7 @@ func RegisterAPIRoutes(rg *gin.RouterGroup, deps *app.Deps) {
 		adminsecurity.RegisterRoutes(admin, deps)
 		adminchannels.RegisterRoutes(admin, deps)
 		adminpricing.RegisterRoutes(admin, deps)
+		adminorder.RegisterRoutes(admin, deps)
+		admincustomeraddress.RegisterRoutes(admin, deps)
 	}
 }

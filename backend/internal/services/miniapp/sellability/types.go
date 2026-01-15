@@ -37,6 +37,13 @@ type ResultDTO struct {
 	Items   []ItemDTO `json:"items"`
 }
 
+// SKUResultDTO represents sellability evaluation for a SKU set under a specific channel.
+// This is primarily used by order creation flows that operate on SKU IDs directly.
+type SKUResultDTO struct {
+	Channel string    `json:"channel"`
+	Items   []ItemDTO `json:"items"`
+}
+
 // SummaryDTO is a compact per-SPU summary suitable for list pages.
 type SummaryDTO struct {
 	Sellable bool     `json:"sellable"`

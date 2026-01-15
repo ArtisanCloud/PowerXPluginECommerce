@@ -81,3 +81,63 @@ func (r *InventoryRepository) EnsureWarehouseRowForUpdate(
 	}
 	return &row, nil
 }
+
+// LockInventory increases locked_qty for a SKU in the given warehouse within the provided transaction.
+// Caller MUST execute this within a tenant transaction (BeginTenantTx/WithTenantTx).
+func (r *InventoryRepository) LockInventory(ctx context.Context, tx *gorm.DB, tenantID, skuID, warehouseID string, qty int64) (*productskumodel.ProductSKUInventory, error) {
+	if r == nil || r.DB == nil {
+		return nil, errors.New("inventory repository is not initialized")
+	}
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
+	if qty <= 0 {
+		return nil, errors.New("qty must be positive")
+	}
+	row, err := r.EnsureWarehouseRowForUpdate(ctx, tx, tenantID, skuID, warehouseID)
+	if err != nil {
+		return nil, err
+	}
+	after := row.LockedQty + qty
+	if after < 0 {
+		after = 0
+	}
+	if err := tx.WithContext(ctx).
+		Model(&productskumodel.ProductSKUInventory{}).
+		Where("id = ?", row.ID).
+		Update("locked_qty", after).Error; err != nil {
+		return nil, err
+	}
+	row.LockedQty = after
+	return row, nil
+}
+
+// UnlockInventory decreases locked_qty for a SKU in the given warehouse within the provided transaction.
+// Caller MUST execute this within a tenant transaction (BeginTenantTx/WithTenantTx).
+func (r *InventoryRepository) UnlockInventory(ctx context.Context, tx *gorm.DB, tenantID, skuID, warehouseID string, qty int64) (*productskumodel.ProductSKUInventory, error) {
+	if r == nil || r.DB == nil {
+		return nil, errors.New("inventory repository is not initialized")
+	}
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
+	if qty <= 0 {
+		return nil, errors.New("qty must be positive")
+	}
+	row, err := r.EnsureWarehouseRowForUpdate(ctx, tx, tenantID, skuID, warehouseID)
+	if err != nil {
+		return nil, err
+	}
+	after := row.LockedQty - qty
+	if after < 0 {
+		after = 0
+	}
+	if err := tx.WithContext(ctx).
+		Model(&productskumodel.ProductSKUInventory{}).
+		Where("id = ?", row.ID).
+		Update("locked_qty", after).Error; err != nil {
+		return nil, err
+	}
+	row.LockedQty = after
+	return row, nil
+}

@@ -39,6 +39,16 @@ export function getSession(): CustomerSession {
   };
 }
 
+export function isLoggedIn() {
+  const s = getSession();
+  if (!s.token) return false;
+  const exp = String(s.expiresAt || "").trim();
+  if (!exp) return true;
+  const t = Date.parse(exp);
+  if (!Number.isFinite(t)) return true;
+  return Date.now() < t - 10_000;
+}
+
 export function setSession(session: CustomerSession) {
   if (session.token) uni.setStorageSync(TOKEN_KEY, session.token);
   if (session.tenantUuid) uni.setStorageSync(TENANT_KEY, session.tenantUuid);

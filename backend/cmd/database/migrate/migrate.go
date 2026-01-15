@@ -81,10 +81,14 @@ var (
 var businessTables = func() []interface{} {
 	tables := append([]interface{}{}, corePluginTables...)
 	tables = append(tables, migrations.CustomerOpsCustomerTables...)
+	tables = append(tables, migrations.CustomerAddressTables...)
+	tables = append(tables, migrations.IntegrationTables...)
 	tables = append(tables, migrations.ProductSPUTables...)
 	tables = append(tables, migrations.ProductCategoryTables...)
 	tables = append(tables, migrations.ChannelMasterTables...)
 	tables = append(tables, migrations.PricingPricebookTables...)
+	tables = append(tables, migrations.OrderTables...)
+	tables = append(tables, migrations.CartTables...)
 	tables = append(tables, marketplaceTables...)
 	tables = append(tables, runtimeOpsTables...)
 	tables = append(tables, operationsTables...)
@@ -134,7 +138,10 @@ func MigratePluginModels(ctx context.Context, db *gorm.DB, includeIAM bool) erro
 	if err := ensureChannelRLSPolicies(ctx, db); err != nil {
 		return err
 	}
-	return ensurePricingRLSPolicies(ctx, db)
+	if err := ensurePricingRLSPolicies(ctx, db); err != nil {
+		return err
+	}
+	return ensureOrderRLSPolicies(ctx, db)
 }
 
 func safeAutoMigrate(ctx context.Context, db *gorm.DB, tables []interface{}) error {

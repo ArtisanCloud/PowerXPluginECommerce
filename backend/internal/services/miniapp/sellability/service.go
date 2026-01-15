@@ -76,16 +76,6 @@ func (s *Service) Evaluate(ctx context.Context, tenantUUID, spuID, channel, loca
 		return nil, err
 	}
 
-	skuIDs := make([]string, 0, len(skus))
-	for _, sku := range skus {
-		if strings.TrimSpace(sku.ID) == "" {
-			continue
-		}
-		skuIDs = append(skuIDs, sku.ID)
-	}
-
-	priceBySKU, pbCurrency := s.loadBasePricebookSkuPrices(tx, tenantUUID, skuIDs)
-	stockBySKU := s.loadAvailableQty(tx, tenantUUID, skuIDs)
 	channelCfg, err := s.loadChannelVisibility(tx, tenantUUID, spuID, channel)
 	if err != nil {
 		if !errors.Is(err, gorm.ErrRecordNotFound) {
@@ -93,44 +83,119 @@ func (s *Service) Evaluate(ctx context.Context, tenantUUID, spuID, channel, loca
 		}
 		channelCfg = nil
 	}
-	channelReasons := s.evalChannelGate(channelCfg)
-
-	items := make([]ItemDTO, 0, len(skus))
-	for _, sku := range skus {
-		reasons := make([]string, 0, 4)
-		reasons = append(reasons, channelReasons...)
-
-		if !isMiniAppSKUOnline(sku.Status) {
-			reasons = appendReason(reasons, string(ReasonSKUNotOnline))
-		}
-
-		price, currency, ok := s.resolveSKUPrice(sku, priceBySKU, pbCurrency)
-		var priceDTO *MoneyDTO
-		if ok && price > 0 {
-			priceDTO = &MoneyDTO{Amount: price, Currency: currency}
-		} else {
-			reasons = appendReason(reasons, string(ReasonNoPublicPrice))
-		}
-
-		available := 0
-		if v, ok := stockBySKU[sku.ID]; ok && v > 0 {
-			available = v
-		} else {
-			reasons = appendReason(reasons, string(ReasonOutOfStock))
-		}
-
-		items = append(items, ItemDTO{
-			SKUID:        sku.ID,
-			Sellable:     len(reasons) == 0,
-			Reasons:      reasons,
-			Price:        priceDTO,
-			AvailableQty: available,
-		})
+	items, err := s.evalSKUItems(tx, tenantUUID, skus, map[string]*productmodel.ChannelVisibility{spuID: channelCfg})
+	if err != nil {
+		return nil, err
 	}
 
 	sort.Slice(items, func(i, j int) bool { return items[i].SKUID < items[j].SKUID })
 	return &ResultDTO{
 		SPUID:   spuID,
+		Channel: channel,
+		Items:   items,
+	}, nil
+}
+
+// EvaluateSKUs evaluates sellability for a list of SKU IDs under the same channel.
+// This is designed for order creation flows which only have SKU IDs at submission time.
+func (s *Service) EvaluateSKUs(ctx context.Context, tenantUUID string, skuIDs []string, channel, locale string) (*SKUResultDTO, error) {
+	if s == nil || s.db == nil {
+		return nil, errors.New("sellability service unavailable")
+	}
+	tenantUUID = strings.TrimSpace(tenantUUID)
+	channel = strings.TrimSpace(channel)
+	_ = strings.TrimSpace(locale)
+	if tenantUUID == "" {
+		return nil, errors.New("tenant context missing")
+	}
+	if len(skuIDs) == 0 {
+		return nil, errors.New("sku ids are required")
+	}
+	if channel == "" {
+		return nil, errors.New("channel is required")
+	}
+
+	cleanIDs := make([]string, 0, len(skuIDs))
+	seen := map[string]struct{}{}
+	for _, raw := range skuIDs {
+		id := strings.TrimSpace(raw)
+		if id == "" {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		cleanIDs = append(cleanIDs, id)
+	}
+	if len(cleanIDs) == 0 {
+		return nil, errors.New("sku ids are required")
+	}
+
+	tx := s.db.WithContext(ctx)
+	skus, err := s.loadSKUsByID(tx, tenantUUID, cleanIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	spuIDs := make([]string, 0, len(skus))
+	spuSeen := map[string]struct{}{}
+	for _, sku := range skus {
+		spuID := strings.TrimSpace(sku.SPUID)
+		if spuID == "" {
+			continue
+		}
+		if _, ok := spuSeen[spuID]; ok {
+			continue
+		}
+		spuSeen[spuID] = struct{}{}
+		spuIDs = append(spuIDs, spuID)
+	}
+
+	channelCfgBySPU, err := s.loadChannelVisibilities(tx, tenantUUID, spuIDs, channel)
+	if err != nil {
+		return nil, err
+	}
+
+	publishedSPU := map[string]bool{}
+	if len(spuIDs) > 0 {
+		type row struct {
+			ID     string `gorm:"column:id"`
+			Status string `gorm:"column:status"`
+		}
+		var rows []row
+		if err := tx.Table(productmodel.SPU{}.TableName()).
+			Select("id, status").
+			Where("tenant_uuid = ? AND deleted_at IS NULL AND id IN ?", tenantUUID, spuIDs).
+			Find(&rows).Error; err != nil {
+			return nil, err
+		}
+		for _, r := range rows {
+			publishedSPU[strings.TrimSpace(r.ID)] = strings.EqualFold(strings.TrimSpace(r.Status), "published")
+		}
+	}
+
+	items, err := s.evalSKUItems(tx, tenantUUID, skus, channelCfgBySPU)
+	if err != nil {
+		return nil, err
+	}
+	for i := range items {
+		skuID := strings.TrimSpace(items[i].SKUID)
+		spuID := ""
+		for _, sku := range skus {
+			if strings.TrimSpace(sku.ID) == skuID {
+				spuID = strings.TrimSpace(sku.SPUID)
+				break
+			}
+		}
+		if spuID != "" && !publishedSPU[spuID] {
+			items[i].Reasons = appendReason(items[i].Reasons, string(ReasonSPUNotPublished))
+			items[i].Sellable = false
+		}
+	}
+
+	sort.Slice(items, func(i, j int) bool { return items[i].SKUID < items[j].SKUID })
+	return &SKUResultDTO{
 		Channel: channel,
 		Items:   items,
 	}, nil
@@ -191,6 +256,7 @@ func summarizeResult(result *ResultDTO) SummaryDTO {
 
 type skuRow struct {
 	ID            string         `gorm:"column:id"`
+	SPUID         string         `gorm:"column:spu_id"`
 	Status        string         `gorm:"column:status"`
 	SKUCode       string         `gorm:"column:sku_code"`
 	DefaultValues datatypes.JSON `gorm:"column:default_values"`
@@ -199,8 +265,23 @@ type skuRow struct {
 func (s *Service) loadSKUs(tx *gorm.DB, tenantUUID, spuID string) ([]skuRow, error) {
 	var rows []skuRow
 	if err := tx.Table(productskumodel.ProductSKU{}.TableName()).
-		Select("id, status, sku_code, default_values").
+		Select("id, spu_id, status, sku_code, default_values").
 		Where("tenant_uuid = ? AND deleted_at IS NULL AND spu_id = ?", tenantUUID, spuID).
+		Order("created_at ASC, sku_code ASC, id ASC").
+		Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+func (s *Service) loadSKUsByID(tx *gorm.DB, tenantUUID string, skuIDs []string) ([]skuRow, error) {
+	var rows []skuRow
+	if len(skuIDs) == 0 {
+		return rows, nil
+	}
+	if err := tx.Table(productskumodel.ProductSKU{}.TableName()).
+		Select("id, spu_id, status, sku_code, default_values").
+		Where("tenant_uuid = ? AND deleted_at IS NULL AND id IN ?", tenantUUID, skuIDs).
 		Order("created_at ASC, sku_code ASC, id ASC").
 		Find(&rows).Error; err != nil {
 		return nil, err
@@ -217,6 +298,24 @@ func (s *Service) loadChannelVisibility(tx *gorm.DB, tenantUUID, spuID, channel 
 		return nil, err
 	}
 	return &row, nil
+}
+
+func (s *Service) loadChannelVisibilities(tx *gorm.DB, tenantUUID string, spuIDs []string, channel string) (map[string]*productmodel.ChannelVisibility, error) {
+	out := make(map[string]*productmodel.ChannelVisibility, len(spuIDs))
+	if len(spuIDs) == 0 {
+		return out, nil
+	}
+	var rows []productmodel.ChannelVisibility
+	if err := tx.Table(productmodel.ChannelVisibility{}.TableName()).
+		Where("tenant_uuid = ? AND channel = ? AND spu_id IN ?", tenantUUID, channel, spuIDs).
+		Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	for i := range rows {
+		r := rows[i]
+		out[strings.TrimSpace(r.SPUID)] = &r
+	}
+	return out, nil
 }
 
 func (s *Service) evalChannelGate(cfg *productmodel.ChannelVisibility) []string {
@@ -350,6 +449,63 @@ func (s *Service) resolveSKUPrice(sku skuRow, pricebookPrices map[string]*float6
 		return *p, strings.TrimSpace(pbCurrency), true
 	}
 	return extractPriceFromDefaultValues(sku.DefaultValues)
+}
+
+func (s *Service) evalSKUItems(
+	tx *gorm.DB,
+	tenantUUID string,
+	skus []skuRow,
+	channelCfgBySPU map[string]*productmodel.ChannelVisibility,
+) ([]ItemDTO, error) {
+	skuIDs := make([]string, 0, len(skus))
+	for _, sku := range skus {
+		if strings.TrimSpace(sku.ID) == "" {
+			continue
+		}
+		skuIDs = append(skuIDs, sku.ID)
+	}
+
+	priceBySKU, pbCurrency := s.loadBasePricebookSkuPrices(tx, tenantUUID, skuIDs)
+	stockBySKU := s.loadAvailableQty(tx, tenantUUID, skuIDs)
+
+	items := make([]ItemDTO, 0, len(skus))
+	for _, sku := range skus {
+		reasons := make([]string, 0, 4)
+
+		cfg := (*productmodel.ChannelVisibility)(nil)
+		if channelCfgBySPU != nil {
+			cfg = channelCfgBySPU[strings.TrimSpace(sku.SPUID)]
+		}
+		reasons = append(reasons, s.evalChannelGate(cfg)...)
+
+		if !isMiniAppSKUOnline(sku.Status) {
+			reasons = appendReason(reasons, string(ReasonSKUNotOnline))
+		}
+
+		price, currency, ok := s.resolveSKUPrice(sku, priceBySKU, pbCurrency)
+		var priceDTO *MoneyDTO
+		if ok && price > 0 {
+			priceDTO = &MoneyDTO{Amount: price, Currency: currency}
+		} else {
+			reasons = appendReason(reasons, string(ReasonNoPublicPrice))
+		}
+
+		available := 0
+		if v, ok := stockBySKU[sku.ID]; ok && v > 0 {
+			available = v
+		} else {
+			reasons = appendReason(reasons, string(ReasonOutOfStock))
+		}
+
+		items = append(items, ItemDTO{
+			SKUID:        sku.ID,
+			Sellable:     len(reasons) == 0,
+			Reasons:      reasons,
+			Price:        priceDTO,
+			AvailableQty: available,
+		})
+	}
+	return items, nil
 }
 
 func extractPriceFromDefaultValues(raw datatypes.JSON) (price float64, currency string, ok bool) {

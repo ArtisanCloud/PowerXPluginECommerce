@@ -129,6 +129,25 @@ type skuListResponse struct {
 	Total    int64               `json:"total"`
 }
 
+type skuBatchRequest struct {
+	SKUIDs []string `json:"skuIds"`
+}
+
+type skuBatchResponse struct {
+	Items []miniAppSkuBatchItem `json:"items"`
+}
+
+type miniAppSkuBatchItem struct {
+	ID       string   `json:"id"`
+	SPUID    string   `json:"spuId"`
+	Code     string   `json:"code"`
+	SPUName  string   `json:"spuName"`
+	ImageURL string   `json:"imageUrl,omitempty"`
+	Price    *float64 `json:"price,omitempty"`
+	Currency string   `json:"currency,omitempty"`
+	Status   string   `json:"status,omitempty"`
+}
+
 type miniAppSkuSummary struct {
 	ID        string     `json:"id"`
 	SPUID     string     `json:"spuId"`

@@ -1,0 +1,729 @@
+openapi: 3.0.3
+info:
+  title: PowerX Plugin - Order Checkout API (MVP)
+  version: 1.0.0
+servers:
+  - url: /
+
+paths:
+  /api/v1/mini-app/me/addresses:
+    get:
+      summary: List customer shipping addresses (mini-app)
+      responses:
+        '200':
+          description: Address list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CustomerAddress'
+    post:
+      summary: Create customer shipping address (mini-app)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerAddressUpsertRequest'
+      responses:
+        '200':
+          description: Address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerAddress'
+
+  /api/v1/mini-app/me/addresses/{id}:
+    patch:
+      summary: Update customer shipping address (mini-app)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerAddressUpsertRequest'
+      responses:
+        '200':
+          description: Address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerAddress'
+    delete:
+      summary: Delete customer shipping address (mini-app)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                required: [success]
+
+  /api/v1/mini-app/me/addresses/{id}/default:
+    post:
+      summary: Set default shipping address (mini-app)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerAddress'
+
+  /api/v1/admin/customers/{id}/addresses:
+    get:
+      summary: List customer shipping addresses (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Address list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CustomerAddress'
+    post:
+      summary: Create customer shipping address (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerAddressUpsertRequest'
+      responses:
+        '200':
+          description: Address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerAddress'
+
+  /api/v1/admin/customers/{id}/addresses/{addressId}:
+    patch:
+      summary: Update customer shipping address (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: addressId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CustomerAddressUpsertRequest'
+      responses:
+        '200':
+          description: Address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerAddress'
+    delete:
+      summary: Delete customer shipping address (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: addressId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                required: [success]
+
+  /api/v1/admin/customers/{id}/addresses/{addressId}/default:
+    post:
+      summary: Set default shipping address (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+        - in: path
+          name: addressId
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CustomerAddress'
+
+  /api/v1/mini-app/cart:
+    get:
+      summary: Get customer cart (mini-app)
+      responses:
+        '200':
+          description: Cart
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+
+  /api/v1/mini-app/cart/sync:
+    post:
+      summary: Sync customer cart (mini-app, hybrid)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartSyncRequest'
+      responses:
+        '200':
+          description: Cart
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+
+  /api/v1/mini-app/orders:
+    post:
+      summary: Create order (mini-app, one_time)
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+          description: Idempotency key for order creation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MiniAppCreateOrderRequest'
+      responses:
+        '200':
+          description: Order created (or existing order returned for same idempotency key)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderSummary'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Sellability or inventory conflict (e.g., out of stock)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      summary: List orders (mini-app)
+      parameters:
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: pageSize
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+      responses:
+        '200':
+          description: Order list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderListResponse'
+
+  /api/v1/mini-app/orders/{id}:
+    get:
+      summary: Get order detail (mini-app)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/admin/orders:
+    post:
+      summary: Create order for customer (admin)
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema:
+            type: string
+          description: Idempotency key for order creation
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AdminCreateOrderRequest'
+      responses:
+        '200':
+          description: Order created (or existing order returned for same idempotency key)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderSummary'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Sellability or inventory conflict (e.g., out of stock)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    get:
+      summary: List orders (admin)
+      parameters:
+        - in: query
+          name: page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: pageSize
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+        - in: query
+          name: status
+          required: false
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderListResponse'
+
+  /api/v1/admin/orders/{id}:
+    get:
+      summary: Get order detail (admin)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Order detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderDetail'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /api/v1/admin/orders/{id}/cancel:
+    post:
+      summary: Cancel order (admin, only pending_payment)
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelOrderRequest'
+      responses:
+        '200':
+          description: Cancelled order summary
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderSummary'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Forbidden
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Cannot cancel (status not allowed)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+        code:
+          type: string
+      required: [error]
+
+    Money:
+      type: object
+      properties:
+        currency:
+          type: string
+        subtotal:
+          type: integer
+          format: int64
+        total:
+          type: integer
+          format: int64
+      required: [currency, subtotal, total]
+
+    OrderItemInput:
+      type: object
+      properties:
+        skuId:
+          type: string
+        qty:
+          type: integer
+          format: int64
+          minimum: 1
+      required: [skuId, qty]
+
+    MiniAppCreateOrderRequest:
+      type: object
+      properties:
+        channel:
+          type: string
+        shippingAddressId:
+          type: string
+          nullable: true
+          description: Shipping address record ID (address book)
+        shippingAddress:
+          $ref: '#/components/schemas/ShippingAddress'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItemInput'
+        locale:
+          type: string
+          nullable: true
+      required: [channel, items]
+
+    AdminCreateOrderRequest:
+      type: object
+      properties:
+        customerId:
+          type: string
+        channel:
+          type: string
+        shippingAddressId:
+          type: string
+          nullable: true
+        shippingAddress:
+          $ref: '#/components/schemas/ShippingAddress'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItemInput'
+        note:
+          type: string
+          nullable: true
+      required: [customerId, channel, items]
+
+    CancelOrderRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+          nullable: true
+
+    OrderSummary:
+      type: object
+      properties:
+        orderId:
+          type: string
+        orderNo:
+          type: string
+        customerId:
+          type: string
+        channel:
+          type: string
+        createdByType:
+          type: string
+        status:
+          type: string
+        amounts:
+          $ref: '#/components/schemas/Money'
+        shippingAddressSnapshot:
+          $ref: '#/components/schemas/ShippingAddress'
+        createdAt:
+          type: string
+          format: date-time
+      required: [orderId, orderNo, status, amounts, createdAt]
+
+    OrderListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderSummary'
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        total:
+          type: integer
+      required: [items, page, pageSize, total]
+
+    OrderItem:
+      type: object
+      properties:
+        skuId:
+          type: string
+        qty:
+          type: integer
+          format: int64
+        unitPrice:
+          type: integer
+          format: int64
+        lineAmount:
+          type: integer
+          format: int64
+      required: [skuId, qty, unitPrice, lineAmount]
+
+    OrderEvent:
+      type: object
+      properties:
+        eventType:
+          type: string
+        operatorType:
+          type: string
+        operator:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+      required: [eventType, operatorType, createdAt]
+
+    OrderDetail:
+      type: object
+      properties:
+        summary:
+          $ref: '#/components/schemas/OrderSummary'
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderEvent'
+      required: [summary, items, events]
+
+    ShippingAddress:
+      type: object
+      properties:
+        label:
+          type: string
+          nullable: true
+        recipientName:
+          type: string
+        recipientPhone:
+          type: string
+        countryCode:
+          type: string
+          nullable: true
+        province:
+          type: string
+          nullable: true
+        city:
+          type: string
+          nullable: true
+        district:
+          type: string
+          nullable: true
+        address1:
+          type: string
+        address2:
+          type: string
+          nullable: true
+        postalCode:
+          type: string
+          nullable: true
+        metadata:
+          type: object
+          additionalProperties: true
+          nullable: true
+      required: [recipientName, recipientPhone, address1]
+
+    CustomerAddress:
+      type: object
+      properties:
+        id:
+          type: string
+        customerId:
+          type: string
+        isDefault:
+          type: boolean
+        shippingAddress:
+          $ref: '#/components/schemas/ShippingAddress'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, customerId, isDefault, shippingAddress]
+
+    CustomerAddressUpsertRequest:
+      type: object
+      properties:
+        isDefault:
+          type: boolean
+          nullable: true
+        shippingAddress:
+          $ref: '#/components/schemas/ShippingAddress'
+      required: [shippingAddress]
+
+    CartItem:
+      type: object
+      properties:
+        skuId:
+          type: string
+        qty:
+          type: integer
+          format: int64
+          minimum: 1
+      required: [skuId, qty]
+
+    Cart:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        updatedAt:
+          type: string
+          format: date-time
+      required: [items, updatedAt]
+
+    CartSyncRequest:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        strategy:
+          type: string
+          enum: [max, overwrite]
+          nullable: true
+      required: [items]

@@ -274,6 +274,15 @@ func defaultRBACResources() []contracts.Resource {
 			},
 		},
 		{
+			Name:        "com.powerx.plugin.ecommerce:order",
+			Description: "自营订单（小程序下单 / 后台代客下单）与后台订单管理",
+			Actions: []contracts.Action{
+				{Name: "read", Description: "查看订单列表、详情与审计事件"},
+				{Name: "create", Description: "创建订单（代客下单）"},
+				{Name: "cancel", Description: "取消订单（仅允许特定状态）"},
+			},
+		},
+		{
 			Name:        "com.powerx.plugin.ecommerce:product.sku.serial",
 			Description: "序列号与批次记录",
 			Actions: []contracts.Action{

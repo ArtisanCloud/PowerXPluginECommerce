@@ -2,6 +2,7 @@ package sellability
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
@@ -13,16 +14,24 @@ import (
 	"gorm.io/gorm/schema"
 )
 
-func TestServiceEvaluate(t *testing.T) {
-	ctx := context.Background()
-	models.ForceSchemaForTests("")
-
-	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{
+func newTestDB(t *testing.T) *gorm.DB {
+	t.Helper()
+	safeName := strings.NewReplacer("/", "_", " ", "_", ":", "_").Replace(t.Name())
+	dsn := fmt.Sprintf("file:%s?mode=memory&cache=shared", safeName)
+	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{
 		NamingStrategy: schema.NamingStrategy{
 			NameReplacer: strings.NewReplacer("SPU", "Spu"),
 		},
 	})
 	require.NoError(t, err)
+	return db
+}
+
+func TestServiceEvaluate(t *testing.T) {
+	ctx := context.Background()
+	models.ForceSchemaForTests("")
+
+	db := newTestDB(t)
 	createSellabilityTables(t, db)
 
 	const tenant = "tenant-test"
@@ -121,6 +130,44 @@ func TestServiceEvaluate(t *testing.T) {
 			require.False(t, it.Sellable)
 		}
 	})
+}
+
+func TestServiceEvaluateSKUs(t *testing.T) {
+	ctx := context.Background()
+	models.ForceSchemaForTests("")
+
+	db := newTestDB(t)
+	createSellabilityTables(t, db)
+
+	const tenant = "tenant-test"
+	const spuID = "spu-1"
+
+	require.NoError(t, db.Exec(`INSERT INTO product_spus (id, tenant_uuid, status, deleted_at) VALUES (?, ?, ?, NULL)`, spuID, tenant, "published").Error)
+	require.NoError(t, db.Exec(`INSERT INTO product_spu_channels (id, tenant_uuid, spu_id, channel, availability, audit_state, publish_at, withdraw_at) VALUES (?, ?, ?, ?, ?, ?, NULL, NULL)`,
+		"ch-1", tenant, spuID, "official", "published", "approved").Error)
+
+	require.NoError(t, db.Exec(`INSERT INTO product_skus (id, tenant_uuid, spu_id, status, sku_code, default_values, deleted_at) VALUES (?, ?, ?, ?, ?, ?, NULL)`,
+		"sku-1", tenant, spuID, "online", "SKU-1", `{}`).Error)
+	require.NoError(t, db.Exec(`INSERT INTO product_sku_inventories (id, tenant_uuid, sku_id, warehouse_id, available_qty, locked_qty, deleted_at) VALUES (?, ?, ?, ?, ?, ?, NULL)`,
+		"inv-1", tenant, "sku-1", "default", 10, 2).Error)
+
+	require.NoError(t, db.Exec(`INSERT INTO pricebooks (id, tenant_uuid, code, currency, status, current_version_id, deleted_at) VALUES (?, ?, ?, ?, ?, ?, NULL)`,
+		"pb-1", tenant, "base", "CNY", "active", "ver-1").Error)
+	require.NoError(t, db.Exec(`INSERT INTO pricebook_items (id, tenant_uuid, pricebook_id, version_id, sku_id, sale_amount_minor, base_amount_minor, msrp_amount_minor, deleted_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NULL)`,
+		"pbi-1", tenant, "pb-1", "ver-1", "sku-1", 19900, nil, nil).Error)
+
+	svc := NewService(db)
+	got, err := svc.EvaluateSKUs(ctx, tenant, []string{"sku-1"}, "official", "zh-CN")
+	require.NoError(t, err)
+	require.NotNil(t, got)
+	require.Equal(t, "official", got.Channel)
+	require.Len(t, got.Items, 1)
+	require.Equal(t, "sku-1", got.Items[0].SKUID)
+	require.True(t, got.Items[0].Sellable)
+	require.NotNil(t, got.Items[0].Price)
+	require.Equal(t, 199.0, got.Items[0].Price.Amount)
+	require.Equal(t, "CNY", got.Items[0].Price.Currency)
+	require.Equal(t, 8, got.Items[0].AvailableQty)
 }
 
 func createSellabilityTables(t *testing.T, db *gorm.DB) {

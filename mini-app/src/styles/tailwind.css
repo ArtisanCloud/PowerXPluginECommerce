@@ -1,25 +1,29 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer utilities {
-  /* 代替 Tailwind preflight 的关键一条：避免 width:100% + padding 溢出导致右侧被裁剪 */
-  page,
-  view,
-  image,
-  button {
-    box-sizing: border-box;
-  }
+	@layer utilities {
+	  /* 代替 Tailwind preflight 的关键一条：避免 width:100% + padding 溢出导致右侧被裁剪 */
+	  page,
+	  view,
+	  scroll-view,
+	  image,
+	  button {
+	    box-sizing: border-box;
+	  }
 
-  page,
-  body {
-    min-height: 100vh;
-  }
+	  html,
+	  body,
+	  page {
+	    min-height: 100vh;
+	  }
 
-  page {
-    background-color: theme("colors.background-light");
-    color: theme("colors.text-dark");
-    overflow-x: hidden;
-  }
+	  html,
+	  body,
+	  page {
+	    background-color: theme("colors.background-light");
+	    color: theme("colors.text-dark");
+	    overflow-x: hidden;
+	  }
 
   /* 小程序端常见：button/text 有默认样式，尽量让基础表现可控 */
   button {
@@ -27,14 +31,15 @@
   }
 
   /* 由于关闭了 Tailwind preflight，需要显式设置 border-style，否则仅设置 border-*-width 不会渲染边框 */
-  page,
-  view,
-  button,
-  input,
-  textarea,
-  image {
-    border-width: 0;
-    border-style: solid;
-    border-color: transparent;
-  }
-}
+	  page,
+	  view,
+	  scroll-view,
+	  button,
+	  input,
+	  textarea,
+	  image {
+	    border-width: 0;
+	    border-style: solid;
+	    border-color: transparent;
+	  }
+	}

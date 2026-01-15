@@ -13,7 +13,7 @@
         </view>
 
         <view class="flex-1 pt-1">
-          <view class="flex items-baseline gap-1 mb-1">
+          <view v-if="showPrice" class="flex items-baseline gap-1 mb-1">
             <text class="text-primary" style="font-size: 12px; font-weight: 900;">{{ displayCurrencySymbol }}</text>
             <text class="text-primary" style="font-size: 22px; font-weight: 900;">{{ displayPrice }}</text>
           </view>
@@ -68,14 +68,14 @@
               @tap="selectSkuLocal(s.id)"
             >
               <text :style="skuChipTextStyle(s.id)" style="font-size: 12px; font-weight: 900;">{{ s.code || s.id }}</text>
-              <text v-if="s.price != null" class="ml-1" :style="skuChipSubTextStyle(s.id)" style="font-size: 10px; font-weight: 800;">
+              <text v-if="showPrice && s.price != null" class="ml-1" :style="skuChipSubTextStyle(s.id)" style="font-size: 10px; font-weight: 800;">
                 {{ formatMoney(s.currency || 'CNY', s.price) }}
               </text>
             </view>
           </view>
         </view>
 
-        <view class="mt-6 flex items-center justify-between border-t pt-5" style="border-color: rgba(243, 244, 246, 1);">
+        <view v-if="showQty" class="mt-6 flex items-center justify-between border-t pt-5" style="border-color: rgba(243, 244, 246, 1);">
           <view>
             <text class="text-gray-900" style="font-size: 12px; font-weight: 900;">数量</text>
             <view class="text-gray-500 mt-1" style="font-size: 11px;">单次最多 {{ maxQty }} 件</view>
@@ -106,11 +106,23 @@
           </view>
         </view>
 
-        <view style="height: 90px;"></view>
+        <view :style="mode === 'cart' ? 'height: 66px;' : 'height: 90px;'"></view>
       </scroll-view>
 
       <view class="absolute bottom-0 left-0 right-0 border-t bg-white px-4 pt-3 safe-pb" style="border-color: rgba(243, 244, 246, 1);">
-        <view class="flex" style="gap: 10px;">
+        <view v-if="mode === 'cart'" class="flex">
+          <view
+            class="flex-1 rounded-full bg-primary shadow-cta"
+            style="height: 44px;"
+            hover-class="opacity-90"
+            @tap="confirmCartPick"
+          >
+            <view class="flex h-full items-center justify-center">
+              <text class="text-white" style="font-size: 12px; font-weight: 900;">确定</text>
+            </view>
+          </view>
+        </view>
+        <view v-else class="flex" style="gap: 10px;">
           <view
             class="flex-1 rounded-full border"
             style="height: 44px; border-color: rgba(79, 138, 126, 0.30); background: rgba(79, 138, 126, 0.10);"
@@ -173,32 +185,54 @@ type SpecGroup = {
   options: SpecOption[];
 };
 
-const props = withDefaults(
-  defineProps<{
-    modelValue: boolean;
-    skus: SkuItem[];
-    specGroups?: SpecGroup[];
-    selectedSkuId?: string;
-    coverUrl?: string;
-    maxQty?: number;
-  }>(),
-  {
-    specGroups: () => [],
-    selectedSkuId: "",
-    coverUrl: "",
-    maxQty: 5,
-  },
-);
+	const props = withDefaults(
+	  defineProps<{
+	    modelValue: boolean;
+	    skus: SkuItem[];
+	    specGroups?: SpecGroup[];
+	    selectedSkuId?: string;
+	    coverUrl?: string;
+	    maxQty?: number;
+      mode?: "product" | "cart";
+      showQty?: boolean;
+      showPrice?: boolean;
+	  }>(),
+	  {
+	    specGroups: () => [],
+	    selectedSkuId: "",
+	    coverUrl: "",
+	    maxQty: 10,
+      mode: "product",
+      showQty: true,
+      showPrice: true,
+	  },
+	);
 
 const emit = defineEmits<{
   (e: "update:modelValue", v: boolean): void;
   (e: "update:selectedSkuId", v: string): void;
   (e: "confirm", payload: { action: "cart" | "buy"; skuId: string; qty: number }): void;
+  (e: "pick", payload: { skuId: string }): void;
 }>();
 
 const localSelectedSkuId = ref(props.selectedSkuId || "");
 const qty = ref(1);
 const localSelectedSpec = ref<Record<string, string>>({});
+
+function normalizeSkuSpecToSelection(spec?: Record<string, string> | null) {
+  const input = spec || {};
+  const out: Record<string, string> = {};
+  if (!orderedSpecGroups.value.length) return out;
+  for (const g of orderedSpecGroups.value) {
+    const raw = String((input as any)?.[g.code] ?? (input as any)?.[g.id] ?? "").trim();
+    if (!raw) continue;
+    const opt =
+      (g.options || []).find((o) => o.code === raw) ||
+      (g.options || []).find((o) => o.id === raw);
+    if (opt?.code) out[g.code] = opt.code;
+  }
+  return out;
+}
 
 watch(
   () => props.selectedSkuId,
@@ -242,7 +276,7 @@ const selectedSku = computed(() => {
 });
 
 const selectedImageUrl = computed(() => {
-  return selectedSku.value?.imageUrl || props.coverUrl || "https://picsum.photos/seed/powerx-sku/200/200";
+  return selectedSku.value?.imageUrl || props.coverUrl || "/static/icons/image-placeholder.svg";
 });
 
 const displayCurrencySymbol = computed(() => {
@@ -288,9 +322,7 @@ function selectSkuLocal(id: string) {
   localSelectedSkuId.value = id;
   emit("update:selectedSkuId", id);
   const s = props.skus.find((x) => x.id === id);
-  if (s?.spec) {
-    localSelectedSpec.value = { ...s.spec };
-  }
+  if (s?.spec) localSelectedSpec.value = normalizeSkuSpecToSelection(s.spec);
 }
 
 function dec() {
@@ -325,6 +357,32 @@ function confirm(action: "cart" | "buy") {
   close();
 }
 
+function confirmCartPick() {
+  const skuId = localSelectedSkuId.value || selectedSku.value?.id || "";
+  if (!skuId) {
+    uni.showToast({ title: "请选择规格", icon: "none" });
+    return;
+  }
+  if (selectedSku.value && typeof selectedSku.value.sellable === "boolean" && !selectedSku.value.sellable) {
+    const code = (selectedSku.value.sellabilityReasons || [])[0] || "";
+    uni.showToast({ title: sellabilityReasonToText(code), icon: "none" });
+    return;
+  }
+  if (orderedSpecGroups.value.length) {
+    const missing = orderedSpecGroups.value.find((g) => g.required && !localSelectedSpec.value[g.code]);
+    if (missing) {
+      uni.showToast({ title: `请选择${missing.name}`, icon: "none" });
+      return;
+    }
+  }
+  emit("pick", { skuId });
+  close();
+}
+
+const mode = computed(() => props.mode);
+const showQty = computed(() => props.showQty);
+const showPrice = computed(() => props.showPrice);
+
 function skuChipStyle(id: string) {
   const active = id === localSelectedSkuId.value;
   return active
@@ -346,7 +404,7 @@ function hydrateSelectionFromProps() {
   if (props.selectedSkuId) {
     localSelectedSkuId.value = props.selectedSkuId;
     const s = props.skus.find((x) => x.id === props.selectedSkuId);
-    if (s?.spec) localSelectedSpec.value = { ...s.spec };
+    if (s?.spec) localSelectedSpec.value = normalizeSkuSpecToSelection(s.spec);
     return;
   }
 
@@ -354,7 +412,7 @@ function hydrateSelectionFromProps() {
   if (!preferred) return;
   localSelectedSkuId.value = preferred.id;
   emit("update:selectedSkuId", preferred.id);
-  if (preferred.spec) localSelectedSpec.value = { ...preferred.spec };
+  if (preferred.spec) localSelectedSpec.value = normalizeSkuSpecToSelection(preferred.spec);
 }
 
 function matchSkuBySpec(spec: Record<string, string>) {
@@ -364,7 +422,20 @@ function matchSkuBySpec(spec: Record<string, string>) {
   return (
     list.find((sku) => {
       const skuSpec = sku.spec || {};
-      return entries.every(([k, v]) => skuSpec?.[k] === v);
+      return entries.every(([groupCode, optionCode]) => {
+        const g = orderedSpecGroups.value.find((x) => x.code === groupCode);
+        const opt =
+          (g?.options || []).find((o) => o.code === optionCode) ||
+          (g?.options || []).find((o) => o.id === optionCode);
+        const groupId = g?.id;
+        const optionId = opt?.id;
+        const actual = (skuSpec as any)?.[groupCode] ?? (groupId ? (skuSpec as any)?.[groupId] : undefined);
+        if (actual === optionCode) return true;
+        if (optionId && actual === optionId) return true;
+        if (groupId && optionId && (skuSpec as any)?.[groupId] === optionId) return true;
+        if (groupId && (skuSpec as any)?.[groupCode] === optionId) return true;
+        return false;
+      });
     }) || null
   );
 }
@@ -376,7 +447,20 @@ function isSpecOptionDisabled(groupCode: string, optionCode: string) {
   if (!entries.length) return false;
   const matched = list.some((sku) => {
     const skuSpec = sku.spec || {};
-    return entries.every(([k, v]) => skuSpec?.[k] === v);
+    return entries.every(([gc, oc]) => {
+      const g = orderedSpecGroups.value.find((x) => x.code === gc);
+      const opt =
+        (g?.options || []).find((o) => o.code === oc) ||
+        (g?.options || []).find((o) => o.id === oc);
+      const groupId = g?.id;
+      const optionId = opt?.id;
+      const actual = (skuSpec as any)?.[gc] ?? (groupId ? (skuSpec as any)?.[groupId] : undefined);
+      if (actual === oc) return true;
+      if (optionId && actual === optionId) return true;
+      if (groupId && optionId && (skuSpec as any)?.[groupId] === optionId) return true;
+      if (groupId && (skuSpec as any)?.[gc] === optionId) return true;
+      return false;
+    });
   });
   return !matched;
 }
