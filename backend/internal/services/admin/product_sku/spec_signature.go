@@ -130,26 +130,6 @@ func (s *Service) buildSpecSignature(ctx context.Context, tx *gorm.DB, tenantID,
 	return strings.Join(parts, "|"), nil
 }
 
-func (s *Service) spuHasSpecGroups(ctx context.Context, tenantID, spuID string) (bool, error) {
-	if s == nil || s.deps == nil || s.deps.DB == nil {
-		return false, errors.New("db unavailable")
-	}
-	if strings.TrimSpace(spuID) == "" {
-		return false, errors.New("spu id is required")
-	}
-	var groupCount int64
-	if err := s.deps.DB.WithContext(ctx).
-		Model(&productspecmodel.ProductSpecGroup{}).
-		Where("tenant_uuid = ? AND spu_id = ? AND deleted_at IS NULL", tenantID, spuID).
-		Count(&groupCount).Error; err != nil {
-		if isMissingSpecTable(err) {
-			return true, nil
-		}
-		return false, err
-	}
-	return groupCount > 0, nil
-}
-
 func isMissingSpecTable(err error) bool {
 	if err == nil {
 		return false
