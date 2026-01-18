@@ -144,4 +144,5 @@ const (
 	TablePaymentReconciliationItems = "payment_reconciliation_items"
 	TablePaymentRefunds             = "payment_refunds"
 	TablePaymentManualReviews       = "payment_manual_reviews"
+	TablePaymentManualReviewLogs    = "payment_manual_review_logs"
 )

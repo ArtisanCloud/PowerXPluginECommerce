@@ -32,6 +32,7 @@ var (
 type ManualReviewService struct {
 	deps            *app.Deps
 	reviewRepo      *paymentrepo.PaymentManualReviewRepository
+	logRepo         *paymentrepo.PaymentManualReviewLogRepository
 	transactionRepo *paymentrepo.PaymentTransactionRepository
 	orderRepo       *orderrepo.OrderRepository
 	eventRepo       *orderrepo.OrderEventRepository
@@ -49,6 +50,7 @@ func NewManualReviewService(deps *app.Deps) *ManualReviewService {
 	return &ManualReviewService{
 		deps:            deps,
 		reviewRepo:      paymentrepo.NewPaymentManualReviewRepository(deps.DB),
+		logRepo:         paymentrepo.NewPaymentManualReviewLogRepository(deps.DB),
 		transactionRepo: paymentrepo.NewPaymentTransactionRepository(deps.DB),
 		orderRepo:       orderrepo.NewOrderRepository(deps.DB),
 		eventRepo:       orderrepo.NewOrderEventRepository(deps.DB),
@@ -57,7 +59,7 @@ func NewManualReviewService(deps *app.Deps) *ManualReviewService {
 }
 
 func (s *ManualReviewService) Ready() bool {
-	return s != nil && s.deps != nil && s.deps.DB != nil && s.reviewRepo != nil && s.transactionRepo != nil && s.orderRepo != nil && s.eventRepo != nil
+	return s != nil && s.deps != nil && s.deps.DB != nil && s.reviewRepo != nil && s.logRepo != nil && s.transactionRepo != nil && s.orderRepo != nil && s.eventRepo != nil
 }
 
 func (s *ManualReviewService) ListReviews(ctx context.Context, tenantUUID, adminID, orderID string) ([]ManualPaymentReviewDTO, error) {
@@ -74,6 +76,24 @@ func (s *ManualReviewService) ListReviews(ctx context.Context, tenantUUID, admin
 	out := make([]ManualPaymentReviewDTO, 0, len(rows))
 	for _, row := range rows {
 		out = append(out, toManualReviewDTO(&row))
+	}
+	return out, nil
+}
+
+func (s *ManualReviewService) ListReviewLogs(ctx context.Context, tenantUUID, adminID, orderID string) ([]ManualPaymentReviewLogDTO, error) {
+	if !s.Ready() {
+		return nil, ErrManualReviewServiceUnavailable
+	}
+	if strings.TrimSpace(adminID) == "" {
+		return nil, errors.New("admin id is required")
+	}
+	rows, err := s.logRepo.ListByOrderID(ctx, tenantUUID, orderID)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]ManualPaymentReviewLogDTO, 0, len(rows))
+	for _, row := range rows {
+		out = append(out, toManualReviewLogDTO(&row))
 	}
 	return out, nil
 }
@@ -141,6 +161,22 @@ func (s *ManualReviewService) CreateReview(ctx context.Context, tenantUUID, admi
 		if err := tx.WithContext(ctx).Create(row).Error; err != nil {
 			return err
 		}
+		if err := s.createManualReviewLog(ctx, tx, tenantUUID, row, "submitted", adminID, ""); err != nil {
+			return err
+		}
+		eventPayload, _ := jsonManualReviewPayload(ctx, row, nil, adminID, "created")
+		event := &ordermodel.OrderEvent{
+			ID:           uuid.NewString(),
+			TenantUUID:   tenantUUID,
+			OrderID:      row.OrderID,
+			EventType:    "order.manual_payment.created",
+			OperatorType: "admin",
+			Operator:     adminID,
+			Payload:      datatypes.JSON(eventPayload),
+		}
+		if err := s.eventRepo.CreateWithTx(ctx, tx, event); err != nil {
+			return err
+		}
 		created = row
 		return nil
 	})
@@ -193,7 +229,7 @@ func (s *ManualReviewService) ApproveReview(ctx context.Context, tenantUUID, adm
 		if strings.TrimSpace(row.Status) != "pending_review" {
 			return ErrManualReviewInvalidStatus
 		}
-		if row.SubmittedBy == adminID {
+		if row.SubmittedBy == adminID && !isRootOperator(ctx) {
 			return ErrManualReviewSameOperator
 		}
 		orderRow, err := s.orderRepo.LockByID(ctx, tx, tenantUUID, row.OrderID)
@@ -218,9 +254,9 @@ func (s *ManualReviewService) ApproveReview(ctx context.Context, tenantUUID, adm
 			Status:         "paid",
 			CompletedAt:    &now,
 		}
-		if err := tx.WithContext(ctx).Create(payTx).Error; err != nil {
-			return err
-		}
+			if err := tx.WithContext(ctx).Create(payTx).Error; err != nil {
+				return err
+			}
 		updates := map[string]any{
 			"status":        "approved",
 			"reviewed_by":   adminID,
@@ -254,12 +290,16 @@ func (s *ManualReviewService) ApproveReview(ctx context.Context, tenantUUID, adm
 			Operator:     adminID,
 			Payload:      datatypes.JSON(eventPayload),
 		}
-		if err := s.eventRepo.CreateWithTx(ctx, tx, event); err != nil {
-			return err
-		}
-		if err := tx.WithContext(ctx).Where("tenant_uuid = ? AND id = ?", tenantUUID, reviewID).First(&row).Error; err != nil {
-			return err
-		}
+			if err := s.eventRepo.CreateWithTx(ctx, tx, event); err != nil {
+				return err
+			}
+			row.Status = "approved"
+			if err := s.createManualReviewLog(ctx, tx, tenantUUID, row, "approved", adminID, strings.TrimSpace(req.Reason)); err != nil {
+				return err
+			}
+			if err := tx.WithContext(ctx).Where("tenant_uuid = ? AND id = ?", tenantUUID, reviewID).First(&row).Error; err != nil {
+				return err
+			}
 		updated = row
 		return nil
 	})
@@ -319,7 +359,7 @@ func (s *ManualReviewService) RejectReview(ctx context.Context, tenantUUID, admi
 		if strings.TrimSpace(row.Status) != "pending_review" {
 			return ErrManualReviewInvalidStatus
 		}
-		if row.SubmittedBy == adminID {
+		if row.SubmittedBy == adminID && !isRootOperator(ctx) {
 			return ErrManualReviewSameOperator
 		}
 		now := time.Now().UTC()
@@ -346,6 +386,10 @@ func (s *ManualReviewService) RejectReview(ctx context.Context, tenantUUID, admi
 			Payload:      datatypes.JSON(eventPayload),
 		}
 		if err := s.eventRepo.CreateWithTx(ctx, tx, event); err != nil {
+			return err
+		}
+		row.Status = "rejected"
+		if err := s.createManualReviewLog(ctx, tx, tenantUUID, row, "rejected", adminID, reason); err != nil {
 			return err
 		}
 		if err := tx.WithContext(ctx).Where("tenant_uuid = ? AND id = ?", tenantUUID, reviewID).First(&row).Error; err != nil {
@@ -409,6 +453,31 @@ func toManualReviewDTO(row *models.PaymentManualReview) ManualPaymentReviewDTO {
 	}
 }
 
+func toManualReviewLogDTO(row *models.PaymentManualReviewLog) ManualPaymentReviewLogDTO {
+	if row == nil {
+		return ManualPaymentReviewLogDTO{}
+	}
+	return ManualPaymentReviewLogDTO{
+		ID:           row.ID,
+		ReviewID:     row.ReviewID,
+		OrderID:      row.OrderID,
+		OrderNo:      row.OrderNo,
+		PayMethod:    row.PayMethod,
+		AmountMinor:  row.AmountMinor,
+		Currency:     row.Currency,
+		Status:       row.Status,
+		Action:       row.Action,
+		SubmittedBy:  row.SubmittedBy,
+		SubmittedAt:  row.SubmittedAt,
+		ReviewedBy:   row.ReviewedBy,
+		ReviewedAt:   row.ReviewedAt,
+		ReviewReason: row.ReviewReason,
+		ProofNo:      row.ProofNo,
+		Note:         row.Note,
+		CreatedAt:    row.CreatedAt,
+	}
+}
+
 func jsonManualReviewPayload(ctx context.Context, review *models.PaymentManualReview, tx *models.PaymentTransaction, reviewer, action string) ([]byte, error) {
 	requestID, _ := authx.RequestIDFromContext(ctx)
 	var txID uint64
@@ -434,4 +503,49 @@ func jsonManualReviewPayload(ctx context.Context, review *models.PaymentManualRe
 		"transactionNo":   txNo,
 	}
 	return json.Marshal(payload)
+}
+
+func (s *ManualReviewService) createManualReviewLog(ctx context.Context, tx *gorm.DB, tenantUUID string, review *models.PaymentManualReview, action, reviewer, reason string) error {
+	if review == nil {
+		return errors.New("manual review is required")
+	}
+	logRow := &models.PaymentManualReviewLog{
+		BaseModel:    models.BaseModel{TenantUuid: tenantUUID},
+		ReviewID:     review.ID,
+		OrderID:      review.OrderID,
+		OrderNo:      review.OrderNo,
+		PayMethod:    review.PayMethod,
+		AmountMinor:  review.AmountMinor,
+		Currency:     review.Currency,
+		Status:       strings.TrimSpace(review.Status),
+		Action:       strings.TrimSpace(action),
+		SubmittedBy:  review.SubmittedBy,
+		SubmittedAt:  review.SubmittedAt,
+		ReviewedBy:   "",
+		ReviewedAt:   nil,
+		ReviewReason: "",
+		ProofNo:      review.ProofNo,
+		Note:         review.Note,
+	}
+	if action != "submitted" {
+		now := time.Now().UTC()
+		logRow.ReviewedBy = strings.TrimSpace(reviewer)
+		logRow.ReviewedAt = &now
+		logRow.ReviewReason = strings.TrimSpace(reason)
+	}
+	return tx.WithContext(ctx).Create(logRow).Error
+}
+
+func isRootOperator(ctx context.Context) bool {
+	tc, ok := authx.TenantContextFromContext(ctx)
+	if !ok || len(tc.Roles) == 0 {
+		return false
+	}
+	for _, role := range tc.Roles {
+		switch strings.ToLower(strings.TrimSpace(role)) {
+		case "superadmin", "system.admin", "root":
+			return true
+		}
+	}
+	return false
 }

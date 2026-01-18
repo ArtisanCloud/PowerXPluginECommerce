@@ -195,19 +195,6 @@
       </UTable>
     </UCard>
 
-    <UCard title="事件日志">
-      <UTable :columns="eventColumns" :data="detail?.events || []" :loading="loading">
-        <template #operator-cell="{ row }">
-          <span class="text-sm">
-            {{ formatOperatorLabel(row.original) }}
-          </span>
-        </template>
-        <template #createdAt-cell="{ row }">
-          <span class="text-sm">{{ formatTime(row.original.createdAt) }}</span>
-        </template>
-      </UTable>
-    </UCard>
-
     <UCard title="优惠券与礼品卡">
       <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div class="text-sm text-gray-500 dark:text-gray-400">
@@ -270,6 +257,12 @@
             {{ formatMoney(row.original.currency || detail?.summary?.amounts?.currency || "CNY", -row.original.amountMinor) }}
           </div>
         </template>
+        <template #submittedBy-cell="{ row }">
+          <span class="text-sm">{{ resolveAdminName(row.original.submittedBy) }}</span>
+        </template>
+        <template #reviewedBy-cell="{ row }">
+          <span class="text-sm">{{ resolveAdminName(row.original.reviewedBy) }}</span>
+        </template>
         <template #status-cell="{ row }">
           <UBadge :color="benefitStatusColor(row.original.status)" variant="subtle">
             {{ benefitStatusLabel(row.original.status) }}
@@ -303,38 +296,60 @@
     </UCard>
 
     <UCard title="手动收款记录">
-      <UTable :columns="manualColumns" :data="manualReviews" :loading="manualLoading">
+      <UTable :columns="manualColumns" :data="manualLogs" :loading="manualLoading">
         <template #amountMinor-cell="{ row }">
           <div class="text-right tabular-nums">
             {{ formatMoney(row.original.currency || detail?.summary?.amounts?.currency || "CNY", row.original.amountMinor) }}
           </div>
         </template>
+        <template #submittedBy-cell="{ row }">
+          <span class="text-sm">{{ resolveAdminName(row.original.submittedBy) }}</span>
+        </template>
+        <template #reviewedBy-cell="{ row }">
+          <span class="text-sm">{{ resolveAdminName(row.original.reviewedBy) }}</span>
+        </template>
         <template #status-cell="{ row }">
-          <UBadge :color="manualStatusColor(row.original.status)" variant="subtle">
-            {{ manualStatusLabel(row.original.status) }}
+          <UBadge :color="manualRowStatusColor(row.original)" variant="subtle">
+            {{ manualRowStatusLabel(row.original) }}
           </UBadge>
         </template>
         <template #actions-cell="{ row }">
           <div class="flex items-center justify-end gap-2">
             <UButton
-              v-if="row.original.status === 'pending_review'"
+              v-if="canActOnManualLog(row.original)"
               size="xs"
               color="success"
               variant="soft"
-              @click="approveManual(row.original)"
+              @click="approveManual(row.original.reviewId)"
             >
               通过
             </UButton>
             <UButton
-              v-if="row.original.status === 'pending_review'"
+              v-if="canActOnManualLog(row.original)"
               size="xs"
               color="warning"
               variant="soft"
-              @click="openReject(row.original)"
+              @click="openReject(row.original.reviewId)"
             >
               拒绝
             </UButton>
           </div>
+        </template>
+      </UTable>
+    </UCard>
+
+    <UCard title="事件日志">
+      <div class="mb-3 text-sm text-gray-500 dark:text-gray-400">
+        订单全量事件记录（包含创建、收款、审核等）。
+      </div>
+      <UTable :columns="eventColumns" :data="detail?.events || []" :loading="loading">
+        <template #operator-cell="{ row }">
+          <span class="text-sm">
+            {{ formatOperatorLabel(row.original) }}
+          </span>
+        </template>
+        <template #createdAt-cell="{ row }">
+          <span class="text-sm">{{ formatTime(row.original.createdAt) }}</span>
         </template>
       </UTable>
     </UCard>
@@ -531,7 +546,8 @@ import type { TableColumn } from "@nuxt/ui";
 import { useOrderApi } from "~/composables/api/useOrder";
 import { useSkuApi } from "~/composables/api/useSku";
 import { usePaymentsApi } from "~/composables/api/usePayments";
-import type { ManualPaymentReview } from "~/types/payments";
+import { useAuthService } from "~/composables/api/services/authService";
+import type { ManualPaymentReview, ManualPaymentReviewLog } from "~/types/payments";
 import type { OrderBenefitReview, OrderDetail, OrderEvent, OrderItem, ShippingAddress } from "~/types/order";
 
 definePageMeta({
@@ -544,6 +560,7 @@ const toast = useToastAlert();
 const api = useOrderApi();
 const skuApi = useSkuApi();
 const paymentsApi = usePaymentsApi();
+const authService = useAuthService();
 
 const loading = ref(false);
 const cancelling = ref(false);
@@ -558,7 +575,8 @@ const rejectOpen = ref(false);
 const manualSubmitting = ref(false);
 const manualLoading = ref(false);
 const manualReviews = ref<ManualPaymentReview[]>([]);
-const currentReview = ref<ManualPaymentReview | null>(null);
+const manualLogs = ref<ManualPaymentReviewLog[]>([]);
+const currentReviewId = ref<number | null>(null);
 const rejectReason = ref("");
 const updating = ref(false);
 const manualForm = reactive({
@@ -622,7 +640,7 @@ const eventColumns = computed<TableColumn<OrderEvent>[]>(() => [
   { accessorKey: "createdAt", header: "时间" },
 ]);
 
-const manualColumns = computed<TableColumn<ManualPaymentReview>[]>(() => [
+const manualColumns = computed<TableColumn<ManualPaymentReviewLog>[]>(() => [
   { accessorKey: "id", header: "编号" },
   { accessorKey: "payMethod", header: "支付方式" },
   { accessorKey: "amountMinor", header: "金额", meta: { class: { td: "text-right" } } },
@@ -746,6 +764,50 @@ const formatOperatorLabel = (event: OrderEvent) => {
   return prefix && prefix !== "-" ? `${prefix}#${id}` : id;
 };
 
+const resolveAdminName = (raw?: string) => {
+  const id = String(raw || "").trim();
+  if (!id) return "-";
+  return operatorMap.value[id] || `管理员#${id}`;
+};
+
+const loadOperatorNames = async (ids: string[]) => {
+  const unique = Array.from(new Set(ids.map((id) => String(id || "").trim()).filter(Boolean)));
+  const pending = unique.filter((id) => !operatorMap.value[id]);
+  if (!pending.length) return;
+  const results = await Promise.allSettled(pending.map((id) => authService.getUser(id)));
+  const next = { ...operatorMap.value };
+  results.forEach((res, idx) => {
+    const id = pending[idx];
+    if (res.status === "fulfilled") {
+      const user = res.value?.data;
+      const name = user?.display_name || user?.email || user?.phone || user?.id || id;
+      next[id] = name;
+    }
+  });
+  operatorMap.value = next;
+};
+
+const syncOperatorMap = async () => {
+  const ids = new Set<string>();
+  (detail.value?.events || []).forEach((event) => {
+    const id = String(event.operator || "").trim();
+    if (id) ids.add(id);
+  });
+  (manualReviews.value || []).forEach((row) => {
+    if (row.submittedBy) ids.add(String(row.submittedBy));
+    if (row.reviewedBy) ids.add(String(row.reviewedBy));
+  });
+  (manualLogs.value || []).forEach((row) => {
+    if (row.submittedBy) ids.add(String(row.submittedBy));
+    if (row.reviewedBy) ids.add(String(row.reviewedBy));
+  });
+  (benefitReviews.value || []).forEach((row) => {
+    if (row.submittedBy) ids.add(String(row.submittedBy));
+    if (row.reviewedBy) ids.add(String(row.reviewedBy));
+  });
+  await loadOperatorNames(Array.from(ids));
+};
+
 const buildSkuLabel = (item: { spuName?: string; skuCode?: string; specDisplay?: string; id?: string }) => {
   const spuName = String(item.spuName || "").trim();
   const skuCode = String(item.skuCode || "").trim();
@@ -787,6 +849,7 @@ const fetchDetail = async () => {
     ]);
     await fetchManualReviews();
     await fetchBenefitReviews();
+    await syncOperatorMap();
   } catch (e: any) {
     toast.add({
       title: "加载订单失败",
@@ -803,6 +866,8 @@ const fetchManualReviews = async () => {
   manualLoading.value = true;
   try {
     manualReviews.value = await paymentsApi.listManualPayments(id.value);
+    manualLogs.value = await paymentsApi.listManualPaymentLogs(id.value);
+    await syncOperatorMap();
   } catch (e: any) {
     toast.add({
       title: "加载收款记录失败",
@@ -820,6 +885,7 @@ const fetchBenefitReviews = async () => {
   try {
     benefitReviews.value = await api.listBenefitReviews(id.value);
     benefitSelection.value = new Set();
+    await syncOperatorMap();
   } catch (e: any) {
     toast.add({
       title: "加载优惠权益失败",
@@ -875,10 +941,10 @@ const submitManualPayment = async () => {
   }
 };
 
-const approveManual = async (review: ManualPaymentReview) => {
+const approveManual = async (reviewId: number) => {
   manualSubmitting.value = true;
   try {
-    await paymentsApi.approveManualPayment(review.id, {});
+    await paymentsApi.approveManualPayment(reviewId, {});
     toast.add({ title: "审核通过", color: "success" });
     await fetchManualReviews();
     await fetchDetail();
@@ -893,8 +959,8 @@ const approveManual = async (review: ManualPaymentReview) => {
   }
 };
 
-const openReject = (review: ManualPaymentReview) => {
-  currentReview.value = review;
+const openReject = (reviewId: number) => {
+  currentReviewId.value = reviewId;
   rejectReason.value = "";
   rejectOpen.value = true;
 };
@@ -905,14 +971,15 @@ const closeReject = () => {
 };
 
 const confirmReject = async () => {
-  if (!currentReview.value) return;
+  if (!currentReviewId.value) return;
   manualSubmitting.value = true;
   try {
-    await paymentsApi.rejectManualPayment(currentReview.value.id, {
+    await paymentsApi.rejectManualPayment(currentReviewId.value, {
       reason: rejectReason.value || "",
     });
     toast.add({ title: "已拒绝收款申请", color: "success" });
     rejectOpen.value = false;
+    currentReviewId.value = null;
     await fetchManualReviews();
   } catch (e: any) {
     toast.add({
@@ -1250,6 +1317,31 @@ const manualStatusColor = (st: string) => {
     rejected: "error",
   };
   return map[st] || "neutral";
+};
+
+const manualRowStatusLabel = (row: ManualPaymentReviewLog) => {
+  if (row.action === "submitted") return "已提交";
+  return manualStatusLabel(row.status);
+};
+
+const manualRowStatusColor = (row: ManualPaymentReviewLog) => {
+  if (row.action === "submitted") return "info";
+  return manualStatusColor(row.status);
+};
+
+const manualReviewTerminalMap = computed(() => {
+  const map = new Map<number, string>();
+  manualLogs.value.forEach((row) => {
+    if (row.action === "approved" || row.action === "rejected") {
+      map.set(row.reviewId, row.action);
+    }
+  });
+  return map;
+});
+
+const canActOnManualLog = (row: ManualPaymentReviewLog) => {
+  if (row.action !== "submitted" || row.status !== "pending_review") return false;
+  return !manualReviewTerminalMap.value.has(row.reviewId);
 };
 
 watch(id, () => fetchDetail(), { immediate: true });

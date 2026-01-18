@@ -9,6 +9,7 @@ import type {
   PaymentTransaction,
   PaymentRefund,
   ManualPaymentReview,
+  ManualPaymentReviewLog,
 } from "~/types/payments";
 
 type ApiEnvelope<T> = ApiResponse<T> & {
@@ -131,6 +132,26 @@ const normalizeManualReview = (raw: RawRecord): ManualPaymentReview => ({
   updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
 });
 
+const normalizeManualReviewLog = (raw: RawRecord): ManualPaymentReviewLog => ({
+  id: Number(pick(raw, "id", "id") || 0),
+  reviewId: Number(pick(raw, "reviewId", "review_id") || 0),
+  orderId: String(pick(raw, "orderId", "order_id") || ""),
+  orderNo: String(pick(raw, "orderNo", "order_no") || ""),
+  payMethod: String(pick(raw, "payMethod", "pay_method") || ""),
+  amountMinor: Number(pick(raw, "amountMinor", "amount_minor") || 0),
+  currency: String(pick(raw, "currency", "currency") || ""),
+  status: String(pick(raw, "status", "status") || ""),
+  action: String(pick(raw, "action", "action") || ""),
+  submittedBy: String(pick(raw, "submittedBy", "submitted_by") || ""),
+  submittedAt: String(pick(raw, "submittedAt", "submitted_at") || ""),
+  reviewedBy: String(pick(raw, "reviewedBy", "reviewed_by") || ""),
+  reviewedAt: pick(raw, "reviewedAt", "reviewed_at") || null,
+  reviewReason: String(pick(raw, "reviewReason", "review_reason") || ""),
+  proofNo: String(pick(raw, "proofNo", "proof_no") || ""),
+  note: String(pick(raw, "note", "note") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+});
+
 export type ProviderListQuery = {
   keyword?: string;
   type?: string;
@@ -195,8 +216,12 @@ export function usePaymentsApi() {
       return normalizeTransaction(raw || {});
     },
     createRefund: async (transactionId: number | string, payload: RefundCreateRequest, init?: any) => {
+      const req = {
+        amount_minor: payload.amountMinor,
+        reason: payload.reason,
+      };
       const raw = await unwrap(
-        apiPost<ApiEnvelope<RawRecord>>(`${basePath}/transactions/${transactionId}/refund`, payload, init),
+        apiPost<ApiEnvelope<RawRecord>>(`${basePath}/transactions/${transactionId}/refund`, req, init),
       );
       return normalizeRefund(raw || {});
     },
@@ -219,8 +244,18 @@ export function usePaymentsApi() {
       return Array.isArray(raw) ? raw.map(normalizeReconciliation) : [];
     },
     createReconciliation: async (payload: ReconciliationCreateRequest, init?: any) => {
+      const req = {
+        period_type: payload.periodType,
+        period_start: payload.periodStart,
+        period_end: payload.periodEnd,
+        items: payload.items.map((item) => ({
+          transaction_id: item.transactionId,
+          diff_type: item.diffType,
+          diff_amount: item.diffAmount,
+        })),
+      };
       const raw = await unwrap(
-        apiPost<ApiEnvelope<RawRecord>>(`${basePath}/reconciliations`, payload, init),
+        apiPost<ApiEnvelope<RawRecord>>(`${basePath}/reconciliations`, req, init),
       );
       return normalizeReconciliation(raw || {});
     },
@@ -252,9 +287,25 @@ export function usePaymentsApi() {
       );
       return Array.isArray(raw) ? raw.map(normalizeManualReview) : [];
     },
-    createManualPayment: async (payload: ManualPaymentCreateRequest, init?: any) => {
+    listManualPaymentLogs: async (orderId?: string, init?: any) => {
+      const query = orderId ? { orderId } : undefined;
       const raw = await unwrap(
-        apiPost<ApiEnvelope<RawRecord>>(`${basePath}/manual-payments`, payload, init),
+        apiGet<ApiEnvelope<RawRecord[]>>(`${basePath}/manual-payments/logs`, query, init),
+      );
+      return Array.isArray(raw) ? raw.map(normalizeManualReviewLog) : [];
+    },
+    createManualPayment: async (payload: ManualPaymentCreateRequest, init?: any) => {
+      const req = {
+        order_id: payload.orderId,
+        amount_minor: payload.amountMinor,
+        currency: payload.currency,
+        pay_method: payload.payMethod,
+        provider_id: payload.providerId,
+        proof_no: payload.proofNo,
+        note: payload.note,
+      };
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<RawRecord>>(`${basePath}/manual-payments`, req, init),
       );
       return normalizeManualReview(raw || {});
     },

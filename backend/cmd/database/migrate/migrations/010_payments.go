@@ -12,4 +12,5 @@ var PaymentTables = []interface{}{
 	&models.PaymentSplitRule{},
 	&models.PaymentSplitResult{},
 	&models.PaymentManualReview{},
+	&models.PaymentManualReviewLog{},
 }

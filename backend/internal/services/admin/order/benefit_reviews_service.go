@@ -214,7 +214,7 @@ func (s *BenefitReviewService) ApproveReviews(ctx context.Context, tenantUUID, a
 			if strings.TrimSpace(row.Status) != "pending_review" {
 				return ErrBenefitReviewInvalidStatus
 			}
-			if row.SubmittedBy == adminID {
+			if row.SubmittedBy == adminID && !isRootOperator(ctx) {
 				return ErrBenefitReviewSameOperator
 			}
 			orderRow, err := s.orderRepo.LockByID(ctx, tx, tenantUUID, row.OrderID)
@@ -307,7 +307,7 @@ func (s *BenefitReviewService) RejectReviews(ctx context.Context, tenantUUID, ad
 			if strings.TrimSpace(row.Status) != "pending_review" {
 				return ErrBenefitReviewInvalidStatus
 			}
-			if row.SubmittedBy == adminID {
+			if row.SubmittedBy == adminID && !isRootOperator(ctx) {
 				return ErrBenefitReviewSameOperator
 			}
 			now := time.Now().UTC()
@@ -474,4 +474,18 @@ func jsonBenefitReviewPayload(ctx context.Context, review *models.OrderBenefitRe
 		"submittedBy":     review.SubmittedBy,
 	}
 	return json.Marshal(payload)
+}
+
+func isRootOperator(ctx context.Context) bool {
+	tc, ok := authx.TenantContextFromContext(ctx)
+	if !ok || len(tc.Roles) == 0 {
+		return false
+	}
+	for _, role := range tc.Roles {
+		switch strings.ToLower(strings.TrimSpace(role)) {
+		case "superadmin", "system.admin", "root":
+			return true
+		}
+	}
+	return false
 }

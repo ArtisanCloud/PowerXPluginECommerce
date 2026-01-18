@@ -187,7 +187,6 @@ const normalizeBody = (body: any) => {
 
 export const useAuthService = () => {
   const { client } = useApiClient();
-  const apiClient = client;
   const adminBaseUrl = "/admin"; // 添加管理员基础URL
   const baseUrl = adminBaseUrl + "/user/auth";
 
@@ -197,6 +196,18 @@ export const useAuthService = () => {
       ...rest,
       body: normalizeBody(body),
     });
+  };
+  const apiClient = {
+    get: <T>(url: string, opts: FetchOptions & { params?: any } = {}) =>
+      request<T>(url, { method: "GET", params: (opts as any).params }),
+    post: <T>(url: string, body?: any, opts: FetchOptions = {}) =>
+      request<T>(url, { method: "POST", body, ...opts }),
+    put: <T>(url: string, body?: any, opts: FetchOptions = {}) =>
+      request<T>(url, { method: "PUT", body, ...opts }),
+    patch: <T>(url: string, body?: any, opts: FetchOptions = {}) =>
+      request<T>(url, { method: "PATCH", body, ...opts }),
+    delete: <T>(url: string, opts: FetchOptions = {}) =>
+      request<T>(url, { method: "DELETE", ...opts }),
   };
 
   return {

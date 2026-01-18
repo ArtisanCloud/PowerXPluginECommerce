@@ -98,3 +98,23 @@ export type ManualPaymentReview = {
   createdAt: string;
   updatedAt: string;
 };
+
+export type ManualPaymentReviewLog = {
+  id: number;
+  reviewId: number;
+  orderId: string;
+  orderNo: string;
+  payMethod: string;
+  amountMinor: number;
+  currency: string;
+  status: string;
+  action: string;
+  submittedBy: string;
+  submittedAt: string;
+  reviewedBy?: string;
+  reviewedAt?: string | null;
+  reviewReason?: string;
+  proofNo?: string;
+  note?: string;
+  createdAt: string;
+};

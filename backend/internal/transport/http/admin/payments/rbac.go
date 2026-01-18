@@ -25,8 +25,9 @@ func RBACEntries(prefix string) map[string]authx.Permission {
 		"POST:" + base + "/reconciliations":  {Resource: res(), Action: "manage"},
 		"GET:" + base + "/reconciliations/:id/items": {Resource: res(), Action: "read"},
 		"POST:" + base + "/reconciliations/:id/items/:itemId/resolve": {Resource: res(), Action: "manage"},
-		"GET:" + base + "/manual-payments":   {Resource: res(), Action: "read"},
-		"POST:" + base + "/manual-payments":  {Resource: res(), Action: "manage"},
+		"GET:" + base + "/manual-payments":      {Resource: res(), Action: "read"},
+		"GET:" + base + "/manual-payments/logs": {Resource: res(), Action: "read"},
+		"POST:" + base + "/manual-payments":     {Resource: res(), Action: "manage"},
 		"POST:" + base + "/manual-payments/:id/approve": {Resource: res(), Action: "manage"},
 		"POST:" + base + "/manual-payments/:id/reject":  {Resource: res(), Action: "manage"},
 	}

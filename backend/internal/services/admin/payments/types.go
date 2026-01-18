@@ -139,6 +139,26 @@ type ManualPaymentReviewDTO struct {
 	UpdatedAt     time.Time  `json:"updated_at"`
 }
 
+type ManualPaymentReviewLogDTO struct {
+	ID           uint64     `json:"id"`
+	ReviewID     uint64     `json:"review_id"`
+	OrderID      string     `json:"order_id"`
+	OrderNo      string     `json:"order_no"`
+	PayMethod    string     `json:"pay_method"`
+	AmountMinor  int64      `json:"amount_minor"`
+	Currency     string     `json:"currency"`
+	Status       string     `json:"status"`
+	Action       string     `json:"action"`
+	SubmittedBy  string     `json:"submitted_by"`
+	SubmittedAt  time.Time  `json:"submitted_at"`
+	ReviewedBy   string     `json:"reviewed_by,omitempty"`
+	ReviewedAt   *time.Time `json:"reviewed_at,omitempty"`
+	ReviewReason string     `json:"review_reason,omitempty"`
+	ProofNo      string     `json:"proof_no,omitempty"`
+	Note         string     `json:"note,omitempty"`
+	CreatedAt    time.Time  `json:"created_at"`
+}
+
 type ReconciliationDTO struct {
 	ID              uint64     `json:"id"`
 	PeriodType      string     `json:"period_type"`

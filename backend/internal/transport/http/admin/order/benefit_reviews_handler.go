@@ -33,6 +33,9 @@ func (h *BenefitReviewHandler) List(c *gin.Context) {
 	}
 	orderID := strings.TrimSpace(c.Param("id"))
 	ctx := authx.ContextWithRequestID(c.Request.Context(), requestIDFromRequest(c))
+	if tc, ok := authx.GetTenantContext(c); ok {
+		ctx = authx.ContextWithTenantContext(ctx, tc)
+	}
 	resp, err := h.service.ListReviews(ctx, tenantUUID, adminID, orderID)
 	if err != nil {
 		respondAdminOrderError(c, err)
@@ -58,6 +61,9 @@ func (h *BenefitReviewHandler) Create(c *gin.Context) {
 		return
 	}
 	ctx := authx.ContextWithRequestID(c.Request.Context(), requestIDFromRequest(c))
+	if tc, ok := authx.GetTenantContext(c); ok {
+		ctx = authx.ContextWithTenantContext(ctx, tc)
+	}
 	resp, err := h.service.CreateReview(ctx, tenantUUID, adminID, orderID, req)
 	if err != nil {
 		respondAdminOrderError(c, err)
@@ -82,6 +88,9 @@ func (h *BenefitReviewHandler) Approve(c *gin.Context) {
 		return
 	}
 	ctx := authx.ContextWithRequestID(c.Request.Context(), requestIDFromRequest(c))
+	if tc, ok := authx.GetTenantContext(c); ok {
+		ctx = authx.ContextWithTenantContext(ctx, tc)
+	}
 	resp, err := h.service.ApproveReviews(ctx, tenantUUID, adminID, req.ReviewIDs, req)
 	if err != nil {
 		respondAdminOrderError(c, err)
@@ -106,6 +115,9 @@ func (h *BenefitReviewHandler) Reject(c *gin.Context) {
 		return
 	}
 	ctx := authx.ContextWithRequestID(c.Request.Context(), requestIDFromRequest(c))
+	if tc, ok := authx.GetTenantContext(c); ok {
+		ctx = authx.ContextWithTenantContext(ctx, tc)
+	}
 	resp, err := h.service.RejectReviews(ctx, tenantUUID, adminID, req.ReviewIDs, req)
 	if err != nil {
 		respondAdminOrderError(c, err)
@@ -127,6 +139,9 @@ func (h *BenefitReviewHandler) SearchCodes(c *gin.Context) {
 	benefitType := strings.TrimSpace(c.Query("type"))
 	keyword := strings.TrimSpace(c.Query("q"))
 	ctx := authx.ContextWithRequestID(c.Request.Context(), requestIDFromRequest(c))
+	if tc, ok := authx.GetTenantContext(c); ok {
+		ctx = authx.ContextWithTenantContext(ctx, tc)
+	}
 	resp, err := h.service.SearchBenefitCodes(ctx, tenantUUID, adminID, benefitType, keyword)
 	if err != nil {
 		respondAdminOrderError(c, err)

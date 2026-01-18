@@ -41,22 +41,48 @@ func (h *ManualReviewHandler) List(c *gin.Context) {
 	contracts.ResponseSuccess(c, resp)
 }
 
+func (h *ManualReviewHandler) ListLogs(c *gin.Context) {
+	if h == nil || h.service == nil {
+		contracts.ResponseError(c, http.StatusServiceUnavailable, contracts.ErrCodeInternalError, "manual review service unavailable")
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	tc, ok := authx.GetTenantContext(c)
+	if !ok || tc.UserID <= 0 {
+		contracts.ResponseUnauthorized(c, "unauthorized")
+		return
+	}
+	adminID := strconv.FormatInt(tc.UserID, 10)
+	orderID := strings.TrimSpace(c.Query("orderId"))
+	ctx := authx.ContextWithRequestID(c.Request.Context(), requestIDFromRequest(c))
+	ctx = authx.ContextWithTenantContext(ctx, tc)
+	resp, err := h.service.ListReviewLogs(ctx, tenantUUID, adminID, orderID)
+	if err != nil {
+		contracts.ResponseError(c, http.StatusInternalServerError, contracts.ErrCodeInternalError, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, resp)
+}
+
 func (h *ManualReviewHandler) Create(c *gin.Context) {
 	if h == nil || h.service == nil {
 		contracts.ResponseError(c, http.StatusServiceUnavailable, contracts.ErrCodeInternalError, "manual review service unavailable")
 		return
 	}
 	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
-	adminID, ok := requireAdminUser(c)
-	if !ok {
+	tc, ok := authx.GetTenantContext(c)
+	if !ok || tc.UserID <= 0 {
+		contracts.ResponseUnauthorized(c, "unauthorized")
 		return
 	}
+	adminID := strconv.FormatInt(tc.UserID, 10)
 	var req paymentsvc.ManualPaymentCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		contracts.ResponseError(c, http.StatusBadRequest, contracts.ErrCodeInvalidRequest, err.Error())
 		return
 	}
 	ctx := authx.ContextWithRequestID(c.Request.Context(), requestIDFromRequest(c))
+	ctx = authx.ContextWithTenantContext(ctx, tc)
 	resp, err := h.service.CreateReview(ctx, tenantUUID, adminID, req)
 	if err != nil {
 		if errors.Is(err, paymentsvc.ErrManualReviewOrderNotPayable) {
@@ -75,10 +101,12 @@ func (h *ManualReviewHandler) Approve(c *gin.Context) {
 		return
 	}
 	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
-	adminID, ok := requireAdminUser(c)
-	if !ok {
+	tc, ok := authx.GetTenantContext(c)
+	if !ok || tc.UserID <= 0 {
+		contracts.ResponseUnauthorized(c, "unauthorized")
 		return
 	}
+	adminID := strconv.FormatInt(tc.UserID, 10)
 	id, err := strconv.ParseUint(strings.TrimSpace(c.Param("id")), 10, 64)
 	if err != nil {
 		contracts.ResponseError(c, http.StatusBadRequest, contracts.ErrCodeInvalidRequest, "invalid review id")
@@ -90,6 +118,7 @@ func (h *ManualReviewHandler) Approve(c *gin.Context) {
 		return
 	}
 	ctx := authx.ContextWithRequestID(c.Request.Context(), requestIDFromRequest(c))
+	ctx = authx.ContextWithTenantContext(ctx, tc)
 	resp, err := h.service.ApproveReview(ctx, tenantUUID, adminID, id, req)
 	if err != nil {
 		if errors.Is(err, paymentsvc.ErrManualReviewNotFound) {
@@ -116,10 +145,12 @@ func (h *ManualReviewHandler) Reject(c *gin.Context) {
 		return
 	}
 	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
-	adminID, ok := requireAdminUser(c)
-	if !ok {
+	tc, ok := authx.GetTenantContext(c)
+	if !ok || tc.UserID <= 0 {
+		contracts.ResponseUnauthorized(c, "unauthorized")
 		return
 	}
+	adminID := strconv.FormatInt(tc.UserID, 10)
 	id, err := strconv.ParseUint(strings.TrimSpace(c.Param("id")), 10, 64)
 	if err != nil {
 		contracts.ResponseError(c, http.StatusBadRequest, contracts.ErrCodeInvalidRequest, "invalid review id")
@@ -131,6 +162,7 @@ func (h *ManualReviewHandler) Reject(c *gin.Context) {
 		return
 	}
 	ctx := authx.ContextWithRequestID(c.Request.Context(), requestIDFromRequest(c))
+	ctx = authx.ContextWithTenantContext(ctx, tc)
 	resp, err := h.service.RejectReview(ctx, tenantUUID, adminID, id, req)
 	if err != nil {
 		if errors.Is(err, paymentsvc.ErrManualReviewNotFound) {
