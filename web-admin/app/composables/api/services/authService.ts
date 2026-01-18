@@ -198,8 +198,11 @@ export const useAuthService = () => {
     });
   };
   const apiClient = {
-    get: <T>(url: string, opts: FetchOptions & { params?: any } = {}) =>
-      request<T>(url, { method: "GET", params: (opts as any).params }),
+    get: <T>(url: string, opts: FetchOptions & { params?: any; query?: any } = {}) =>
+      request<T>(url, {
+        method: "GET",
+        query: (opts as any).query ?? (opts as any).params,
+      }),
     post: <T>(url: string, body?: any, opts: FetchOptions = {}) =>
       request<T>(url, { method: "POST", body, ...opts }),
     put: <T>(url: string, body?: any, opts: FetchOptions = {}) =>

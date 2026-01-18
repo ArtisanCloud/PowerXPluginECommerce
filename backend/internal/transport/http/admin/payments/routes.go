@@ -47,9 +47,9 @@ func RegisterRoutes(rg *gin.RouterGroup, deps *app.Deps) {
 		group.POST("/reconciliations", reconciliations.Create)
 		group.GET("/reconciliations/:id/items", reconciliations.ListItems)
 		group.POST("/reconciliations/:id/items/:itemId/resolve", reconciliations.ResolveItem)
-	group.GET("/manual-payments", manualReviews.List)
-	group.GET("/manual-payments/logs", manualReviews.ListLogs)
-	group.POST("/manual-payments", manualReviews.Create)
+		group.GET("/manual-payments", manualReviews.List)
+		group.GET("/manual-payments/logs", manualReviews.ListLogs)
+		group.POST("/manual-payments", manualReviews.Create)
 		group.POST("/manual-payments/:id/approve", manualReviews.Approve)
 		group.POST("/manual-payments/:id/reject", manualReviews.Reject)
 	}

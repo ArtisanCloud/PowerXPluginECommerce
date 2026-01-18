@@ -191,9 +191,9 @@ type CreateReconciliationItemInput struct {
 }
 
 type CreateReconciliationRequest struct {
-	PeriodType  string                         `json:"period_type"`
-	PeriodStart time.Time                      `json:"period_start"`
-	PeriodEnd   time.Time                      `json:"period_end"`
+	PeriodType  string                          `json:"period_type"`
+	PeriodStart time.Time                       `json:"period_start"`
+	PeriodEnd   time.Time                       `json:"period_end"`
 	Items       []CreateReconciliationItemInput `json:"items"`
 }
 

@@ -124,9 +124,9 @@ const (
 	TableCustomerAddresses = "customer_addresses"
 
 	// Order (Checkout MVP)
-	TableOrders      = "orders"
-	TableOrderItems  = "order_items"
-	TableOrderEvents = "order_events"
+	TableOrders              = "orders"
+	TableOrderItems          = "order_items"
+	TableOrderEvents         = "order_events"
 	TableOrderBenefitReviews = "order_benefit_reviews"
 
 	// Cart (Checkout MVP)

@@ -196,10 +196,10 @@ func (s *ManualReviewService) CreateReview(ctx context.Context, tenantUUID, admi
 			Currency:  created.Currency,
 			Status:    created.Status,
 			Metadata: map[string]any{
-				"review_id":  created.ID,
-				"pay_method": created.PayMethod,
+				"review_id":   created.ID,
+				"pay_method":  created.PayMethod,
 				"provider_id": created.ProviderID,
-				"proof_no":   created.ProofNo,
+				"proof_no":    created.ProofNo,
 			},
 		})
 	}
@@ -254,14 +254,14 @@ func (s *ManualReviewService) ApproveReview(ctx context.Context, tenantUUID, adm
 			Status:         "paid",
 			CompletedAt:    &now,
 		}
-			if err := tx.WithContext(ctx).Create(payTx).Error; err != nil {
-				return err
-			}
+		if err := tx.WithContext(ctx).Create(payTx).Error; err != nil {
+			return err
+		}
 		updates := map[string]any{
-			"status":        "approved",
-			"reviewed_by":   adminID,
-			"reviewed_at":   now,
-			"review_reason": strings.TrimSpace(req.Reason),
+			"status":         "approved",
+			"reviewed_by":    adminID,
+			"reviewed_at":    now,
+			"review_reason":  strings.TrimSpace(req.Reason),
 			"transaction_id": payTx.ID,
 		}
 		if err := tx.WithContext(ctx).
@@ -290,16 +290,16 @@ func (s *ManualReviewService) ApproveReview(ctx context.Context, tenantUUID, adm
 			Operator:     adminID,
 			Payload:      datatypes.JSON(eventPayload),
 		}
-			if err := s.eventRepo.CreateWithTx(ctx, tx, event); err != nil {
-				return err
-			}
-			row.Status = "approved"
-			if err := s.createManualReviewLog(ctx, tx, tenantUUID, row, "approved", adminID, strings.TrimSpace(req.Reason)); err != nil {
-				return err
-			}
-			if err := tx.WithContext(ctx).Where("tenant_uuid = ? AND id = ?", tenantUUID, reviewID).First(&row).Error; err != nil {
-				return err
-			}
+		if err := s.eventRepo.CreateWithTx(ctx, tx, event); err != nil {
+			return err
+		}
+		row.Status = "approved"
+		if err := s.createManualReviewLog(ctx, tx, tenantUUID, row, "approved", adminID, strings.TrimSpace(req.Reason)); err != nil {
+			return err
+		}
+		if err := tx.WithContext(ctx).Where("tenant_uuid = ? AND id = ?", tenantUUID, reviewID).First(&row).Error; err != nil {
+			return err
+		}
 		updated = row
 		return nil
 	})
@@ -404,18 +404,18 @@ func (s *ManualReviewService) RejectReview(ctx context.Context, tenantUUID, admi
 	if s.logger != nil {
 		requestID, _ := authx.RequestIDFromContext(ctx)
 		s.logger.EmitEvent(paymentslogger.Event{
-			Action:    "manual_review.rejected",
-			TenantID:  tenantUUID,
-			ActorID:   adminID,
-			RequestID: requestID,
-			OrderID:   updated.OrderID,
-			OrderNo:   updated.OrderNo,
+			Action:     "manual_review.rejected",
+			TenantID:   tenantUUID,
+			ActorID:    adminID,
+			RequestID:  requestID,
+			OrderID:    updated.OrderID,
+			OrderNo:    updated.OrderNo,
 			ProviderID: fmt.Sprintf("%d", updated.ProviderID),
-			Amount:    updated.AmountMinor,
-			Currency:  updated.Currency,
-			Status:    updated.Status,
-			Result:    "rejected",
-			Reason:    updated.ReviewReason,
+			Amount:     updated.AmountMinor,
+			Currency:   updated.Currency,
+			Status:     updated.Status,
+			Result:     "rejected",
+			Reason:     updated.ReviewReason,
 			Metadata: map[string]any{
 				"review_id":  updated.ID,
 				"pay_method": updated.PayMethod,
@@ -487,20 +487,20 @@ func jsonManualReviewPayload(ctx context.Context, review *models.PaymentManualRe
 		txNo = tx.TransactionNo
 	}
 	payload := map[string]any{
-		"requestId":       requestID,
-		"manualReviewId":  review.ID,
-		"orderId":         review.OrderID,
-		"orderNo":         review.OrderNo,
-		"amount":          review.AmountMinor,
-		"currency":        review.Currency,
-		"payMethod":       review.PayMethod,
-		"providerId":      review.ProviderID,
-		"proofNo":         review.ProofNo,
-		"note":            review.Note,
-		"reviewer":        reviewer,
-		"action":          action,
-		"transactionId":   txID,
-		"transactionNo":   txNo,
+		"requestId":      requestID,
+		"manualReviewId": review.ID,
+		"orderId":        review.OrderID,
+		"orderNo":        review.OrderNo,
+		"amount":         review.AmountMinor,
+		"currency":       review.Currency,
+		"payMethod":      review.PayMethod,
+		"providerId":     review.ProviderID,
+		"proofNo":        review.ProofNo,
+		"note":           review.Note,
+		"reviewer":       reviewer,
+		"action":         action,
+		"transactionId":  txID,
+		"transactionNo":  txNo,
 	}
 	return json.Marshal(payload)
 }
