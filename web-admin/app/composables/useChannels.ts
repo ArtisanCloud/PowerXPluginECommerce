@@ -36,10 +36,30 @@ const unwrapApiData = <T>(response: T | { data?: T } | null | undefined): T => {
   return response as T
 }
 
+const normalizeChannelSummary = (item: Record<string, any>): ChannelSummary => ({
+  id: String(item?.id ?? '').trim(),
+  name: String(item?.name ?? '').trim(),
+  storeId: item?.storeId ?? item?.store_id,
+  platform: String(item?.platform ?? '').trim(),
+  region: String(item?.region ?? '').trim(),
+  ownerUuid: String(item?.ownerUuid ?? item?.owner_uuid ?? '').trim(),
+  status: item?.status,
+  channelType: item?.channelType ?? item?.channel_type,
+  tags: item?.tags ?? [],
+  approvalHistory: item?.approvalHistory ?? item?.approval_history,
+})
+
+const normalizeChannelList = (payload: ChannelListResponse): ChannelListResponse => ({
+  ...payload,
+  items: Array.isArray(payload?.items)
+    ? payload.items.map((item) => normalizeChannelSummary(item as Record<string, any>))
+    : [],
+})
+
 export const useChannelsApi = () => {
   const listChannels = async (params?: ChannelListParams) => {
     const response = await apiGet<ChannelListApiResponse>(API_PREFIX, params)
-    return unwrapApiData<ChannelListResponse>(response)
+    return normalizeChannelList(unwrapApiData<ChannelListResponse>(response))
   }
 
   const createChannel = async (payload: ChannelDraftPayload) => {

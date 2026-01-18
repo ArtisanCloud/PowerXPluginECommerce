@@ -124,10 +124,15 @@ func (s *Service) ListSkus(ctx context.Context, query SkuListQuery) (*SkuListRes
 	if err != nil {
 		return nil, err
 	}
+	locale := strings.TrimSpace(query.Locale)
+	if locale == "" {
+		locale = "zh-CN"
+	}
 	filters := repo.SkuListFilters{
 		SPUID:    strings.TrimSpace(query.SPUID),
 		Status:   strings.TrimSpace(query.Status),
 		Keyword:  strings.TrimSpace(query.Keyword),
+		Locale:   locale,
 		Page:     query.Page,
 		PageSize: query.PageSize,
 	}
@@ -136,10 +141,7 @@ func (s *Service) ListSkus(ctx context.Context, query SkuListQuery) (*SkuListRes
 		return nil, err
 	}
 
-	locale := strings.TrimSpace(query.Locale)
-	if locale == "" {
-		locale = "zh-CN"
-	}
+	locale = strings.TrimSpace(locale)
 	spuNameMap, err := s.resolveSPUNames(ctx, tenantID, rows, locale)
 	if err != nil {
 		return nil, err

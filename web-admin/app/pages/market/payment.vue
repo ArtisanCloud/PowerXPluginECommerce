@@ -14,23 +14,19 @@
       <div class="flex gap-2">
         <USelect
           v-model="selectedStatus"
-          :options="statusOptions"
-          option-attribute="label"
-          value-attribute="value"
+          :items="statusItems"
           placeholder="全部状态"
           class="w-44"
         />
         <USelect
           v-model="selectedMethod"
-          :options="methodOptions"
-          option-attribute="label"
-          value-attribute="value"
+          :items="methodItems"
           placeholder="全部方式"
           class="w-44"
         />
         <UInput
           v-model="keyword"
-          placeholder="搜索订单号/支付单号/客户"
+          placeholder="搜索订单号/支付单号"
           icon="i-heroicons-magnifying-glass"
           class="w-72"
         />
@@ -127,21 +123,8 @@
         </template>
 
         <!-- 订单号 -->
-        <template #orderId-cell="{ getValue }">
+        <template #orderNo-cell="{ getValue }">
           <code class="text-xs">{{ getValue() }}</code>
-        </template>
-
-        <!-- 客户 -->
-        <template #customer-cell="{ row }">
-          <div class="flex items-center gap-2">
-            <UAvatar :src="row.original.avatar" size="xs" />
-            <div>
-              <div class="font-medium">{{ row.original.customer }}</div>
-              <div class="text-xs text-muted">
-                {{ row.original.customerEmail }}
-              </div>
-            </div>
-          </div>
         </template>
 
         <!-- 支付方式 -->
@@ -196,7 +179,7 @@
               退款
             </UButton>
             <UButton
-              v-else-if="row.original.status === 'pending'"
+              v-else-if="row.original.status === 'pending_payment' || row.original.status === 'paying'"
               size="xs"
               color="primary"
               variant="soft"
@@ -229,10 +212,16 @@
       </template>
     </UCard>
 
-    <!-- 详情 Drawer -->
-    <USlideover v-model="detailOpen">
-      <UCard class="h-full">
-        <template #header>
+    <!-- 详情 Modal -->
+    <UModal
+      v-model:open="detailOpen"
+      :title="current ? `支付单 ${current.paymentNo}` : '支付单详情'"
+      description="查看支付详情、退款记录与风控/分账信息"
+      :ui="{ content: 'max-w-3xl w-full' }"
+      :prevent-close="detailLoading"
+    >
+      <template #body>
+        <div class="space-y-4 p-4 sm:p-5">
           <div class="flex items-center justify-between">
             <div>
               <div class="text-sm text-muted">支付单号</div>
@@ -242,22 +231,15 @@
               {{ current ? statusLabel(current.status) : "" }}
             </UBadge>
           </div>
-        </template>
 
-        <div class="space-y-4">
           <div class="grid grid-cols-2 gap-4">
             <div>
               <div class="text-xs text-muted">订单号</div>
-              <div class="font-medium">{{ current?.orderId }}</div>
+              <div class="font-medium">{{ current?.orderNo }}</div>
             </div>
             <div>
               <div class="text-xs text-muted">渠道</div>
-              <div class="font-medium">{{ current?.channelName }}</div>
-            </div>
-            <div>
-              <div class="text-xs text-muted">客户</div>
-              <div class="font-medium">{{ current?.customer }}</div>
-              <div class="text-xs text-muted">{{ current?.customerEmail }}</div>
+              <div class="font-medium">{{ current?.providerName }}</div>
             </div>
             <div>
               <div class="text-xs text-muted">支付方式</div>
@@ -291,86 +273,263 @@
                 {{ current?.paidAt ? fmtDT(current.paidAt) : "-" }}
               </div>
             </div>
+            <div v-if="current?.failureReason" class="col-span-2">
+              <div class="text-xs text-muted">失败原因</div>
+              <div class="font-medium text-error-600">
+                {{ current?.failureReason }}
+              </div>
+            </div>
           </div>
 
           <USeparator />
 
           <div>
-            <div class="text-sm font-semibold mb-2">分账/明细</div>
-            <div v-if="current?.items?.length" class="space-y-2">
+            <div class="text-sm font-semibold mb-2">退款记录</div>
+            <div v-if="refundsForCurrent.length" class="space-y-2">
               <div
-                v-for="it in current?.items"
-                :key="it.id"
-                class="flex justify-between text-sm"
+                v-for="refund in refundsForCurrent"
+                :key="refund.id"
+                class="flex items-center justify-between text-sm"
               >
-                <div class="text-muted">{{ it.name }}</div>
-                <div class="font-medium">{{ formatCNY(it.amount) }}</div>
+                <div>
+                  <div class="font-medium">{{ refund.refundNo }}</div>
+                  <div class="text-xs text-muted">
+                    {{ refund.createdAt ? fmtDT(refund.createdAt) : "-" }}
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="font-medium">{{ formatCNY(refund.refundAmount) }}</div>
+                  <div class="text-xs text-muted">{{ refund.status }}</div>
+                </div>
               </div>
             </div>
-            <div v-else class="text-sm text-muted">无明细</div>
+            <div v-else class="text-sm text-muted">暂无退款记录</div>
           </div>
-        </div>
 
-        <template #footer>
-          <div class="flex justify-end gap-2">
-            <UButton variant="outline" @click="detailOpen = false"
-              >关闭</UButton
-            >
+          <USeparator />
+
+          <div>
+            <div class="text-sm font-semibold mb-2">风险事件</div>
+            <div v-if="detailLoading" class="text-sm text-muted">加载中...</div>
+            <div v-else-if="riskEvents.length" class="space-y-2">
+              <div
+                v-for="event in riskEvents"
+                :key="event.id"
+                class="flex items-center justify-between text-sm"
+              >
+                <div>
+                  <div class="font-medium">{{ event.riskType }}</div>
+                  <div class="text-xs text-muted">
+                    {{ event.createdAt ? fmtDT(event.createdAt) : "-" }}
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="font-medium">评分 {{ event.riskScore }}</div>
+                  <div class="text-xs text-muted">{{ event.action }}</div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="text-sm text-muted">暂无风险事件</div>
+          </div>
+
+          <USeparator />
+
+          <div>
+            <div class="text-sm font-semibold mb-2">分账结果</div>
+            <div v-if="detailLoading" class="text-sm text-muted">加载中...</div>
+            <div v-else-if="splitResults.length" class="space-y-2">
+              <div
+                v-for="result in splitResults"
+                :key="result.id"
+                class="flex items-center justify-between text-sm"
+              >
+                <div>
+                  <div class="font-medium">{{ result.participant }}</div>
+                  <div class="text-xs text-muted">
+                    {{ result.createdAt ? fmtDT(result.createdAt) : "-" }}
+                  </div>
+                </div>
+                <div class="text-right">
+                  <div class="font-medium">{{ formatCNY(result.amount) }}</div>
+                  <div class="text-xs text-muted">{{ result.status }}</div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="text-sm text-muted">暂无分账结果</div>
+          </div>
+
+          <USeparator />
+
+          <div class="flex items-center justify-between">
+            <div>
+              <div class="text-sm font-semibold">对账处理</div>
+              <div class="text-xs text-muted">记录该笔支付的对账差异</div>
+            </div>
             <UButton
-              v-if="current?.status === 'paid'"
-              color="error"
-              icon="i-heroicons-arrow-uturn-left"
-              @click="requestRefund(current!)"
+              size="xs"
+              variant="outline"
+              icon="i-heroicons-adjustments-horizontal"
+              @click="openReconcile"
             >
-              退款
+              记录对账
             </UButton>
           </div>
-        </template>
-      </UCard>
-    </USlideover>
+        </div>
+      </template>
+
+      <template #footer>
+        <div class="flex w-full flex-col-reverse gap-2 p-4 sm:p-5 sm:flex-row sm:justify-end">
+          <UButton color="neutral" variant="subtle" type="button" @click="closeDetail">
+            关闭
+          </UButton>
+          <UButton
+            v-if="current?.status === 'paid'"
+            color="error"
+            type="button"
+            icon="i-heroicons-arrow-uturn-left"
+            @click="requestRefund(current!)"
+          >
+            退款
+          </UButton>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal
+      v-model:open="reconcileOpen"
+      title="对账处理"
+      description="创建对账记录并提交差异说明"
+      :prevent-close="reconcileSaving"
+    >
+      <template #body>
+        <div class="space-y-4 p-4 sm:p-5">
+          <div class="grid gap-4 sm:grid-cols-2">
+            <UFormField label="对账周期" required>
+              <USelect
+                v-model="reconcileForm.periodType"
+                :items="reconcilePeriodItems"
+                class="w-full"
+              />
+            </UFormField>
+            <UFormField label="差异类型" required>
+              <USelect
+                v-model="reconcileForm.diffType"
+                :items="reconcileDiffTypeItems"
+                class="w-full"
+              />
+            </UFormField>
+          </div>
+          <div class="grid gap-4 sm:grid-cols-2">
+            <UFormField label="周期开始" required>
+              <UInput v-model="reconcileForm.periodStart" type="date" />
+            </UFormField>
+            <UFormField label="周期结束" required>
+              <UInput v-model="reconcileForm.periodEnd" type="date" />
+            </UFormField>
+          </div>
+          <UFormField label="差异金额（分）" required>
+            <UInput v-model.number="reconcileForm.diffAmount" type="number" />
+          </UFormField>
+          <UFormField label="处理说明">
+            <UTextarea v-model.trim="reconcileForm.resolution" :rows="3" />
+          </UFormField>
+        </div>
+      </template>
+      <template #footer>
+        <div class="flex w-full flex-col-reverse gap-2 p-4 sm:p-5 sm:flex-row sm:justify-end">
+          <UButton color="neutral" variant="subtle" type="button" :disabled="reconcileSaving" @click="reconcileOpen = false">
+            取消
+          </UButton>
+          <UButton color="primary" type="button" :loading="reconcileSaving" @click="submitReconcile">
+            提交对账
+          </UButton>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
+import { usePaymentsApi } from "~/composables/api";
+import { useToastAlert } from "~/composables/useToastAlert";
+import type {
+  PaymentProvider,
+  PaymentTransaction,
+  PaymentRefund,
+  PaymentRiskEvent,
+  PaymentSplitResult,
+} from "~/types/payments";
 
 const { t } = useI18n();
+const { listProviders, listTransactions, createRefund, listRiskEvents, listSplitResults, createReconciliation } =
+  usePaymentsApi();
+const toast = useToastAlert();
 
 type PaymentRow = {
-  id: string;
+  id: number;
   paymentNo: string;
-  orderId: string;
-  channelId: string;
-  channelName: string;
-  customer: string;
-  customerEmail: string;
-  avatar?: string;
-  method: "wechat" | "alipay" | "card" | "bank" | "cod";
+  orderNo: string;
+  providerId: number;
+  providerName: string;
+  method: string;
   amount: number;
   fee: number;
-  status: "pending" | "paid" | "failed" | "refunded" | "partial_refund";
+  status: string;
   createdAt: string;
   paidAt?: string | null;
-  items?: { id: string; name: string; amount: number }[];
+  failureReason?: string;
 };
 
 const loading = ref(false);
+const detailLoading = ref(false);
 const keyword = ref("");
-const selectedStatus = ref<string | "">("");
-const selectedMethod = ref<string | "">("");
+const ALL_FILTER = "all";
+const selectedStatus = ref<string>(ALL_FILTER);
+const selectedMethod = ref<string>(ALL_FILTER);
+const providers = ref<PaymentProvider[]>([]);
+const transactions = ref<PaymentTransaction[]>([]);
+const refundsByTransaction = ref<Record<string, PaymentRefund[]>>({});
+const riskEvents = ref<PaymentRiskEvent[]>([]);
+const splitResults = ref<PaymentSplitResult[]>([]);
+const reconcileOpen = ref(false);
+const reconcileSaving = ref(false);
+const reconcileForm = reactive({
+  periodType: "daily",
+  periodStart: "",
+  periodEnd: "",
+  diffType: "",
+  diffAmount: 0,
+  resolution: "",
+});
+
+const reconcilePeriodItems = [
+  { label: "日对账", value: "daily" },
+  { label: "周对账", value: "weekly" },
+];
+const reconcileDiffTypeItems = [
+  { label: "金额不一致", value: "amount_mismatch" },
+  { label: "缺失记录", value: "missing" },
+  { label: "重复记录", value: "duplicate" },
+  { label: "其他", value: "other" },
+];
 
 // 选项
-const statusOptions = [
-  { label: "全部状态", value: "" },
-  { label: "待支付", value: "pending" },
+const statusItems = [
+  { label: "全部状态", value: ALL_FILTER },
+  { label: "待支付", value: "pending_payment" },
+  { label: "支付中", value: "paying" },
   { label: "已支付", value: "paid" },
   { label: "失败", value: "failed" },
+  { label: "已取消", value: "canceled" },
+  { label: "超时", value: "timeout" },
   { label: "已退款", value: "refunded" },
-  { label: "部分退款", value: "partial_refund" },
 ];
-const methodOptions = [
-  { label: "全部方式", value: "" },
+const methodItems = [
+  { label: "全部方式", value: ALL_FILTER },
   { label: "微信支付", value: "wechat" },
+  { label: "微信 JSAPI", value: "wechat_jsapi" },
+  { label: "微信小程序", value: "wechat_miniapp" },
   { label: "支付宝", value: "alipay" },
   { label: "银行卡", value: "card" },
   { label: "银行转账", value: "bank" },
@@ -380,9 +539,8 @@ const methodOptions = [
 // 列（v3 TanStack 风格）
 const columns = computed<TableColumn<PaymentRow>[]>(() => [
   { accessorKey: "paymentNo", header: "支付单号" },
-  { accessorKey: "orderId", header: "订单号" },
-  { accessorKey: "customer", header: "客户" },
-  { accessorKey: "channelName", header: "渠道" },
+  { accessorKey: "orderNo", header: "订单号" },
+  { accessorKey: "providerName", header: "渠道" },
   { accessorKey: "method", header: "方式" },
   {
     id: "amount",
@@ -400,96 +558,24 @@ const columns = computed<TableColumn<PaymentRow>[]>(() => [
   },
 ]);
 
-// 示例数据
-const rows = ref<PaymentRow[]>([
-  {
-    id: "1",
-    paymentNo: "PAY202401150001",
-    orderId: "ORD001",
-    channelId: "ONLINE",
-    channelName: "官网自营",
-    customer: "张三",
-    customerEmail: "zhangsan@example.com",
-    avatar: "https://i.pravatar.cc/80?img=1",
-    method: "wechat",
-    amount: 8999,
-    fee: 90,
-    status: "paid",
-    createdAt: "2024-01-15T10:10:00",
-    paidAt: "2024-01-15T10:11:35",
-    items: [{ id: "i1", name: "iPhone 15 Pro", amount: 8999 }],
-  },
-  {
-    id: "2",
-    paymentNo: "PAY202401150002",
-    orderId: "ORD002",
-    channelId: "JD",
-    channelName: "京东旗舰店",
-    customer: "李四",
-    customerEmail: "lisi@example.com",
-    avatar: "https://i.pravatar.cc/80?img=2",
-    method: "alipay",
-    amount: 12999,
-    fee: 130,
-    status: "pending",
-    createdAt: "2024-01-15T09:15:00",
-    paidAt: null,
-  },
-  {
-    id: "3",
-    paymentNo: "PAY202401140003",
-    orderId: "ORD003",
-    channelId: "TMALL",
-    channelName: "天猫旗舰店",
-    customer: "王五",
-    customerEmail: "wangwu@example.com",
-    avatar: "https://i.pravatar.cc/80?img=3",
-    method: "card",
-    amount: 1899,
-    fee: 19,
-    status: "refunded",
-    createdAt: "2024-01-14T16:45:00",
-    paidAt: "2024-01-14T16:45:50",
-    items: [{ id: "i2", name: "AirPods Pro", amount: 1899 }],
-  },
-  {
-    id: "4",
-    paymentNo: "PAY202401130004",
-    orderId: "ORD004",
-    channelId: "OFFLINE",
-    channelName: "线下门店",
-    customer: "赵六",
-    customerEmail: "zhaoliu@example.com",
-    avatar: "https://i.pravatar.cc/80?img=4",
-    method: "bank",
-    amount: 4599,
-    fee: 0,
-    status: "failed",
-    createdAt: "2024-01-13T14:20:00",
-    paidAt: null,
-  },
-  {
-    id: "5",
-    paymentNo: "PAY202401120005",
-    orderId: "ORD005",
-    channelId: "ONLINE",
-    channelName: "官网自营",
-    customer: "钱七",
-    customerEmail: "qianqi@example.com",
-    avatar: "https://i.pravatar.cc/80?img=5",
-    method: "wechat",
-    amount: 9999,
-    fee: 100,
-    status: "partial_refund",
-    createdAt: "2024-01-12T11:20:00",
-    paidAt: "2024-01-12T11:20:50",
-    items: [
-      { id: "i3", name: "iPad Air", amount: 4599 },
-      { id: "i4", name: "Apple Pencil", amount: 599 },
-      { id: "i5", name: "保护壳", amount: 199 },
-    ],
-  },
-]);
+const providerMap = computed(() => new Map(providers.value.map((p) => [p.id, p])));
+
+const rows = computed<PaymentRow[]>(() =>
+  transactions.value.map((tx) => ({
+    id: tx.id,
+    paymentNo: tx.transactionNo,
+    orderNo: tx.orderNo || tx.orderId,
+    providerId: tx.providerId,
+    providerName: providerMap.value.get(tx.providerId)?.name || (tx.providerId ? `渠道#${tx.providerId}` : "-"),
+    method: tx.payMethod,
+    amount: tx.amountTotal,
+    fee: tx.feeAmount,
+    status: tx.status,
+    createdAt: tx.createdAt,
+    paidAt: tx.completedAt || null,
+    failureReason: tx.failureReason,
+  })),
+);
 
 // 过滤
 const filteredRows = computed(() => {
@@ -498,10 +584,11 @@ const filteredRows = computed(() => {
     const okQ =
       !q ||
       r.paymentNo.toLowerCase().includes(q) ||
-      r.orderId.toLowerCase().includes(q) ||
-      r.customer.toLowerCase().includes(q);
-    const okS = !selectedStatus.value || r.status === selectedStatus.value;
-    const okM = !selectedMethod.value || r.method === selectedMethod.value;
+      r.orderNo.toLowerCase().includes(q);
+    const okS =
+      selectedStatus.value === ALL_FILTER || r.status === selectedStatus.value;
+    const okM =
+      selectedMethod.value === ALL_FILTER || r.method === selectedMethod.value;
     return okQ && okS && okM;
   });
 });
@@ -509,17 +596,17 @@ const filteredRows = computed(() => {
 // 汇总
 const totalPaid = computed(() =>
   filteredRows.value
-    .filter((r) => r.status === "paid" || r.status === "partial_refund")
+    .filter((r) => r.status === "paid" || r.status === "refunded")
     .reduce((s, r) => s + r.amount, 0)
 );
 const totalRefund = computed(() =>
   filteredRows.value
-    .filter((r) => r.status === "refunded" || r.status === "partial_refund")
-    .reduce((s, r) => s + Math.min(r.amount * 0.5, r.amount), 0)
-); // demo：假设部分退款50%
+    .filter((r) => r.status === "refunded")
+    .reduce((s, r) => s + r.amount, 0)
+);
 const totalPending = computed(() =>
   filteredRows.value
-    .filter((r) => r.status === "pending")
+    .filter((r) => r.status === "pending_payment" || r.status === "paying")
     .reduce((s, r) => s + r.amount, 0)
 );
 
@@ -531,17 +618,19 @@ const formatCNY = (n: number) =>
     maximumFractionDigits: 0,
   }).format(n || 0);
 const fmtDT = (s: string) =>
-  new Date(s).toLocaleString("zh-CN", { hour12: false });
+  s ? new Date(s).toLocaleString("zh-CN", { hour12: false }) : "-";
 
 function statusLabel(s: PaymentRow["status"]) {
   return (
     (
       {
-        pending: "待支付",
+        pending_payment: "待支付",
+        paying: "支付中",
         paid: "已支付",
         failed: "失败",
+        canceled: "已取消",
+        timeout: "超时",
         refunded: "已退款",
-        partial_refund: "部分退款",
       } as const
     )[s] || s
   );
@@ -550,11 +639,13 @@ function statusColor(s: PaymentRow["status"]) {
   return (
     (
       {
-        pending: "warning",
+        pending_payment: "warning",
+        paying: "info",
         paid: "success",
         failed: "error",
+        canceled: "neutral",
+        timeout: "neutral",
         refunded: "neutral",
-        partial_refund: "info",
       } as const
     )[s] || "neutral"
   );
@@ -564,6 +655,8 @@ function methodLabel(m: PaymentRow["method"]) {
     (
       {
         wechat: "微信支付",
+        wechat_jsapi: "微信 JSAPI",
+        wechat_miniapp: "微信小程序",
         alipay: "支付宝",
         card: "银行卡",
         bank: "银行转账",
@@ -577,6 +670,8 @@ function methodIcon(m: PaymentRow["method"] | "") {
     (
       {
         wechat: "i-simple-icons-wechat",
+        wechat_jsapi: "i-simple-icons-wechat",
+        wechat_miniapp: "i-simple-icons-wechat",
         alipay: "i-simple-icons-alipay",
         card: "i-heroicons-credit-card",
         bank: "i-heroicons-building-library",
@@ -588,15 +683,14 @@ function methodIcon(m: PaymentRow["method"] | "") {
 
 function resetFilters() {
   keyword.value = "";
-  selectedStatus.value = "";
-  selectedMethod.value = "";
+  selectedStatus.value = ALL_FILTER;
+  selectedMethod.value = ALL_FILTER;
 }
 
 function exportCsv() {
   const header = [
     "PaymentNo",
-    "OrderId",
-    "Customer",
+    "OrderNo",
     "Channel",
     "Method",
     "Amount",
@@ -606,9 +700,8 @@ function exportCsv() {
   ];
   const body = filteredRows.value.map((r) => [
     r.paymentNo,
-    r.orderId,
-    r.customer,
-    r.channelName,
+    r.orderNo,
+    r.providerName,
     methodLabel(r.method),
     r.amount,
     statusLabel(r.status),
@@ -629,19 +722,147 @@ function exportCsv() {
   URL.revokeObjectURL(url);
 }
 
-// 明细/退款/重试（示例）
-const toast = useToastAlert();
+// 明细/退款/重试
 const detailOpen = ref(false);
 const current = ref<PaymentRow | null>(null);
 function openDetail(row: PaymentRow) {
   current.value = row;
   detailOpen.value = true;
+  loadDetailExtras(row);
 }
+const blurActiveElement = () => {
+  if (typeof document !== "undefined") {
+    (document.activeElement as HTMLElement | null)?.blur();
+  }
+};
+const closeDetail = () => {
+  blurActiveElement();
+  detailOpen.value = false;
+};
 function requestRefund(row: PaymentRow) {
-  // 这里调用后端退款接口；演示先提示
-  toast.add({ title: `已提交退款申请：${row.paymentNo}`, color: "info" });
+  const amountMinor = Math.max(1, Math.round(row.amount || 0));
+  const reason =
+    typeof window !== "undefined"
+      ? window.prompt("请输入退款原因（可选）", "后台退款")
+      : "后台退款";
+  createRefund(row.id, { amountMinor, reason: reason || undefined })
+    .then((refund) => {
+      const key = String(row.id);
+      const existing = refundsByTransaction.value[key] || [];
+      refundsByTransaction.value = {
+        ...refundsByTransaction.value,
+        [key]: [refund, ...existing],
+      };
+      toast.add({ title: `已提交退款申请：${row.paymentNo}`, color: "info" });
+    })
+    .catch((error: any) => {
+      toast.add({
+        title: "退款申请失败",
+        description: error?.message || "请稍后重试",
+        color: "red",
+      });
+    });
 }
 function retryPay(row: PaymentRow) {
   toast.add({ title: `已触发重试：${row.paymentNo}`, color: "primary" });
 }
+
+const openReconcile = () => {
+  if (!current.value) return;
+  const today = new Date().toISOString().slice(0, 10);
+  if (!reconcileForm.periodStart) reconcileForm.periodStart = today;
+  if (!reconcileForm.periodEnd) reconcileForm.periodEnd = today;
+  if (!reconcileForm.diffType) reconcileForm.diffType = "amount_mismatch";
+  reconcileOpen.value = true;
+};
+
+const submitReconcile = async () => {
+  if (!current.value) return;
+  const periodStart = reconcileForm.periodStart.trim();
+  const periodEnd = reconcileForm.periodEnd.trim();
+  const diffType = reconcileForm.diffType.trim();
+  if (!periodStart || !periodEnd || !diffType) {
+    toast.add({ title: "请补全对账信息", color: "error" });
+    return;
+  }
+  reconcileSaving.value = true;
+  try {
+    await createReconciliation({
+      periodType: reconcileForm.periodType,
+      periodStart: new Date(`${periodStart}T00:00:00Z`).toISOString(),
+      periodEnd: new Date(`${periodEnd}T23:59:59Z`).toISOString(),
+      items: [
+        {
+          transactionId: current.value.id,
+          diffType,
+          diffAmount: Number(reconcileForm.diffAmount || 0),
+        },
+      ],
+    });
+    toast.add({ title: "对账记录已提交", color: "success" });
+    reconcileOpen.value = false;
+  } catch (error: any) {
+    toast.add({
+      title: "对账提交失败",
+      description: error?.message || "请稍后重试",
+      color: "red",
+    });
+  } finally {
+    reconcileSaving.value = false;
+  }
+};
+
+const refundsForCurrent = computed(() => {
+  const id = current.value?.id;
+  if (!id) return [];
+  return refundsByTransaction.value[String(id)] || [];
+});
+
+watch(detailOpen, (open) => {
+  if (!open) {
+    blurActiveElement();
+  }
+});
+
+const loadDetailExtras = async (row: PaymentRow) => {
+  detailLoading.value = true;
+  try {
+    const [risk, splits] = await Promise.all([
+      listRiskEvents(row.id),
+      listSplitResults(row.id),
+    ]);
+    riskEvents.value = risk;
+    splitResults.value = splits;
+  } catch (error: any) {
+    toast.add({
+      title: "加载支付详情失败",
+      description: error?.message || "请稍后重试",
+      color: "red",
+    });
+  } finally {
+    detailLoading.value = false;
+  }
+};
+
+const loadData = async () => {
+  loading.value = true;
+  try {
+    const [providerRows, transactionRows] = await Promise.all([
+      listProviders(),
+      listTransactions(),
+    ]);
+    providers.value = providerRows;
+    transactions.value = transactionRows;
+  } catch (error: any) {
+    toast.add({
+      title: "获取支付列表失败",
+      description: error?.message || "请稍后重试",
+      color: "red",
+    });
+  } finally {
+    loading.value = false;
+  }
+};
+
+onMounted(loadData);
 </script>

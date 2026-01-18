@@ -69,14 +69,15 @@
 - [x] T022 [US3] 实现取消订单接口（POST /admin/orders/{id}/cancel）并将错误语义对齐（`backend/internal/transport/http/admin/order/handler.go`）
 - [x] T023 [P] [US3] 增加 repository/service 单测：取消状态机约束、库存解锁下限为 0、事件写入（`backend/internal/services/admin/order/cancel_test.go`，`backend/internal/entity/repository/order/order_repository_test.go`）
 - [x] T024 [P] [US3] web-admin 最小订单管理页：订单列表、订单详情、取消按钮与错误提示（`web-admin/app/pages/orders/index.vue`，`web-admin/app/pages/orders/[id].vue`，`web-admin/app/composables/api/useOrder.ts`）
+- [x] T025 [US3] web-admin 订单列表增加“新建订单”入口与表单（`web-admin/app/pages/orders/index.vue`）
 
 ---
 
 ## Phase 6: Polish & Cross-Cutting Concerns
 
-- [x] T025 [P] 统一错误码与可解释错误消息（参数错误/不可售/库存不足/幂等冲突/禁止取消/权限不足），并确保前端可直接展示（`backend/internal/services/**/order/*.go`，`backend/internal/transport/http/**/order/*.go`）
-- [x] T026 [P] 结构化日志与审计字段补齐（包含 request_id/tenant_uuid/operator），确保问题可追踪（`backend/internal/entity/models/order/order_event.go`，`backend/internal/services/**/order/*.go`）
-- [x] T027 运行 quickstart 验证清单并更新“已执行记录”（`specs/007-order-mini-app/quickstart.md`）
+- [x] T026 [P] 统一错误码与可解释错误消息（参数错误/不可售/库存不足/幂等冲突/禁止取消/权限不足），并确保前端可直接展示（`backend/internal/services/**/order/*.go`，`backend/internal/transport/http/**/order/*.go`）
+- [x] T027 [P] 结构化日志与审计字段补齐（包含 request_id/tenant_uuid/operator），确保问题可追踪（`backend/internal/entity/models/order/order_event.go`，`backend/internal/services/**/order/*.go`）
+- [x] T028 运行 quickstart 验证清单并更新“已执行记录”（`specs/007-order-mini-app/quickstart.md`）
 
 ---
 
@@ -86,12 +87,12 @@
 
 **Independent Test**: 登录后调用 `GET /api/v1/mini-app/cart` 与 `POST /api/v1/mini-app/cart/sync`，验证合并策略生效且不影响库存；从小程序购物车发起下单成功后清空购物车。
 
-- [x] T028 [US0] 新增 cart 表常量/模型/仓储，并加入迁移与 RLS（`backend/internal/entity/models/model.go`，`backend/internal/entity/models/cart/cart.go`，`backend/internal/entity/repository/cart/cart_repository.go`，`backend/cmd/database/migrate/migrations/008_cart.go`，`backend/cmd/database/migrate/migrate.go`，`backend/cmd/database/migrate/rls_order.go`）
-- [x] T029 [US0] 实现 miniapp cart service（Get/Sync，默认 max 合并）（`backend/internal/services/miniapp/cart/service.go`，`backend/internal/services/miniapp/cart/types.go`）
-- [x] T030 [US0] 增加 miniapp cart handler 与路由（GET /cart，POST /cart/sync），挂载到 protected 组（`backend/internal/transport/http/miniapp/cart/handler.go`，`backend/internal/transport/http/miniapp/cart/routes.go`，`backend/internal/transport/http/miniapp/router.go`）
-- [x] T031 [US0] 更新 OpenAPI 合同（cart endpoints + schemas）（`specs/007-order-mini-app/contracts/order-checkout.openapi.yaml`）
-- [x] T032 [US0] mini-app：实现本地购物车 + 同步（混合模式）并替换占位提示（`mini-app/src/pages/cart/index.vue`，`mini-app/src/pages/product/detail.vue`，`mini-app/src/pages/mall/index.vue`，`mini-app/src/services/cart.ts`，`mini-app/src/services/miniapp-cart.ts`）
-- [x] T033 [US0] mini-app：从购物车发起下单（复用现有订单创建 API）并下单后清空购物车（`mini-app/src/services/miniapp-order.ts`，`mini-app/src/pages/cart/index.vue`）
+- [x] T029 [US0] 新增 cart 表常量/模型/仓储，并加入迁移与 RLS（`backend/internal/entity/models/model.go`，`backend/internal/entity/models/cart/cart.go`，`backend/internal/entity/repository/cart/cart_repository.go`，`backend/cmd/database/migrate/migrations/008_cart.go`，`backend/cmd/database/migrate/migrate.go`，`backend/cmd/database/migrate/rls_order.go`）
+- [x] T030 [US0] 实现 miniapp cart service（Get/Sync，默认 max 合并）（`backend/internal/services/miniapp/cart/service.go`，`backend/internal/services/miniapp/cart/types.go`）
+- [x] T031 [US0] 增加 miniapp cart handler 与路由（GET /cart，POST /cart/sync），挂载到 protected 组（`backend/internal/transport/http/miniapp/cart/handler.go`，`backend/internal/transport/http/miniapp/cart/routes.go`，`backend/internal/transport/http/miniapp/router.go`）
+- [x] T032 [US0] 更新 OpenAPI 合同（cart endpoints + schemas）（`specs/007-order-mini-app/contracts/order-checkout.openapi.yaml`）
+- [x] T033 [US0] mini-app：实现本地购物车 + 同步（混合模式）并替换占位提示（`mini-app/src/pages/cart/index.vue`，`mini-app/src/pages/product/detail.vue`，`mini-app/src/pages/mall/index.vue`，`mini-app/src/services/cart.ts`，`mini-app/src/services/miniapp-cart.ts`）
+- [x] T034 [US0] mini-app：从购物车发起下单（复用现有订单创建 API）并下单后清空购物车（`mini-app/src/services/miniapp-order.ts`，`mini-app/src/pages/cart/index.vue`）
 
 ---
 
@@ -104,14 +105,14 @@
 
 ### Implementation for User Story 4
 
-- [x] T034 [P] [US4] 新增 customer_addresses 表常量/模型/仓储，并加入迁移与 RLS（`backend/internal/entity/models/model.go`，`backend/internal/entity/models/customer/customer_address.go`，`backend/internal/entity/repository/customer/customer_address_repository.go`，`backend/cmd/database/migrate/migrations/009_customer_addresses.go`，`backend/cmd/database/migrate/migrate.go`）
-- [x] T035 [US4] 订单模型增加收货地址字段（`shipping_address_id` + `shipping_address_snapshot`），并在创建订单 Service 中写入快照（miniapp/admin 两端复用）（`backend/internal/entity/models/order/order.go`，`backend/internal/services/miniapp/order/service.go`，`backend/internal/services/admin/order/service.go`）
-- [x] T036 [P] [US4] 小程序地址簿 Service + Handler：CRUD + 设置默认（`backend/internal/services/miniapp/customer_address/*`，`backend/internal/transport/http/miniapp/customer_address/*`，`backend/internal/transport/http/miniapp/router.go`）
-- [x] T037 [P] [US4] 后台地址簿 Service + Handler：按 customerId CRUD + 设置默认（`backend/internal/services/admin/customer_address/*`，`backend/internal/transport/http/admin/customer_address/*`）
-- [x] T038 [US4] 更新 OpenAPI 合同：新增地址簿 endpoints + 订单创建/详情包含收货地址字段（`specs/007-order-mini-app/contracts/order-checkout.openapi.yaml`）
-- [x] T039 [P] [US4] 增加单测：默认地址唯一性、RLS/tenant 约束、订单快照不可变（`backend/internal/entity/repository/customer/customer_address_repository_test.go`，`backend/internal/services/**/customer_address/*_test.go`，`backend/internal/services/**/order/*_test.go`）
-- [x] T040 [US4] mini-app：地址管理页 + 下单选择地址（仅 UI + API 串联，履约/运费后续）（`mini-app/src/pages/address/index.vue`，`mini-app/src/pages/order/confirm.vue`，`mini-app/src/services/miniapp-address.ts`）
-- [x] T041 [US4] web-admin：客户详情抽屉增加“收货地址”Tab（CRUD + 设默认）（`web-admin/app/components/customer/CustomerDetailDrawer.vue`，`web-admin/app/components/customer/CustomerAddressBookPanel.vue`，`web-admin/app/composables/api/services/customerAddressService.ts`）
+- [x] T035 [P] [US4] 新增 customer_addresses 表常量/模型/仓储，并加入迁移与 RLS（`backend/internal/entity/models/model.go`，`backend/internal/entity/models/customer/customer_address.go`，`backend/internal/entity/repository/customer/customer_address_repository.go`，`backend/cmd/database/migrate/migrations/009_customer_addresses.go`，`backend/cmd/database/migrate/migrate.go`）
+- [x] T036 [US4] 订单模型增加收货地址字段（`shipping_address_id` + `shipping_address_snapshot`），并在创建订单 Service 中写入快照（miniapp/admin 两端复用）（`backend/internal/entity/models/order/order.go`，`backend/internal/services/miniapp/order/service.go`，`backend/internal/services/admin/order/service.go`）
+- [x] T037 [P] [US4] 小程序地址簿 Service + Handler：CRUD + 设置默认（`backend/internal/services/miniapp/customer_address/*`，`backend/internal/transport/http/miniapp/customer_address/*`，`backend/internal/transport/http/miniapp/router.go`）
+- [x] T038 [P] [US4] 后台地址簿 Service + Handler：按 customerId CRUD + 设置默认（`backend/internal/services/admin/customer_address/*`，`backend/internal/transport/http/admin/customer_address/*`）
+- [x] T039 [US4] 更新 OpenAPI 合同：新增地址簿 endpoints + 订单创建/详情包含收货地址字段（`specs/007-order-mini-app/contracts/order-checkout.openapi.yaml`）
+- [x] T040 [P] [US4] 增加单测：默认地址唯一性、RLS/tenant 约束、订单快照不可变（`backend/internal/entity/repository/customer/customer_address_repository_test.go`，`backend/internal/services/**/customer_address/*_test.go`，`backend/internal/services/**/order/*_test.go`）
+- [x] T041 [US4] mini-app：地址管理页 + 下单选择地址（仅 UI + API 串联，履约/运费后续）（`mini-app/src/pages/address/index.vue`，`mini-app/src/pages/order/confirm.vue`，`mini-app/src/services/miniapp-address.ts`）
+- [x] T042 [US4] web-admin：客户详情抽屉增加“收货地址”Tab（CRUD + 设默认）（`web-admin/app/components/customer/CustomerDetailDrawer.vue`，`web-admin/app/components/customer/CustomerAddressBookPanel.vue`，`web-admin/app/composables/api/services/customerAddressService.ts`）
 
 ## Dependencies & Execution Order
 

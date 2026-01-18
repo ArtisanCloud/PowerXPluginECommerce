@@ -19,7 +19,7 @@ type Order struct {
 	Currency            string         `gorm:"type:varchar(8);not null" json:"currency"`
 	SubtotalAmount      int64          `gorm:"not null;default:0" json:"subtotal_amount"`
 	TotalAmount         int64          `gorm:"not null;default:0" json:"total_amount"`
-	ShippingAddressID   string         `gorm:"column:shipping_address_id;type:uuid;index" json:"shipping_address_id,omitempty"`
+	ShippingAddressID   *string        `gorm:"column:shipping_address_id;type:uuid;index" json:"shipping_address_id,omitempty"`
 	ShippingAddressSnap datatypes.JSON `gorm:"column:shipping_address_snapshot;type:jsonb" json:"shipping_address_snapshot,omitempty"`
 	PriceSnapshot       datatypes.JSON `gorm:"type:jsonb" json:"price_snapshot,omitempty"`
 	SellabilitySnap     datatypes.JSON `gorm:"column:sellability_snapshot;type:jsonb" json:"sellability_snapshot,omitempty"`

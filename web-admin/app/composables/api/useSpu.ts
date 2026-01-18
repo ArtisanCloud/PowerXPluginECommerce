@@ -204,11 +204,42 @@ export function useSpuApi() {
     return resp.data
   }
 
+  const normalizeSpuSummary = (item: Record<string, any>): SpuSummary => ({
+    id: String(item?.id ?? '').trim(),
+    name: String(item?.name ?? item?.title ?? '').trim(),
+    code: String(item?.code ?? '').trim(),
+    status: String(item?.status ?? '').trim(),
+    type: String(item?.type ?? '').trim(),
+    skuCount: item?.skuCount ?? item?.sku_count,
+    updatedAt: item?.updatedAt ?? item?.updated_at,
+  })
+
+  const normalizeSpuDetail = (item: Record<string, any>): SpuDetail => ({
+    ...normalizeSpuSummary(item),
+    categoryId: String(item?.categoryId ?? item?.category_id ?? '').trim(),
+    categoryPath: String(item?.categoryPath ?? item?.category_path ?? '').trim(),
+    brandId: item?.brandId ?? item?.brand_id,
+    defaultLocale: String(item?.defaultLocale ?? item?.default_locale ?? '').trim(),
+    responsibleUser: item?.responsibleUser ?? item?.responsible_user,
+    tags: item?.tags ?? [],
+    locales: item?.locales,
+    currentVersionId: item?.currentVersionId ?? item?.current_version_id,
+    createdAt: item?.createdAt ?? item?.created_at,
+    updatedAt: item?.updatedAt ?? item?.updated_at,
+  })
+
+  const normalizeSpuList = (resp: SpuListResponse): SpuListResponse => ({
+    ...resp,
+    items: Array.isArray(resp?.items) ? resp.items.map((item) => normalizeSpuSummary(item as Record<string, any>)) : [],
+  })
+
   const listSpus = (params?: SpuListParams, init?: any) =>
-    unwrap(apiGet<ApiResponse<SpuListResponse>>(basePath, params, init))
+    unwrap(apiGet<ApiResponse<SpuListResponse>>(basePath, params, init)).then(normalizeSpuList)
 
   const getSpu = (id: string, init?: any) =>
-    unwrap(apiGet<ApiResponse<SpuDetail>>(`${basePath}/${id}`, undefined, init))
+    unwrap(apiGet<ApiResponse<SpuDetail>>(`${basePath}/${id}`, undefined, init)).then((item) =>
+      normalizeSpuDetail(item as Record<string, any>),
+    )
 
   const createSpu = (payload: Record<string, any>, init?: any) =>
     unwrap(apiPost<ApiResponse<SpuDetail>>(basePath, payload, init))

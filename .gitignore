@@ -33,6 +33,10 @@ web-admin/.vercel/
 web-admin/.eslintcache
 web-admin/.stylelintcache
 
+# Mini app
+mini-app/node_modules/
+mini-app/dist/
+
 # Backend (Go)
 backend/bin/
 backend/.cache/

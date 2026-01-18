@@ -21,9 +21,7 @@
         <div class="mt-1 text-3xl font-semibold text-gray-900 dark:text-white">
           {{ card.value }}
         </div>
-        <p class="text-xs" :class="card.trend >= 0 ? 'text-emerald-600' : 'text-rose-500'">
-          {{ card.trend >= 0 ? '+' : '' }}{{ card.trend }}% 较上周
-        </p>
+        <p class="text-xs text-gray-500 dark:text-gray-400">{{ card.subtitle }}</p>
       </UCard>
     </div>
 
@@ -44,31 +42,27 @@
             <USelect
               v-model="typeFilter"
               class="w-40"
-              :options="typeOptions"
+              :items="typeItems"
               placeholder="支付类型"
             />
             <USelect
               v-model="statusFilter"
               class="w-40"
-              :options="statusOptions"
+              :items="statusItems"
               placeholder="服务状态"
             />
           </div>
         </div>
       </template>
 
-      <UTable :columns="columns" :data="filteredProviders">
+      <UTable :columns="columns" :data="filteredProviders" :loading="loading">
         <template #status-cell="{ getValue }">
           <UBadge :color="statusMeta(getValue()).color" variant="subtle">
             {{ statusMeta(getValue()).label }}
           </UBadge>
         </template>
-        <template #sla-cell="{ getValue }">
-          <div class="flex items-center gap-2">
-            <UProgress :value="getValue()" size="xs" class="flex-1" />
-            <span class="text-xs text-gray-500">{{ getValue() }}%</span>
-          </div>
-        </template>
+        <template #feeRate-cell="{ getValue }">{{ formatFeeRate(getValue()) }}</template>
+        <template #updatedAt-cell="{ getValue }">{{ fmtDT(getValue()) }}</template>
         <template #actions-cell>
           <div class="flex gap-2">
             <UButton size="xs" variant="ghost">配置</UButton>
@@ -77,136 +71,58 @@
         </template>
       </UTable>
     </UCard>
-
-    <UCard>
-      <template #header>
-        <div class="flex items-center justify-between">
-          <div>
-            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">费率日历</h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400">密切关注促销期的特殊费率。</p>
-          </div>
-          <UBadge color="info" variant="subtle">{{ rateEvents.length }} 条</UBadge>
-        </div>
-      </template>
-
-      <ul class="space-y-4">
-        <li
-          v-for="event in rateEvents"
-          :key="event.id"
-          class="flex flex-col rounded-xl border border-gray-100 p-4 dark:border-gray-800 md:flex-row md:items-center md:justify-between"
-        >
-          <div>
-            <p class="font-medium text-gray-900 dark:text-white">{{ event.title }}</p>
-            <p class="text-sm text-gray-500 dark:text-gray-400">{{ event.range }}</p>
-          </div>
-          <div class="text-sm text-gray-500 dark:text-gray-400">
-            当前费率
-            <span class="ml-1 text-gray-900 dark:text-white">{{ event.rate }}</span>
-          </div>
-          <div class="flex gap-2">
-            <UButton size="xs" variant="soft">查看详情</UButton>
-            <UButton size="xs" variant="ghost">忽略</UButton>
-          </div>
-        </li>
-      </ul>
-    </UCard>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
+import { usePaymentsApi } from "~/composables/api";
+import { useToastAlert } from "~/composables/useToastAlert";
+import type { PaymentProvider } from "~/types/payments";
 
 definePageMeta({
   name: "payments-providers",
 });
 
-type ProviderStatus = "active" | "monitor" | "paused";
-
-type Provider = {
-  id: string;
-  name: string;
-  type: string;
-  contact: string;
-  phone: string;
-  feeRate: string;
-  status: ProviderStatus;
-  sla: number;
-};
-
-const providers = ref<Provider[]>([
-  {
-    id: "WX-PAY",
-    name: "微信支付",
-    type: "移动支付",
-    contact: "李思思",
-    phone: "400-800-1234",
-    feeRate: "0.38%",
-    status: "active",
-    sla: 99.9,
-  },
-  {
-    id: "ALI-PAY",
-    name: "支付宝",
-    type: "移动支付",
-    contact: "赵伟",
-    phone: "95188",
-    feeRate: "0.35%",
-    status: "active",
-    sla: 99.7,
-  },
-  {
-    id: "INSTALLMENT",
-    name: "花呗分期",
-    type: "分期",
-    contact: "刘敏",
-    phone: "400-666-8888",
-    feeRate: "0.60%",
-    status: "monitor",
-    sla: 98.5,
-  },
-  {
-    id: "BNPL",
-    name: "分期乐",
-    type: "先享后付",
-    contact: "王浩",
-    phone: "400-111-9999",
-    feeRate: "0.75%",
-    status: "paused",
-    sla: 95.2,
-  },
-]);
+const { listProviders } = usePaymentsApi();
+const toast = useToastAlert();
+const loading = ref(false);
+const providers = ref<PaymentProvider[]>([]);
 
 const keyword = ref("");
-const typeFilter = ref("");
-const statusFilter = ref<ProviderStatus | "">("");
+const ALL_FILTER = "all";
+const typeFilter = ref(ALL_FILTER);
+const statusFilter = ref(ALL_FILTER);
 
-const typeOptions = computed(() =>
-  [{ label: "全部类型", value: "" }].concat(
-    Array.from(new Set(providers.value.map((provider) => provider.type))).map((type) => ({
-      label: type,
-      value: type,
-    })),
-  ),
-);
+const typeItems = computed(() => {
+  const types = Array.from(
+    new Set(
+      providers.value
+        .map((provider) => String(provider.type || "").trim())
+        .filter((type) => type.length > 0),
+    ),
+  );
+  return [{ label: "全部类型", value: ALL_FILTER }].concat(
+    types.map((type) => ({ label: type, value: type })),
+  );
+});
 
-const statusOptions = [
-  { label: "全部状态", value: "" },
+const statusItems = [
+  { label: "全部状态", value: ALL_FILTER },
   { label: "合作中", value: "active" },
   { label: "观察中", value: "monitor" },
   { label: "暂停", value: "paused" },
+  { label: "停用", value: "inactive" },
 ];
 
-const columns = computed<TableColumn<Provider>[]>(() => [
+const columns = computed<TableColumn<PaymentProvider>[]>(() => [
   { accessorKey: "name", header: "渠道" },
   { accessorKey: "type", header: "类型" },
   { accessorKey: "feeRate", header: "费率" },
-  {
-    accessorKey: "contact",
-    header: "商务",
-    cell: ({ row }) => `${row.original.contact} / ${row.original.phone}`,
-  },
+  { accessorKey: "currency", header: "币种" },
+  { accessorKey: "settlementCycle", header: "结算周期" },
   { accessorKey: "status", header: "状态" },
-  { accessorKey: "sla", header: "SLA" },
+  { accessorKey: "updatedAt", header: "更新时间" },
   { id: "actions", header: "操作" },
 ]);
 
@@ -214,15 +130,16 @@ const filteredProviders = computed(() =>
   providers.value.filter((provider) => {
     const matchesKeyword =
       !keyword.value ||
-      provider.name.includes(keyword.value) ||
-      provider.contact.includes(keyword.value);
-    const matchesType = !typeFilter.value || provider.type === typeFilter.value;
-    const matchesStatus = !statusFilter.value || provider.status === statusFilter.value;
+      provider.name.includes(keyword.value);
+    const matchesType =
+      typeFilter.value === ALL_FILTER || provider.type === typeFilter.value;
+    const matchesStatus =
+      statusFilter.value === ALL_FILTER || provider.status === statusFilter.value;
     return matchesKeyword && matchesType && matchesStatus;
   }),
 );
 
-const statusMeta = (status: ProviderStatus | "") => {
+const statusMeta = (status: string | "") => {
   switch (status) {
     case "active":
       return { label: "合作中", color: "success" as const };
@@ -230,6 +147,8 @@ const statusMeta = (status: ProviderStatus | "") => {
       return { label: "观察中", color: "warning" as const };
     case "paused":
       return { label: "暂停", color: "neutral" as const };
+    case "inactive":
+      return { label: "停用", color: "neutral" as const };
     default:
       return { label: "未知", color: "neutral" as const };
   }
@@ -237,37 +156,51 @@ const statusMeta = (status: ProviderStatus | "") => {
 
 const summaryCards = computed(() => [
   {
-    title: "合作支付渠道",
+    title: "支付渠道总数",
+    value: providers.value.length,
+    subtitle: "全部已接入渠道",
+  },
+  {
+    title: "合作中渠道",
     value: providers.value.filter((p) => p.status === "active").length,
-    trend: 1.5,
+    subtitle: "已上线可用",
   },
   {
-    title: "平均 SLA",
-    value:
-      (
-        providers.value.reduce((sum, provider) => sum + provider.sla, 0) / providers.value.length
-      ).toFixed(1) + "%",
-    trend: 0.4,
-  },
-  {
-    title: "观察/暂停渠道",
-    value: providers.value.filter((p) => p.status !== "active").length,
-    trend: -2.1,
+    title: "平均费率",
+    value: formatFeeRate(
+      providers.value.length
+        ? providers.value.reduce((sum, provider) => sum + provider.feeRate, 0) /
+            providers.value.length
+        : 0,
+    ),
+    subtitle: "根据当前配置",
   },
 ]);
 
-const rateEvents = ref([
-  {
-    id: "EV-01",
-    title: "女王节活动费率",
-    range: "3 月 1 日 - 3 月 8 日",
-    rate: "0.32%",
-  },
-  {
-    id: "EV-02",
-    title: "双 11 全链路补贴",
-    range: "11 月 1 日 - 11 月 12 日",
-    rate: "0.28%",
-  },
-]);
+const fmtDT = (s: string) =>
+  s ? new Date(s).toLocaleString("zh-CN", { hour12: false }) : "-";
+
+const formatFeeRate = (value: number) => {
+  const rate = Number(value) || 0;
+  if (rate <= 0) return "0%";
+  const percent = rate <= 1 ? rate * 100 : rate;
+  return `${percent.toFixed(2)}%`;
+};
+
+const loadProviders = async () => {
+  loading.value = true;
+  try {
+    providers.value = await listProviders();
+  } catch (error: any) {
+    toast.add({
+      title: "获取支付渠道失败",
+      description: error?.message || "请稍后重试",
+      color: "red",
+    });
+  } finally {
+    loading.value = false;
+  }
+};
+
+onMounted(loadProviders);
 </script>

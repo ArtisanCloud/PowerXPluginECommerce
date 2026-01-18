@@ -1,6 +1,6 @@
 # 逆向物流 PRD
 
-> 与 `docs/plan/customer/returns-portal.md`（售后）和 `docs/plan/marketing/payments.md`（退款）联动，负责退货、换货、补发的物流执行：逆向运单、轨迹、入库、报损、退款结算。
+> 与 `docs/plan/customer/returns-portal.md`（售后）和 `docs/plan/marketing/payments/README.md`（退款）联动，负责退货、换货、补发的物流执行：逆向运单、轨迹、入库、报损、退款结算。
 
 ## 1. 背景
 - 售后模块负责申请/审批，但逆向物流（取件、退货运单、入库、补偿）需在履约域统一管理，追踪生命周期并连接库存/财务。

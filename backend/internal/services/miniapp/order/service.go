@@ -275,6 +275,10 @@ func (s *Service) createOrderWithIdempotencyTx(
 			}
 		}
 
+		var shippingAddrPtr *string
+		if shippingAddrID != "" {
+			shippingAddrPtr = &shippingAddrID
+		}
 		order := &ordermodel.Order{
 			ID:                  orderID,
 			TenantUUID:          tenantUUID,
@@ -285,7 +289,7 @@ func (s *Service) createOrderWithIdempotencyTx(
 			Currency:            currency,
 			SubtotalAmount:      subtotal,
 			TotalAmount:         total,
-			ShippingAddressID:   shippingAddrID,
+			ShippingAddressID:   shippingAddrPtr,
 			ShippingAddressSnap: datatypes.JSON(shippingSnapJSON),
 			PriceSnapshot:       datatypes.JSON(priceSnapJSON),
 			SellabilitySnap:     datatypes.JSON(sellSnapJSON),

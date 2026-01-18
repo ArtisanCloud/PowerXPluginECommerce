@@ -132,6 +132,9 @@ func (s *Service) ListCustomers(ctx context.Context, filters ListFilters) (*Cust
 	sanitized.Tags = normalizeTags(filters.Tags)
 	sanitized.Page = page
 	sanitized.PageSize = pageSize
+	if strings.TrimSpace(sanitized.Sort) == "" && strings.TrimSpace(sanitized.Keyword) == "" {
+		sanitized.Sort = "-lastOrderAt"
+	}
 
 	repoFilters := customerrepo.ListQueryOptions{
 		Keyword:   sanitized.Keyword,

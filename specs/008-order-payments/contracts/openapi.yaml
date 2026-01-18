@@ -1,0 +1,440 @@
+openapi: 3.0.3
+info:
+  title: Payments Admin API
+  version: 1.0.0
+servers:
+  - url: /v1
+paths:
+  /admin/payments/providers:
+    get:
+      summary: List payment providers
+      responses:
+        "200":
+          description: Provider list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PaymentProvider"
+    post:
+      summary: Create payment provider
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentProviderCreate"
+      responses:
+        "201":
+          description: Provider created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentProvider"
+  /admin/payments/providers/{id}:
+    patch:
+      summary: Update payment provider
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentProviderUpdate"
+      responses:
+        "200":
+          description: Provider updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentProvider"
+  /admin/payments/providers/{id}/test:
+    post:
+      summary: Test payment provider
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Test result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProviderTestResult"
+  /admin/payments/transactions:
+    get:
+      summary: List payment transactions
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+        - name: providerId
+          in: query
+          schema:
+            type: string
+        - name: from
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: to
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        "200":
+          description: Transaction list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/PaymentTransaction"
+  /admin/payments/transactions/{id}:
+    get:
+      summary: Get payment transaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Transaction detail
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentTransaction"
+  /admin/payments/transactions/{id}/refund:
+    post:
+      summary: Create refund
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentRefundCreate"
+      responses:
+        "201":
+          description: Refund created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentRefund"
+  /admin/payments/transactions/{id}/reconcile:
+    post:
+      summary: Mark transaction reconciliation result
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentReconcileRequest"
+      responses:
+        "200":
+          description: Reconcile result recorded
+  /admin/payments/manual-payments:
+    get:
+      summary: List manual payment reviews
+      parameters:
+        - name: orderId
+          in: query
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Manual review list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ManualPaymentReview"
+    post:
+      summary: Create manual payment review
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManualPaymentCreate"
+      responses:
+        "201":
+          description: Manual review created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManualPaymentReview"
+  /admin/payments/manual-payments/{id}/approve:
+    post:
+      summary: Approve manual payment review
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManualPaymentReviewRequest"
+      responses:
+        "200":
+          description: Manual review approved
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManualPaymentReview"
+  /admin/payments/manual-payments/{id}/reject:
+    post:
+      summary: Reject manual payment review
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ManualPaymentReviewRequest"
+      responses:
+        "200":
+          description: Manual review rejected
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManualPaymentReview"
+components:
+  schemas:
+    PaymentProvider:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantUuid:
+          type: string
+        name:
+          type: string
+        type:
+          type: string
+        status:
+          type: string
+        feeRate:
+          type: number
+        settlementCycle:
+          type: string
+        currency:
+          type: string
+        updatedAt:
+          type: string
+          format: date-time
+    PaymentProviderCreate:
+      type: object
+      required: [name, type, status]
+      properties:
+        name:
+          type: string
+        type:
+          type: string
+        status:
+          type: string
+        feeRate:
+          type: number
+        settlementCycle:
+          type: string
+        currency:
+          type: string
+        credentials:
+          type: object
+          additionalProperties: true
+    PaymentProviderUpdate:
+      type: object
+      properties:
+        status:
+          type: string
+        feeRate:
+          type: number
+        settlementCycle:
+          type: string
+        currency:
+          type: string
+        credentials:
+          type: object
+          additionalProperties: true
+        riskPolicy:
+          type: object
+          additionalProperties: true
+    ProviderTestResult:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        message:
+          type: string
+    PaymentTransaction:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantUuid:
+          type: string
+        transactionNo:
+          type: string
+        orderId:
+          type: string
+        orderNo:
+          type: string
+        providerId:
+          type: string
+        payMethod:
+          type: string
+        amountTotal:
+          type: integer
+        amountCurrency:
+          type: string
+        feeAmount:
+          type: integer
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+        failureReason:
+          type: string
+    ManualPaymentCreate:
+      type: object
+      required: [orderId, amountMinor, payMethod]
+      properties:
+        orderId:
+          type: string
+        amountMinor:
+          type: integer
+        currency:
+          type: string
+        payMethod:
+          type: string
+        providerId:
+          type: integer
+        proofNo:
+          type: string
+        note:
+          type: string
+    ManualPaymentReviewRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+    ManualPaymentReview:
+      type: object
+      properties:
+        id:
+          type: integer
+        orderId:
+          type: string
+        orderNo:
+          type: string
+        transactionId:
+          type: integer
+        providerId:
+          type: integer
+        payMethod:
+          type: string
+        amountMinor:
+          type: integer
+        currency:
+          type: string
+        status:
+          type: string
+          enum: [pending_review, approved, rejected]
+        submittedBy:
+          type: string
+        submittedAt:
+          type: string
+          format: date-time
+        reviewedBy:
+          type: string
+        reviewedAt:
+          type: string
+          format: date-time
+        reviewReason:
+          type: string
+        proofNo:
+          type: string
+        note:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+      required: [id, orderId, orderNo, amountMinor, currency, status, submittedBy, submittedAt]
+    PaymentRefundCreate:
+      type: object
+      required: [amountMinor]
+      properties:
+        amountMinor:
+          type: integer
+        reason:
+          type: string
+    PaymentRefund:
+      type: object
+      properties:
+        id:
+          type: string
+        tenantUuid:
+          type: string
+        refundNo:
+          type: string
+        refundAmount:
+          type: integer
+        refundCurrency:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+    PaymentReconcileRequest:
+      type: object
+      required: [resolution]
+      properties:
+        resolution:
+          type: string
+        note:
+          type: string

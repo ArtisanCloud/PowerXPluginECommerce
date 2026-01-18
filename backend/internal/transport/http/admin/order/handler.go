@@ -125,6 +125,33 @@ func (h *Handler) CancelOrder(c *gin.Context) {
 	contracts.ResponseSuccess(c, resp)
 }
 
+func (h *Handler) UpdateShippingAddress(c *gin.Context) {
+	if h == nil || h.service == nil {
+		contracts.ResponseError(c, http.StatusServiceUnavailable, contracts.ErrCodeInternalError, "order service unavailable")
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	adminID, ok := requireAdminUser(c)
+	if !ok {
+		return
+	}
+	orderID := strings.TrimSpace(c.Param("id"))
+
+	var req ordersvc.UpdateOrderShippingAddressRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		contracts.ResponseError(c, http.StatusBadRequest, contracts.ErrCodeInvalidRequest, err.Error())
+		return
+	}
+
+	ctx := authx.ContextWithRequestID(c.Request.Context(), requestIDFromRequest(c))
+	resp, err := h.service.UpdateOrderShippingAddress(ctx, tenantUUID, adminID, orderID, req.ShippingAddress)
+	if err != nil {
+		respondAdminOrderError(c, err)
+		return
+	}
+	contracts.ResponseSuccess(c, resp)
+}
+
 func requireAdminUser(c *gin.Context) (string, bool) {
 	tc, ok := authx.GetTenantContext(c)
 	if !ok || tc.UserID <= 0 {

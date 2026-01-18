@@ -9,6 +9,7 @@ export * from "./useCustomer";
 export * from "./useOrder";
 export * from "./usePricebook";
 export * from "./useProductSpec";
+export * from "./usePayments";
 export {
   useApiClient,
   apiGet,

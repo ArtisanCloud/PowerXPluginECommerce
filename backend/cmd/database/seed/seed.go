@@ -51,10 +51,10 @@ func SeedPluginData(ctx context.Context, db *gorm.DB) error {
 	if err := seedSampleCustomers(ctxDB); err != nil {
 		return err
 	}
-	if err := seedSportsCatalog(ctxDB); err != nil {
+	if err := seedSampleChannelMasters(ctxDB); err != nil {
 		return err
 	}
-	if err := seedSampleChannelMasters(ctxDB); err != nil {
+	if err := seedSportsCatalog(ctxDB); err != nil {
 		return err
 	}
 	return nil
@@ -671,6 +671,27 @@ func seedSportsChannelVisibilities(db *gorm.DB) error {
 	if !db.Migrator().HasTable(&productmodel.ChannelVisibility{}) {
 		return nil
 	}
+	channelCodes := []string{"official"}
+	if db.Migrator().HasTable(&channelmodel.ChannelMaster{}) {
+		var masters []channelmodel.ChannelMaster
+		if err := db.Where("tenant_uuid = ? AND deleted_at IS NULL", defaultTenantUUID).Find(&masters).Error; err != nil {
+			return err
+		}
+		for _, m := range masters {
+			code := strings.TrimSpace(m.StoreID)
+			if code == "" {
+				continue
+			}
+			channelCodes = append(channelCodes, code)
+		}
+	}
+	uniq := make(map[string]struct{}, len(channelCodes))
+	for _, code := range channelCodes {
+		if strings.TrimSpace(code) == "" {
+			continue
+		}
+		uniq[code] = struct{}{}
+	}
 
 	var spus []productmodel.SPU
 	if err := db.Where("tenant_uuid = ? AND deleted_at IS NULL AND status = ?", defaultTenantUUID, "published").
@@ -684,39 +705,41 @@ func seedSportsChannelVisibilities(db *gorm.DB) error {
 
 	now := time.Now().UTC()
 	for _, spu := range spus {
-		// Seed the default mini-app channel as enabled so purchase readiness works out-of-the-box.
-		var existing productmodel.ChannelVisibility
-		err := db.Where("tenant_uuid = ? AND spu_id = ? AND channel = ?", defaultTenantUUID, spu.ID, "official").
-			First(&existing).Error
-		switch {
-		case errors.Is(err, gorm.ErrRecordNotFound):
-			row := productmodel.ChannelVisibility{
-				ID:              utils.NewUUID(),
-				TenantUUID:      defaultTenantUUID,
-				SPUID:           spu.ID,
-				Channel:         "official",
-				Availability:    "published",
-				PublishAt:       nil,
-				WithdrawAt:      nil,
-				ContentOverride: datatypes.JSON([]byte(`{}`)),
-				AuditState:      "approved",
-				LastFeedback:    datatypes.JSON([]byte(`{}`)),
-				CreatedAt:       now,
-				UpdatedAt:       now,
-			}
-			if err := db.Create(&row).Error; err != nil {
+		for channel := range uniq {
+			// Seed channel visibility so order creation can use channel master store IDs.
+			var existing productmodel.ChannelVisibility
+			err := db.Where("tenant_uuid = ? AND spu_id = ? AND channel = ?", defaultTenantUUID, spu.ID, channel).
+				First(&existing).Error
+			switch {
+			case errors.Is(err, gorm.ErrRecordNotFound):
+				row := productmodel.ChannelVisibility{
+					ID:              utils.NewUUID(),
+					TenantUUID:      defaultTenantUUID,
+					SPUID:           spu.ID,
+					Channel:         channel,
+					Availability:    "published",
+					PublishAt:       nil,
+					WithdrawAt:      nil,
+					ContentOverride: datatypes.JSON([]byte(`{}`)),
+					AuditState:      "approved",
+					LastFeedback:    datatypes.JSON([]byte(`{}`)),
+					CreatedAt:       now,
+					UpdatedAt:       now,
+				}
+				if err := db.Create(&row).Error; err != nil {
+					return err
+				}
+			case err != nil:
 				return err
-			}
-		case err != nil:
-			return err
-		default:
-			updates := map[string]any{
-				"availability": "published",
-				"audit_state":  "approved",
-				"updated_at":   now,
-			}
-			if err := db.Model(&existing).Updates(updates).Error; err != nil {
-				return err
+			default:
+				updates := map[string]any{
+					"availability": "published",
+					"audit_state":  "approved",
+					"updated_at":   now,
+				}
+				if err := db.Model(&existing).Updates(updates).Error; err != nil {
+					return err
+				}
 			}
 		}
 	}
@@ -1393,6 +1416,9 @@ func seedSportsSKUs(db *gorm.DB) error {
 	}
 	now := time.Now().UTC()
 	for _, spec := range specs {
+		if len(spec.Spec) == 0 {
+			continue
+		}
 		spuID, ok := spuIDs[spec.SPUCode]
 		if !ok {
 			return fmt.Errorf("missing spu %s for sku %s", spec.SPUCode, spec.SKUCode)

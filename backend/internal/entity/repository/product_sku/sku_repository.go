@@ -3,8 +3,10 @@ package product_sku
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 
+	basemodels "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models"
 	productskumodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_sku"
 	repo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository"
 	"gorm.io/gorm"
@@ -33,29 +35,51 @@ type SkuListFilters struct {
 	SPUID    string
 	Status   string
 	Keyword  string
+	Locale   string
 	Page     int
 	PageSize int
 }
 
 // ListForExport lists SKUs for CSV export given tenant scoped filters.
 func (r *SKURepository) ListForExport(ctx context.Context, tenantID string, filters SkuExportFilters) ([]productskumodel.ProductSKU, error) {
-	query := r.DB.WithContext(ctx).Where("tenant_uuid = ?", tenantID)
+	skuTable := basemodels.S(basemodels.TableProductSkus)
+	query := r.DB.WithContext(ctx).Table(skuTable).
+		Where(fmt.Sprintf("%s.tenant_uuid = ?", skuTable), tenantID)
 	if filters.SPUID != "" {
-		query = query.Where("spu_id = ?", filters.SPUID)
+		query = query.Where(fmt.Sprintf("%s.spu_id = ?", skuTable), filters.SPUID)
 	}
 	if filters.Status != "" {
-		query = query.Where("status = ?", filters.Status)
+		query = query.Where(fmt.Sprintf("%s.status = ?", skuTable), filters.Status)
 	}
 	if filters.Keyword != "" {
 		keyword := strings.ToLower(filters.Keyword)
 		pattern := "%" + keyword + "%"
-		query = query.Where("(LOWER(sku_code) LIKE ? OR LOWER(barcode) LIKE ?)", pattern, pattern)
+		spuTable := basemodels.S(basemodels.TableProductSpus)
+		query = query.Joins(
+			fmt.Sprintf(
+				"LEFT JOIN %s spu ON spu.id = %s.spu_id AND spu.tenant_uuid = %s.tenant_uuid AND spu.deleted_at IS NULL",
+				spuTable,
+				skuTable,
+				skuTable,
+			),
+		)
+		query = query.Where(
+			fmt.Sprintf(
+				"(LOWER(%s.sku_code) LIKE ? OR LOWER(%s.barcode) LIKE ? OR LOWER(spu.name) LIKE ? OR LOWER(spu.code) LIKE ?)",
+				skuTable,
+				skuTable,
+			),
+			pattern,
+			pattern,
+			pattern,
+			pattern,
+		)
 	}
 	if filters.Limit > 0 {
 		query = query.Limit(filters.Limit)
 	}
 	var skus []productskumodel.ProductSKU
-	if err := query.Order("created_at DESC").Find(&skus).Error; err != nil {
+	if err := query.Order(fmt.Sprintf("%s.created_at DESC", skuTable)).Find(&skus).Error; err != nil {
 		return nil, err
 	}
 	return skus, nil
@@ -75,18 +99,64 @@ func (r *SKURepository) List(ctx context.Context, tenantID string, filters SkuLi
 		filters.PageSize = 200
 	}
 
-	query := r.DB.WithContext(ctx).Model(&productskumodel.ProductSKU{}).
-		Where("tenant_uuid = ?", tenantID)
+	skuTable := basemodels.S(basemodels.TableProductSkus)
+	query := r.DB.WithContext(ctx).Table(skuTable).
+		Where(fmt.Sprintf("%s.tenant_uuid = ?", skuTable), tenantID)
 	if strings.TrimSpace(filters.SPUID) != "" {
-		query = query.Where("spu_id = ?", strings.TrimSpace(filters.SPUID))
+		query = query.Where(fmt.Sprintf("%s.spu_id = ?", skuTable), strings.TrimSpace(filters.SPUID))
 	}
 	if strings.TrimSpace(filters.Status) != "" {
-		query = query.Where("status = ?", strings.TrimSpace(filters.Status))
+		query = query.Where(fmt.Sprintf("%s.status = ?", skuTable), strings.TrimSpace(filters.Status))
 	}
 	if strings.TrimSpace(filters.Keyword) != "" {
 		keyword := strings.ToLower(filters.Keyword)
 		pattern := "%" + keyword + "%"
-		query = query.Where("(LOWER(sku_code) LIKE ? OR LOWER(barcode) LIKE ?)", pattern, pattern)
+		spuTable := basemodels.S(basemodels.TableProductSpus)
+		locale := strings.TrimSpace(filters.Locale)
+		query = query.Joins(
+			fmt.Sprintf(
+				"LEFT JOIN %s spu ON spu.id = %s.spu_id AND spu.tenant_uuid = %s.tenant_uuid AND spu.deleted_at IS NULL",
+				spuTable,
+				skuTable,
+				skuTable,
+			),
+		)
+		if locale != "" {
+			spuLocaleTable := basemodels.S(basemodels.TableProductSpuLocales)
+			query = query.Joins(
+				fmt.Sprintf(
+					"LEFT JOIN %s spuloc ON spuloc.spu_id = %s.spu_id AND spuloc.tenant_uuid = %s.tenant_uuid AND spuloc.locale = ?",
+					spuLocaleTable,
+					skuTable,
+					skuTable,
+				),
+				locale,
+			)
+			query = query.Where(
+				fmt.Sprintf(
+					"(LOWER(%s.sku_code) LIKE ? OR LOWER(%s.barcode) LIKE ? OR LOWER(spu.name) LIKE ? OR LOWER(spu.code) LIKE ? OR LOWER(COALESCE(spuloc.title, '')) LIKE ?)",
+					skuTable,
+					skuTable,
+				),
+				pattern,
+				pattern,
+				pattern,
+				pattern,
+				pattern,
+			)
+		} else {
+			query = query.Where(
+				fmt.Sprintf(
+					"(LOWER(%s.sku_code) LIKE ? OR LOWER(%s.barcode) LIKE ? OR LOWER(spu.name) LIKE ? OR LOWER(spu.code) LIKE ?)",
+					skuTable,
+					skuTable,
+				),
+				pattern,
+				pattern,
+				pattern,
+				pattern,
+			)
+		}
 	}
 
 	var total int64
@@ -99,7 +169,7 @@ func (r *SKURepository) List(ctx context.Context, tenantID string, filters SkuLi
 
 	var skus []productskumodel.ProductSKU
 	offset := (filters.Page - 1) * filters.PageSize
-	if err := query.Order("created_at DESC").
+	if err := query.Order(fmt.Sprintf("%s.created_at DESC", skuTable)).
 		Limit(filters.PageSize).
 		Offset(offset).
 		Find(&skus).Error; err != nil {

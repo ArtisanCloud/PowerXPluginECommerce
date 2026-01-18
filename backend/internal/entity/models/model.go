@@ -124,10 +124,25 @@ const (
 	TableCustomerAddresses = "customer_addresses"
 
 	// Order (Checkout MVP)
-	TableOrders      = "orders"
-	TableOrderItems  = "order_items"
-	TableOrderEvents = "order_events"
+	TableOrders              = "orders"
+	TableOrderItems          = "order_items"
+	TableOrderEvents         = "order_events"
+	TableOrderBenefitReviews = "order_benefit_reviews"
 
 	// Cart (Checkout MVP)
 	TableCarts = "carts"
+
+	// Payments
+	TablePaymentProviders           = "payment_providers"
+	TablePaymentProviderConfigs     = "payment_provider_configs"
+	TablePaymentTransactions        = "payment_transactions"
+	TablePaymentLogs                = "payment_logs"
+	TablePaymentReconciliations     = "payment_reconciliations"
+	TablePaymentRiskEvents          = "payment_risk_events"
+	TablePaymentSplitRules          = "payment_split_rules"
+	TablePaymentSplitResults        = "payment_split_results"
+	TablePaymentReconciliationItems = "payment_reconciliation_items"
+	TablePaymentRefunds             = "payment_refunds"
+	TablePaymentManualReviews       = "payment_manual_reviews"
+	TablePaymentManualReviewLogs    = "payment_manual_review_logs"
 )

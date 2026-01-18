@@ -12,6 +12,7 @@ export type OrderSummary = {
   createdByType?: string;
   status: string;
   amounts: Money;
+  shippingAddressSnapshot?: ShippingAddress;
   createdAt: string;
 };
 
@@ -36,6 +37,28 @@ export type OrderEvent = {
   createdAt: string;
 };
 
+export type OrderBenefitReview = {
+  id: number;
+  orderId: string;
+  orderNo: string;
+  benefitType: string;
+  benefitCode: string;
+  valueType: string;
+  value: number;
+  amountMinor: number;
+  currency: string;
+  stackingAllowed: boolean;
+  status: string;
+  submittedBy: string;
+  submittedAt: string;
+  reviewedBy?: string;
+  reviewedAt?: string | null;
+  reviewReason?: string;
+  note?: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type OrderDetail = {
   summary: OrderSummary;
   items: OrderItem[];
@@ -44,4 +67,31 @@ export type OrderDetail = {
 
 export type CancelOrderRequest = {
   reason?: string;
+};
+
+export type CreateOrderItemInput = {
+  skuId: string;
+  qty: number;
+};
+
+export type ShippingAddress = {
+  label?: string;
+  recipientName: string;
+  recipientPhone: string;
+  countryCode?: string;
+  province?: string;
+  city?: string;
+  district?: string;
+  address1: string;
+  address2?: string;
+  postalCode?: string;
+};
+
+export type CreateOrderRequest = {
+  customerId: string;
+  channel: string;
+  shippingAddressId?: string;
+  shippingAddress?: ShippingAddress;
+  items: CreateOrderItemInput[];
+  note?: string;
 };

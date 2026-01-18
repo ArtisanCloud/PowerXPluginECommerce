@@ -1,0 +1,84 @@
+openapi: 3.0.3
+info:
+  title: Payments Miniapp API
+  version: 1.0.0
+servers:
+  - url: /v1
+paths:
+  /agent/payments/transactions:
+    post:
+      summary: Create payment transaction (miniapp)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaymentTransactionCreate"
+      responses:
+        "201":
+          description: Transaction created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentTransactionCreateResponse"
+  /agent/payments/providers/{id}/callback:
+    post:
+      summary: Provider callback (wechat)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Callback accepted
+components:
+  schemas:
+    PaymentTransactionCreate:
+      type: object
+      required: [orderId, orderNo, amountMinor, currency, payMethod, openid]
+      properties:
+        orderId:
+          type: string
+        orderNo:
+          type: string
+        amountMinor:
+          type: integer
+        currency:
+          type: string
+        payMethod:
+          type: string
+        openid:
+          type: string
+        client:
+          type: string
+        idempotencyKey:
+          type: string
+    PaymentTransactionCreateResponse:
+      type: object
+      properties:
+        transactionId:
+          type: string
+        wechat:
+          type: object
+          properties:
+            appId:
+              type: string
+            timeStamp:
+              type: string
+            nonceStr:
+              type: string
+            package:
+              type: string
+            signType:
+              type: string
+            paySign:
+              type: string

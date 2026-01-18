@@ -12,9 +12,9 @@ import (
 )
 
 type signatureEntry struct {
-	GroupCode string
+	GroupCode  string
 	OptionCode string
-	SortOrder int
+	SortOrder  int
 }
 
 func (s *Service) buildSpecSignature(ctx context.Context, tx *gorm.DB, tenantID, spuID string, specs []SkuSpec) (string, error) {
@@ -111,9 +111,9 @@ func (s *Service) buildSpecSignature(ctx context.Context, tx *gorm.DB, tenantID,
 			return "", errors.New("spec code missing")
 		}
 		entries = append(entries, signatureEntry{
-			GroupCode: groupCode,
+			GroupCode:  groupCode,
 			OptionCode: optionCode,
-			SortOrder: g.SortOrder,
+			SortOrder:  g.SortOrder,
 		})
 	}
 
