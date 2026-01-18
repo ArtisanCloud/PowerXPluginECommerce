@@ -42,12 +42,44 @@ export const useCustomerService = () => {
     return result as T;
   };
 
+  const normalizeCustomer = (item: Record<string, any>): Customer => ({
+    id: String(item?.id ?? "").trim(),
+    name: String(item?.name ?? "").trim(),
+    type: item?.type ?? "individual",
+    email: item?.email ?? item?.email_address,
+    phone: item?.phone ?? item?.phone_number,
+    country: item?.country,
+    region: item?.region,
+    membershipTier: item?.membershipTier ?? item?.membership_tier,
+    membershipTierLabel: item?.membershipTierLabel ?? item?.membership_tier_label,
+    growthValue: item?.growthValue ?? item?.growth_value,
+    points: item?.points,
+    lastOrderAmount: item?.lastOrderAmount ?? item?.last_order_amount,
+    lastOrderAt: item?.lastOrderAt ?? item?.last_order_at,
+    status: item?.status,
+    riskLevel: item?.riskLevel ?? item?.risk_level,
+    source: item?.source,
+    accountManager: item?.accountManager ?? item?.account_manager,
+    tags: item?.tags ?? [],
+    createdAt: item?.createdAt ?? item?.created_at,
+    updatedAt: item?.updatedAt ?? item?.updated_at,
+    notes: item?.notes,
+    maskedFields: item?.maskedFields ?? item?.masked_fields,
+    membershipSnapshot: item?.membershipSnapshot ?? item?.membership_snapshot,
+    metadata: item?.metadata ?? item?.meta,
+  });
+
+  const normalizeCustomerList = (payload: CustomerListResponse): CustomerListResponse => ({
+    ...payload,
+    data: Array.isArray(payload?.data) ? payload.data.map((item) => normalizeCustomer(item as Record<string, any>)) : [],
+  });
+
   const listCustomers = async (filters?: CustomerListFilters) => {
     const response = await client<ApiEnvelope<CustomerListResponse>>(`${basePath}`, {
       method: "GET",
       query: filters,
     });
-    return unwrap(response);
+    return normalizeCustomerList(unwrap(response));
   };
 
   const createCustomer = async (payload: CustomerCreatePayload) => {
@@ -85,7 +117,7 @@ export const useCustomerService = () => {
       throw new Error("customerId is required");
     }
     const response = await client<ApiEnvelope<Customer>>(`${basePath}/${id}`, { method: "GET" });
-    return unwrap(response);
+    return normalizeCustomer(unwrap(response) as Record<string, any>);
   };
 
   const listMembers = async (filters?: MembershipFilters) => {

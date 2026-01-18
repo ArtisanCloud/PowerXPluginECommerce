@@ -78,3 +78,44 @@ type OrderDetailDTO struct {
 type CancelOrderRequest struct {
 	Reason string `json:"reason,omitempty"`
 }
+
+type UpdateOrderShippingAddressRequest struct {
+	ShippingAddress *ShippingAddress `json:"shippingAddress"`
+}
+
+type BenefitReviewCreateRequest struct {
+	BenefitType     string  `json:"benefitType"`
+	BenefitCode     string  `json:"benefitCode"`
+	ValueType       string  `json:"valueType"`
+	Value           float64 `json:"value"`
+	Currency        string  `json:"currency,omitempty"`
+	StackingAllowed bool    `json:"stackingAllowed"`
+	Note            string  `json:"note,omitempty"`
+}
+
+type BenefitReviewDecisionRequest struct {
+	ReviewIDs []uint64 `json:"reviewIds"`
+	Reason    string   `json:"reason,omitempty"`
+}
+
+type OrderBenefitReviewDTO struct {
+	ID              uint64     `json:"id"`
+	OrderID         string     `json:"order_id"`
+	OrderNo         string     `json:"order_no"`
+	BenefitType     string     `json:"benefit_type"`
+	BenefitCode     string     `json:"benefit_code"`
+	ValueType       string     `json:"value_type"`
+	Value           int64      `json:"value"`
+	AmountMinor     int64      `json:"amount_minor"`
+	Currency        string     `json:"currency"`
+	StackingAllowed bool       `json:"stacking_allowed"`
+	Status          string     `json:"status"`
+	SubmittedBy     string     `json:"submitted_by"`
+	SubmittedAt     time.Time  `json:"submitted_at"`
+	ReviewedBy      string     `json:"reviewed_by,omitempty"`
+	ReviewedAt      *time.Time `json:"reviewed_at,omitempty"`
+	ReviewReason    string     `json:"review_reason,omitempty"`
+	Note            string     `json:"note,omitempty"`
+	CreatedAt       time.Time  `json:"created_at"`
+	UpdatedAt       time.Time  `json:"updated_at"`
+}

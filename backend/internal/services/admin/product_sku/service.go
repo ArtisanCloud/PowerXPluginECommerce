@@ -124,10 +124,37 @@ func (s *Service) ListSkus(ctx context.Context, query SkuListQuery) (*SkuListRes
 	if err != nil {
 		return nil, err
 	}
+	if strings.TrimSpace(query.SPUID) != "" {
+		hasSpecs, err := s.spuHasSpecGroups(ctx, tenantID, query.SPUID)
+		if err != nil {
+			return nil, err
+		}
+		if !hasSpecs {
+			page := query.Page
+			pageSize := query.PageSize
+			if page <= 0 {
+				page = 1
+			}
+			if pageSize <= 0 {
+				pageSize = 20
+			}
+			return &SkuListResult{
+				Items:    []SkuListItem{},
+				Page:     page,
+				PageSize: pageSize,
+				Total:    0,
+			}, nil
+		}
+	}
+	locale := strings.TrimSpace(query.Locale)
+	if locale == "" {
+		locale = "zh-CN"
+	}
 	filters := repo.SkuListFilters{
 		SPUID:    strings.TrimSpace(query.SPUID),
 		Status:   strings.TrimSpace(query.Status),
 		Keyword:  strings.TrimSpace(query.Keyword),
+		Locale:   locale,
 		Page:     query.Page,
 		PageSize: query.PageSize,
 	}
@@ -136,10 +163,7 @@ func (s *Service) ListSkus(ctx context.Context, query SkuListQuery) (*SkuListRes
 		return nil, err
 	}
 
-	locale := strings.TrimSpace(query.Locale)
-	if locale == "" {
-		locale = "zh-CN"
-	}
+	locale = strings.TrimSpace(locale)
 	spuNameMap, err := s.resolveSPUNames(ctx, tenantID, rows, locale)
 	if err != nil {
 		return nil, err
@@ -206,6 +230,13 @@ func (s *Service) GetSku(ctx context.Context, skuID string, locale string) (*Sku
 	row, err := s.SKURepo.FindByID(ctx, tenantID, skuID)
 	if err != nil {
 		return nil, err
+	}
+	hasSpecs, err := s.spuHasSpecGroups(ctx, tenantID, row.SPUID)
+	if err != nil {
+		return nil, err
+	}
+	if !hasSpecs {
+		return nil, errors.New("invalid spu specs: no spec groups configured")
 	}
 	rows := []productskumodel.ProductSKU{*row}
 

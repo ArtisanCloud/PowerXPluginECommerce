@@ -53,10 +53,10 @@
 ## 6. 数据 & API
 - 表：`payment_providers`、`payment_provider_configs`、`payment_transactions`、`payment_logs`、`payment_reconciliations`、`payment_risk_events`、`payment_split_rules`。
 - API：
-  - `GET/POST /api/payments/providers`、`PATCH /api/payments/providers/{id}`、`POST /api/payments/providers/{id}/test`。
-  - `GET /api/payments/transactions`、`POST /api/payments/transactions/sync`、`GET /api/payments/transactions/{id}`。
-  - `POST /api/payments/transactions/{id}/refund`、`POST /api/payments/transactions/{id}/reconcile`。
-  - Webhook：`POST /api/payments/providers/{id}/callback`。
+  - `GET/POST /v1/admin/payments/providers`、`PATCH /v1/admin/payments/providers/{id}`、`POST /v1/admin/payments/providers/{id}/test`。
+  - `GET /v1/admin/payments/transactions`、`GET /v1/admin/payments/transactions/{id}`。
+  - `POST /v1/admin/payments/transactions/{id}/refund`、`POST /v1/admin/payments/transactions/{id}/reconcile`。
+  - Webhook：`POST /v1/agent/payments/providers/{id}/callback`。
 
 ## 7. 权限 & 审计
 - 权限：`payments.providers.read/manage`、`payments.transactions.read/manage`、`payments.reconcile`、`payments.refund`、`payments.risk`。

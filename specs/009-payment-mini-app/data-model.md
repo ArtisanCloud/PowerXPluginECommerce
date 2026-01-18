@@ -1,0 +1,22 @@
+# Data Model: 小程序支付
+
+## Entities
+
+### PaymentTransaction（支付单/交易）
+- Fields: id, tenant_uuid, transaction_no, order_id, order_no, provider_id, pay_method, amount_total, amount_currency, fee_amount, status, created_at, completed_at, failure_reason, metadata
+- Relationships: references Order
+- State transitions:
+  - pending_payment -> paying -> paid
+  - pending_payment -> canceled
+  - paying -> failed
+
+### PaymentRiskEvent（风险事件）
+- Fields: id, tenant_uuid, transaction_id, risk_type, risk_score, action, created_at, resolved_at
+
+## Enumerations
+- PaymentTransaction.status: pending_payment, paying, paid, failed, canceled, timeout
+- PaymentRiskEvent.action: block, review, allow
+
+## Validation Rules
+- amount_total > 0
+- tenant_uuid is required on all entities

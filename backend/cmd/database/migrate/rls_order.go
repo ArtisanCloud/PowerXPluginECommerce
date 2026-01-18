@@ -21,6 +21,7 @@ func ensureOrderRLSPolicies(ctx context.Context, db *gorm.DB) error {
 		{models.S(models.TableOrders), "order_tenant_rls"},
 		{models.S(models.TableOrderItems), "order_item_tenant_rls"},
 		{models.S(models.TableOrderEvents), "order_event_tenant_rls"},
+		{models.S(models.TableOrderBenefitReviews), "order_benefit_review_tenant_rls"},
 		{models.S(models.TableCarts), "cart_tenant_rls"},
 		{models.S(models.TableCustomerAddresses), "customer_address_tenant_rls"},
 	}

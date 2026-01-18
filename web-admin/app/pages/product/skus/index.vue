@@ -250,6 +250,7 @@
                 />
               </UFormField>
 
+
               <UFormField :label="$t('product.sku.specifications')">
                 <div class="space-y-2">
                   <p class="text-sm text-gray-600 dark:text-gray-400">
@@ -432,6 +433,7 @@
                   {{ getSpuLabel(currentSku.spuId) || currentSku.spu || "-" }}
                 </p>
               </div>
+
 
               <div>
                 <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
@@ -709,6 +711,7 @@ const statusOptions = [
   { label: t("status.active"), value: "active" },
   { label: t("status.inactive"), value: "inactive" }
 ];
+
 
 // SKU数据类型
 type Sku = {
@@ -1165,9 +1168,9 @@ const saveSku = async () => {
           skuCode: trimmedCode,
           barcode: currentSku.value.barcode?.trim() || undefined,
           status: statusForApi,
+          specs: [],
           minOrderQty: currentSku.value.moq || undefined,
           defaultValues: buildDefaultValues(),
-          specs: [],
         },
       ],
     };

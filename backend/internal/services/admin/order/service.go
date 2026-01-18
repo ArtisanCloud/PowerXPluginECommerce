@@ -42,6 +42,7 @@ var (
 	ErrCustomerNotFound        = errors.New("customer not found")
 	ErrOrderNotFound           = errors.New("order not found")
 	ErrOrderNotCancellable     = errors.New("order cannot be cancelled")
+	ErrOrderNotEditable        = errors.New("order cannot be edited")
 	ErrAdminRequired           = errors.New("admin id is required")
 	ErrChannelRequired         = errors.New("channel is required")
 	ErrItemsRequired           = errors.New("items are required")
@@ -310,6 +311,10 @@ func (s *Service) createOrderWithIdempotencyTx(
 			}
 		}
 
+		var shippingAddrPtr *string
+		if shippingAddrID != "" {
+			shippingAddrPtr = &shippingAddrID
+		}
 		order := &ordermodel.Order{
 			ID:                  orderID,
 			TenantUUID:          tenantUUID,
@@ -320,7 +325,7 @@ func (s *Service) createOrderWithIdempotencyTx(
 			Currency:            currency,
 			SubtotalAmount:      subtotal,
 			TotalAmount:         total,
-			ShippingAddressID:   shippingAddrID,
+			ShippingAddressID:   shippingAddrPtr,
 			ShippingAddressSnap: datatypes.JSON(shippingSnapJSON),
 			PriceSnapshot:       datatypes.JSON(priceSnapJSON),
 			SellabilitySnap:     datatypes.JSON(sellSnapJSON),

@@ -40,6 +40,44 @@ export interface SkuListResponse {
 	}
 }
 
+type AnySku = Record<string, any>
+
+const normalizeSpec = (spec: AnySku) => ({
+	specId: String(spec?.specId ?? spec?.spec_id ?? '').trim(),
+	specName: spec?.specName ?? spec?.spec_name,
+	valueId: String(spec?.valueId ?? spec?.value_id ?? '').trim(),
+	valueName: spec?.valueName ?? spec?.value_name,
+})
+
+const normalizeSku = (sku: AnySku): ProductSku => ({
+	id: String(sku?.id ?? '').trim(),
+	tenantUuid: String(sku?.tenantUuid ?? sku?.tenant_uuid ?? '').trim(),
+	spuId: String(sku?.spuId ?? sku?.spu_id ?? '').trim(),
+	spuName: sku?.spuName ?? sku?.spu_name,
+	skuCode: String(sku?.skuCode ?? sku?.sku_code ?? '').trim(),
+	specs: Array.isArray(sku?.specs) ? sku.specs.map(normalizeSpec) : [],
+	specDisplay: sku?.specDisplay ?? sku?.spec_display,
+	salePrice: typeof sku?.salePrice === 'number' ? sku.salePrice : (typeof sku?.sale_price === 'number' ? sku.sale_price : undefined),
+	currency: sku?.currency ?? sku?.currency_code,
+	barcode: sku?.barcode,
+	status: sku?.status,
+	lifecyclePhase: sku?.lifecyclePhase ?? sku?.lifecycle_phase,
+	minOrderQty: sku?.minOrderQty ?? sku?.min_order_qty,
+	priceRefs: sku?.priceRefs ?? sku?.price_refs,
+	logistics: sku?.logistics,
+	tags: sku?.tags,
+	media: sku?.media,
+	inventory: sku?.inventory,
+	channels: sku?.channels,
+	createdAt: sku?.createdAt ?? sku?.created_at,
+	updatedAt: sku?.updatedAt ?? sku?.updated_at,
+})
+
+const normalizeSkuList = (resp: SkuListResponse): SkuListResponse => ({
+	...resp,
+	items: Array.isArray(resp?.items) ? resp.items.map((item) => normalizeSku(item as AnySku)) : [],
+})
+
 export function useSkuApi() {
 	const basePath = 'admin/product/skus'
 	const unwrap = async <T>(promise: Promise<T | ApiResponse<T>>) => {
@@ -52,11 +90,11 @@ export function useSkuApi() {
 
 	return {
 		list: (params?: SkuListParams, init?: any) =>
-			unwrap(apiGet<SkuListResponse>(basePath, params, init)),
+			unwrap(apiGet<SkuListResponse>(basePath, params, init)).then(normalizeSkuList),
 		get: (skuId: string, params?: { locale?: string }, init?: any) =>
-			unwrap(apiGet<any>(`${basePath}/${skuId}`, params, init)),
+			unwrap(apiGet<any>(`${basePath}/${skuId}`, params, init)).then((item) => normalizeSku(item as AnySku)),
 		listBySpu: (spuId: string, params?: Omit<SkuListParams, 'spuId'>, init?: any) =>
-			unwrap(apiGet<SkuListResponse>(basePath, { ...params, spuId }, init)),
+			unwrap(apiGet<SkuListResponse>(basePath, { ...params, spuId }, init)).then(normalizeSkuList),
 		generate: (spuId: string, payload: SkuGeneratorRequest, init?: any) =>
 			unwrap(
 				apiPost<ApiResponse<SkuGeneratorResponse>>(
@@ -65,8 +103,15 @@ export function useSkuApi() {
 					init,
 				),
 			),
-		create: (payload: SkuUpsertRequest, init?: any) =>
-			unwrap(apiPost<SkuUpsertResult>(basePath, payload, init)),
+		create: (payload: SkuUpsertRequest, init?: any) => {
+			const skus = Array.isArray(payload?.skus)
+				? payload.skus.map((sku) => ({
+						...sku,
+						specs: Array.isArray((sku as any)?.specs) ? (sku as any).specs : [],
+				  }))
+				: [];
+			return unwrap(apiPost<SkuUpsertResult>(basePath, { ...payload, skus }, init));
+		},
 		submitBulkTask: (payload: SkuBulkTaskRequest, init?: any) =>
 			unwrap(apiPost<SkuBulkTask>(`${basePath}/bulk-tasks`, payload, init)),
 		importByFile: (file: File, mode: SkuImportMode = 'upsert', init?: any) => {

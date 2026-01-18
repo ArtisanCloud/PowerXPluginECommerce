@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/contracts"
 	productskuservice "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/product_sku"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -20,9 +21,19 @@ func respondError(c *gin.Context, err error) {
 	if err == nil {
 		err = errors.New("unknown error")
 	}
-	c.JSON(classifyError(err), gin.H{
-		"message": err.Error(),
-	})
+	status := classifyError(err)
+	code := contracts.ErrCodeInternalError
+	switch status {
+	case http.StatusBadRequest:
+		code = contracts.ErrCodeInvalidRequest
+	case http.StatusForbidden:
+		code = contracts.ErrCodeForbidden
+	case http.StatusNotFound:
+		code = contracts.ErrCodeNotFound
+	case http.StatusConflict:
+		code = contracts.ErrCodeConflict
+	}
+	contracts.ResponseError(c, status, code, err.Error())
 }
 
 func classifyError(err error) int {
@@ -81,7 +92,7 @@ func (h *Handler) Get(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, item)
+	contracts.ResponseSuccess(c, item)
 }
 
 func (h *Handler) List(c *gin.Context) {
@@ -110,7 +121,7 @@ func (h *Handler) List(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
-	c.JSON(http.StatusOK, result)
+	contracts.ResponseSuccess(c, result)
 }
 
 func (h *Handler) Upsert(c *gin.Context) {
@@ -128,7 +139,7 @@ func (h *Handler) Upsert(c *gin.Context) {
 		respondError(c, err)
 		return
 	}
-	c.JSON(http.StatusCreated, result)
+	contracts.ResponseCreated(c, result)
 }
 
 func (h *Handler) Update(c *gin.Context) {
