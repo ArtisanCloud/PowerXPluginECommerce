@@ -231,10 +231,6 @@ func (s *Service) GetSku(ctx context.Context, skuID string, locale string) (*Sku
 	if err != nil {
 		return nil, err
 	}
-	hasSpecs, err := s.spuHasSpecGroups(ctx, tenantID, row.SPUID)
-	if err != nil {
-		return nil, err
-	}
 	rows := []productskumodel.ProductSKU{*row}
 
 	spuNameMap, err := s.resolveSPUNames(ctx, tenantID, rows, locale)
