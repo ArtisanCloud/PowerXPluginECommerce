@@ -235,9 +235,6 @@ func (s *Service) GetSku(ctx context.Context, skuID string, locale string) (*Sku
 	if err != nil {
 		return nil, err
 	}
-	if !hasSpecs {
-		return nil, errors.New("invalid spu specs: no spec groups configured")
-	}
 	rows := []productskumodel.ProductSKU{*row}
 
 	spuNameMap, err := s.resolveSPUNames(ctx, tenantID, rows, locale)
