@@ -5,7 +5,7 @@
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T001 对齐小程序支付 PRD 与规格说明（`docs/plan/marketing/payments/miniapp.md`、`specs/009-payment-mini-app/spec.md`）
+- [x] T001 对齐小程序支付 PRD 与规格说明（`docs/plan/marketing/payments/miniapp.md`、`specs/009-payment-mini-app/spec.md`）
 
 ---
 
