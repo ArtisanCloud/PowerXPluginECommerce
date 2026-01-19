@@ -1,11 +1,11 @@
 # Implementation Plan: 小程序支付
 
-**Branch**: `009-payment-mini-app` | **Date**: 2026-01-15 | **Spec**: `/private/var/www/html/ArtisanCloud/X/PowerX/Core/Plugins/com.powerx.plugin.ecommerce/specs/009-payment-mini-app/spec.md`  
+**Branch**: `009-payment-mini-app` | **Date**: 2026-01-19 | **Spec**: `/private/var/www/html/ArtisanCloud/X/PowerX/Core/Plugins/com.powerx.plugin.ecommerce/specs/009-payment-mini-app/spec.md`  
 **Input**: Feature specification from `/specs/009-payment-mini-app/spec.md`
 
 ## Summary
 
-交付小程序支付闭环：创建支付单 → 拉起微信支付 → 回调确认 → 结果页展示与重试；支付使用 PowerWechat 封装；回调优先、前端短时轮询兜底；支付成功后更新订单状态为 `paid` 并记录审计事件。
+交付小程序支付闭环：下单确认 → 拉起支付 → 结果确认 → 结果页展示与重试；回调确认优先、前端短时确认兜底；支付成功后订单状态同步更新并可追溯。
 
 ## Technical Context
 
@@ -15,7 +15,7 @@
 **Testing**: `go test ./...`（支付服务与回调幂等）  
 **Target Platform**: Linux server + 小程序  
 **Project Type**: backend + mini-app  
-**Performance Goals**: 支付回调处理 p95 < 500ms；结果确认 p95 < 1s  
+**Performance Goals**: 95% 用户在 10 秒内获得最终支付结果  
 **Constraints**: 多租户 RLS、Host Contract（`/_p/<plugin-id>/api/v1`）、回调幂等与签名验真  
 **Scale/Scope**: 小程序支付路径与回调闭环，不包含后台支付管理
 

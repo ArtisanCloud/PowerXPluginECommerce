@@ -5,7 +5,7 @@
 
 ## Phase 1: Setup (Shared Infrastructure)
 
-- [ ] T001 复核小程序支付文档与现状一致（`docs/plan/marketing/payments/miniapp.md`）
+- [ ] T001 对齐小程序支付 PRD 与规格说明（`docs/plan/marketing/payments/miniapp.md`、`specs/009-payment-mini-app/spec.md`）
 
 ---
 
@@ -19,9 +19,9 @@
 
 ## Phase 3: User Story 1 - 小程序支付与结果反馈 (Priority: P1)
 
-**Goal**: 完成支付发起、回调确认与失败重试入口。
+**Goal**: 完成支付发起、结果确认、失败/取消重试与结果页展示。
 
-**Independent Test**: 小程序可发起支付、显示结果、失败可重试并回到订单列表。
+**Independent Test**: 小程序可发起支付、显示成功/失败/取消/处理中结果，失败可立即重试并返回订单继续支付。
 
 ### Implementation for User Story 1
 
@@ -32,10 +32,11 @@
 - [ ] T009 [US1] 在订单列表接入支付入口在 `mini-app/src/pages/order/list.vue`
 - [ ] T010 [US1] 在订单详情接入支付入口在 `mini-app/src/pages/order/detail.vue`
 - [ ] T011 [US1] 在结果页补充支付状态与重试入口在 `mini-app/src/pages/order/success.vue`
+- [ ] T012 [US1] 增加支付中状态展示与短时确认逻辑在 `mini-app/src/pages/order/`
 
 ---
 
 ## Phase 4: Polish & Cross-Cutting Concerns
 
-- [ ] T012 支付回调幂等与状态确认记录（`backend/internal/services/agent/payments/`）
-- [ ] T013 运行 quickstart 检查项与自检记录在 `specs/009-payment-mini-app/quickstart.md`
+- [ ] T013 支付回调幂等与状态确认记录（`backend/internal/services/agent/payments/`）
+- [ ] T014 运行 quickstart 检查项与自检记录在 `specs/009-payment-mini-app/quickstart.md`
