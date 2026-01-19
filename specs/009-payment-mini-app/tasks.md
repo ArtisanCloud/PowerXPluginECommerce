@@ -12,8 +12,8 @@
 ## Phase 2: Foundational (Blocking Prerequisites)
 
 - [x] T002 统一支付状态机与回调幂等策略在 `specs/009-payment-mini-app/research.md`
-- [ ] T003 统一对外 API 合同与字段命名在 `specs/009-payment-mini-app/contracts/openapi.yaml`
-- [ ] T004 设计支付相关领域模型草案在 `specs/009-payment-mini-app/data-model.md`
+- [x] T003 统一对外 API 合同与字段命名在 `specs/009-payment-mini-app/contracts/openapi.yaml`
+- [x] T004 设计支付相关领域模型草案在 `specs/009-payment-mini-app/data-model.md`
 
 ---
 

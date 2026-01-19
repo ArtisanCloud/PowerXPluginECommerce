@@ -21,6 +21,30 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/PaymentTransactionCreateResponse"
+        "400":
+          description: Validation error
+        "409":
+          description: Duplicate or conflict
+        "422":
+          description: Risk blocked or not payable
+  /agent/payments/transactions/{id}:
+    get:
+      summary: Get payment transaction status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Transaction status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentTransactionStatus"
+        "404":
+          description: Not found
   /agent/payments/providers/{id}/callback:
     post:
       summary: Provider callback (wechat)
@@ -44,7 +68,7 @@ components:
   schemas:
     PaymentTransactionCreate:
       type: object
-      required: [orderId, orderNo, amountMinor, currency, payMethod, openid]
+      required: [orderId, orderNo, amountMinor, currency, payMethod, openid, client, idempotencyKey]
       properties:
         orderId:
           type: string
@@ -67,6 +91,8 @@ components:
       properties:
         transactionId:
           type: string
+        status:
+          type: string
         wechat:
           type: object
           properties:
@@ -82,3 +108,18 @@ components:
               type: string
             paySign:
               type: string
+    PaymentTransactionStatus:
+      type: object
+      properties:
+        transactionId:
+          type: string
+        orderId:
+          type: string
+        orderNo:
+          type: string
+        status:
+          type: string
+        failureReason:
+          type: string
+        updatedAt:
+          type: string
