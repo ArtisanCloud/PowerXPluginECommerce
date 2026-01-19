@@ -25,18 +25,18 @@
 
 ### Implementation for User Story 1
 
-- [ ] T005 [US1] 新增支付单创建接口在 `backend/internal/transport/http/agent/payments/transactions_handler.go`
-- [ ] T006 [US1] 新增支付回调处理在 `backend/internal/transport/http/agent/payments/providers_callback_handler.go`
-- [ ] T007 [US1] 新增支付服务（含 PowerWechat 调用）在 `backend/internal/services/agent/payments/transactions_service.go`
-- [ ] T008 [US1] 在小程序增加支付请求封装在 `mini-app/src/services/miniapp-payment.ts`
-- [ ] T009 [US1] 在订单列表接入支付入口在 `mini-app/src/pages/order/list.vue`
-- [ ] T010 [US1] 在订单详情接入支付入口在 `mini-app/src/pages/order/detail.vue`
-- [ ] T011 [US1] 在结果页补充支付状态与重试入口在 `mini-app/src/pages/order/success.vue`
-- [ ] T012 [US1] 增加支付中状态展示与短时确认逻辑在 `mini-app/src/pages/order/`
+- [x] T005 [US1] 新增支付单创建接口在 `backend/internal/transport/http/agent/payments/transactions_handler.go`
+- [x] T006 [US1] 新增支付回调处理在 `backend/internal/transport/http/agent/payments/providers_callback_handler.go`
+- [x] T007 [US1] 新增支付服务（含 PowerWechat 调用）在 `backend/internal/services/agent/payments/transactions_service.go`
+- [x] T008 [US1] 在小程序增加支付请求封装在 `mini-app/src/services/miniapp-payment.ts`
+- [x] T009 [US1] 在订单列表接入支付入口在 `mini-app/src/pages/order/list.vue`
+- [x] T010 [US1] 在订单详情接入支付入口在 `mini-app/src/pages/order/detail.vue`
+- [x] T011 [US1] 在结果页补充支付状态与重试入口在 `mini-app/src/pages/order/success.vue`
+- [x] T012 [US1] 增加支付中状态展示与短时确认逻辑在 `mini-app/src/pages/order/`
 
 ---
 
 ## Phase 4: Polish & Cross-Cutting Concerns
 
-- [ ] T013 支付回调幂等与状态确认记录（`backend/internal/services/agent/payments/`）
-- [ ] T014 运行 quickstart 检查项与自检记录在 `specs/009-payment-mini-app/quickstart.md`
+- [x] T013 支付回调幂等与状态确认记录（`backend/internal/services/agent/payments/`）
+- [x] T014 运行 quickstart 检查项与自检记录在 `specs/009-payment-mini-app/quickstart.md`
