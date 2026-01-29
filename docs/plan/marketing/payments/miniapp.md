@@ -65,7 +65,44 @@
 | 订单联动 | 支付状态同步更新订单状态并可追溯 |
 | 风控提示 | 风控拦截或异常提示给用户 |
 
-## 7. 状态与一致性
+**接口约定（小程序）**
+- 发起支付必须显式携带 `providerType/mchId/appId` 以定位渠道配置。
+- 回调地址建议使用：`/api/v1/mini-app/payments/providers/{type}/{mchId}/{appId}/callback`。
+
+## 7. 小程序登录与 OpenID 获取
+**目标**：使用 PowerWeChat 完成小程序授权登录与 OpenID 绑定，为支付提供用户标识。
+
+**核心流程**
+1. 小程序端调用 `wx.login()` 获取 `code`。
+2. 前端将 `code` 传给后端登录接口。
+3. 后端使用 PowerWeChat `MiniProgramApp.Auth.Session(ctx, code)` 换取 `openid/unionid` 并签发 token。
+
+泳道图（登录与资料获取）：
+[MiniApp Wechat Login Flow](https://www.figma.com/online-whiteboard/create-diagram/331d6c07-7ca9-44b8-b542-ab2763148855?utm_source=other&utm_content=edit_in_figjam&oai_id=&request_id=26b651e4-df17-44cd-aa28-959711b8fca7)
+
+**后端接口**
+- `POST /api/v1/mini-app/auth/wechat/login`
+  - 入参：`providerId`（必填）、`code`（必填），可选 `nickname/avatarUrl`
+  - 出参：`token/expiresAt/customerId/tenantUuid/customerName/openid/unionid`
+- `POST /api/v1/mini-app/auth/wechat/phone`
+  - 入参：`code`（必填）
+- `POST /api/v1/mini-app/auth/wechat/decrypt`
+  - 入参：`encryptedData/sessionKey/iv`
+- `POST /api/v1/mini-app/auth/wechat/check-encrypted`
+  - 入参：`hash` 或 `encryptedData`
+- `POST /api/v1/mini-app/auth/wechat/paid-unionid`
+  - 入参：`openid`（必填）+ `transactionId/mchId/outTradeNo` 任选
+
+**配置项**
+```yaml
+wechat_miniapp:
+  app_id: "wx..."
+  app_secret: "..."
+```
+或环境变量：
+`POWERX_WECHAT_MINIAPP_APP_ID` / `POWERX_WECHAT_MINIAPP_APP_SECRET`
+
+## 8. 状态与一致性
 - **权威源**：支付单状态以服务端回调确认为准。
 - **更新时序**：回调确认后更新支付单状态，并驱动订单状态更新。
 - **幂等处理**：同一支付单重复回调不得回滚状态。
@@ -80,19 +117,19 @@
 - `timeout`：支付超时
 - `refunded`：已退款
 
-## 8. KPI
+## 9. KPI
 | 指标 | 目标 |
 | --- | --- |
 | 支付成功率 | ≥ 98% |
 | 支付转化率 | ≥ 90% |
 | 支付失败重试成功率 | ≥ 30% |
 
-## 9. Backlog
+## 10. Backlog
 - 多支付方式（余额/分期/礼品卡）。
 - 失败原因聚类与智能引导。
 - 支付风险提示与验证增强。
 
-## 10. 交付任务拆解（前端/后端）
+## 11. 交付任务拆解（前端/后端）
 **前端（小程序）**
 1. 支付入口联动：订单列表/详情触发支付流程。
 2. 支付拉起：创建支付单并拉起支付。

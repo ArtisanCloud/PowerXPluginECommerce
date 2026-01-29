@@ -40,6 +40,9 @@ type Config struct {
 	// CustomerAuth 配置迷你应用客户鉴权模式。
 	CustomerAuth *CustomerAuthConfig `yaml:"customer_auth" json:"customer_auth"`
 
+	// WechatMiniApp 配置微信小程序登录。
+	WechatMiniApp *WechatMiniAppConfig `yaml:"wechat_miniapp" json:"wechat_miniapp"`
+
 	// 安全配置
 	Security *SecurityConfig `yaml:"security" json:"security"`
 
@@ -98,6 +101,14 @@ type CustomerAuthConfig struct {
 	JWTAudience      string        `yaml:"jwt_audience" json:"jwt_audience"`
 	JWTExpires       time.Duration `yaml:"jwt_expires" json:"jwt_expires"`
 	CacheTTL         time.Duration `yaml:"cache_ttl" json:"cache_ttl"`
+}
+
+// WechatMiniAppConfig 微信小程序登录配置。
+type WechatMiniAppConfig struct {
+	AppID     string `yaml:"app_id" json:"app_id"`
+	AppSecret string `yaml:"app_secret" json:"app_secret"`
+	HttpDebug bool   `yaml:"http_debug" json:"http_debug"`
+	Debug     bool   `yaml:"debug" json:"debug"`
 }
 
 // ServerConfig 服务配置
@@ -256,13 +267,15 @@ type HealthCheckConfig struct {
 
 // LoggingConfig 日志配置
 type LoggingConfig struct {
-	Level      string `yaml:"level" json:"level"`
-	Format     string `yaml:"format" json:"format"`
-	Output     string `yaml:"output" json:"output"`
-	FilePath   string `yaml:"file_path" json:"file_path"`
-	MaxSize    int    `yaml:"max_size" json:"max_size"`
-	MaxBackups int    `yaml:"max_backups" json:"max_backups"`
-	MaxAge     int    `yaml:"max_age" json:"max_age"`
+	Level                      string `yaml:"level" json:"level"`
+	Format                     string `yaml:"format" json:"format"`
+	Output                     string `yaml:"output" json:"output"`
+	FilePath                   string `yaml:"file_path" json:"file_path"`
+	MaxSize                    int    `yaml:"max_size" json:"max_size"`
+	MaxBackups                 int    `yaml:"max_backups" json:"max_backups"`
+	MaxAge                     int    `yaml:"max_age" json:"max_age"`
+	PaymentCallbackNotifyDebug bool   `yaml:"payment_callback_notify_debug" json:"payment_callback_notify_debug"`
+	WechatHTTPDebug            bool   `yaml:"wechat_http_debug" json:"wechat_http_debug"`
 }
 
 // GRPCUpstream PowerX gRPC 上游配置
@@ -392,6 +405,7 @@ func getDefaultConfig() *Config {
 			JWTExpires:  2 * time.Hour,
 			CacheTTL:    5 * time.Minute,
 		},
+		WechatMiniApp: &WechatMiniAppConfig{},
 		Integration: &IntegrationConfig{
 			Idempotency: IntegrationIdempotencyConfig{
 				Provider: "redis",
@@ -828,6 +842,20 @@ func loadEnvConfig(cfg *Config) {
 		}
 	}
 
+	// Wechat miniapp 配置
+	if appID := resolveConfigValue(os.Getenv("POWERX_WECHAT_MINIAPP_APP_ID")); appID != "" {
+		cfg.WechatMiniAppConfigOrDefault().AppID = appID
+	}
+	if secret := resolveConfigValue(os.Getenv("POWERX_WECHAT_MINIAPP_APP_SECRET")); secret != "" {
+		cfg.WechatMiniAppConfigOrDefault().AppSecret = secret
+	}
+	if v := resolveConfigValue(os.Getenv("POWERX_WECHAT_MINIAPP_HTTP_DEBUG")); v != "" {
+		cfg.WechatMiniAppConfigOrDefault().HttpDebug = strings.EqualFold(v, "true")
+	}
+	if v := resolveConfigValue(os.Getenv("POWERX_WECHAT_MINIAPP_DEBUG")); v != "" {
+		cfg.WechatMiniAppConfigOrDefault().Debug = strings.EqualFold(v, "true")
+	}
+
 	// gRPC 上游配置
 	if grpcAddr := resolveConfigValue(os.Getenv("POWERX_GRPC_UPSTREAM_ADDRESS")); grpcAddr != "" {
 		cfg.GRPCUpstream.Address = grpcAddr
@@ -1011,6 +1039,18 @@ func (c *Config) CustomerAuthConfigOrDefault() *CustomerAuthConfig {
 	return c.CustomerAuth
 }
 
+// WechatMiniAppConfigOrDefault ensures miniapp config is non-nil.
+func (c *Config) WechatMiniAppConfigOrDefault() *WechatMiniAppConfig {
+	if c == nil {
+		return &WechatMiniAppConfig{}
+	}
+	if c.WechatMiniApp == nil {
+		c.WechatMiniApp = &WechatMiniAppConfig{}
+	}
+	return c.WechatMiniApp
+}
+
+// PaymentsConfigOrDefault ensures payments config is non-nil.
 // ResolveCustomerAuthMode 返回最终客户鉴权模式。
 func (c *Config) ResolveCustomerAuthMode() CustomerAuthMode {
 	if c == nil {

@@ -50,7 +50,7 @@ import { onLoad, onUnload } from "@dcloudio/uni-app";
 import {
   buildIdempotencyKey,
   createPaymentTransaction,
-  getMiniAppOpenID,
+  getWechatProviderIdNumber,
   getPaymentTransactionStatus,
   requestMiniAppPayment,
 } from "@/services/miniapp-payment";
@@ -203,15 +203,17 @@ async function refreshOrder() {
 async function onPay() {
   if (isPaying.value) return;
   if (!orderId.value || !orderNo.value) return;
+  const providerId = getWechatProviderIdNumber();
+  if (!providerId) {
+    uni.showToast({ title: "支付渠道未配置", icon: "none" });
+    return;
+  }
   isPaying.value = true;
   try {
     const resp = await createPaymentTransaction({
       orderId: orderId.value,
-      orderNo: orderNo.value,
-      amountMinor: Number(totalMinor.value || 0) || 0,
-      currency: String(currency.value || "CNY").trim() || "CNY",
       payMethod: "wechat_jsapi",
-      openid: getMiniAppOpenID(),
+      providerId,
       client: "miniapp",
       idempotencyKey: buildIdempotencyKey("pay"),
     });

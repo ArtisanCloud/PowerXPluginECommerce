@@ -28,13 +28,10 @@ type ApiResponse<T> = {
 
 export type PaymentCreateRequest = {
   orderId: string;
-  orderNo: string;
-  amountMinor: number;
-  currency: string;
   payMethod: string;
-  openid?: string;
-  client: string;
   idempotencyKey: string;
+  providerId: number;
+  client?: string;
 };
 
 export type WechatPayParams = {
@@ -78,10 +75,8 @@ function getBaseUrl() {
   return v || DEFAULT_BASE;
 }
 
-function getAgentBaseUrl() {
-  const base = getBaseUrl();
-  if (base.endsWith("/mini-app")) return base.slice(0, -"/mini-app".length);
-  return base;
+function getMiniAppBaseUrl() {
+  return getBaseUrl();
 }
 
 function getTenantUUID() {
@@ -97,13 +92,25 @@ export function getMiniAppOpenID() {
   return String(uni.getStorageSync("miniapp.customer.openid") || "").trim();
 }
 
+export function getWechatProviderId() {
+  const stored = String(uni.getStorageSync("miniapp.wechat.providerId") || "").trim();
+  const value = stored || String(import.meta.env.VITE_MINIAPP_WECHAT_PROVIDER_ID || "").trim();
+  return value;
+}
+
+export function getWechatProviderIdNumber() {
+  const raw = String(getWechatProviderId() || "").trim();
+  const num = Number(raw);
+  return Number.isFinite(num) && num > 0 ? num : 0;
+}
+
 export function buildIdempotencyKey(prefix = "pay") {
   const rand = Math.random().toString(36).slice(2, 10);
   return `${prefix}-${Date.now()}-${rand}`;
 }
 
-async function agentRequest<T>(opts: MiniAppRequestOptions): Promise<T> {
-  const url = `${getAgentBaseUrl()}${opts.path}`;
+async function miniAppRequest<T>(opts: MiniAppRequestOptions): Promise<T> {
+  const url = `${getMiniAppBaseUrl()}${opts.path}`;
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
     "X-Tenant-UUID": getTenantUUID(),
@@ -148,18 +155,18 @@ async function agentRequest<T>(opts: MiniAppRequestOptions): Promise<T> {
 }
 
 export async function createPaymentTransaction(req: PaymentCreateRequest) {
-  return await agentRequest<PaymentCreateResponse>({
+  return await miniAppRequest<PaymentCreateResponse>({
     method: "POST",
-    path: "/agent/payments/transactions",
+    path: "/payments/transactions",
     data: req,
   });
 }
 
 export async function getPaymentTransactionStatus(id: string) {
   const tid = encodeURIComponent(String(id || "").trim());
-  return await agentRequest<PaymentStatusResponse>({
+  return await miniAppRequest<PaymentStatusResponse>({
     method: "GET",
-    path: `/agent/payments/transactions/${tid}`,
+    path: `/payments/transactions/${tid}`,
   });
 }
 

@@ -1,14 +1,16 @@
 package payments
 
 import (
+	"errors"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
 
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/contracts"
+	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	paymentsvc "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/payments"
 	httpmw "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/middleware"
-	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	"github.com/gin-gonic/gin"
 )
 
@@ -62,6 +64,10 @@ func (h *ProviderHandler) Create(c *gin.Context) {
 	ctx := authx.ContextWithRequestID(c.Request.Context(), requestIDFromRequest(c))
 	resp, err := h.service.CreateProvider(ctx, tenantUUID, adminID, req)
 	if err != nil {
+		if errors.Is(err, paymentsvc.ErrProviderSelectorDuplicate) {
+			contracts.ResponseError(c, http.StatusBadRequest, contracts.ErrCodeInvalidRequest, err.Error())
+			return
+		}
 		contracts.ResponseError(c, http.StatusBadRequest, contracts.ErrCodeInvalidRequest, err.Error())
 		return
 	}
@@ -92,6 +98,35 @@ func (h *ProviderHandler) Update(c *gin.Context) {
 	ctx := authx.ContextWithRequestID(c.Request.Context(), requestIDFromRequest(c))
 	resp, err := h.service.UpdateProvider(ctx, tenantUUID, adminID, id, req)
 	if err != nil {
+		if errors.Is(err, paymentsvc.ErrProviderSelectorDuplicate) {
+			contracts.ResponseError(c, http.StatusBadRequest, contracts.ErrCodeInvalidRequest, err.Error())
+			return
+		}
+		contracts.ResponseError(c, http.StatusInternalServerError, contracts.ErrCodeInternalError, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, resp)
+}
+
+func (h *ProviderHandler) Get(c *gin.Context) {
+	if h == nil || h.service == nil {
+		contracts.ResponseError(c, http.StatusServiceUnavailable, contracts.ErrCodeInternalError, "provider service unavailable")
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	adminID, ok := requireAdminUser(c)
+	if !ok {
+		return
+	}
+	idRaw := strings.TrimSpace(c.Param("id"))
+	id, err := strconv.ParseUint(idRaw, 10, 64)
+	if err != nil {
+		contracts.ResponseError(c, http.StatusBadRequest, contracts.ErrCodeInvalidRequest, "invalid provider id")
+		return
+	}
+	ctx := authx.ContextWithRequestID(c.Request.Context(), requestIDFromRequest(c))
+	resp, err := h.service.GetProviderDetail(ctx, tenantUUID, adminID, id)
+	if err != nil {
 		contracts.ResponseError(c, http.StatusInternalServerError, contracts.ErrCodeInternalError, err.Error())
 		return
 	}
@@ -120,4 +155,72 @@ func (h *ProviderHandler) Test(c *gin.Context) {
 		return
 	}
 	contracts.ResponseSuccess(c, gin.H{"ok": true, "message": "ok"})
+}
+
+func (h *ProviderHandler) TestMiniApp(c *gin.Context) {
+	if h == nil || h.service == nil {
+		contracts.ResponseError(c, http.StatusServiceUnavailable, contracts.ErrCodeInternalError, "provider service unavailable")
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	adminID, ok := requireAdminUser(c)
+	if !ok {
+		return
+	}
+	idRaw := strings.TrimSpace(c.Param("id"))
+	id, err := strconv.ParseUint(idRaw, 10, 64)
+	if err != nil {
+		contracts.ResponseError(c, http.StatusBadRequest, contracts.ErrCodeInvalidRequest, "invalid provider id")
+		return
+	}
+	var req testMiniAppRequest
+	if err := c.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
+		contracts.ResponseError(c, http.StatusBadRequest, contracts.ErrCodeInvalidRequest, err.Error())
+		return
+	}
+	ctx := authx.ContextWithRequestID(c.Request.Context(), requestIDFromRequest(c))
+	if err := h.service.TestMiniApp(ctx, tenantUUID, adminID, id, req.AppID, req.AppSecret); err != nil {
+		contracts.ResponseError(c, http.StatusBadRequest, contracts.ErrCodeInvalidRequest, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, gin.H{"ok": true, "message": "ok"})
+}
+
+func (h *ProviderHandler) TestCertSerial(c *gin.Context) {
+	if h == nil || h.service == nil {
+		contracts.ResponseError(c, http.StatusServiceUnavailable, contracts.ErrCodeInternalError, "provider service unavailable")
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	adminID, ok := requireAdminUser(c)
+	if !ok {
+		return
+	}
+	idRaw := strings.TrimSpace(c.Param("id"))
+	id, err := strconv.ParseUint(idRaw, 10, 64)
+	if err != nil {
+		contracts.ResponseError(c, http.StatusBadRequest, contracts.ErrCodeInvalidRequest, "invalid provider id")
+		return
+	}
+	var req testCertRequest
+	if err := c.ShouldBindJSON(&req); err != nil && !errors.Is(err, io.EOF) {
+		contracts.ResponseError(c, http.StatusBadRequest, contracts.ErrCodeInvalidRequest, err.Error())
+		return
+	}
+	ctx := authx.ContextWithRequestID(c.Request.Context(), requestIDFromRequest(c))
+	if err := h.service.TestWechatCertSerial(ctx, tenantUUID, adminID, id, req.SerialNo, req.CertPem); err != nil {
+		contracts.ResponseError(c, http.StatusBadRequest, contracts.ErrCodeInvalidRequest, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, gin.H{"ok": true, "message": "ok"})
+}
+
+type testMiniAppRequest struct {
+	AppID     string `json:"appId"`
+	AppSecret string `json:"appSecret"`
+}
+
+type testCertRequest struct {
+	SerialNo string `json:"serialNo"`
+	CertPem  string `json:"certPem"`
 }

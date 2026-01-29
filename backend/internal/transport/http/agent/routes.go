@@ -2,7 +2,6 @@ package agent
 
 import (
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
-	agentpayments "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/agent/payments"
 	agentsecurity "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/agent/security"
 	"github.com/gin-gonic/gin"
 )
@@ -19,6 +18,5 @@ func RegisterAPIRoutes(rg *gin.RouterGroup, deps *app.Deps) {
 		// STS 调试端点：主动触发 Exchange
 		RegisterSTSRoutes(g, deps)
 		agentsecurity.RegisterRoutes(g, deps)
-		agentpayments.RegisterRoutes(g, deps)
 	}
 }

@@ -54,6 +54,9 @@ func SeedPluginData(ctx context.Context, db *gorm.DB) error {
 	if err := seedSampleChannelMasters(ctxDB); err != nil {
 		return err
 	}
+	if err := seedPaymentProviders(ctxDB); err != nil {
+		return err
+	}
 	if err := seedSportsCatalog(ctxDB); err != nil {
 		return err
 	}
@@ -187,6 +190,88 @@ func seedSampleChannelMasters(db *gorm.DB) error {
 }
 
 func intPtr(v int) *int { return &v }
+
+func seedPaymentProviders(db *gorm.DB) error {
+	if db == nil || db.Migrator() == nil {
+		return nil
+	}
+	if !db.Migrator().HasTable(&models.PaymentProvider{}) {
+		return nil
+	}
+
+	now := time.Now().UTC()
+	providers := []models.PaymentProvider{
+		{
+			BaseModel:       models.BaseModel{TenantUuid: defaultTenantUUID, CreatedAt: now, UpdatedAt: now},
+			Name:            "微信支付（小程序）",
+			ProviderType:    "wechat",
+			Status:          "active",
+			IsDefault:       true,
+			FeeRate:         0.006,
+			SettlementCycle: "daily",
+			Currency:        "CNY",
+			Credentials:     datatypes.JSON([]byte(`{"appId":"wx-demo-appid"}`)),
+			RiskPolicy:      datatypes.JSON([]byte(`{"mode":"standard","retry_limit":1}`)),
+		},
+		{
+			BaseModel:       models.BaseModel{TenantUuid: defaultTenantUUID, CreatedAt: now, UpdatedAt: now},
+			Name:            "支付宝（暂不可用）",
+			ProviderType:    "alipay",
+			Status:          "disabled",
+			IsDefault:       false,
+			FeeRate:         0.006,
+			SettlementCycle: "daily",
+			Currency:        "CNY",
+			Credentials:     datatypes.JSON([]byte(`{}`)),
+			RiskPolicy:      datatypes.JSON([]byte(`{"mode":"standard"}`)),
+		},
+		{
+			BaseModel:       models.BaseModel{TenantUuid: defaultTenantUUID, CreatedAt: now, UpdatedAt: now},
+			Name:            "银联（暂不可用）",
+			ProviderType:    "unionpay",
+			Status:          "disabled",
+			IsDefault:       false,
+			FeeRate:         0.006,
+			SettlementCycle: "daily",
+			Currency:        "CNY",
+			Credentials:     datatypes.JSON([]byte(`{}`)),
+			RiskPolicy:      datatypes.JSON([]byte(`{"mode":"standard"}`)),
+		},
+	}
+
+	for _, provider := range providers {
+		if strings.TrimSpace(provider.ProviderType) == "" {
+			continue
+		}
+		var existing models.PaymentProvider
+		err := db.Where("tenant_uuid = ? AND provider_type = ?", defaultTenantUUID, provider.ProviderType).
+			First(&existing).Error
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			if err := db.Create(&provider).Error; err != nil {
+				return err
+			}
+		case err != nil:
+			return err
+		default:
+			updates := map[string]any{
+				"name":             provider.Name,
+				"status":           provider.Status,
+				"is_default":       provider.IsDefault,
+				"fee_rate":         provider.FeeRate,
+				"settlement_cycle": provider.SettlementCycle,
+				"currency":         provider.Currency,
+				"credentials":      provider.Credentials,
+				"risk_policy":      provider.RiskPolicy,
+				"updated_at":       now,
+			}
+			if err := db.Model(&existing).Updates(updates).Error; err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
 
 func seedTemplates(db *gorm.DB) error {
 	seedTemplates := []struct {

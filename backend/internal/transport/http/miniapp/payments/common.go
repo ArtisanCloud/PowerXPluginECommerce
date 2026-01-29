@@ -12,7 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func respondPaymentError(c *gin.Context, err error) {
+func respondMiniAppPaymentError(c *gin.Context, err error) {
 	if c == nil {
 		return
 	}
@@ -20,7 +20,7 @@ func respondPaymentError(c *gin.Context, err error) {
 		"request_id": requestIDFromRequest(c),
 		"path":       c.FullPath(),
 		"method":     c.Request.Method,
-	}).Error("agent payments request failed")
+	}).Error("mini-app payments request failed")
 	status, code, msg := httpStatusForPaymentError(err)
 	contracts.ResponseError(c, status, code, msg)
 }
@@ -48,6 +48,14 @@ func httpStatusForPaymentError(err error) (int, string, string) {
 		return http.StatusUnprocessableEntity, contracts.ErrCodeInvalidRequest, "支付渠道暂不可用"
 	case errors.Is(err, paymentssvc.ErrProviderSelectorRequired):
 		return http.StatusBadRequest, contracts.ErrCodeInvalidRequest, "缺少支付渠道定位信息（providerId）"
+	case errors.Is(err, paymentssvc.ErrProviderCredentialsDecryptFailed):
+		return http.StatusUnprocessableEntity, contracts.ErrCodeInvalidRequest, "支付渠道凭证解密失败"
+	case errors.Is(err, paymentssvc.ErrWechatCredentialsMissingRequiredFields):
+		return http.StatusUnprocessableEntity, contracts.ErrCodeInvalidRequest, "支付渠道配置不完整（缺少 AppID/商户号/证书序列号/APIv3 Key）"
+	case errors.Is(err, paymentssvc.ErrWechatCredentialsMissingPrivateKey):
+		return http.StatusUnprocessableEntity, contracts.ErrCodeInvalidRequest, "支付渠道配置不完整（缺少商户私钥）"
+	case errors.Is(err, paymentssvc.ErrWechatCredentialsMissingNotifyURL):
+		return http.StatusUnprocessableEntity, contracts.ErrCodeInvalidRequest, "支付渠道配置不完整（缺少回调地址）"
 	case errors.Is(err, paymentssvc.ErrTransactionNotFound):
 		return http.StatusNotFound, contracts.ErrCodeNotFound, "支付单不存在"
 	case errors.Is(err, paymentssvc.ErrOpenIDRequired):

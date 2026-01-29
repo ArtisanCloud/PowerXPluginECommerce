@@ -611,12 +611,15 @@ const totalPending = computed(() =>
 );
 
 // 工具
-const formatCNY = (n: number) =>
-  new Intl.NumberFormat("zh-CN", {
+const formatCNY = (minor: number) => {
+  const amount = Number(minor || 0) / 100;
+  return new Intl.NumberFormat("zh-CN", {
     style: "currency",
     currency: "CNY",
-    maximumFractionDigits: 0,
-  }).format(n || 0);
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(amount);
+};
 const fmtDT = (s: string) =>
   s ? new Date(s).toLocaleString("zh-CN", { hour12: false }) : "-";
 

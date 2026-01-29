@@ -6,4 +6,5 @@ import customermodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-pl
 var CustomerOpsCustomerTables = []interface{}{
 	&customermodel.Customer{},
 	&customermodel.CustomerAccount{},
+	&customermodel.CustomerIdentity{},
 }

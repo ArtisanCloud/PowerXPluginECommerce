@@ -16,10 +16,11 @@ func RegisterRoutes(rg *gin.RouterGroup, deps *app.Deps) {
 	callbacks := NewProviderCallbackHandler(transactionSvc)
 
 	group := rg.Group("/payments")
-	group.Use(httpmw.EnsureTenant())
 	{
+		group.Use(httpmw.EnsureTenant())
 		group.POST("/transactions", transactions.Create)
 		group.GET("/transactions/:id", transactions.GetStatus)
-		group.POST("/providers/:id/callback", callbacks.Callback)
 	}
+	// 支付回调由外部支付平台触发，不要求鉴权。
+	rg.POST("/payments/providers/:id/callback", callbacks.Callback)
 }

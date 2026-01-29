@@ -55,6 +55,7 @@ export type OrderListQuery = {
   page?: number;
   pageSize?: number;
   status?: string;
+  orderNo?: string;
   customerId?: string;
 };
 

@@ -131,8 +131,8 @@
         <view class="flex h-14 w-14 items-center justify-center rounded-full border border-line-5 bg-white" @tap="noop">
           <text class="text-xl">#</text>
         </view>
-        <view class="flex h-14 w-14 items-center justify-center rounded-full border border-line-5 bg-white" @tap="noop">
-          <text class="text-xl">W</text>
+        <view class="flex h-14 w-14 items-center justify-center rounded-full border border-line-5 bg-white" @tap="onWechatLogin">
+          <text class="text-sm font-bold text-primary">{{ t("auth.wechatLogin") }}</text>
         </view>
         <view class="flex h-14 w-14 items-center justify-center rounded-full border border-line-5 bg-white" @tap="noop">
           <text class="text-xl">$</text>
@@ -145,6 +145,49 @@
         <view class="text-sm font-semibold text-muted" @tap="onSupport">{{ t("auth.support") }}</view>
       </view>
     </view>
+
+    <view
+      v-if="wechatConfirmOpen"
+      class="fixed inset-0 z-50 flex items-center justify-center px-6"
+      style="background-color: rgba(0,0,0,0.5);"
+    >
+      <view class="rounded-2xl bg-white p-6 shadow-xl" style="width: 620rpx; box-sizing: border-box;">
+        <view class="text-lg font-extrabold text-text-dark">{{ t("auth.wechatConfirmTitle") }}</view>
+        <view class="pt-4 flex items-center gap-4">
+          <image
+            v-if="wechatAvatarUrl"
+            :src="wechatAvatarUrl"
+            class="h-16 w-16 rounded-full bg-line-5"
+            mode="aspectFill"
+          />
+          <view class="flex-1" style="min-width: 0;">
+            <text class="text-sm font-semibold text-muted">{{ t("auth.wechatNickname") }}</text>
+            <input
+              v-model="wechatNickname"
+              class="mt-2 h-12 rounded-xl border border-line-5 bg-white px-4 text-base"
+              style="width: 100%; box-sizing: border-box;"
+              :placeholder="t('auth.wechatNicknamePlaceholder')"
+            />
+          </view>
+        </view>
+        <view class="pt-6 flex gap-3">
+          <view
+            class="flex-1 h-12 rounded-xl border border-line-5 bg-white text-center text-sm font-semibold text-muted"
+            style="line-height: 48px;"
+            @tap="closeWechatConfirm"
+          >
+            {{ t("auth.cancel") }}
+          </view>
+          <view
+            class="flex-1 h-12 rounded-xl bg-primary text-center text-sm font-extrabold text-white"
+            style="line-height: 48px;"
+            @tap="confirmWechatProfile"
+          >
+            {{ t("auth.confirm") }}
+          </view>
+        </view>
+      </view>
+    </view>
   </view>
 </template>
 
@@ -152,7 +195,7 @@
 		import { reactive, ref } from "vue";
 		import { onLoad } from "@dcloudio/uni-app";
 	import { useI18n } from "vue-i18n";
-	import { miniAppAuthLogin, miniAppAuthRegister } from "@/services/miniapp-auth";
+	import { miniAppAuthLogin, miniAppAuthRegister, miniAppAuthWechatLogin } from "@/services/miniapp-auth";
 	import { miniAppGetCategoryTree } from "@/services/miniapp-category";
 
 type Tab = "login" | "signup";
@@ -170,6 +213,10 @@ const bannerImage =
 		  password: "",
 		  agree: false,
 		});
+    const wechatConfirmOpen = ref(false);
+    const wechatCode = ref("");
+    const wechatNickname = ref("");
+    const wechatAvatarUrl = ref("");
 
 function goBack() {
   try {
@@ -231,16 +278,7 @@ function onSupport() {
 			      // 受保护接口联通校验：确认 token 已生效
 			      await miniAppGetCategoryTree();
 		      uni.showToast({ title: t("auth.loginSuccess"), icon: "none" });
-		      const redirect = String(uni.getStorageSync("miniapp.auth.redirect") || "").trim();
-		      if (redirect) {
-		        uni.removeStorageSync("miniapp.auth.redirect");
-		        const url = redirect.startsWith("/") ? redirect : `/${redirect}`;
-		        const tabPages = new Set(["/pages/index/index", "/pages/mall/index", "/pages/cart/index", "/pages/profile/index"]);
-		        if (tabPages.has(url)) uni.switchTab({ url });
-		        else uni.redirectTo({ url });
-		      } else {
-		        uni.reLaunch({ url: "/pages/index/index" });
-		      }
+		      redirectAfterLogin();
 		      return;
 		    }
 
@@ -258,20 +296,132 @@ function onSupport() {
 		    // 注册后同样做一次联通校验（注册接口也会返回 token）
 		    await miniAppGetCategoryTree();
 		    uni.showToast({ title: t("auth.signupSuccess"), icon: "none" });
-		    const redirect = String(uni.getStorageSync("miniapp.auth.redirect") || "").trim();
-		    if (redirect) {
-		      uni.removeStorageSync("miniapp.auth.redirect");
-		      const url = redirect.startsWith("/") ? redirect : `/${redirect}`;
-		      const tabPages = new Set(["/pages/index/index", "/pages/mall/index", "/pages/cart/index", "/pages/profile/index"]);
-		      if (tabPages.has(url)) uni.switchTab({ url });
-		      else uni.redirectTo({ url });
-		      return;
-		    }
+		    if (redirectAfterLogin()) return;
 		    activeTab.value = "login";
 			  } catch (err: any) {
 			    uni.showToast({ title: err?.message || t("auth.failed"), icon: "none" });
 			  }
 			}
+
+      async function onWechatLogin() {
+        try {
+          const profile = await getWechatProfile();
+          const code = await getWechatCode();
+          const nickname = String(profile?.nickName || "").trim();
+          const avatarUrl = String(profile?.avatarUrl || "").trim();
+          const cached = getStoredWechatProfile();
+          wechatCode.value = code;
+          if (cached.nickname || cached.avatarUrl) {
+            wechatNickname.value = cached.nickname || nickname;
+            wechatAvatarUrl.value = cached.avatarUrl || avatarUrl;
+          } else {
+            wechatNickname.value = nickname;
+            wechatAvatarUrl.value = avatarUrl;
+          }
+          wechatConfirmOpen.value = true;
+        } catch (err: any) {
+          uni.showToast({ title: err?.message || t("auth.wechatLoginFailed"), icon: "none" });
+        }
+      }
+
+      function closeWechatConfirm() {
+        wechatConfirmOpen.value = false;
+      }
+
+      function confirmWechatProfile() {
+        if (!wechatCode.value) {
+          uni.showToast({ title: t("auth.wechatLoginFailed"), icon: "none" });
+          return;
+        }
+        const providerId = getWechatProviderId();
+        if (!providerId) {
+          uni.showToast({ title: t("auth.wechatLoginFailed"), icon: "none" });
+          return;
+        }
+        wechatConfirmOpen.value = false;
+        submitWechatLogin(wechatCode.value, wechatNickname.value, wechatAvatarUrl.value);
+      }
+
+      function redirectAfterLogin() {
+        const redirect = String(uni.getStorageSync("miniapp.auth.redirect") || "").trim();
+        if (redirect) {
+          uni.removeStorageSync("miniapp.auth.redirect");
+          const url = redirect.startsWith("/") ? redirect : `/${redirect}`;
+          const tabPages = new Set(["/pages/index/index", "/pages/mall/index", "/pages/cart/index", "/pages/profile/index"]);
+          if (tabPages.has(url)) uni.switchTab({ url });
+          else uni.redirectTo({ url });
+          return true;
+        }
+        uni.reLaunch({ url: "/pages/index/index" });
+        return true;
+      }
+
+      function getWechatCode(): Promise<string> {
+        return new Promise((resolve, reject) => {
+          uni.login({
+            provider: "weixin",
+            success: (res: any) => {
+              const code = String(res?.code || "").trim();
+              console.log("[miniapp] wechat login code:", code);
+              if (!code) return reject(new Error(t("auth.wechatLoginFailed")));
+              resolve(code);
+            },
+            fail: (err: any) => reject(new Error(err?.errMsg || t("auth.wechatLoginFailed"))),
+          });
+        });
+      }
+
+      function getWechatProfile(): Promise<any | null> {
+        return new Promise((resolve) => {
+          const uniAny = uni as any;
+          if (typeof uniAny.getUserProfile !== "function") return resolve(null);
+          uniAny.getUserProfile({
+            desc: t("auth.wechatProfileDesc"),
+            success: (res: any) => resolve(res?.userInfo || null),
+            fail: () => resolve(null),
+          });
+        });
+      }
+
+      function getWechatProviderId() {
+        const stored = String(uni.getStorageSync("miniapp.wechat.providerId") || "").trim();
+        if (stored) return stored;
+        return String(import.meta.env.VITE_MINIAPP_WECHAT_PROVIDER_ID || "").trim();
+      }
+
+      function getStoredWechatProfile() {
+        return {
+          nickname: String(uni.getStorageSync("miniapp.wechat.profile.nickname") || "").trim(),
+          avatarUrl: String(uni.getStorageSync("miniapp.wechat.profile.avatarUrl") || "").trim(),
+        };
+      }
+
+      function setStoredWechatProfile(nickname: string, avatarUrl: string) {
+        uni.setStorageSync("miniapp.wechat.profile.nickname", String(nickname || "").trim());
+        uni.setStorageSync("miniapp.wechat.profile.avatarUrl", String(avatarUrl || "").trim());
+      }
+
+      async function submitWechatLogin(code: string, nickname: string, avatarUrl: string) {
+        const providerId = getWechatProviderId();
+        if (!providerId) {
+          uni.showToast({ title: t("auth.wechatLoginFailed"), icon: "none" });
+          return;
+        }
+        try {
+          await miniAppAuthWechatLogin({
+            providerId,
+            code,
+            nickname: String(nickname || "").trim(),
+            avatarUrl: String(avatarUrl || "").trim(),
+          });
+          setStoredWechatProfile(nickname, avatarUrl);
+          await miniAppGetCategoryTree();
+          uni.showToast({ title: t("auth.loginSuccess"), icon: "none" });
+          redirectAfterLogin();
+        } catch (err: any) {
+          uni.showToast({ title: err?.message || t("auth.wechatLoginFailed"), icon: "none" });
+        }
+      }
 
 		onLoad((query) => {
 		  try {

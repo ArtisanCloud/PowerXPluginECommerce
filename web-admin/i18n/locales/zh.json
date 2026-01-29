@@ -1631,12 +1631,17 @@
     "statuses": {
       "pending_payment": "待支付",
       "paid": "已支付",
+      "to_ship": "待发货",
       "shipped": "已发货",
       "cancelled": "已取消",
       "draft": "草稿"
     },
     "loadFailedTitle": "加载订单失败",
-    "loadFailedDesc": "请稍后重试"
+    "loadFailedDesc": "请稍后重试",
+    "filters": {
+      "orderNoPlaceholder": "搜索订单号",
+      "customerPlaceholder": "筛选客户"
+    }
   },
   "pricing": {
     "overview": "定价概览",

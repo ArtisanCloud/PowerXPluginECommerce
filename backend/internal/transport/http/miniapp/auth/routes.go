@@ -14,5 +14,10 @@ func RegisterRoutes(rg *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	group := rg.Group("/auth")
 	group.POST("/register", handler.Register)
 	group.POST("/login", handler.Login)
+	group.POST("/wechat/login", handler.WechatLogin)
+	group.POST("/wechat/phone", handler.WechatPhoneNumber)
+	group.POST("/wechat/decrypt", handler.WechatDecryptData)
+	group.POST("/wechat/check-encrypted", handler.WechatCheckEncryptedData)
+	group.POST("/wechat/paid-unionid", handler.WechatPaidUnionID)
 	return group
 }

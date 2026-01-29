@@ -3,9 +3,83 @@ info:
   title: Payments Miniapp API
   version: 1.0.0
 servers:
-  - url: /v1
+  - url: /api/v1
 paths:
-  /agent/payments/transactions:
+  /mini-app/auth/wechat/login:
+    post:
+      summary: Wechat miniapp login (code -> openid)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MiniappWechatLoginRequest"
+      responses:
+        "200":
+          description: Login success
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MiniappWechatLoginResponse"
+        "400":
+          description: Validation error
+  /mini-app/auth/wechat/phone:
+    post:
+      summary: Wechat phone number (code -> phone)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MiniappWechatPhoneRequest"
+      responses:
+        "200":
+          description: Phone number response
+        "400":
+          description: Validation error
+  /mini-app/auth/wechat/decrypt:
+    post:
+      summary: Wechat decrypt encryptedData
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MiniappWechatDecryptRequest"
+      responses:
+        "200":
+          description: Decrypt response
+        "400":
+          description: Validation error
+  /mini-app/auth/wechat/check-encrypted:
+    post:
+      summary: Wechat check encrypted data
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MiniappWechatCheckEncryptedRequest"
+      responses:
+        "200":
+          description: Check response
+        "400":
+          description: Validation error
+  /mini-app/auth/wechat/paid-unionid:
+    post:
+      summary: Wechat get paid unionid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MiniappWechatPaidUnionIDRequest"
+      responses:
+        "200":
+          description: Paid unionid response
+        "400":
+          description: Validation error
+  /mini-app/payments/transactions:
     post:
       summary: Create payment transaction (miniapp)
       requestBody:
@@ -27,7 +101,7 @@ paths:
           description: Duplicate or conflict
         "422":
           description: Risk blocked or not payable
-  /agent/payments/transactions/{id}:
+  /mini-app/payments/transactions/{id}:
     get:
       summary: Get payment transaction status
       parameters:
@@ -45,9 +119,38 @@ paths:
                 $ref: "#/components/schemas/PaymentTransactionStatus"
         "404":
           description: Not found
-  /agent/payments/providers/{id}/callback:
+  /mini-app/payments/providers/{type}/{mchId}/{appId}/callback:
     post:
-      summary: Provider callback (wechat)
+      summary: Provider callback (wechat, selector)
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: mchId
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: appId
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: true
+      responses:
+        "200":
+          description: Callback accepted
+  /mini-app/payments/providers/id/{id}/callback:
+    post:
+      summary: Provider callback (wechat, legacy by id)
       parameters:
         - name: id
           in: path
@@ -66,9 +169,81 @@ paths:
           description: Callback accepted
 components:
   schemas:
+    MiniappWechatLoginRequest:
+      type: object
+      required: [providerId, code]
+      properties:
+        providerId:
+          type: string
+        code:
+          type: string
+        nickname:
+          type: string
+        avatarUrl:
+          type: string
+    MiniappWechatLoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        expiresAt:
+          type: string
+        customerId:
+          type: string
+        tenantUuid:
+          type: string
+        customerName:
+          type: string
+        openid:
+          type: string
+        unionid:
+          type: string
+    MiniappWechatPhoneRequest:
+      type: object
+      required: [providerId, code]
+      properties:
+        providerId:
+          type: string
+        code:
+          type: string
+    MiniappWechatDecryptRequest:
+      type: object
+      required: [providerId, encryptedData, sessionKey, iv]
+      properties:
+        providerId:
+          type: string
+        encryptedData:
+          type: string
+        sessionKey:
+          type: string
+        iv:
+          type: string
+    MiniappWechatCheckEncryptedRequest:
+      type: object
+      properties:
+        providerId:
+          type: string
+        encryptedData:
+          type: string
+        hash:
+          type: string
+    MiniappWechatPaidUnionIDRequest:
+      type: object
+      required: [providerId, openid]
+      properties:
+        providerId:
+          type: string
+        openid:
+          type: string
+        transactionId:
+          type: string
+        mchId:
+          type: string
+        outTradeNo:
+          type: string
     PaymentTransactionCreate:
       type: object
-      required: [orderId, orderNo, amountMinor, currency, payMethod, openid, client, idempotencyKey]
+      required: [orderId, orderNo, amountMinor, currency, payMethod, openid, client, idempotencyKey, providerType, mchId, appId]
       properties:
         orderId:
           type: string
@@ -85,6 +260,12 @@ components:
         client:
           type: string
         idempotencyKey:
+          type: string
+        providerType:
+          type: string
+        mchId:
+          type: string
+        appId:
           type: string
     PaymentTransactionCreateResponse:
       type: object

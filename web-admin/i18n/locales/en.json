@@ -1021,11 +1021,16 @@
     "statuses": {
       "pending_payment": "Pending payment",
       "paid": "Paid",
+      "to_ship": "To ship",
       "shipped": "Shipped",
       "cancelled": "Cancelled",
       "draft": "Draft"
     },
     "loadFailedTitle": "Failed to load orders",
-    "loadFailedDesc": "Please try again later"
+    "loadFailedDesc": "Please try again later",
+    "filters": {
+      "orderNoPlaceholder": "Search order no.",
+      "customerPlaceholder": "Filter customer"
+    }
   }
 }

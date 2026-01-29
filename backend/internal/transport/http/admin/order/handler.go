@@ -67,8 +67,10 @@ func (h *Handler) ListOrders(c *gin.Context) {
 	pageSize, _ := strconv.Atoi(strings.TrimSpace(c.Query("pageSize")))
 	status := strings.TrimSpace(c.Query("status"))
 	customerID := strings.TrimSpace(c.Query("customerId"))
+	orderNo := strings.TrimSpace(c.Query("orderNo"))
 
 	resp, err := h.service.ListOrders(ctx, tenantUUID, orderrepo.OrderListFilter{
+		OrderNo:    orderNo,
 		CustomerID: customerID,
 		Status:     status,
 	}, page, pageSize)

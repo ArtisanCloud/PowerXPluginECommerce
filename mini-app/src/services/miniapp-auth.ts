@@ -14,12 +14,21 @@ export type MiniAppAuthRegisterInput = {
   phone?: string;
 };
 
+export type MiniAppAuthWechatLoginInput = {
+  providerId: string | number;
+  code: string;
+  nickname?: string;
+  avatarUrl?: string;
+};
+
 type AuthResponse = {
   token?: string;
   expiresAt?: string;
   customerId?: string;
   tenantUuid?: string;
   customerName?: string;
+  openid?: string;
+  unionid?: string;
 };
 
 export async function miniAppAuthLogin(input: MiniAppAuthLoginInput) {
@@ -46,6 +55,24 @@ export async function miniAppAuthRegister(input: MiniAppAuthRegisterInput) {
     data: input,
   });
   setCustomerIdentifier(input.identifier);
+  setSession({
+    token: data?.token,
+    tenantUuid: data?.tenantUuid,
+    customerId: data?.customerId,
+    customerName: data?.customerName,
+    expiresAt: data?.expiresAt,
+  });
+  return data;
+}
+
+export async function miniAppAuthWechatLogin(input: MiniAppAuthWechatLoginInput) {
+  const data = await miniAppRequest<AuthResponse>({
+    method: "POST",
+    path: "/auth/wechat/login",
+    data: input,
+  });
+  if (data?.openid) setCustomerIdentifier(`wechat:${data.openid}`);
+  if (data?.openid) uni.setStorageSync("miniapp.customer.openid", String(data.openid));
   setSession({
     token: data?.token,
     tenantUuid: data?.tenantUuid,

@@ -12,9 +12,12 @@ func RBACEntries(prefix string) map[string]authx.Permission {
 	res := func() string { return "com.powerx.plugin.ecommerce:payments" }
 	return map[string]authx.Permission{
 		"GET:" + base + "/providers":                                  {Resource: res(), Action: "read"},
+		"GET:" + base + "/providers/:id":                              {Resource: res(), Action: "read"},
 		"POST:" + base + "/providers":                                 {Resource: res(), Action: "manage"},
 		"PATCH:" + base + "/providers/:id":                            {Resource: res(), Action: "manage"},
 		"POST:" + base + "/providers/:id/test":                        {Resource: res(), Action: "manage"},
+		"POST:" + base + "/providers/:id/miniapp/test":                {Resource: res(), Action: "manage"},
+		"POST:" + base + "/providers/:id/cert/test":                   {Resource: res(), Action: "manage"},
 		"GET:" + base + "/transactions":                               {Resource: res(), Action: "read"},
 		"GET:" + base + "/transactions/:id":                           {Resource: res(), Action: "read"},
 		"POST:" + base + "/transactions/:id/refund":                   {Resource: res(), Action: "refund"},

@@ -3,10 +3,20 @@ export type PaymentProvider = {
   name: string;
   type: string;
   status: string;
+  isDefault: boolean;
   feeRate: number;
   settlementCycle: string;
   currency: string;
+  appId?: string;
+  mchId?: string;
+  serialNo?: string;
+  notifyUrl?: string;
   updatedAt: string;
+};
+
+export type PaymentProviderDetail = PaymentProvider & {
+  credentials?: Record<string, any>;
+  riskPolicy?: Record<string, any>;
 };
 
 export type PaymentTransaction = {

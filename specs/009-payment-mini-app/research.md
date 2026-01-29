@@ -10,6 +10,7 @@
 
 - 微信支付使用 PowerWechat 封装
 - 回调需验签并记录 request_id/tenant_uuid
+- 小程序登录采用 `code -> openid/unionid`，并以第三方身份表绑定客户
 
 ## 支付状态机
 

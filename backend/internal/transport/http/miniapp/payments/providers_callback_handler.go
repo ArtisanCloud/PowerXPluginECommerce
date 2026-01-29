@@ -21,7 +21,7 @@ func NewProviderCallbackHandler(svc *paymentssvc.TransactionService) *ProviderCa
 
 func (h *ProviderCallbackHandler) Callback(c *gin.Context) {
 	if h == nil || h.service == nil || !h.service.Ready() {
-		respondPaymentError(c, paymentssvc.ErrPaymentServiceUnavailable)
+		respondMiniAppPaymentError(c, paymentssvc.ErrPaymentServiceUnavailable)
 		return
 	}
 	providerID := parseUint(strings.TrimSpace(c.Param("id")))
@@ -29,12 +29,36 @@ func (h *ProviderCallbackHandler) Callback(c *gin.Context) {
 	ctx := authx.ContextWithRequestID(c.Request.Context(), requestIDFromRequest(c))
 	resp, err := h.service.HandleProviderCallbackRequest(ctx, tenantUUID, providerID, c.Request)
 	if err != nil {
-		respondPaymentError(c, err)
+		respondMiniAppPaymentError(c, err)
 		return
 	}
 	if resp != nil {
 		if err := sendProviderCallbackResponse(c, resp); err != nil {
-			respondPaymentError(c, err)
+			respondMiniAppPaymentError(c, err)
+		}
+		return
+	}
+	contracts.ResponseSuccess(c, gin.H{"code": "SUCCESS"})
+}
+
+func (h *ProviderCallbackHandler) CallbackBySelector(c *gin.Context) {
+	if h == nil || h.service == nil || !h.service.Ready() {
+		respondMiniAppPaymentError(c, paymentssvc.ErrPaymentServiceUnavailable)
+		return
+	}
+	providerType := strings.TrimSpace(c.Param("type"))
+	mchID := strings.TrimSpace(c.Param("mchId"))
+	appID := strings.TrimSpace(c.Param("appId"))
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	ctx := authx.ContextWithRequestID(c.Request.Context(), requestIDFromRequest(c))
+	resp, err := h.service.HandleProviderCallbackRequestBySelector(ctx, tenantUUID, providerType, mchID, appID, c.Request)
+	if err != nil {
+		respondMiniAppPaymentError(c, err)
+		return
+	}
+	if resp != nil {
+		if err := sendProviderCallbackResponse(c, resp); err != nil {
+			respondMiniAppPaymentError(c, err)
 		}
 		return
 	}

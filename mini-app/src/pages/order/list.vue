@@ -88,7 +88,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { onLoad, onShow } from "@dcloudio/uni-app";
-import { buildIdempotencyKey, createPaymentTransaction, getMiniAppOpenID, requestMiniAppPayment } from "@/services/miniapp-payment";
+import { buildIdempotencyKey, createPaymentTransaction, getWechatProviderIdNumber, requestMiniAppPayment } from "@/services/miniapp-payment";
 import { miniAppBatchSkus, type MiniAppSkuBatchItem } from "@/services/miniapp-sku";
 import { miniAppGetMyOrder, miniAppListMyOrders, type OrderDetail, type OrderSummary } from "@/services/miniapp-order";
 import { miniAppGetProduct } from "@/services/miniapp-product";
@@ -249,15 +249,17 @@ async function startPayment(o: OrderCardVM) {
   const orderId = String(o.orderId || "").trim();
   const orderNo = String(o.orderNo || "").trim();
   if (!orderId || !orderNo) return;
+  const providerId = getWechatProviderIdNumber();
+  if (!providerId) {
+    uni.showToast({ title: "支付渠道未配置", icon: "none" });
+    return;
+  }
   isPaying.value = true;
   try {
     const resp = await createPaymentTransaction({
       orderId,
-      orderNo,
-      amountMinor: Number(o.amounts?.total || 0) || 0,
-      currency: String(o.amounts?.currency || "CNY").trim() || "CNY",
       payMethod: "wechat_jsapi",
-      openid: getMiniAppOpenID(),
+      providerId,
       client: "miniapp",
       idempotencyKey: buildIdempotencyKey("pay"),
     });

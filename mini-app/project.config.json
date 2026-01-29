@@ -1,7 +1,7 @@
 {
   "description": "uni-app mp-weixin",
   "compileType": "miniprogram",
-  "appid": "touristappid",
+  "appid": "wxc1ebbc8236ffae2b",
   "projectname": "com.powerx.plugin.ecommerce-mini-app",
   "miniprogramRoot": "dist/dev/mp-weixin/",
   "setting": {
