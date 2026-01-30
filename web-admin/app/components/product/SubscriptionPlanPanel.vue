@@ -26,6 +26,9 @@
 				<UFormField label="计划名称" :ui="fieldUi">
 					<UInput v-model="form.name" placeholder="如 月度订阅" />
 				</UFormField>
+				<UFormField label="SKU ID" :ui="fieldUi">
+					<UInput v-model="skuId" placeholder="绑定订阅 SKU（UUID）" />
+				</UFormField>
 				<UFormField label="计费周期" :ui="fieldUi">
 					<USelect v-model="form.billingCycle" :items="billingOptions" class="w-full" />
 				</UFormField>
@@ -63,6 +66,11 @@
 			<div>
 				<h4 class="text-base font-semibold mb-2 text-gray-900 dark:text-white">计划列表</h4>
 				<UTable :data="pagedPlans" :columns="columns" :loading="loading">
+					<template #skuId-cell="{ row }">
+						<span class="text-xs font-mono text-gray-600 dark:text-gray-300">
+							{{ formatSkuId(row.original) }}
+						</span>
+					</template>
 					<template #billingCycle-cell="{ row }">
 						{{ billingLabel(row.original.billingCycle, row.original.billingValue) }}
 					</template>
@@ -132,7 +140,9 @@ const form = reactive<SubscriptionPlanPayload>({
 	autoRenew: true,
 	cancelPolicy: 'anytime',
 	effectScope: 'new_only',
+	metadata: {},
 })
+const skuId = ref('')
 const editingPlanId = ref<string | null>(null)
 const isSubscription = computed(() => (props.spuType || '').toLowerCase() === 'subscription')
 const isEditingExisting = computed(() => Boolean(editingPlanId.value))
@@ -160,6 +170,7 @@ const effectScopeOptions = [
 const columns = computed<TableColumn<SpuSubscriptionPlan>[]>(() => [
 	{ accessorKey: 'planCode', header: '计划编码' },
 	{ accessorKey: 'name', header: '名称' },
+	{ id: 'skuId', header: 'SKU ID' },
 	{ accessorKey: 'billingCycle', header: '计费周期' },
 	{ accessorKey: 'price', header: '价格' },
 	{ accessorKey: 'effectScope', header: '作用范围' },
@@ -181,6 +192,13 @@ const billingLabel = (cycle: string, value?: number) => {
 	return map[cycle] || cycle
 }
 const effectScopeLabel = (value: string) => (value === 'new_and_existing' ? '新+存量' : '仅新订阅')
+const resolveSkuId = (plan: SpuSubscriptionPlan) => {
+	const direct = String(plan.skuId || '').trim()
+	if (direct) return direct
+	const meta = (plan.metadata || {}) as Record<string, any>
+	return String(meta.skuId || meta.sku_id || meta.skuID || '').trim()
+}
+const formatSkuId = (plan: SpuSubscriptionPlan) => resolveSkuId(plan) || '-'
 
 const resetForm = () => {
 	Object.assign(form, {
@@ -194,7 +212,9 @@ const resetForm = () => {
 		autoRenew: true,
 		cancelPolicy: 'anytime',
 		effectScope: 'new_only',
+		metadata: {},
 	})
+	skuId.value = ''
 	editingPlanId.value = null
 }
 
@@ -208,6 +228,7 @@ const startCreate = () => {
 
 const handleEdit = (plan: SpuSubscriptionPlan) => {
 	editingPlanId.value = plan.id
+	skuId.value = resolveSkuId(plan)
 	Object.assign(form, {
 		planCode: plan.planCode,
 		name: plan.name,
@@ -219,6 +240,7 @@ const handleEdit = (plan: SpuSubscriptionPlan) => {
 		autoRenew: plan.autoRenew,
 		cancelPolicy: plan.cancelPolicy,
 		effectScope: plan.effectScope,
+		metadata: plan.metadata || {},
 	})
 }
 
@@ -229,15 +251,22 @@ const handleSave = async () => {
 	}
 	try {
 		saving.value = true
+		const payload: SubscriptionPlanPayload = {
+			...form,
+			metadata: {
+				...(form.metadata || {}),
+				skuId: skuId.value || undefined,
+			},
+		}
 		if (editingPlanId.value) {
-			await api.updateSubscriptionPlan(props.spuId, editingPlanId.value, form)
+			await api.updateSubscriptionPlan(props.spuId, editingPlanId.value, payload)
 			toast.add({ title: '计划已更新' })
 		} else {
 			if (!form.planCode) {
 				toast.add({ title: '请填写计划编码', color: 'red' })
 				return
 			}
-			await api.createSubscriptionPlan(props.spuId, form)
+			await api.createSubscriptionPlan(props.spuId, payload)
 			toast.add({ title: '计划已创建' })
 		}
 		await loadPlans()

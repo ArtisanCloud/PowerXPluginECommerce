@@ -214,6 +214,7 @@ const bannerImage =
 		  agree: false,
 		});
     const wechatConfirmOpen = ref(false);
+    const wechatSubmitting = ref(false);
     const wechatCode = ref("");
     const wechatNickname = ref("");
     const wechatAvatarUrl = ref("");
@@ -305,12 +306,12 @@ function onSupport() {
 
       async function onWechatLogin() {
         try {
+          console.log("[miniapp] wechat login: start");
+          wechatCode.value = "";
           const profile = await getWechatProfile();
-          const code = await getWechatCode();
           const nickname = String(profile?.nickName || "").trim();
           const avatarUrl = String(profile?.avatarUrl || "").trim();
           const cached = getStoredWechatProfile();
-          wechatCode.value = code;
           if (cached.nickname || cached.avatarUrl) {
             wechatNickname.value = cached.nickname || nickname;
             wechatAvatarUrl.value = cached.avatarUrl || avatarUrl;
@@ -319,6 +320,7 @@ function onSupport() {
             wechatAvatarUrl.value = avatarUrl;
           }
           wechatConfirmOpen.value = true;
+          console.log("[miniapp] wechat login: confirm dialog opened");
         } catch (err: any) {
           uni.showToast({ title: err?.message || t("auth.wechatLoginFailed"), icon: "none" });
         }
@@ -328,18 +330,29 @@ function onSupport() {
         wechatConfirmOpen.value = false;
       }
 
-      function confirmWechatProfile() {
+      async function confirmWechatProfile() {
+        if (wechatSubmitting.value) return;
         if (!wechatCode.value) {
-          uni.showToast({ title: t("auth.wechatLoginFailed"), icon: "none" });
-          return;
+          try {
+            wechatSubmitting.value = true;
+            wechatCode.value = await getWechatCode();
+          } catch (err: any) {
+            uni.showToast({ title: err?.message || t("auth.wechatLoginFailed"), icon: "none" });
+            wechatSubmitting.value = false;
+            return;
+          }
         }
+        console.log("[miniapp] wechat login: confirm with code", wechatCode.value);
         const providerId = getWechatProviderId();
         if (!providerId) {
           uni.showToast({ title: t("auth.wechatLoginFailed"), icon: "none" });
+          wechatSubmitting.value = false;
           return;
         }
         wechatConfirmOpen.value = false;
-        submitWechatLogin(wechatCode.value, wechatNickname.value, wechatAvatarUrl.value);
+        submitWechatLogin(wechatCode.value, wechatNickname.value, wechatAvatarUrl.value).finally(() => {
+          wechatSubmitting.value = false;
+        });
       }
 
       function redirectAfterLogin() {
@@ -408,6 +421,11 @@ function onSupport() {
           return;
         }
         try {
+          console.log("[miniapp] wechat login: submit", {
+            providerId,
+            codeTail: String(code || "").slice(-8),
+            nickname: String(nickname || ""),
+          });
           await miniAppAuthWechatLogin({
             providerId,
             code,
@@ -419,6 +437,7 @@ function onSupport() {
           uni.showToast({ title: t("auth.loginSuccess"), icon: "none" });
           redirectAfterLogin();
         } catch (err: any) {
+          wechatCode.value = "";
           uni.showToast({ title: err?.message || t("auth.wechatLoginFailed"), icon: "none" });
         }
       }

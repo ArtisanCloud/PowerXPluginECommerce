@@ -75,6 +75,8 @@ export interface SpuSubscriptionPlan {
   cancelPolicy: string
   effectScope: string
   status: string
+  metadata?: Record<string, any>
+  skuId?: string
   updatedAt: string
   createdAt: string
 }

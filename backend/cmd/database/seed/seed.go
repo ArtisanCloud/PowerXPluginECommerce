@@ -859,6 +859,7 @@ func seedSportsSpecs(db *gorm.DB) error {
 		{SPUCode: "SHOE-BASKET-001", Spec: map[string]any{"size": "43", "color": "white"}},
 		{SPUCode: "APP-JERSEY-001", Spec: map[string]any{"size": "M", "color": "blue"}},
 		{SPUCode: "APP-JERSEY-001", Spec: map[string]any{"size": "L", "color": "blue"}},
+		{SPUCode: "SUB-MAG-SPORTS-001", Spec: map[string]any{"plan": "standard"}},
 	}
 
 	preferredOrder := map[string]int{
@@ -866,6 +867,7 @@ func seedSportsSpecs(db *gorm.DB) error {
 		"size":     20,
 		"material": 30,
 		"surface":  40,
+		"plan":     50,
 	}
 
 	type groupKey struct {
@@ -1290,7 +1292,9 @@ func seedSportsSPUs(db *gorm.DB) error {
 	if db.Migrator().HasTable(&productmodel.SubscriptionPlan{}) {
 		monthlyID := "9c1c0b9a-1c20-4d7e-8c3e-0b9a4d7e1c22"
 		yearlyID := "a1b2c3d4-5f60-4a9a-9f2a-1b2c3d4e5f61"
+		subSkuID := "8a8a8a8a-bbbb-4f0d-8c3e-0b9a4d7e1c3a"
 		subSpuID := specs[len(specs)-1].ID
+		metadata := datatypes.JSON([]byte(fmt.Sprintf(`{"skuId":"%s"}`, subSkuID)))
 		plans := []productmodel.SubscriptionPlan{
 			{
 				ID:           monthlyID,
@@ -1307,7 +1311,7 @@ func seedSportsSPUs(db *gorm.DB) error {
 				CancelPolicy: "anytime",
 				EffectScope:  "new_only",
 				Status:       "active",
-				Metadata:     datatypes.JSON([]byte(`{}`)),
+				Metadata:     metadata,
 			},
 			{
 				ID:           yearlyID,
@@ -1324,7 +1328,7 @@ func seedSportsSPUs(db *gorm.DB) error {
 				CancelPolicy: "anytime",
 				EffectScope:  "new_only",
 				Status:       "active",
-				Metadata:     datatypes.JSON([]byte(`{}`)),
+				Metadata:     metadata,
 			},
 		}
 		for _, plan := range plans {
@@ -1497,6 +1501,18 @@ func seedSportsSKUs(db *gorm.DB) error {
 			SalePrice: 629,
 			Currency:  "CNY",
 			MediaID:   "9a8a8a8a-aaaa-4f0d-8c3e-0b9a4d7e1c39",
+		},
+		{
+			ID:        "8a8a8a8a-bbbb-4f0d-8c3e-0b9a4d7e1c3a",
+			SPUCode:   "SUB-MAG-SPORTS-001",
+			SKUCode:   "SUB-MAG-SPORTS-001-STD",
+			Status:    "published",
+			Barcode:   "6900000000011",
+			Tags:      []string{"subscription", "magazine"},
+			Spec:      map[string]any{"plan": "standard"},
+			SalePrice: 29.9,
+			Currency:  "CNY",
+			MediaID:   "9a8a8a8a-bbbb-4f0d-8c3e-0b9a4d7e1c3a",
 		},
 	}
 	now := time.Now().UTC()

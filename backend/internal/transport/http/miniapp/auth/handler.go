@@ -18,6 +18,7 @@ import (
 	pxmodels "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/customer"
 	customerrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/customer"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	adminpayments "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/payments"
 	customerauth "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/customer/auth"
@@ -133,7 +134,30 @@ func (h *Handler) WechatLogin(c *gin.Context) {
 		return
 	}
 	if session == nil || session.ErrCode != 0 || strings.TrimSpace(session.OpenID) == "" {
-		contracts.ResponseBadRequest(c, "wechat session invalid")
+		errCode := 0
+		errMsg := ""
+		if session != nil {
+			errCode = session.ErrCode
+			errMsg = session.ErrMsg
+		}
+		reqID, _ := authx.RequestIDFromContext(c.Request.Context())
+		code := strings.TrimSpace(req.Code)
+		codeSuffix := code
+		if len(codeSuffix) > 8 {
+			codeSuffix = codeSuffix[len(codeSuffix)-8:]
+		}
+		logger.WithFields(logger.Fields{
+			"request_id":  reqID,
+			"provider_id": req.ProviderID,
+			"code_tail":   codeSuffix,
+			"err_code":    errCode,
+			"err_msg":     errMsg,
+		}).Warn("miniapp wechat session invalid")
+		msg := "wechat session invalid"
+		if session != nil && (errCode != 0 || strings.TrimSpace(errMsg) != "") {
+			msg = msg + ": " + strconv.Itoa(errCode) + " " + strings.TrimSpace(errMsg)
+		}
+		contracts.ResponseBadRequest(c, msg)
 		return
 	}
 	appID := strings.TrimSpace(app.GetConfig().GetString("app_id", ""))

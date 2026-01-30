@@ -150,6 +150,8 @@
             <UFormField label="回调 Host">
               <UInput
                 v-model="configForm.notifyHost"
+                class="w-full"
+                size="lg"
                 placeholder="https://debug-ecommerce.artisan-cloud.com"
               />
             </UFormField>

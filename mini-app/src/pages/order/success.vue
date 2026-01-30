@@ -45,7 +45,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import { onLoad, onUnload } from "@dcloudio/uni-app";
 import {
   buildIdempotencyKey,
@@ -67,6 +67,7 @@ const totalMinor = ref(0);
 const transactionId = ref("");
 const isPaying = ref(false);
 let pollTimer: ReturnType<typeof setTimeout> | null = null;
+const redirected = ref(false);
 
 function ensureTopInset() {
   try {
@@ -164,6 +165,16 @@ function toProfile() {
   uni.navigateTo({ url: "/pages/order/list" });
 }
 
+function gotoOrderDetail() {
+  if (redirected.value) return;
+  redirected.value = true;
+  if (orderId.value) {
+    uni.redirectTo({ url: `/pages/order/detail?id=${encodeURIComponent(orderId.value)}` });
+    return;
+  }
+  uni.redirectTo({ url: "/pages/order/list" });
+}
+
 function stopPolling() {
   if (pollTimer) clearTimeout(pollTimer);
   pollTimer = null;
@@ -173,8 +184,10 @@ function startPolling() {
   stopPolling();
   if (!transactionId.value) return;
   const startedAt = Date.now();
+  const maxDurationMs = 30_000;
+  const intervalMs = 3000;
   const poll = async () => {
-    if (Date.now() - startedAt > 10000) return;
+    if (Date.now() - startedAt > maxDurationMs) return;
     try {
       const res = await getPaymentTransactionStatus(transactionId.value);
       if (res?.status) status.value = String(res.status || "").trim() || status.value;
@@ -183,7 +196,7 @@ function startPolling() {
     } catch {
       // ignore
     }
-    pollTimer = setTimeout(poll, 2000);
+    pollTimer = setTimeout(poll, intervalMs);
   };
   void poll();
 }
@@ -223,6 +236,7 @@ async function onPay() {
       const outcome = await requestMiniAppPayment(resp.wechat);
       if (outcome.status === "cancel") nextStatus = "canceled";
       if (outcome.status === "fail") nextStatus = "failed";
+      if (outcome.status === "success") nextStatus = "paying";
       if (outcome.message) uni.showToast({ title: outcome.message, icon: "none" });
     } else {
       nextStatus = "pending_payment";
@@ -252,6 +266,15 @@ onMounted(() => {
   void refreshOrder();
   startPolling();
 });
+
+watch(
+  () => status.value,
+  (next) => {
+    if (String(next || "").trim() === "paid") {
+      gotoOrderDetail();
+    }
+  }
+);
 
 onUnload(() => stopPolling());
 </script>

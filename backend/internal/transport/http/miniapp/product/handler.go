@@ -827,8 +827,25 @@ func (h *Handler) ListSubscriptionPlans(c *gin.Context) {
 		if !strings.EqualFold(strings.TrimSpace(p.Status), "active") {
 			continue
 		}
+		skuID := ""
+		if len(p.Metadata) > 0 {
+			if v, ok := p.Metadata["skuId"]; ok {
+				skuID = strings.TrimSpace(fmt.Sprint(v))
+			}
+			if skuID == "" {
+				if v, ok := p.Metadata["sku_id"]; ok {
+					skuID = strings.TrimSpace(fmt.Sprint(v))
+				}
+			}
+			if skuID == "" {
+				if v, ok := p.Metadata["skuID"]; ok {
+					skuID = strings.TrimSpace(fmt.Sprint(v))
+				}
+			}
+		}
 		items = append(items, miniAppSubscriptionPlan{
 			ID:           p.ID,
+			SKUID:        skuID,
 			PlanCode:     p.PlanCode,
 			Name:         p.Name,
 			BillingCycle: p.BillingCycle,
