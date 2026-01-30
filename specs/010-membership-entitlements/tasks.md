@@ -6,8 +6,8 @@
 
 ## Phase 2: Foundational
 
-- [ ] T002 建立权益/代币最小实体清单与字段映射（参考 `specs/010-membership-entitlements/data-model.md`）
-- [ ] T003 定义幂等键优先级与统一写入位置（`specs/010-membership-entitlements/spec.md` FR-006a）
+- [x] T002 建立权益/代币最小实体清单与字段映射（参考 `specs/010-membership-entitlements/data-model.md`）
+- [x] T003 定义幂等键优先级与统一写入位置（`specs/010-membership-entitlements/spec.md` FR-006a）
 
 ## Phase 3: User Story 1 (P1) — 支付成功自动授予会籍与权益
 
