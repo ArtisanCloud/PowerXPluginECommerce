@@ -54,6 +54,9 @@ func SeedPluginData(ctx context.Context, db *gorm.DB) error {
 	if err := seedSampleChannelMasters(ctxDB); err != nil {
 		return err
 	}
+	if err := seedPaymentProviders(ctxDB); err != nil {
+		return err
+	}
 	if err := seedSportsCatalog(ctxDB); err != nil {
 		return err
 	}
@@ -187,6 +190,88 @@ func seedSampleChannelMasters(db *gorm.DB) error {
 }
 
 func intPtr(v int) *int { return &v }
+
+func seedPaymentProviders(db *gorm.DB) error {
+	if db == nil || db.Migrator() == nil {
+		return nil
+	}
+	if !db.Migrator().HasTable(&models.PaymentProvider{}) {
+		return nil
+	}
+
+	now := time.Now().UTC()
+	providers := []models.PaymentProvider{
+		{
+			BaseModel:       models.BaseModel{TenantUuid: defaultTenantUUID, CreatedAt: now, UpdatedAt: now},
+			Name:            "微信支付（小程序）",
+			ProviderType:    "wechat",
+			Status:          "active",
+			IsDefault:       true,
+			FeeRate:         0.006,
+			SettlementCycle: "daily",
+			Currency:        "CNY",
+			Credentials:     datatypes.JSON([]byte(`{"appId":"wx-demo-appid"}`)),
+			RiskPolicy:      datatypes.JSON([]byte(`{"mode":"standard","retry_limit":1}`)),
+		},
+		{
+			BaseModel:       models.BaseModel{TenantUuid: defaultTenantUUID, CreatedAt: now, UpdatedAt: now},
+			Name:            "支付宝（暂不可用）",
+			ProviderType:    "alipay",
+			Status:          "disabled",
+			IsDefault:       false,
+			FeeRate:         0.006,
+			SettlementCycle: "daily",
+			Currency:        "CNY",
+			Credentials:     datatypes.JSON([]byte(`{}`)),
+			RiskPolicy:      datatypes.JSON([]byte(`{"mode":"standard"}`)),
+		},
+		{
+			BaseModel:       models.BaseModel{TenantUuid: defaultTenantUUID, CreatedAt: now, UpdatedAt: now},
+			Name:            "银联（暂不可用）",
+			ProviderType:    "unionpay",
+			Status:          "disabled",
+			IsDefault:       false,
+			FeeRate:         0.006,
+			SettlementCycle: "daily",
+			Currency:        "CNY",
+			Credentials:     datatypes.JSON([]byte(`{}`)),
+			RiskPolicy:      datatypes.JSON([]byte(`{"mode":"standard"}`)),
+		},
+	}
+
+	for _, provider := range providers {
+		if strings.TrimSpace(provider.ProviderType) == "" {
+			continue
+		}
+		var existing models.PaymentProvider
+		err := db.Where("tenant_uuid = ? AND provider_type = ?", defaultTenantUUID, provider.ProviderType).
+			First(&existing).Error
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			if err := db.Create(&provider).Error; err != nil {
+				return err
+			}
+		case err != nil:
+			return err
+		default:
+			updates := map[string]any{
+				"name":             provider.Name,
+				"status":           provider.Status,
+				"is_default":       provider.IsDefault,
+				"fee_rate":         provider.FeeRate,
+				"settlement_cycle": provider.SettlementCycle,
+				"currency":         provider.Currency,
+				"credentials":      provider.Credentials,
+				"risk_policy":      provider.RiskPolicy,
+				"updated_at":       now,
+			}
+			if err := db.Model(&existing).Updates(updates).Error; err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
 
 func seedTemplates(db *gorm.DB) error {
 	seedTemplates := []struct {
@@ -774,6 +859,7 @@ func seedSportsSpecs(db *gorm.DB) error {
 		{SPUCode: "SHOE-BASKET-001", Spec: map[string]any{"size": "43", "color": "white"}},
 		{SPUCode: "APP-JERSEY-001", Spec: map[string]any{"size": "M", "color": "blue"}},
 		{SPUCode: "APP-JERSEY-001", Spec: map[string]any{"size": "L", "color": "blue"}},
+		{SPUCode: "SUB-MAG-SPORTS-001", Spec: map[string]any{"plan": "standard"}},
 	}
 
 	preferredOrder := map[string]int{
@@ -781,6 +867,7 @@ func seedSportsSpecs(db *gorm.DB) error {
 		"size":     20,
 		"material": 30,
 		"surface":  40,
+		"plan":     50,
 	}
 
 	type groupKey struct {
@@ -1205,7 +1292,9 @@ func seedSportsSPUs(db *gorm.DB) error {
 	if db.Migrator().HasTable(&productmodel.SubscriptionPlan{}) {
 		monthlyID := "9c1c0b9a-1c20-4d7e-8c3e-0b9a4d7e1c22"
 		yearlyID := "a1b2c3d4-5f60-4a9a-9f2a-1b2c3d4e5f61"
+		subSkuID := "8a8a8a8a-bbbb-4f0d-8c3e-0b9a4d7e1c3a"
 		subSpuID := specs[len(specs)-1].ID
+		metadata := datatypes.JSON([]byte(fmt.Sprintf(`{"skuId":"%s"}`, subSkuID)))
 		plans := []productmodel.SubscriptionPlan{
 			{
 				ID:           monthlyID,
@@ -1222,7 +1311,7 @@ func seedSportsSPUs(db *gorm.DB) error {
 				CancelPolicy: "anytime",
 				EffectScope:  "new_only",
 				Status:       "active",
-				Metadata:     datatypes.JSON([]byte(`{}`)),
+				Metadata:     metadata,
 			},
 			{
 				ID:           yearlyID,
@@ -1239,7 +1328,7 @@ func seedSportsSPUs(db *gorm.DB) error {
 				CancelPolicy: "anytime",
 				EffectScope:  "new_only",
 				Status:       "active",
-				Metadata:     datatypes.JSON([]byte(`{}`)),
+				Metadata:     metadata,
 			},
 		}
 		for _, plan := range plans {
@@ -1412,6 +1501,18 @@ func seedSportsSKUs(db *gorm.DB) error {
 			SalePrice: 629,
 			Currency:  "CNY",
 			MediaID:   "9a8a8a8a-aaaa-4f0d-8c3e-0b9a4d7e1c39",
+		},
+		{
+			ID:        "8a8a8a8a-bbbb-4f0d-8c3e-0b9a4d7e1c3a",
+			SPUCode:   "SUB-MAG-SPORTS-001",
+			SKUCode:   "SUB-MAG-SPORTS-001-STD",
+			Status:    "published",
+			Barcode:   "6900000000011",
+			Tags:      []string{"subscription", "magazine"},
+			Spec:      map[string]any{"plan": "standard"},
+			SalePrice: 29.9,
+			Currency:  "CNY",
+			MediaID:   "9a8a8a8a-bbbb-4f0d-8c3e-0b9a4d7e1c3a",
 		},
 	}
 	now := time.Now().UTC()

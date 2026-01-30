@@ -32,9 +32,12 @@ func RegisterRoutes(rg *gin.RouterGroup, deps *app.Deps) {
 	group := rg.Group("/payments")
 	{
 		group.GET("/providers", providers.List)
+		group.GET("/providers/:id", providers.Get)
 		group.POST("/providers", providers.Create)
 		group.PATCH("/providers/:id", providers.Update)
 		group.POST("/providers/:id/test", providers.Test)
+		group.POST("/providers/:id/miniapp/test", providers.TestMiniApp)
+		group.POST("/providers/:id/cert/test", providers.TestCertSerial)
 
 		group.GET("/transactions", transactions.List)
 		group.GET("/transactions/:id", transactions.Get)

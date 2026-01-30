@@ -62,3 +62,26 @@
 - 代币市场或二级交易功能（需合规评估）。
 - 与订阅模块深度联动，自动续费扣代币。
 - AI 风控模型识别异常使用。
+
+## 10. 订阅发放代币（补充）
+> 订阅支付成功后，按计划发放代币（只做发放 + 余额查询，暂不做复杂流转）。
+
+### 10.1 订阅计划绑定字段
+在订阅计划（subscription plan）`metadata` 中约定：
+- `tokenCode`：代币类型（如 `service_credit`）
+- `tokenAmount`：每计费周期发放数量
+- `tokenExpireDays`：代币有效期（天，0=永久）
+- `tokenRollover`：是否结转（true/false）
+
+### 10.2 发放触发与幂等
+- 触发点：支付回调成功（仅 SUCCESS）
+- 幂等键：`transaction_id` 或 `out_trade_no` 或 `order_id`
+- 同一笔交易只允许发放一次
+
+### 10.3 最小落地表建议（仅发放 + 余额查询）
+- `token_accounts`：`id, tenant_uuid, customer_id, token_code, balance, updated_at`
+- `token_transactions`：`id, tenant_uuid, customer_id, token_code, delta, source_type, source_id, created_at`
+
+### 10.4 余额使用方式（对齐权益）
+- token 视为一种可消费权益（`service_code = token:<code>`）
+- 权益扣减时，优先使用 token 余额

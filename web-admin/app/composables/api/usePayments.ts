@@ -1,7 +1,8 @@
-import { apiGet, apiPost } from "./_client";
+import { apiGet, apiPatch, apiPost } from "./_client";
 import type { ApiResponse } from "./_base";
 import type {
   PaymentProvider,
+  PaymentProviderDetail,
   PaymentRiskEvent,
   PaymentReconciliation,
   PaymentReconciliationItem,
@@ -36,10 +37,21 @@ const normalizeProvider = (raw: RawRecord): PaymentProvider => ({
   name: String(pick(raw, "name", "name") || ""),
   type: String(pick(raw, "type", "type") || ""),
   status: String(pick(raw, "status", "status") || ""),
+  isDefault: Boolean(pick(raw, "isDefault", "is_default")),
   feeRate: Number(pick(raw, "feeRate", "fee_rate") || 0),
   settlementCycle: String(pick(raw, "settlementCycle", "settlement_cycle") || ""),
   currency: String(pick(raw, "currency", "currency") || ""),
+  appId: String(pick(raw, "appId", "app_id") || ""),
+  mchId: String(pick(raw, "mchId", "mch_id") || ""),
+  serialNo: String(pick(raw, "serialNo", "serial_no") || ""),
+  notifyUrl: String(pick(raw, "notifyUrl", "notify_url") || ""),
   updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeProviderDetail = (raw: RawRecord): PaymentProviderDetail => ({
+  ...normalizeProvider(raw),
+  credentials: (pick(raw, "credentials", "credentials") as RawRecord) || {},
+  riskPolicy: (pick(raw, "riskPolicy", "risk_policy") as RawRecord) || {},
 });
 
 const normalizeTransaction = (raw: RawRecord): PaymentTransaction => ({
@@ -206,6 +218,35 @@ export function usePaymentsApi() {
     listProviders: async (query?: ProviderListQuery, init?: any) => {
       const raw = await unwrap(apiGet<ApiEnvelope<RawRecord[]>>(`${basePath}/providers`, query, init));
       return Array.isArray(raw) ? raw.map(normalizeProvider) : [];
+    },
+    getProviderDetail: async (id: number | string, init?: any) => {
+      const raw = await unwrap(apiGet<ApiEnvelope<RawRecord>>(`${basePath}/providers/${id}`, undefined, init));
+      return normalizeProviderDetail(raw || {});
+    },
+    updateProvider: async (
+      id: number | string,
+      payload: { status?: string; isDefault?: boolean; credentials?: Record<string, any> },
+      init?: any,
+    ) => {
+      const req = {
+        status: payload.status,
+        is_default: payload.isDefault,
+        credentials: payload.credentials,
+      };
+      const raw = await unwrap(apiPatch<ApiEnvelope<RawRecord>>(`${basePath}/providers/${id}`, req, init));
+      return normalizeProvider(raw || {});
+    },
+    testMiniApp: async (id: number | string, payload: Record<string, any>, init?: any) => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<RawRecord>>(`${basePath}/providers/${id}/miniapp/test`, payload, init),
+      );
+      return raw || {};
+    },
+    testWechatCertSerial: async (id: number | string, payload: Record<string, any>, init?: any) => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<RawRecord>>(`${basePath}/providers/${id}/cert/test`, payload, init),
+      );
+      return raw || {};
     },
     listTransactions: async (query?: TransactionListQuery, init?: any) => {
       const raw = await unwrap(apiGet<ApiEnvelope<RawRecord[]>>(`${basePath}/transactions`, query, init));

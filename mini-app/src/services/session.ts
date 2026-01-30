@@ -71,5 +71,7 @@ export function clearSession() {
     uni.removeStorageSync(CUSTOMER_NAME_KEY);
     uni.removeStorageSync(EXPIRES_AT_KEY);
     uni.removeStorageSync(IDENTIFIER_KEY);
+    uni.removeStorageSync("miniapp.customer.openid");
+    uni.removeStorageSync("miniapp.auth.redirect");
   } catch {}
 }

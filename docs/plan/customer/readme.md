@@ -52,6 +52,7 @@
   - `customer_reminder_task` + `recordReminderResult`：保级提醒成功/失败率（SC-003/SC-004）。
   - 自定义事件：`customer_import_modal_open`、`customer_export_modal_open` 用于统计入口使用频次。
 - 指标推送至宿主任务中心/监控，Quickstart 中提供验证步骤：筛选 ≤ 3 次点击即可命中目标、导出任务 ≤ 10 分钟完成。
+- 订阅商品与会籍/代币发放规则：补充在 `membership.md` 与 `tokens.md` 的“订阅”章节。
 
 ## 4. 流程示意
 1. **客户导入**

@@ -49,6 +49,18 @@ function getCustomerToken() {
   return String(uni.getStorageSync("miniapp.customer.token") || "").trim();
 }
 
+function redirectToLogin() {
+  try {
+    const pages = (typeof getCurrentPages === "function" ? getCurrentPages() : []) as any[];
+    const current = pages[pages.length - 1];
+    const route = current?.route ? `/${current.route}` : "";
+    if (route && !route.startsWith("/pages/auth/index")) {
+      uni.setStorageSync("miniapp.auth.redirect", route);
+      uni.navigateTo({ url: "/pages/auth/index?tab=login" });
+    }
+  } catch {}
+}
+
 export async function miniAppRequest<T>(opts: MiniAppRequestOptions): Promise<T> {
   const url = `${getBaseUrl()}${opts.path}`;
   const isAuthEndpoint = String(opts.path || "").startsWith("/auth/");
@@ -77,6 +89,7 @@ export async function miniAppRequest<T>(opts: MiniAppRequestOptions): Promise<T>
           if ((env.code ?? 0) === 401) {
             if (isAuthEndpoint) return reject(new Error("手机号或密码错误"));
             clearSession();
+            redirectToLogin();
             return reject(new Error("请先登录"));
           }
           return reject(new Error(env.message || "request failed"));
@@ -93,6 +106,7 @@ export async function miniAppRequest<T>(opts: MiniAppRequestOptions): Promise<T>
           if (httpStatus === 401 || String(errMsg).toLowerCase().includes("unauthorized")) {
             if (isAuthEndpoint) return reject(new Error("手机号或密码错误"));
             clearSession();
+            redirectToLogin();
             return reject(new Error("请先登录"));
           }
           return reject(new Error(errMsg));
@@ -102,6 +116,7 @@ export async function miniAppRequest<T>(opts: MiniAppRequestOptions): Promise<T>
         if (httpStatus === 401) {
           if (isAuthEndpoint) return reject(new Error("手机号或密码错误"));
           clearSession();
+          redirectToLogin();
           return reject(new Error("请先登录"));
         }
         reject(new Error((body as any)?.message || (body as any)?.error || "request failed"));

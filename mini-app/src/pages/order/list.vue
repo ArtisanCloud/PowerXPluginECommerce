@@ -88,6 +88,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { onLoad, onShow } from "@dcloudio/uni-app";
+import { buildIdempotencyKey, createPaymentTransaction, getWechatProviderIdNumber, requestMiniAppPayment } from "@/services/miniapp-payment";
 import { miniAppBatchSkus, type MiniAppSkuBatchItem } from "@/services/miniapp-sku";
 import { miniAppGetMyOrder, miniAppListMyOrders, type OrderDetail, type OrderSummary } from "@/services/miniapp-order";
 import { miniAppGetProduct } from "@/services/miniapp-product";
@@ -127,6 +128,7 @@ const errorMsg = ref("");
 const page = ref(1);
 const pageSize = ref(10);
 const total = ref(0);
+const isPaying = ref(false);
 
 const orders = ref<OrderCardVM[]>([]);
 const detailsByOrderId = new Map<string, OrderDetail>();
@@ -168,6 +170,7 @@ function openDetail(orderId: string) {
 function statusText(status: string) {
   const s = String(status || "").trim();
   if (s === "pending_payment") return "待付款";
+  if (s === "paying") return "支付处理中";
   if (s === "paid") return "待发货";
   if (s === "shipped") return "待收货";
   if (s === "completed") return "交易成功";
@@ -179,6 +182,7 @@ function statusText(status: string) {
 function statusColorStyle(status: string) {
   const s = String(status || "").trim();
   if (s === "pending_payment") return "color:#f97316;";
+  if (s === "paying") return "color:#f59e0b;";
   if (s === "paid" || s === "shipped") return "color:#4F6F52;";
   if (s === "completed") return "color:#6b7280;";
   if (s === "cancelled" || s === "canceled") return "color:#9ca3af;";
@@ -229,8 +233,8 @@ function actionButtons(status: string) {
   return [];
 }
 
-function onAction(action: string, o: OrderCardVM) {
-  if (action === "pay") return uni.showToast({ title: "支付待接入", icon: "none" });
+async function onAction(action: string, o: OrderCardVM) {
+  if (action === "pay") return await startPayment(o);
   if (action === "cancel") return uni.showToast({ title: "取消订单待接入", icon: "none" });
   if (action === "logistics") return uni.showToast({ title: "物流待接入", icon: "none" });
   if (action === "confirm") return uni.showToast({ title: "确认收货待接入", icon: "none" });
@@ -238,6 +242,48 @@ function onAction(action: string, o: OrderCardVM) {
   if (action === "review") return uni.showToast({ title: "评价待接入", icon: "none" });
   if (action === "remind") return uni.showToast({ title: "已提醒（示意）", icon: "none" });
   uni.showToast({ title: "功能待接入", icon: "none" });
+}
+
+async function startPayment(o: OrderCardVM) {
+  if (isPaying.value) return;
+  const orderId = String(o.orderId || "").trim();
+  const orderNo = String(o.orderNo || "").trim();
+  if (!orderId || !orderNo) return;
+  const providerId = getWechatProviderIdNumber();
+  if (!providerId) {
+    uni.showToast({ title: "支付渠道未配置", icon: "none" });
+    return;
+  }
+  isPaying.value = true;
+  try {
+    const resp = await createPaymentTransaction({
+      orderId,
+      payMethod: "wechat_jsapi",
+      providerId,
+      client: "miniapp",
+      idempotencyKey: buildIdempotencyKey("pay"),
+    });
+    let status = "paying";
+    if (resp?.wechat?.appId) {
+      const outcome = await requestMiniAppPayment(resp.wechat);
+      if (outcome.status === "cancel") status = "canceled";
+      if (outcome.status === "fail") status = "failed";
+      if (outcome.message) uni.showToast({ title: outcome.message, icon: "none" });
+    } else {
+      status = "pending_payment";
+      uni.showToast({ title: "支付渠道未配置", icon: "none" });
+    }
+    const query = `orderId=${encodeURIComponent(orderId)}&orderNo=${encodeURIComponent(orderNo)}&status=${encodeURIComponent(status)}&currency=${encodeURIComponent(
+      String(o.amounts?.currency || "CNY"),
+    )}&total=${encodeURIComponent(String(o.amounts?.total || 0))}&transactionId=${encodeURIComponent(
+      String(resp?.transactionId || ""),
+    )}`;
+    uni.navigateTo({ url: `/pages/order/success?${query}` });
+  } catch (e: any) {
+    uni.showToast({ title: e?.message || "支付发起失败", icon: "none" });
+  } finally {
+    isPaying.value = false;
+  }
 }
 
 async function mapWithConcurrency<T, R>(items: T[], limit: number, fn: (it: T) => Promise<R>): Promise<R[]> {

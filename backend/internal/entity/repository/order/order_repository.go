@@ -78,6 +78,7 @@ func (r *OrderRepository) GetByID(ctx context.Context, tenantUUID, orderID strin
 }
 
 type OrderListFilter struct {
+	OrderNo   string
 	CustomerID string
 	Status     string
 }
@@ -108,6 +109,9 @@ func (r *OrderRepository) List(ctx context.Context, tenantUUID string, filter Or
 	query := r.DB.WithContext(ctx).Model(&ordermodel.Order{}).Where("tenant_uuid = ?", tenantUUID)
 	if cid := strings.TrimSpace(filter.CustomerID); cid != "" {
 		query = query.Where("customer_id = ?", cid)
+	}
+	if orderNo := strings.TrimSpace(filter.OrderNo); orderNo != "" {
+		query = query.Where("order_no ILIKE ?", "%"+orderNo+"%")
 	}
 	if st := strings.TrimSpace(filter.Status); st != "" {
 		query = query.Where("status = ?", st)

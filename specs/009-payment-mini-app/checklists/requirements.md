@@ -1,7 +1,7 @@
-# Specification Quality Checklist: 营销支付与小程序支付
+# Specification Quality Checklist: 小程序支付
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning
-**Created**: 2026-01-15
+**Created**: 2026-01-19
 **Feature**: [Link to spec.md](../spec.md)
 
 ## Content Quality

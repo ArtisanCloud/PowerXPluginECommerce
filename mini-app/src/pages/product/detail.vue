@@ -355,6 +355,7 @@ import {
   type MiniAppSubscriptionPlan,
 } from "@/services/miniapp-product";
 import { addCartItem, cartCount as countCart, getLocalCart } from "@/services/cart";
+import { isLoggedIn } from "@/services/session";
 import { isLikelyPlaceholderUrl } from "@/utils/product-images";
 
 const topInset = ref(40);
@@ -530,6 +531,18 @@ function goBack() {
   uni.navigateBack();
 }
 
+function ensureLoggedIn() {
+  if (isLoggedIn()) return true;
+  try {
+    const pages = (typeof getCurrentPages === "function" ? getCurrentPages() : []) as any[];
+    const current = pages[pages.length - 1];
+    const route = current?.route ? `/${current.route}` : "";
+    if (route) uni.setStorageSync("miniapp.auth.redirect", route);
+  } catch {}
+  uni.navigateTo({ url: "/pages/auth/index?tab=login" });
+  return false;
+}
+
 function selectSku(id: string) {
   selectedSkuId.value = id;
 }
@@ -550,8 +563,30 @@ function onPrimaryAction() {
 }
 
 function onAddToCart() {
+  if (!ensureLoggedIn()) return;
   if (isSubscription.value) {
-    onPrimaryAction();
+    const plan = plans.value.find((x) => x.id === selectedPlanId.value);
+    if (!plan) {
+      uni.showToast({ title: "请选择订阅计划", icon: "none" });
+      return;
+    }
+    const skuId = String(plan.skuId || "").trim();
+    if (!skuId) {
+      uni.showToast({ title: "订阅计划未绑定 SKU", icon: "none" });
+      return;
+    }
+    addCartItem(skuId, 1, {
+      spuId: String(spuId.value || "").trim() || undefined,
+      title: String(product.value?.name || "").trim() || "订阅商品",
+      skuLabel: String(plan.name || "").trim() || undefined,
+      skuCode: String(plan.planCode || "").trim() || undefined,
+      currency: String(plan.currency || "CNY").trim() || "CNY",
+      unitPrice: Number(plan.price || 0) || 0,
+      imageUrl: coverUrl.value || undefined,
+      maxQty: 1,
+    });
+    cartCount.value = countCart(getLocalCart().items);
+    uni.showToast({ title: "已加入购物车", icon: "none" });
     return;
   }
   if (!skus.value.length) {
@@ -566,8 +601,41 @@ function onAddToCart() {
 }
 
 function onBuyNow() {
+  if (!ensureLoggedIn()) return;
   if (isSubscription.value) {
-    uni.showToast({ title: "下单能力待接入", icon: "none" });
+    const plan = plans.value.find((x) => x.id === selectedPlanId.value);
+    if (!plan) {
+      uni.showToast({ title: "请选择订阅计划", icon: "none" });
+      return;
+    }
+    const skuId = String(plan.skuId || "").trim();
+    if (!skuId) {
+      uni.showToast({ title: "订阅计划未绑定 SKU", icon: "none" });
+      return;
+    }
+    const channel = String(uni.getStorageSync("miniapp.channel") || "official").trim() || "official";
+    const locale = String(uni.getStorageSync("miniapp.locale") || "zh-CN").trim() || "zh-CN";
+    const draftKey = `miniapp.checkout.draft.${Date.now()}-${Math.random().toString(16).slice(2)}`;
+    const payload = {
+      channel,
+      locale,
+      from: "buy",
+      items: [
+        {
+          skuId,
+          spuId: String(spuId.value || "").trim() || undefined,
+          qty: 1,
+          title: String(product.value?.name || "").trim() || "订阅商品",
+          skuLabel: String(plan.name || "").trim() || undefined,
+          skuCode: String(plan.planCode || "").trim() || undefined,
+          imageUrl: coverUrl.value || undefined,
+          currency: String(plan.currency || "CNY").trim() || "CNY",
+          unitPrice: Number(plan.price || 0) || 0,
+        },
+      ],
+    };
+    uni.setStorageSync(draftKey, JSON.stringify(payload));
+    uni.navigateTo({ url: `/pages/order/confirm?draftKey=${encodeURIComponent(draftKey)}` });
     return;
   }
   if (!skus.value.length) {

@@ -8,10 +8,33 @@ type ProviderDTO struct {
 	Name            string    `json:"name"`
 	ProviderType    string    `json:"type"`
 	Status          string    `json:"status"`
+	IsDefault       bool      `json:"is_default"`
 	FeeRate         float64   `json:"fee_rate"`
 	SettlementCycle string    `json:"settlement_cycle"`
 	Currency        string    `json:"currency"`
+	AppID           string    `json:"app_id"`
+	MchID           string    `json:"mch_id"`
+	SerialNo        string    `json:"serial_no"`
+	NotifyURL       string    `json:"notify_url"`
 	UpdatedAt       time.Time `json:"updated_at"`
+}
+
+type ProviderDetailDTO struct {
+	ID              uint64                 `json:"id"`
+	Name            string                 `json:"name"`
+	ProviderType    string                 `json:"type"`
+	Status          string                 `json:"status"`
+	IsDefault       bool                   `json:"is_default"`
+	FeeRate         float64                `json:"fee_rate"`
+	SettlementCycle string                 `json:"settlement_cycle"`
+	Currency        string                 `json:"currency"`
+	AppID           string                 `json:"app_id"`
+	MchID           string                 `json:"mch_id"`
+	SerialNo        string                 `json:"serial_no"`
+	NotifyURL       string                 `json:"notify_url"`
+	Credentials     map[string]interface{} `json:"credentials,omitempty"`
+	RiskPolicy      map[string]interface{} `json:"risk_policy,omitempty"`
+	UpdatedAt       time.Time              `json:"updated_at"`
 }
 
 type ProviderListFilter struct {
@@ -24,6 +47,7 @@ type CreateProviderRequest struct {
 	Name            string                 `json:"name"`
 	Type            string                 `json:"type"`
 	Status          string                 `json:"status"`
+	IsDefault       bool                   `json:"is_default"`
 	FeeRate         float64                `json:"fee_rate"`
 	SettlementCycle string                 `json:"settlement_cycle"`
 	Currency        string                 `json:"currency"`
@@ -33,6 +57,7 @@ type CreateProviderRequest struct {
 
 type UpdateProviderRequest struct {
 	Status          *string                `json:"status"`
+	IsDefault       *bool                  `json:"is_default"`
 	FeeRate         *float64               `json:"fee_rate"`
 	SettlementCycle *string                `json:"settlement_cycle"`
 	Currency        *string                `json:"currency"`

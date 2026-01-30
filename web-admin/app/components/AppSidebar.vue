@@ -636,91 +636,22 @@
           营销增长
         </div>
         <div class="space-y-1">
-          <!-- 订单管理 - 带子菜单 -->
-          <div>
-            <UButton
-              variant="ghost"
-              color="neutral"
-              class="w-full justify-start"
-              @click="toggleOrderManagement"
-            >
-              <UIcon
-                name="i-heroicons-clipboard-document-list"
-                class="w-4 h-4 mr-3"
-              />
-              订单管理
-              <UIcon
-                :name="
-                  showOrderManagement
-                    ? 'i-heroicons-chevron-down'
-                    : 'i-heroicons-chevron-right'
-                "
-                class="w-4 h-4 ml-auto"
-              />
-            </UButton>
-
-            <div v-show="showOrderManagement" class="ml-6 mt-1 space-y-1">
-              <UButton
-                to="/market/orders"
-                variant="ghost"
-                color="neutral"
-                size="sm"
-                class="w-full justify-start text-sm"
-                :class="{
-                  'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
-                    $route.path === '/market/orders',
-                }"
-              >
-                <UIcon name="i-heroicons-list-bullet" class="w-3 h-3 mr-2"/>
-                订单（全部）
-              </UButton>
-
-              <UButton
-                to="/market/orders/pending-payment"
-                variant="ghost"
-                color="neutral"
-                size="sm"
-                class="w-full justify-start text-sm"
-                :class="{
-                  'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
-                    $route.path === '/market/orders/pending-payment',
-                }"
-              >
-                <UIcon name="i-heroicons-clock" class="w-3 h-3 mr-2"/>
-                待支付
-              </UButton>
-
-              <UButton
-                to="/market/orders/to-ship"
-                variant="ghost"
-                color="neutral"
-                size="sm"
-                class="w-full justify-start text-sm"
-                :class="{
-                  'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
-                    $route.path === '/market/orders/to-ship',
-                }"
-              >
-                <UIcon name="i-heroicons-truck" class="w-3 h-3 mr-2"/>
-                待发货
-              </UButton>
-
-              <UButton
-                to="/market/orders/shipped"
-                variant="ghost"
-                color="neutral"
-                size="sm"
-                class="w-full justify-start text-sm"
-                :class="{
-                  'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
-                    $route.path === '/market/orders/shipped',
-                }"
-              >
-                <UIcon name="i-heroicons-check-circle" class="w-3 h-3 mr-2"/>
-                已发货
-              </UButton>
-            </div>
-          </div>
+          <UButton
+            to="/market/orders"
+            variant="ghost"
+            color="neutral"
+            class="w-full justify-start"
+            :class="{
+              'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
+                $route.path === '/market/orders',
+            }"
+          >
+            <UIcon
+              name="i-heroicons-clipboard-document-list"
+              class="w-4 h-4 mr-3"
+            />
+            订单管理
+          </UButton>
 
           <UButton
             to="/market/payment"
@@ -1249,18 +1180,12 @@ const asideRef = ref<HTMLElement | null>(null);
 const scrollRatio = ref(0);
 
 // 控制各个子菜单的展开状态
-const showOrderManagement = ref(false);
 const showMarketingInteraction = ref(false);
 const showAfterSales = ref(false);
 const showMembershipTiers = ref(false);
 const showMembershipPointsAndGrowth = ref(false);
 const showAffiliates = ref(false);
 const showReturns = ref(false);
-
-// 切换订单管理子菜单
-const toggleOrderManagement = () => {
-  showOrderManagement.value = !showOrderManagement.value;
-};
 
 // 切换营销互动子菜单
 const toggleMarketingInteraction = () => {
@@ -1365,10 +1290,6 @@ onBeforeUnmount(() => {
 watch(
   () => route.path,
   (newPath) => {
-    // 订单管理相关路由
-    if (newPath.startsWith("/market/orders")) {
-      showOrderManagement.value = true;
-    }
     // 营销互动相关路由
     if (
       newPath.startsWith("/market/marketing") ||

@@ -83,6 +83,12 @@ customer_auth:
   jwt_expires: "2h"
   cache_ttl: "5m"
 
+wechat_miniapp:
+  app_id: "wxc1ebbc8236ffae2b"
+  app_secret: "replace-with-secret"
+  http_debug: false
+  debug: false
+
 security:
   enable_cors: true
   cors_origins:
@@ -103,6 +109,8 @@ logging:
   level: "debug"
   format: "text"
   output: "stdout"
+  payment_callback_notify_debug: false
+  wechat_http_debug: false
 
 integration:
   idempotency:

@@ -28,6 +28,7 @@ const (
 	TablePluginTenantExt                 = "plugin_tenant_ext"
 	TableCustomer                        = "customers"
 	TableCustomerAccount                 = "customer_accounts"
+	TableCustomerIdentity                = "customer_identities"
 	TableTemplate                        = "template"
 	TablePluginCredentials               = "plugin_credentials"
 	TablePrivacyDataClassifications      = "privacy_data_classifications"

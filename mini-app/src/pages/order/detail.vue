@@ -121,15 +121,25 @@
     <view class="fixed bottom-0 left-0 right-0 z-50 bg-white border-t" style="border-color: rgba(0,0,0,0.06);">
       <view class="px-4 pb-2" :style="`padding-bottom: calc(env(safe-area-inset-bottom) + 8px);`">
         <view class="flex justify-end gap-3 py-3 border-b" style="border-color: rgba(0,0,0,0.04);">
-          <view class="px-5 py-2 rounded-full border" style="border-color: rgba(0,0,0,0.12);" hover-class="opacity-90" @tap="onAction('contact')">
-            <text class="text-sm font-semibold">联系客服</text>
-          </view>
-          <view class="px-5 py-2 rounded-full border" style="border-color: rgba(0,0,0,0.12);" hover-class="opacity-90" @tap="onAction('logistics')">
-            <text class="text-sm font-semibold">查看物流</text>
-          </view>
-          <view class="px-5 py-2 rounded-full" style="background:#4F6F52;" hover-class="opacity-90" @tap="onAction('confirm')">
-            <text class="text-sm font-semibold text-white">确认收货</text>
-          </view>
+          <template v-if="canPay">
+            <view class="px-5 py-2 rounded-full border" style="border-color: rgba(0,0,0,0.12);" hover-class="opacity-90" @tap="onAction('contact')">
+              <text class="text-sm font-semibold">联系客服</text>
+            </view>
+            <view class="px-5 py-2 rounded-full" style="background:#4F6F52;" hover-class="opacity-90" @tap="onPay">
+              <text class="text-sm font-semibold text-white">{{ isPaying ? "支付中..." : "去支付" }}</text>
+            </view>
+          </template>
+          <template v-else>
+            <view class="px-5 py-2 rounded-full border" style="border-color: rgba(0,0,0,0.12);" hover-class="opacity-90" @tap="onAction('contact')">
+              <text class="text-sm font-semibold">联系客服</text>
+            </view>
+            <view class="px-5 py-2 rounded-full border" style="border-color: rgba(0,0,0,0.12);" hover-class="opacity-90" @tap="onAction('logistics')">
+              <text class="text-sm font-semibold">查看物流</text>
+            </view>
+            <view class="px-5 py-2 rounded-full" style="background:#4F6F52;" hover-class="opacity-90" @tap="onAction('confirm')">
+              <text class="text-sm font-semibold text-white">确认收货</text>
+            </view>
+          </template>
         </view>
       </view>
     </view>
@@ -139,6 +149,7 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
 import { onLoad } from "@dcloudio/uni-app";
+import { buildIdempotencyKey, createPaymentTransaction, getWechatProviderIdNumber, requestMiniAppPayment } from "@/services/miniapp-payment";
 import { miniAppBatchSkus, type MiniAppSkuBatchItem } from "@/services/miniapp-sku";
 import { miniAppGetMyOrder, type OrderDetail } from "@/services/miniapp-order";
 import { maskPhone } from "@/services/miniapp-address";
@@ -150,6 +161,7 @@ const storeName = "官方自营旗舰店";
 const topInset = ref(44);
 const loading = ref(false);
 const errorMsg = ref("");
+const isPaying = ref(false);
 
 const orderId = ref("");
 const detail = ref<OrderDetail | null>(null);
@@ -225,6 +237,7 @@ const discountText = computed(() => formatMoneyFromMinor(currency.value, 0));
 const statusText = computed(() => {
   const s = String(detail.value?.summary?.status || "").trim();
   if (s === "pending_payment") return "待付款";
+  if (s === "paying") return "支付处理中";
   if (s === "paid") return "待发货";
   if (s === "shipped") return "待收货";
   if (s === "completed") return "交易成功";
@@ -236,12 +249,15 @@ const statusText = computed(() => {
 const statusSubText = computed(() => {
   const s = String(detail.value?.summary?.status || "").trim();
   if (s === "pending_payment") return "订单已创建，请尽快完成支付";
+  if (s === "paying") return "支付处理中，请稍等片刻";
   if (s === "paid") return "已支付，等待卖家发货";
   if (s === "shipped") return "包裹正在派送中，请耐心等待";
   if (s === "completed") return "订单已完成，感谢你的支持";
   if (s === "cancelled" || s === "canceled") return "订单已取消";
   return "订单状态更新中";
 });
+
+const canPay = computed(() => String(detail.value?.summary?.status || "").trim() === "pending_payment");
 
 const latestEvent = computed(() => {
   const evs = Array.isArray(detail.value?.events) ? detail.value!.events : [];
@@ -346,6 +362,50 @@ async function load() {
     errorMsg.value = e?.message || "加载失败";
   } finally {
     loading.value = false;
+  }
+}
+
+async function onPay() {
+  if (isPaying.value) return;
+  const d = detail.value?.summary;
+  if (!d) return;
+  const orderIdText = String(d.orderId || "").trim();
+  const orderNoText = String(d.orderNo || "").trim();
+  if (!orderIdText || !orderNoText) return;
+  const providerId = getWechatProviderIdNumber();
+  if (!providerId) {
+    uni.showToast({ title: "支付渠道未配置", icon: "none" });
+    return;
+  }
+  isPaying.value = true;
+  try {
+    const resp = await createPaymentTransaction({
+      orderId: orderIdText,
+      payMethod: "wechat_jsapi",
+      providerId,
+      client: "miniapp",
+      idempotencyKey: buildIdempotencyKey("pay"),
+    });
+    let status = "paying";
+    if (resp?.wechat?.appId) {
+      const outcome = await requestMiniAppPayment(resp.wechat);
+      if (outcome.status === "cancel") status = "canceled";
+      if (outcome.status === "fail") status = "failed";
+      if (outcome.message) uni.showToast({ title: outcome.message, icon: "none" });
+    } else {
+      status = "pending_payment";
+      uni.showToast({ title: "支付渠道未配置", icon: "none" });
+    }
+    const query = `orderId=${encodeURIComponent(orderIdText)}&orderNo=${encodeURIComponent(orderNoText)}&status=${encodeURIComponent(status)}&currency=${encodeURIComponent(
+      String(d.amounts?.currency || "CNY"),
+    )}&total=${encodeURIComponent(String(d.amounts?.total || 0))}&transactionId=${encodeURIComponent(
+      String(resp?.transactionId || ""),
+    )}`;
+    uni.navigateTo({ url: `/pages/order/success?${query}` });
+  } catch (e: any) {
+    uni.showToast({ title: e?.message || "支付发起失败", icon: "none" });
+  } finally {
+    isPaying.value = false;
   }
 }
 

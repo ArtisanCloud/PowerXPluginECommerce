@@ -179,6 +179,7 @@ type subscriptionPlanListResponse struct {
 
 type miniAppSubscriptionPlan struct {
 	ID           string  `json:"id"`
+	SKUID        string  `json:"skuId,omitempty"`
 	PlanCode     string  `json:"planCode"`
 	Name         string  `json:"name"`
 	BillingCycle string  `json:"billingCycle"`

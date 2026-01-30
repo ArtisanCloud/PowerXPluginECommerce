@@ -243,6 +243,7 @@ export async function miniAppGetSellability(spuId: string, params: { channel: st
 
 export type MiniAppSubscriptionPlan = {
   id: string;
+  skuId?: string;
   planCode: string;
   name: string;
   billingCycle: string;

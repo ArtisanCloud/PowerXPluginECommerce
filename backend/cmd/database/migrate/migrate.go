@@ -136,6 +136,12 @@ func MigratePluginModels(ctx context.Context, db *gorm.DB, includeIAM bool) erro
 	if err := ensureChannelMetricUniqueIndex(ctx, db); err != nil {
 		return err
 	}
+	if err := ensurePaymentProviderUniqueIndex(ctx, db); err != nil {
+		return err
+	}
+	if err := ensureCustomerIdentityUniqueIndex(ctx, db); err != nil {
+		return err
+	}
 	if err := ensureChannelRLSPolicies(ctx, db); err != nil {
 		return err
 	}
@@ -265,6 +271,109 @@ func ensureChannelMetricUniqueIndex(ctx context.Context, db *gorm.DB) error {
 		return fmt.Errorf("create unique index %s failed: %w", idxName, err)
 	}
 	return nil
+}
+
+func ensurePaymentProviderUniqueIndex(ctx context.Context, db *gorm.DB) error {
+	if db == nil {
+		return nil
+	}
+	if !strings.EqualFold(db.Dialector.Name(), "postgres") {
+		return nil
+	}
+	tableName := models.S(models.TablePaymentProviders)
+	if err := dedupePaymentProviderSelector(ctx, db, tableName); err != nil {
+		return fmt.Errorf("dedupe payment providers failed: %w", err)
+	}
+	const idxName = "uniq_payment_provider_selector"
+	createSQL := fmt.Sprintf(`CREATE UNIQUE INDEX IF NOT EXISTS %s ON %s(tenant_uuid, provider_type, mch_id, app_id) WHERE deleted_at IS NULL`,
+		quoteIdentifier(idxName), tableName)
+	if err := db.WithContext(ctx).Exec(createSQL).Error; err != nil {
+		return fmt.Errorf("create unique index %s failed: %w", idxName, err)
+	}
+	return nil
+}
+
+func ensureCustomerIdentityUniqueIndex(ctx context.Context, db *gorm.DB) error {
+	if db == nil {
+		return nil
+	}
+	if !strings.EqualFold(db.Dialector.Name(), "postgres") {
+		return nil
+	}
+	tableName := models.S(models.TableCustomerIdentity)
+	if err := dedupeCustomerIdentityScope(ctx, db, tableName); err != nil {
+		return fmt.Errorf("dedupe customer identities failed: %w", err)
+	}
+	const oldIdxName = "uniq_customer_identity_subject"
+	dropSQL := fmt.Sprintf(`DROP INDEX IF EXISTS %s`, quoteIdentifier(oldIdxName))
+	if err := db.WithContext(ctx).Exec(dropSQL).Error; err != nil {
+		return fmt.Errorf("drop index %s failed: %w", oldIdxName, err)
+	}
+	const idxName = "uniq_customer_identity_scope"
+	createSQL := fmt.Sprintf(`CREATE UNIQUE INDEX IF NOT EXISTS %s ON %s(tenant_uuid, provider, app_id, subject) WHERE deleted_at IS NULL`,
+		quoteIdentifier(idxName), tableName)
+	if err := db.WithContext(ctx).Exec(createSQL).Error; err != nil {
+		return fmt.Errorf("create unique index %s failed: %w", idxName, err)
+	}
+	return nil
+}
+
+func dedupePaymentProviderSelector(ctx context.Context, db *gorm.DB, tableName string) error {
+	tenantCol := quoteIdentifier("tenant_uuid")
+	typeCol := quoteIdentifier("provider_type")
+	mchCol := quoteIdentifier("mch_id")
+	appCol := quoteIdentifier("app_id")
+	updatedCol := quoteIdentifier("updated_at")
+	createdCol := quoteIdentifier("created_at")
+	idCol := quoteIdentifier("id")
+	deletedCol := quoteIdentifier("deleted_at")
+	query := fmt.Sprintf(`
+UPDATE %s AS p
+SET %s = NOW()
+FROM (
+	SELECT ctid
+	FROM (
+		SELECT ctid,
+			ROW_NUMBER() OVER (
+				PARTITION BY %s, %s, %s, %s
+				ORDER BY %s DESC NULLS LAST, %s DESC NULLS LAST, %s DESC
+			) AS rn
+		FROM %s
+		WHERE %s IS NULL
+	) ranked
+	WHERE ranked.rn > 1
+) dup
+WHERE p.ctid = dup.ctid`, tableName, deletedCol, tenantCol, typeCol, mchCol, appCol, updatedCol, createdCol, idCol, tableName, deletedCol)
+	return db.WithContext(ctx).Exec(query).Error
+}
+
+func dedupeCustomerIdentityScope(ctx context.Context, db *gorm.DB, tableName string) error {
+	tenantCol := quoteIdentifier("tenant_uuid")
+	providerCol := quoteIdentifier("provider")
+	appCol := quoteIdentifier("app_id")
+	subjectCol := quoteIdentifier("subject")
+	updatedCol := quoteIdentifier("updated_at")
+	createdCol := quoteIdentifier("created_at")
+	idCol := quoteIdentifier("id")
+	deletedCol := quoteIdentifier("deleted_at")
+	query := fmt.Sprintf(`
+UPDATE %s AS c
+SET %s = NOW()
+FROM (
+	SELECT ctid
+	FROM (
+		SELECT ctid,
+			ROW_NUMBER() OVER (
+				PARTITION BY %s, %s, %s, %s
+				ORDER BY %s DESC NULLS LAST, %s DESC NULLS LAST, %s DESC
+			) AS rn
+		FROM %s
+		WHERE %s IS NULL
+	) ranked
+	WHERE ranked.rn > 1
+) dup
+WHERE c.ctid = dup.ctid`, tableName, deletedCol, tenantCol, providerCol, appCol, subjectCol, updatedCol, createdCol, idCol, tableName, deletedCol)
+	return db.WithContext(ctx).Exec(query).Error
 }
 
 func dedupeChannelMetricScope(ctx context.Context, db *gorm.DB, tableName string) error {

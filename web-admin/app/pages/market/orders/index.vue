@@ -1,19 +1,55 @@
 <template>
   <div>
     <!-- 页面标题和筛选 -->
-    <div class="flex justify-between items-center mb-6">
-      <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
-        {{ $t("orders.title") }}
-      </h1>
-      <div class="flex items-center gap-2">
+    <div class="mb-6 space-y-4">
+      <div class="flex items-center justify-between">
+        <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
+          {{ $t("orders.title") }}
+        </h1>
+        <UButton color="primary" @click="createOpen = true">
+          {{ $t("orders.create") }}
+        </UButton>
+      </div>
+      <div class="flex flex-wrap items-center gap-2">
+        <UInput
+          v-model="orderNoKeyword"
+          :placeholder="$t('orders.filters.orderNoPlaceholder')"
+          class="w-56"
+        />
         <USelect
           v-model="selectedStatus"
           :items="statusOptions"
           :placeholder="$t('orders.allStatus')"
-          class="w-48"
+          class="w-40"
         />
-        <UButton color="primary" @click="createOpen = true">
-          {{ $t("orders.create") }}
+        <USelectMenu
+          v-model="filterCustomerId"
+          v-model:search-term="filterCustomerSearchTerm"
+          :items="filterCustomerOptions"
+          value-key="value"
+          label-key="label"
+          :loading="filterCustomerLoading"
+          :portal="false"
+          :ui="{ content: 'z-[60] max-h-60 overflow-auto' }"
+          searchable
+          :ignore-filter="true"
+          class="w-56"
+          :placeholder="$t('orders.filters.customerPlaceholder')"
+        >
+          <template #option="{ option }">
+            <div class="flex flex-col">
+              <span class="text-sm font-medium text-gray-900 dark:text-white">{{ option.label }}</span>
+              <span v-if="option.description" class="text-xs text-gray-500">{{ option.description }}</span>
+            </div>
+          </template>
+          <template #empty>
+            <div class="px-3 py-2 text-sm text-gray-500">
+              {{ $t("orders.createCustomerEmpty") }}
+            </div>
+          </template>
+        </USelectMenu>
+        <UButton variant="ghost" @click="resetFilters">
+          {{ $t("common.reset") }}
         </UButton>
       </div>
     </div>
@@ -574,17 +610,30 @@ const specApi = useProductSpecApi();
 const customerService = useCustomerService();
 const customerAddressService = useCustomerAddressService();
 const { listChannels } = useChannelsApi();
+const route = useRoute();
 const router = useRouter();
-
-// 状态筛选：Nuxt UI Select 的 item value 不能是空字符串；用 undefined 表示“未选择/全部”
-const selectedStatus = ref<string | undefined>(undefined);
 
 const statusItems = [
   { value: "pending_payment", labelKey: "orders.statuses.pending_payment" },
   { value: "paid", labelKey: "orders.statuses.paid" },
+  { value: "to_ship", labelKey: "orders.statuses.to_ship" },
+  { value: "shipped", labelKey: "orders.statuses.shipped" },
   { value: "cancelled", labelKey: "orders.statuses.cancelled" },
   { value: "draft", labelKey: "orders.statuses.draft" },
 ] as const;
+
+const normalizeStatus = (value: unknown) => {
+  if (typeof value !== "string") return undefined;
+  return statusItems.some((item) => item.value === value) ? value : undefined;
+};
+
+// 状态筛选：Nuxt UI Select 的 item value 不能是空字符串；用 undefined 表示“未选择/全部”
+const selectedStatus = ref<string | undefined>(normalizeStatus(route.query.status));
+const orderNoKeyword = ref("");
+const filterCustomerId = ref("");
+const filterCustomerSearchTerm = ref("");
+const filterCustomerOptions = ref<Array<{ value: string; label: string; description?: string }>>([]);
+const filterCustomerLoading = ref(false);
 
 const statusOptions = computed(() =>
   statusItems.map((it) => ({
@@ -1190,6 +1239,25 @@ const fetchCustomers = async (keyword?: string) => {
   }
 };
 
+const fetchFilterCustomers = async (keyword?: string) => {
+  filterCustomerLoading.value = true;
+  try {
+    const normalized = String(keyword || "").trim();
+    const sort = normalized ? undefined : "-lastOrderAt";
+    const resp = await customerService.listCustomers({
+      keyword: normalized || undefined,
+      page: 1,
+      pageSize: 20,
+      sort,
+    });
+    filterCustomerOptions.value = buildCustomerOptions(resp?.data || []);
+  } catch {
+    filterCustomerOptions.value = [];
+  } finally {
+    filterCustomerLoading.value = false;
+  }
+};
+
 const fetchAddresses = async (customerId: string) => {
   const id = String(customerId || "").trim();
   if (!id) {
@@ -1655,6 +1723,8 @@ const refresh = async () => {
       page: page.value,
       pageSize: pageSize.value,
       status: selectedStatus.value || undefined,
+      orderNo: orderNoKeyword.value.trim() || undefined,
+      customerId: filterCustomerId.value.trim() || undefined,
     };
     const resp = await api.listOrders(query);
     items.value = resp.items || [];
@@ -1671,8 +1741,39 @@ const refresh = async () => {
   }
 };
 
+const resetFilters = () => {
+  orderNoKeyword.value = "";
+  filterCustomerId.value = "";
+  filterCustomerSearchTerm.value = "";
+  selectedStatus.value = undefined;
+  fetchFilterCustomers();
+};
+
 watch([page, pageSize], () => refresh());
-watch(selectedStatus, () => {
+watch(
+  () => route.query.status,
+  (value) => {
+    const next = normalizeStatus(value);
+    if (next !== selectedStatus.value) {
+      selectedStatus.value = next;
+    }
+  },
+);
+watch(selectedStatus, (next) => {
+  page.value = 1;
+  const current = normalizeStatus(route.query.status);
+  if (next !== current) {
+    const query = { ...route.query } as Record<string, string>;
+    if (next) {
+      query.status = next;
+    } else {
+      delete query.status;
+    }
+    router.replace({ path: route.path, query });
+  }
+  refresh();
+});
+watch(filterCustomerId, () => {
   page.value = 1;
   refresh();
 });
@@ -1739,6 +1840,8 @@ watch(
 
 let customerSearchTimer: ReturnType<typeof setTimeout> | null = null;
 let channelSearchTimer: ReturnType<typeof setTimeout> | null = null;
+let filterCustomerSearchTimer: ReturnType<typeof setTimeout> | null = null;
+let orderNoSearchTimer: ReturnType<typeof setTimeout> | null = null;
 const spuSearchTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 watch(customerSearchTerm, (value) => {
@@ -1755,5 +1858,25 @@ watch(channelSearchTerm, (value) => {
   }, 300);
 });
 
+watch(filterCustomerSearchTerm, (value) => {
+  if (filterCustomerSearchTimer) clearTimeout(filterCustomerSearchTimer);
+  filterCustomerSearchTimer = setTimeout(() => {
+    fetchFilterCustomers(value.trim());
+  }, 300);
+});
+
+watch(orderNoKeyword, (value) => {
+  if (orderNoSearchTimer) clearTimeout(orderNoSearchTimer);
+  orderNoSearchTimer = setTimeout(() => {
+    page.value = 1;
+    if (!value.trim()) {
+      refresh();
+      return;
+    }
+    refresh();
+  }, 300);
+});
+
 await refresh();
+await fetchFilterCustomers();
 </script>

@@ -11,6 +11,10 @@ database:
   connMaxLifetime: 5m
   connMaxIdleTime: 2m
 
+logging:
+  payment_callback_notify_debug: false
+  wechat_http_debug: false
+
 integration:
   idempotency:
     provider: redis

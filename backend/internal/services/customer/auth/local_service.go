@@ -189,6 +189,14 @@ func (s *LocalService) issueToken(ctx context.Context, customerID, customerName 
 	}, nil
 }
 
+// IssueTokenForCustomer allows issuing tokens for non-password login flows.
+func (s *LocalService) IssueTokenForCustomer(ctx context.Context, customerID, customerName string) (*AuthResult, error) {
+	if s == nil {
+		return nil, ErrUnauthorized
+	}
+	return s.issueToken(ctx, customerID, customerName)
+}
+
 func validateRegisterInput(input RegisterInput) error {
 	identifier := strings.TrimSpace(input.Identifier)
 	password := strings.TrimSpace(input.Password)

@@ -46,17 +46,19 @@
 
 ## 5. 流程
 1. **支付渠道接入**：配置 provider、凭证、费率、回调 → 测试 → 上线。
+1. **小程序登录**：小程序端 `wx.login` 获取 `code` → 后端换取 `openid/unionid` 并签发 token。
 2. **支付处理**：订单发起支付 → 渠道返回状态 → 更新支付单 → 通知订单/履约。
 3. **对账**：日/周对账 → 识别差异 → 调整、补记、调查。
 4. **退款**：客服/系统发起 → 渠道处理 → 更新支付单、通知用户、记录审计。
 
 ## 6. 数据 & API
-- 表：`payment_providers`、`payment_provider_configs`、`payment_transactions`、`payment_logs`、`payment_reconciliations`、`payment_risk_events`、`payment_split_rules`。
+- 表：`payment_providers`、`payment_provider_configs`、`payment_transactions`、`payment_logs`、`payment_reconciliations`、`payment_risk_events`、`payment_split_rules`、`customer_identities`。
 - API：
   - `GET/POST /v1/admin/payments/providers`、`PATCH /v1/admin/payments/providers/{id}`、`POST /v1/admin/payments/providers/{id}/test`。
   - `GET /v1/admin/payments/transactions`、`GET /v1/admin/payments/transactions/{id}`。
   - `POST /v1/admin/payments/transactions/{id}/refund`、`POST /v1/admin/payments/transactions/{id}/reconcile`。
-  - Webhook：`POST /v1/agent/payments/providers/{id}/callback`。
+  - `POST /api/v1/mini-app/auth/wechat/login`（code + providerId 换 openid/unionid）
+  - Webhook：`POST /api/v1/mini-app/payments/providers/{type}/{mchId}/{appId}/callback`（兼容 `.../providers/id/{id}/callback`）。
 
 ## 7. 权限 & 审计
 - 权限：`payments.providers.read/manage`、`payments.transactions.read/manage`、`payments.reconcile`、`payments.refund`、`payments.risk`。
