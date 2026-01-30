@@ -37,9 +37,9 @@
 
 **Independent Test**: 客户接口可返回权益与代币余额。
 
-- [ ] T012 [US3] 新增客户权益查询接口（`backend/internal/transport/http/miniapp` 或 `admin`）
-- [ ] T013 [US3] 新增代币余额查询接口（`backend/internal/transport/http/miniapp` 或 `admin`）
-- [ ] T014 [US3] mini-app 订单/会员视图展示权益与代币余额（`mini-app/src/pages/order` 或 `profile`）
+- [x] T012 [US3] 新增客户权益查询接口（`backend/internal/transport/http/miniapp` 或 `admin`）
+- [x] T013 [US3] 新增代币余额查询接口（`backend/internal/transport/http/miniapp` 或 `admin`）
+- [x] T014 [US3] mini-app 订单/会员视图展示权益与代币余额（`mini-app/src/pages/order` 或 `profile`）
 
 ## Phase 6: Polish & Cross-Cutting
 

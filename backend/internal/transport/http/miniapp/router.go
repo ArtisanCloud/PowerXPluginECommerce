@@ -10,6 +10,7 @@ import (
 	miniappaddress "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/miniapp/customer_address"
 	miniapporder "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/miniapp/order"
 	miniapppayments "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/miniapp/payments"
+	miniappmembership "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/miniapp/membership"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/miniapp/product"
 	"github.com/gin-gonic/gin"
 )
@@ -38,6 +39,7 @@ func RegisterRoutes(rg *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	miniappcart.RegisterRoutes(protected, deps)
 	miniapporder.RegisterRoutes(protected, deps)
 	miniappaddress.RegisterRoutes(protected, deps)
+	miniappmembership.RegisterRoutes(protected, deps)
 	miniapppayments.RegisterRoutes(nil, protected, deps)
 	return group
 }

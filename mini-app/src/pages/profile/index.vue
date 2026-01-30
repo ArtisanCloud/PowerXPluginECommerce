@@ -52,18 +52,18 @@
       <view class="mt-3 rounded-3xl bg-white p-4 shadow-sm">
         <view class="flex justify-between gap-3">
           <view class="flex flex-1 flex-col items-center">
-            <view class="text-xl font-extrabold">¥2,450</view>
-            <view class="mt-1 text-xs text-muted">余额</view>
+            <view class="text-xl font-extrabold">{{ tokenBalanceText }}</view>
+            <view class="mt-1 text-xs text-muted">代币</view>
           </view>
           <view class="my-auto h-8 w-px bg-gray-100"></view>
           <view class="flex flex-1 flex-col items-center">
-            <view class="text-xl font-extrabold">1,204</view>
-            <view class="mt-1 text-xs text-muted">积分</view>
+            <view class="text-xl font-extrabold">{{ entitlementsCount }}</view>
+            <view class="mt-1 text-xs text-muted">权益</view>
           </view>
           <view class="my-auto h-8 w-px bg-gray-100"></view>
           <view class="flex flex-1 flex-col items-center">
-            <view class="text-xl font-extrabold">5</view>
-            <view class="mt-1 text-xs text-muted">优惠券</view>
+            <view class="text-xl font-extrabold">{{ tokenTypeCount }}</view>
+            <view class="mt-1 text-xs text-muted">代币种类</view>
           </view>
         </view>
       </view>
@@ -167,6 +167,7 @@ import { onShow } from "@dcloudio/uni-app";
 import { syncTabBarSelected } from "@/utils/tabbar";
 import { clearSession, getCustomerIdentifier, getCustomerName, isLoggedIn } from "@/services/session";
 import { miniAppListMyOrders } from "@/services/miniapp-order";
+import { miniAppGetEntitlements, miniAppGetTokenBalances } from "@/services/miniapp-membership";
 
 const topInset = ref<number>(40);
 
@@ -174,6 +175,10 @@ const loggedIn = computed(() => isLoggedIn());
 const displayName = computed(() => getCustomerName() || getCustomerIdentifier() || "用户");
 const avatarUrl = "/static/icons/image-placeholder.svg";
 const orderBadges = ref({ pendingPayment: false, shippedCount: 0 });
+const entitlementsCount = ref(0);
+const tokenTypeCount = ref(0);
+const tokenBalance = ref(0);
+const tokenBalanceText = computed(() => (tokenBalance.value > 0 ? String(tokenBalance.value) : "0"));
 
 function goLogin() {
   uni.setStorageSync("miniapp.auth.redirect", "/pages/profile/index");
@@ -206,6 +211,25 @@ async function refreshOrderBadges() {
     const pending = items.filter((x) => String((x as any)?.status || "").trim() === "pending_payment").length;
     const shipped = items.filter((x) => String((x as any)?.status || "").trim() === "shipped").length;
     orderBadges.value = { pendingPayment: pending > 0, shippedCount: shipped };
+  } catch {
+    // ignore
+  }
+}
+
+async function refreshMembershipSummary() {
+  if (!loggedIn.value) {
+    entitlementsCount.value = 0;
+    tokenTypeCount.value = 0;
+    tokenBalance.value = 0;
+    return;
+  }
+  try {
+    const [entRes, tokenRes] = await Promise.all([miniAppGetEntitlements(), miniAppGetTokenBalances()]);
+    const entItems = Array.isArray(entRes?.items) ? entRes.items : [];
+    const tokenItems = Array.isArray(tokenRes?.items) ? tokenRes.items : [];
+    entitlementsCount.value = entItems.length;
+    tokenTypeCount.value = tokenItems.length;
+    tokenBalance.value = tokenItems.reduce((sum, item) => sum + Number(item?.balance || 0), 0);
   } catch {
     // ignore
   }
@@ -249,6 +273,7 @@ onMounted(() => {
 onShow(() => {
   syncTabBarSelected("pages/profile/index");
   void refreshOrderBadges();
+  void refreshMembershipSummary();
   if (!loggedIn.value) {
     goLogin();
   }
