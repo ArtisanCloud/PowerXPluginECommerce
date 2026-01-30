@@ -15,11 +15,11 @@
 
 **Independent Test**: 单笔支付成功回调触发后，会籍/权益生成且不会重复。
 
-- [ ] T004 [US1] 新增权益实例与代币账本模型（`backend/internal/entity/models`）
-- [ ] T005 [US1] 新增权益实例与代币账本仓储（`backend/internal/entity/repository`）
-- [ ] T006 [US1] 在支付回调服务中接入会籍/权益/代币发放编排（`backend/internal/services/agent/payments` 或对应支付服务）
-- [ ] T007 [US1] 幂等处理：按 `transaction_id` → `out_trade_no` → `order_id` 去重发放（支付回调服务）
-- [ ] T008 [US1] 处理缺失绑定字段的异常并记录（支付回调服务日志/审计）
+- [x] T004 [US1] 新增权益实例与代币账本模型（`backend/internal/entity/models`）
+- [x] T005 [US1] 新增权益实例与代币账本仓储（`backend/internal/entity/repository`）
+- [x] T006 [US1] 在支付回调服务中接入会籍/权益/代币发放编排（`backend/internal/services/agent/payments` 或对应支付服务）
+- [x] T007 [US1] 幂等处理：按 `transaction_id` → `out_trade_no` → `order_id` 去重发放（支付回调服务）
+- [x] T008 [US1] 处理缺失绑定字段的异常并记录（支付回调服务日志/审计）
 
 ## Phase 4: User Story 2 (P2) — 订阅计划绑定权益与代币
 

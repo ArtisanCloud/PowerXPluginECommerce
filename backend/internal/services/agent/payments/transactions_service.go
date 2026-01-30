@@ -451,6 +451,11 @@ func (s *TransactionService) applyStatusUpdate(ctx context.Context, tenantUUID s
 			Updates(updates).Error; err != nil {
 			return err
 		}
+		if status == "paid" {
+			if err := s.applySubscriptionEntitlements(ctx, db, tenantUUID, row); err != nil {
+				return err
+			}
+		}
 		s.emitStatusEvent(ctx, tenantUUID, row, status, reason)
 		return nil
 	})

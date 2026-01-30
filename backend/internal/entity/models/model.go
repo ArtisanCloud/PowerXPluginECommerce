@@ -133,6 +133,14 @@ const (
 	// Cart (Checkout MVP)
 	TableCarts = "carts"
 
+	// Membership & Entitlements
+	TableMembershipTiers       = "membership_tiers"
+	TableMembershipBenefits    = "membership_benefits"
+	TableMembershipAssignments = "membership_assignments"
+	TableEntitlements          = "entitlements"
+	TableTokenAccounts         = "token_accounts"
+	TableTokenTransactions     = "token_transactions"
+
 	// Payments
 	TablePaymentProviders           = "payment_providers"
 	TablePaymentProviderConfigs     = "payment_provider_configs"
