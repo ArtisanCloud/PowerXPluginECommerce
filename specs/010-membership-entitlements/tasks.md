@@ -27,9 +27,9 @@
 
 **Independent Test**: 在订阅计划配置页保存绑定字段并可读取。
 
-- [ ] T009 [US2] 订阅计划 metadata 支持 membershipTierId/benefitIds/tokenCode/tokenAmount/tokenExpireDays/tokenRollover（后端 DTO/service）
-- [ ] T010 [US2] web-admin 订阅计划配置页补充绑定字段 UI（`web-admin/app/components/product/SubscriptionPlanPanel.vue`）
-- [ ] T011 [US2] 确保订阅计划列表/详情可返回绑定字段（mini-app 或 admin API）
+- [x] T009 [US2] 订阅计划 metadata 支持 membershipTierId/benefitIds/tokenCode/tokenAmount/tokenExpireDays/tokenRollover（后端 DTO/service）
+- [x] T010 [US2] web-admin 订阅计划配置页补充绑定字段 UI（`web-admin/app/components/product/SubscriptionPlanPanel.vue`）
+- [x] T011 [US2] 确保订阅计划列表/详情可返回绑定字段（mini-app 或 admin API）
 
 ## Phase 5: User Story 3 (P3) — 客户查看权益与代币余额
 

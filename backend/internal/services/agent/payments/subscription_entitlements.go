@@ -14,7 +14,12 @@ import (
 	productmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
+)
+
+const (
+	metadataTokenPlanIDsKey = "tokenPlanIds"
 )
 
 type planBinding struct {
@@ -93,7 +98,7 @@ func (s *TransactionService) applySubscriptionEntitlements(ctx context.Context, 
 			}
 		}
 		if strings.TrimSpace(binding.TokenCode) != "" && binding.TokenAmount > 0 {
-			if err := grantTokens(ctx, db, tenantUUID, order.CustomerID, binding.TokenCode, binding.TokenAmount, idemKey); err != nil {
+			if err := grantTokens(ctx, db, tenantUUID, order.CustomerID, binding.TokenCode, binding.TokenAmount, idemKey, plan.ID); err != nil {
 				return err
 			}
 		}
@@ -303,7 +308,7 @@ func grantEntitlement(ctx context.Context, db *gorm.DB, tenantUUID, customerID s
 	return db.WithContext(ctx).Create(&ent).Error
 }
 
-func grantTokens(ctx context.Context, db *gorm.DB, tenantUUID, customerID, tokenCode string, amount int64, sourceID string) error {
+func grantTokens(ctx context.Context, db *gorm.DB, tenantUUID, customerID, tokenCode string, amount int64, sourceID, planID string) error {
 	if strings.TrimSpace(tokenCode) == "" || amount <= 0 {
 		return nil
 	}
@@ -339,7 +344,15 @@ func grantTokens(ctx context.Context, db *gorm.DB, tenantUUID, customerID, token
 		if err := db.WithContext(ctx).
 			Model(&membershipModel.TokenAccount{}).
 			Where("tenant_uuid = ? AND id = ?", tenantUUID, account.ID).
-			Update("balance", gorm.Expr("balance + ?", amount)).Error; err != nil {
+			Updates(map[string]any{
+				"balance":    gorm.Expr("balance + ?", amount),
+				"updated_at": time.Now().UTC(),
+			}).Error; err != nil {
+			return err
+		}
+	}
+	if strings.TrimSpace(planID) != "" {
+		if err := appendTokenPlanLink(ctx, db, tenantUUID, account.ID, planID); err != nil {
 			return err
 		}
 	}
@@ -353,6 +366,56 @@ func grantTokens(ctx context.Context, db *gorm.DB, tenantUUID, customerID, token
 		SourceID:   strings.TrimSpace(sourceID),
 	}
 	return db.WithContext(ctx).Create(&transaction).Error
+}
+
+func appendTokenPlanLink(ctx context.Context, db *gorm.DB, tenantUUID, accountID, planID string) error {
+	if strings.TrimSpace(accountID) == "" || strings.TrimSpace(planID) == "" {
+		return nil
+	}
+	var account membershipModel.TokenAccount
+	if err := db.WithContext(ctx).
+		Where("tenant_uuid = ? AND id = ?", tenantUUID, accountID).
+		First(&account).Error; err != nil {
+		return err
+	}
+	meta := map[string]any{}
+	if len(account.Metadata) > 0 {
+		_ = json.Unmarshal(account.Metadata, &meta)
+	}
+	var ids []string
+	if raw, ok := meta[metadataTokenPlanIDsKey]; ok {
+		switch t := raw.(type) {
+		case []any:
+			for _, it := range t {
+				ids = append(ids, strings.TrimSpace(fmt.Sprint(it)))
+			}
+		case []string:
+			ids = append(ids, t...)
+		case string:
+			if strings.TrimSpace(t) != "" {
+				ids = append(ids, strings.Split(t, ",")...)
+			}
+		}
+	}
+	planID = strings.TrimSpace(planID)
+	for _, id := range ids {
+		if strings.TrimSpace(id) == planID {
+			return nil
+		}
+	}
+	ids = append(ids, planID)
+	meta[metadataTokenPlanIDsKey] = ids
+	buf, err := json.Marshal(meta)
+	if err != nil {
+		return err
+	}
+	return db.WithContext(ctx).
+		Model(&membershipModel.TokenAccount{}).
+		Where("tenant_uuid = ? AND id = ?", tenantUUID, account.ID).
+		Updates(map[string]any{
+			"metadata":   datatypes.JSON(buf),
+			"updated_at": time.Now().UTC(),
+		}).Error
 }
 
 func pickInt64(payload map[string]any, keys ...string) int64 {

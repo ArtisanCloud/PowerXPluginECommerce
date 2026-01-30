@@ -4,6 +4,7 @@ import (
 	"time"
 
 	basemodels "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models"
+	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
@@ -14,6 +15,7 @@ type TokenAccount struct {
 	CustomerID string         `gorm:"type:uuid;not null;index;uniqueIndex:uk_token_account,priority:2" json:"customer_id"`
 	TokenCode  string         `gorm:"type:varchar(64);not null;uniqueIndex:uk_token_account,priority:3" json:"token_code"`
 	Balance    int64          `gorm:"not null;default:0" json:"balance"`
+	Metadata   datatypes.JSON `gorm:"type:jsonb" json:"metadata,omitempty"`
 	UpdatedAt  time.Time      `gorm:"autoUpdateTime" json:"updated_at"`
 	CreatedAt  time.Time      `gorm:"autoCreateTime" json:"created_at"`
 	DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`

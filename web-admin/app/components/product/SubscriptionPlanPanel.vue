@@ -23,11 +23,17 @@
 				<UFormField label="计划编码" :ui="fieldUi">
 					<UInput v-model="form.planCode" :disabled="isEditingExisting" placeholder="如 monthly" />
 				</UFormField>
-				<UFormField label="计划名称" :ui="fieldUi">
-					<UInput v-model="form.name" placeholder="如 月度订阅" />
-				</UFormField>
+		<UFormField label="计划名称" :ui="fieldUi">
+			<UInput v-model="form.name" placeholder="如 月度订阅" />
+		</UFormField>
+		<UFormField label="会籍等级 ID" :ui="fieldUi">
+			<UInput v-model="membershipTierId" placeholder="绑定 membership tier ID" />
+		</UFormField>
 				<UFormField label="SKU ID" :ui="fieldUi">
 					<UInput v-model="skuId" placeholder="绑定订阅 SKU（UUID）" />
+				</UFormField>
+				<UFormField label="权益 IDs" :ui="fieldUi">
+					<UInput v-model="benefitIdsInput" placeholder="多个以逗号分隔" />
 				</UFormField>
 				<UFormField label="计费周期" :ui="fieldUi">
 					<USelect v-model="form.billingCycle" :items="billingOptions" class="w-full" />
@@ -40,6 +46,18 @@
 				</UFormField>
 				<UFormField label="币种" :ui="fieldUi">
 					<UInput v-model="form.currency" maxlength="3" placeholder="CNY" class="w-full" />
+				</UFormField>
+				<UFormField label="Token Code" :ui="fieldUi">
+					<UInput v-model="tokenCode" placeholder="service_credit" />
+				</UFormField>
+				<UFormField label="Token 数量" :ui="fieldUi">
+					<UInput v-model.number="tokenAmount" type="number" min="0" placeholder="0" />
+				</UFormField>
+				<UFormField label="Token 有效期(天)" :ui="fieldUi">
+					<UInput v-model.number="tokenExpireDays" type="number" min="0" placeholder="0" />
+				</UFormField>
+				<UFormField label="Token 结转" :ui="fieldUi">
+					<USwitch v-model="tokenRollover" />
 				</UFormField>
 				<UFormField label="试用天数" :ui="fieldUi">
 					<UInput v-model.number="form.trialDays" type="number" min="0" placeholder="0" />
@@ -69,6 +87,16 @@
 					<template #skuId-cell="{ row }">
 						<span class="text-xs font-mono text-gray-600 dark:text-gray-300">
 							{{ formatSkuId(row.original) }}
+						</span>
+					</template>
+					<template #membershipTierId-cell="{ row }">
+						<span class="text-xs font-mono text-gray-600 dark:text-gray-300">
+							{{ formatMembershipTierId(row.original) }}
+						</span>
+					</template>
+					<template #benefitIds-cell="{ row }">
+						<span class="text-xs text-gray-500 dark:text-gray-400">
+							{{ formatBenefitIds(row.original) }}
 						</span>
 					</template>
 					<template #billingCycle-cell="{ row }">
@@ -143,6 +171,12 @@ const form = reactive<SubscriptionPlanPayload>({
 	metadata: {},
 })
 const skuId = ref('')
+const membershipTierId = ref('')
+const benefitIdsInput = ref('')
+const tokenCode = ref('')
+const tokenAmount = ref<number | null>(null)
+const tokenExpireDays = ref<number | null>(null)
+const tokenRollover = ref(false)
 const editingPlanId = ref<string | null>(null)
 const isSubscription = computed(() => (props.spuType || '').toLowerCase() === 'subscription')
 const isEditingExisting = computed(() => Boolean(editingPlanId.value))
@@ -170,7 +204,9 @@ const effectScopeOptions = [
 const columns = computed<TableColumn<SpuSubscriptionPlan>[]>(() => [
 	{ accessorKey: 'planCode', header: '计划编码' },
 	{ accessorKey: 'name', header: '名称' },
+	{ id: 'membershipTierId', header: '会籍等级' },
 	{ id: 'skuId', header: 'SKU ID' },
+	{ id: 'benefitIds', header: '权益' },
 	{ accessorKey: 'billingCycle', header: '计费周期' },
 	{ accessorKey: 'price', header: '价格' },
 	{ accessorKey: 'effectScope', header: '作用范围' },
@@ -199,6 +235,22 @@ const resolveSkuId = (plan: SpuSubscriptionPlan) => {
 	return String(meta.skuId || meta.sku_id || meta.skuID || '').trim()
 }
 const formatSkuId = (plan: SpuSubscriptionPlan) => resolveSkuId(plan) || '-'
+const resolveMembershipTierId = (plan: SpuSubscriptionPlan) => {
+	const meta = (plan.metadata || {}) as Record<string, any>
+	return String(meta.membershipTierId || meta.membership_tier_id || meta.membershipTierID || '').trim()
+}
+const formatMembershipTierId = (plan: SpuSubscriptionPlan) => resolveMembershipTierId(plan) || '-'
+const resolveBenefitIds = (plan: SpuSubscriptionPlan) => {
+	const meta = (plan.metadata || {}) as Record<string, any>
+	const raw = meta.benefitIds || meta.benefit_ids
+	if (Array.isArray(raw)) return raw.map((x: any) => String(x).trim()).filter(Boolean)
+	if (typeof raw === 'string') return raw.split(',').map((x) => x.trim()).filter(Boolean)
+	return [] as string[]
+}
+const formatBenefitIds = (plan: SpuSubscriptionPlan) => {
+	const ids = resolveBenefitIds(plan)
+	return ids.length ? ids.join(', ') : '-'
+}
 
 const resetForm = () => {
 	Object.assign(form, {
@@ -215,6 +267,12 @@ const resetForm = () => {
 		metadata: {},
 	})
 	skuId.value = ''
+	membershipTierId.value = ''
+	benefitIdsInput.value = ''
+	tokenCode.value = ''
+	tokenAmount.value = null
+	tokenExpireDays.value = null
+	tokenRollover.value = false
 	editingPlanId.value = null
 }
 
@@ -229,6 +287,15 @@ const startCreate = () => {
 const handleEdit = (plan: SpuSubscriptionPlan) => {
 	editingPlanId.value = plan.id
 	skuId.value = resolveSkuId(plan)
+	membershipTierId.value = resolveMembershipTierId(plan)
+	benefitIdsInput.value = resolveBenefitIds(plan).join(', ')
+	const meta = (plan.metadata || {}) as Record<string, any>
+	tokenCode.value = String(meta.tokenCode || meta.token_code || '').trim()
+	const tokenAmountRaw = meta.tokenAmount ?? meta.token_amount
+	const tokenExpireRaw = meta.tokenExpireDays ?? meta.token_expire_days
+	tokenAmount.value = Number.isFinite(Number(tokenAmountRaw)) ? Number(tokenAmountRaw) : null
+	tokenExpireDays.value = Number.isFinite(Number(tokenExpireRaw)) ? Number(tokenExpireRaw) : null
+	tokenRollover.value = Boolean(meta.tokenRollover ?? meta.token_rollover)
 	Object.assign(form, {
 		planCode: plan.planCode,
 		name: plan.name,
@@ -251,11 +318,21 @@ const handleSave = async () => {
 	}
 	try {
 		saving.value = true
+		const benefitIds = benefitIdsInput.value
+			.split(',')
+			.map((v) => v.trim())
+			.filter(Boolean)
 		const payload: SubscriptionPlanPayload = {
 			...form,
 			metadata: {
 				...(form.metadata || {}),
 				skuId: skuId.value || undefined,
+				membershipTierId: membershipTierId.value || undefined,
+				benefitIds: benefitIds.length ? benefitIds : undefined,
+				tokenCode: tokenCode.value || undefined,
+				tokenAmount: tokenAmount.value ?? undefined,
+				tokenExpireDays: tokenExpireDays.value ?? undefined,
+				tokenRollover: tokenRollover.value || undefined,
 			},
 		}
 		if (editingPlanId.value) {
