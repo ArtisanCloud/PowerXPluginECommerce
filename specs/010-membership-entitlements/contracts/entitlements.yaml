@@ -1,0 +1,11 @@
+openapi: 3.0.3
+info:
+  title: Membership Entitlements API
+  version: 0.1.0
+paths:
+  /api/v1/mini-app/membership/entitlements:
+    get:
+      summary: List current customer entitlements
+      responses:
+        '200':
+          description: OK
