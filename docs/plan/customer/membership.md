@@ -93,3 +93,47 @@
 - 与营销自动化联动：根据等级变化触发旅程。
 - 会员权益 API：开放给前台（自助门户）实时查询。
 - 成长值可视化：在 `customer/members.vue` 中展示升级路径图。
+
+## 11. 订阅商品 → 会籍/权益生成（补充）
+> 目标：订阅支付成功后，自动生成会籍与权益，并支持组合型权益（bundle）。
+
+### 11.1 订阅计划与会籍/权益绑定规则
+在订阅计划（subscription plan）`metadata` 中约定以下字段，用于驱动会籍与权益发放：
+
+- `membershipTierId`：绑定会员等级（tier）
+- `benefitIds`：绑定权益 ID 数组（可配置多个权益包）
+- `tokenCode`：订阅发放的代币类型（可选）
+- `tokenAmount`：每周期发放代币数量（可选）
+- `tokenExpireDays`：代币有效期（天，0=永久，可选）
+- `tokenRollover`：是否可结转（true/false，可选）
+
+### 11.2 权益结构（Benefit）
+权益支持 **单体** 与 **组合型（bundle）** 两种：
+
+**A. 单体权益**
+- `type: "single"`
+- 直接定义一个服务项。
+
+**B. 组合型权益（bundle）**
+- `type: "bundle"`
+- `items[]` 表示多个服务项；发放时按 items 批量生成可消费权益。
+
+**服务项字段建议：**
+- `service_code`：服务标识（如 `ai_video`、`vip_support`、`token:service_credit`）
+- `quantity`：可用数量（`-1` 表示无限）
+- `valid_days`：有效期（天；0/空表示永久）
+- `stack_policy`：叠加策略（`stack`/`replace`/`max`）
+
+### 11.3 订阅支付成功的发放规则
+1. 支付回调成功后：
+   - 创建或更新 `membership_assignments`（绑定 customer 与 tier）
+   - 发放权益（benefits → entitlements），按 `stack_policy` 处理叠加
+2. 若 `tokenCode/tokenAmount` 存在：
+   - 同步发放代币（见 tokens.md 的订阅发放规则）
+3. 幂等：
+   - 同一笔交易（`transaction_id / out_trade_no / order_id`）只能发放一次
+
+### 11.4 叠加策略说明
+- `stack`：数量累加（可叠加）
+- `replace`：覆盖旧权益（常用于升级）
+- `max`：取较大值（数量或有效期）
