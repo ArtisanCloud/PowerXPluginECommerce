@@ -16,6 +16,36 @@ export type TokenBalanceItem = {
   balance: number;
 };
 
+export type MembershipBenefitItem = {
+  id: string;
+  name: string;
+  type?: string;
+  items?: any;
+  status?: string;
+};
+
+export type MembershipProfile = {
+  customerId?: string;
+  customerName?: string;
+  membershipTier?: string;
+  tierName?: string;
+  avatarUrl?: string;
+};
+
+export async function miniAppListMembershipBenefits() {
+  return await miniAppRequest<{ items: MembershipBenefitItem[] }>({
+    method: "GET",
+    path: "/membership/benefits",
+  });
+}
+
+export async function miniAppGetMembershipProfile() {
+  return await miniAppRequest<MembershipProfile>({
+    method: "GET",
+    path: "/membership/profile",
+  });
+}
+
 export async function miniAppGetEntitlements() {
   return await miniAppRequest<{ items: EntitlementItem[] }>({
     method: "GET",

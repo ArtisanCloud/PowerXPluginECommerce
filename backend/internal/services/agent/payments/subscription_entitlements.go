@@ -13,6 +13,7 @@ import (
 	ordermodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/order"
 	productmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
+	paymentslogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/payments"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -36,6 +37,26 @@ type benefitItem struct {
 	Quantity    int64  `json:"quantity"`
 	ValidDays   int    `json:"valid_days"`
 	StackPolicy string `json:"stack_policy"`
+}
+
+type entitlementGrant struct {
+	EntitlementID string
+	ServiceCode   string
+	Quantity      int64
+	ValidFrom     time.Time
+	ValidTo       *time.Time
+	StackPolicy   string
+	BenefitID     string
+	SourceID      string
+}
+
+type tokenGrant struct {
+	TransactionID string
+	AccountID     string
+	TokenCode     string
+	Amount        int64
+	SourceID      string
+	PlanID        string
 }
 
 func (s *TransactionService) applySubscriptionEntitlements(ctx context.Context, db *gorm.DB, tenantUUID string, txn *paymentModel.PaymentTransaction) error {
@@ -78,6 +99,13 @@ func (s *TransactionService) applySubscriptionEntitlements(ctx context.Context, 
 			return err
 		}
 		binding := parsePlanBinding(plan)
+		if len(binding.BenefitIDs) == 0 {
+			if ids, err := loadPlanBenefitIDs(ctx, db, tenantUUID, plan.ID); err == nil {
+				binding.BenefitIDs = ids
+			} else {
+				return err
+			}
+		}
 		if binding.MembershipTierID == "" && len(binding.BenefitIDs) == 0 && strings.TrimSpace(binding.TokenCode) == "" {
 			logger.WithFields(logger.Fields{
 				"tenant_uuid": tenantUUID,
@@ -87,19 +115,84 @@ func (s *TransactionService) applySubscriptionEntitlements(ctx context.Context, 
 			continue
 		}
 		validTo := computePlanValidTo(paidAt, plan)
+		baseMetadata := map[string]any{
+			"order_id":        strings.TrimSpace(order.ID),
+			"order_no":        strings.TrimSpace(order.OrderNo),
+			"transaction_id":  txn.ID,
+			"subscription_id": strings.TrimSpace(plan.ID),
+			"plan_code":       strings.TrimSpace(plan.PlanCode),
+			"sku_id":          strings.TrimSpace(item.SKUID),
+			"source_id":       strings.TrimSpace(idemKey),
+		}
 		if binding.MembershipTierID != "" {
-			if err := upsertMembershipAssignment(ctx, db, tenantUUID, order.CustomerID, binding.MembershipTierID, paidAt, validTo, idemKey); err != nil {
+			assignmentID, result, err := upsertMembershipAssignment(ctx, db, tenantUUID, order.CustomerID, binding.MembershipTierID, paidAt, validTo, idemKey)
+			if err != nil {
 				return err
+			}
+			if assignmentID != "" && result != "" {
+				metadata := cloneMetadata(baseMetadata)
+				metadata["tier_id"] = binding.MembershipTierID
+				s.emitSubscriptionAudit(ctx, tenantUUID, paymentslogger.AuditEvent{
+					Action:     "membership_assignment_grant",
+					TenantID:   tenantUUID,
+					ActorID:    strings.TrimSpace(order.CustomerID),
+					TargetType: "membership_assignment",
+					TargetID:   assignmentID,
+					Result:     result,
+					Reason:     "subscription_paid",
+					Metadata:   metadata,
+					EmittedAt:  time.Now().UTC(),
+				})
 			}
 		}
 		if len(binding.BenefitIDs) > 0 {
-			if err := grantBenefits(ctx, db, tenantUUID, order.CustomerID, binding.BenefitIDs, paidAt, idemKey); err != nil {
+			grants, err := grantBenefits(ctx, db, tenantUUID, order.CustomerID, binding.BenefitIDs, paidAt, idemKey)
+			if err != nil {
 				return err
+			}
+			for _, grant := range grants {
+				metadata := cloneMetadata(baseMetadata)
+				metadata["benefit_id"] = grant.BenefitID
+				metadata["service_code"] = grant.ServiceCode
+				metadata["stack_policy"] = grant.StackPolicy
+				metadata["quantity"] = grant.Quantity
+				if grant.ValidTo != nil {
+					metadata["valid_to"] = grant.ValidTo.UTC().Format(time.RFC3339)
+				}
+				s.emitSubscriptionAudit(ctx, tenantUUID, paymentslogger.AuditEvent{
+					Action:     "entitlement_grant",
+					TenantID:   tenantUUID,
+					ActorID:    strings.TrimSpace(order.CustomerID),
+					TargetType: "entitlement",
+					TargetID:   grant.EntitlementID,
+					Result:     "created",
+					Reason:     "subscription_paid",
+					Metadata:   metadata,
+					EmittedAt:  time.Now().UTC(),
+				})
 			}
 		}
 		if strings.TrimSpace(binding.TokenCode) != "" && binding.TokenAmount > 0 {
-			if err := grantTokens(ctx, db, tenantUUID, order.CustomerID, binding.TokenCode, binding.TokenAmount, idemKey, plan.ID); err != nil {
+			grant, err := grantTokens(ctx, db, tenantUUID, order.CustomerID, binding.TokenCode, binding.TokenAmount, idemKey, plan.ID)
+			if err != nil {
 				return err
+			}
+			if grant != nil {
+				metadata := cloneMetadata(baseMetadata)
+				metadata["token_code"] = grant.TokenCode
+				metadata["token_amount"] = grant.Amount
+				metadata["token_account_id"] = grant.AccountID
+				s.emitSubscriptionAudit(ctx, tenantUUID, paymentslogger.AuditEvent{
+					Action:     "token_grant",
+					TenantID:   tenantUUID,
+					ActorID:    strings.TrimSpace(order.CustomerID),
+					TargetType: "token_transaction",
+					TargetID:   grant.TransactionID,
+					Result:     "created",
+					Reason:     "subscription_paid",
+					Metadata:   metadata,
+					EmittedAt:  time.Now().UTC(),
+				})
 			}
 		}
 	}
@@ -155,6 +248,32 @@ func parsePlanBinding(plan *productmodel.SubscriptionPlan) planBinding {
 	return binding
 }
 
+func loadPlanBenefitIDs(ctx context.Context, db *gorm.DB, tenantUUID, planID string) ([]string, error) {
+	if db == nil || strings.TrimSpace(planID) == "" {
+		return []string{}, nil
+	}
+	var rows []productmodel.SubscriptionPlanBenefit
+	if err := db.WithContext(ctx).
+		Where("tenant_uuid = ? AND plan_id = ?", tenantUUID, planID).
+		Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	out := make([]string, 0, len(rows))
+	seen := map[string]struct{}{}
+	for _, row := range rows {
+		id := strings.TrimSpace(row.BenefitID)
+		if id == "" {
+			continue
+		}
+		if _, ok := seen[id]; ok {
+			continue
+		}
+		seen[id] = struct{}{}
+		out = append(out, id)
+	}
+	return out, nil
+}
+
 func computePlanValidTo(start time.Time, plan *productmodel.SubscriptionPlan) *time.Time {
 	if plan == nil {
 		return nil
@@ -181,9 +300,9 @@ func computePlanValidTo(start time.Time, plan *productmodel.SubscriptionPlan) *t
 	return &end
 }
 
-func upsertMembershipAssignment(ctx context.Context, db *gorm.DB, tenantUUID, customerID, tierID string, validFrom time.Time, validTo *time.Time, sourceID string) error {
+func upsertMembershipAssignment(ctx context.Context, db *gorm.DB, tenantUUID, customerID, tierID string, validFrom time.Time, validTo *time.Time, sourceID string) (string, string, error) {
 	if strings.TrimSpace(tierID) == "" || strings.TrimSpace(customerID) == "" {
-		return nil
+		return "", "", nil
 	}
 	var existing membershipModel.MembershipAssignment
 	err := db.WithContext(ctx).
@@ -199,10 +318,13 @@ func upsertMembershipAssignment(ctx context.Context, db *gorm.DB, tenantUUID, cu
 		if validTo != nil {
 			updates["valid_to"] = validTo
 		}
-		return db.WithContext(ctx).
+		if err := db.WithContext(ctx).
 			Model(&membershipModel.MembershipAssignment{}).
 			Where("tenant_uuid = ? AND id = ?", tenantUUID, existing.ID).
-			Updates(updates).Error
+			Updates(updates).Error; err != nil {
+			return "", "", err
+		}
+		return existing.ID, "updated", nil
 	case err == gorm.ErrRecordNotFound:
 		assignment := membershipModel.MembershipAssignment{
 			ID:         utils.NewUUID(),
@@ -215,21 +337,25 @@ func upsertMembershipAssignment(ctx context.Context, db *gorm.DB, tenantUUID, cu
 			SourceType: "subscription",
 			SourceID:   strings.TrimSpace(sourceID),
 		}
-		return db.WithContext(ctx).Create(&assignment).Error
+		if err := db.WithContext(ctx).Create(&assignment).Error; err != nil {
+			return "", "", err
+		}
+		return assignment.ID, "created", nil
 	default:
-		return err
+		return "", "", err
 	}
 }
 
-func grantBenefits(ctx context.Context, db *gorm.DB, tenantUUID, customerID string, benefitIDs []string, validFrom time.Time, sourceID string) error {
+func grantBenefits(ctx context.Context, db *gorm.DB, tenantUUID, customerID string, benefitIDs []string, validFrom time.Time, sourceID string) ([]entitlementGrant, error) {
+	var grants []entitlementGrant
 	if len(benefitIDs) == 0 {
-		return nil
+		return grants, nil
 	}
 	var benefits []membershipModel.MembershipBenefit
 	if err := db.WithContext(ctx).
 		Where("tenant_uuid = ? AND id IN ?", tenantUUID, benefitIDs).
 		Find(&benefits).Error; err != nil {
-		return err
+		return grants, err
 	}
 	for _, benefit := range benefits {
 		items := parseBenefitItems(benefit)
@@ -238,26 +364,52 @@ func grantBenefits(ctx context.Context, db *gorm.DB, tenantUUID, customerID stri
 				continue
 			}
 			entSourceID := strings.TrimSpace(fmt.Sprintf("%s:%s", sourceID, benefit.ID))
-			if err := grantEntitlement(ctx, db, tenantUUID, customerID, item, validFrom, entSourceID); err != nil {
-				return err
+			grant, err := grantEntitlement(ctx, db, tenantUUID, customerID, item, validFrom, entSourceID, benefit.ID)
+			if err != nil {
+				return grants, err
+			}
+			if grant != nil {
+				grants = append(grants, *grant)
 			}
 		}
 	}
-	return nil
+	return grants, nil
 }
 
 func parseBenefitItems(benefit membershipModel.MembershipBenefit) []benefitItem {
+	fallbackCode := strings.TrimSpace(benefit.Name)
+	if fallbackCode == "" {
+		fallbackCode = strings.TrimSpace(benefit.ID)
+	}
 	if len(benefit.Items) == 0 {
-		return nil
+		if fallbackCode == "" {
+			return nil
+		}
+		return []benefitItem{{ServiceCode: fallbackCode, Quantity: 1}}
 	}
 	var items []benefitItem
 	if err := json.Unmarshal(benefit.Items, &items); err == nil {
-		return items
+		normalized := make([]benefitItem, 0, len(items))
+		for _, it := range items {
+			if strings.TrimSpace(it.ServiceCode) == "" {
+				it.ServiceCode = fallbackCode
+			}
+			if it.Quantity == 0 {
+				it.Quantity = 1
+			}
+			if strings.TrimSpace(it.ServiceCode) != "" {
+				normalized = append(normalized, it)
+			}
+		}
+		return normalized
 	}
 	// fallback for single item
 	payload := map[string]any{}
 	if err := json.Unmarshal(benefit.Items, &payload); err != nil {
-		return nil
+		if fallbackCode == "" {
+			return nil
+		}
+		return []benefitItem{{ServiceCode: fallbackCode, Quantity: 1}}
 	}
 	item := benefitItem{
 		ServiceCode: pickString(payload, "service_code", "serviceCode"),
@@ -265,17 +417,26 @@ func parseBenefitItems(benefit membershipModel.MembershipBenefit) []benefitItem 
 		ValidDays:   int(pickInt64(payload, "valid_days", "validDays")),
 		StackPolicy: pickString(payload, "stack_policy", "stackPolicy"),
 	}
+	if strings.TrimSpace(item.ServiceCode) == "" {
+		item.ServiceCode = fallbackCode
+	}
+	if item.Quantity == 0 {
+		item.Quantity = 1
+	}
+	if strings.TrimSpace(item.ServiceCode) == "" {
+		return nil
+	}
 	return []benefitItem{item}
 }
 
-func grantEntitlement(ctx context.Context, db *gorm.DB, tenantUUID, customerID string, item benefitItem, validFrom time.Time, sourceID string) error {
+func grantEntitlement(ctx context.Context, db *gorm.DB, tenantUUID, customerID string, item benefitItem, validFrom time.Time, sourceID, benefitID string) (*entitlementGrant, error) {
 	stackPolicy := strings.TrimSpace(item.StackPolicy)
 	if stackPolicy == "" {
 		stackPolicy = "stack"
 	}
 	qty := item.Quantity
 	if qty == 0 {
-		return nil
+		return nil, nil
 	}
 	var validTo *time.Time
 	if item.ValidDays > 0 {
@@ -288,10 +449,10 @@ func grantEntitlement(ctx context.Context, db *gorm.DB, tenantUUID, customerID s
 			tenantUUID, customerID, "subscription", sourceID, item.ServiceCode).
 		First(&existing).Error
 	if err == nil {
-		return nil
+		return nil, nil
 	}
 	if err != gorm.ErrRecordNotFound {
-		return err
+		return nil, err
 	}
 	ent := membershipModel.Entitlement{
 		ID:          utils.NewUUID(),
@@ -305,12 +466,24 @@ func grantEntitlement(ctx context.Context, db *gorm.DB, tenantUUID, customerID s
 		SourceType:  "subscription",
 		SourceID:    strings.TrimSpace(sourceID),
 	}
-	return db.WithContext(ctx).Create(&ent).Error
+	if err := db.WithContext(ctx).Create(&ent).Error; err != nil {
+		return nil, err
+	}
+	return &entitlementGrant{
+		EntitlementID: ent.ID,
+		ServiceCode:   ent.ServiceCode,
+		Quantity:      ent.Quantity,
+		ValidFrom:     validFrom,
+		ValidTo:       validTo,
+		StackPolicy:   ent.StackPolicy,
+		BenefitID:     strings.TrimSpace(benefitID),
+		SourceID:      ent.SourceID,
+	}, nil
 }
 
-func grantTokens(ctx context.Context, db *gorm.DB, tenantUUID, customerID, tokenCode string, amount int64, sourceID, planID string) error {
+func grantTokens(ctx context.Context, db *gorm.DB, tenantUUID, customerID, tokenCode string, amount int64, sourceID, planID string) (*tokenGrant, error) {
 	if strings.TrimSpace(tokenCode) == "" || amount <= 0 {
-		return nil
+		return nil, nil
 	}
 	var existing membershipModel.TokenTransaction
 	err := db.WithContext(ctx).
@@ -318,17 +491,17 @@ func grantTokens(ctx context.Context, db *gorm.DB, tenantUUID, customerID, token
 			tenantUUID, "subscription", sourceID, tokenCode).
 		First(&existing).Error
 	if err == nil {
-		return nil
+		return nil, nil
 	}
 	if err != gorm.ErrRecordNotFound {
-		return err
+		return nil, err
 	}
 	account := membershipModel.TokenAccount{}
 	if err := db.WithContext(ctx).
 		Where("tenant_uuid = ? AND customer_id = ? AND token_code = ?", tenantUUID, customerID, tokenCode).
 		First(&account).Error; err != nil {
 		if err != gorm.ErrRecordNotFound {
-			return err
+			return nil, err
 		}
 		account = membershipModel.TokenAccount{
 			ID:         utils.NewUUID(),
@@ -338,7 +511,7 @@ func grantTokens(ctx context.Context, db *gorm.DB, tenantUUID, customerID, token
 			Balance:    amount,
 		}
 		if err := db.WithContext(ctx).Create(&account).Error; err != nil {
-			return err
+			return nil, err
 		}
 	} else {
 		if err := db.WithContext(ctx).
@@ -348,16 +521,17 @@ func grantTokens(ctx context.Context, db *gorm.DB, tenantUUID, customerID, token
 				"balance":    gorm.Expr("balance + ?", amount),
 				"updated_at": time.Now().UTC(),
 			}).Error; err != nil {
-			return err
+			return nil, err
 		}
 	}
 	if strings.TrimSpace(planID) != "" {
 		if err := appendTokenPlanLink(ctx, db, tenantUUID, account.ID, planID); err != nil {
-			return err
+			return nil, err
 		}
 	}
+	transactionID := utils.NewUUID()
 	transaction := membershipModel.TokenTransaction{
-		ID:         utils.NewUUID(),
+		ID:         transactionID,
 		TenantUUID: tenantUUID,
 		CustomerID: customerID,
 		TokenCode:  strings.TrimSpace(tokenCode),
@@ -365,7 +539,17 @@ func grantTokens(ctx context.Context, db *gorm.DB, tenantUUID, customerID, token
 		SourceType: "subscription",
 		SourceID:   strings.TrimSpace(sourceID),
 	}
-	return db.WithContext(ctx).Create(&transaction).Error
+	if err := db.WithContext(ctx).Create(&transaction).Error; err != nil {
+		return nil, err
+	}
+	return &tokenGrant{
+		TransactionID: transactionID,
+		AccountID:     account.ID,
+		TokenCode:     transaction.TokenCode,
+		Amount:        amount,
+		SourceID:      strings.TrimSpace(sourceID),
+		PlanID:        strings.TrimSpace(planID),
+	}, nil
 }
 
 func appendTokenPlanLink(ctx context.Context, db *gorm.DB, tenantUUID, accountID, planID string) error {
@@ -416,6 +600,31 @@ func appendTokenPlanLink(ctx context.Context, db *gorm.DB, tenantUUID, accountID
 			"metadata":   datatypes.JSON(buf),
 			"updated_at": time.Now().UTC(),
 		}).Error
+}
+
+func (s *TransactionService) emitSubscriptionAudit(ctx context.Context, tenantUUID string, evt paymentslogger.AuditEvent) {
+	if s == nil {
+		return
+	}
+	logger := s.logger(ctx)
+	if logger == nil {
+		return
+	}
+	if strings.TrimSpace(evt.TenantID) == "" {
+		evt.TenantID = strings.TrimSpace(tenantUUID)
+	}
+	logger.EmitAudit(evt)
+}
+
+func cloneMetadata(source map[string]any) map[string]any {
+	if len(source) == 0 {
+		return map[string]any{}
+	}
+	out := make(map[string]any, len(source))
+	for k, v := range source {
+		out[k] = v
+	}
+	return out
 }
 
 func pickInt64(payload map[string]any, keys ...string) int64 {

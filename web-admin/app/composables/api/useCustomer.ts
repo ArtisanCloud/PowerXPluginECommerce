@@ -6,9 +6,11 @@ import type {
   Customer,
   CustomerCreatePayload,
   CustomerDeletePayload,
+  CustomerEntitlementList,
   CustomerExportPayload,
   CustomerListFilters,
   CustomerListResponse,
+  CustomerTokenBalanceList,
   CustomerUpdatePayload,
   JobStatus,
   MembershipFilters,
@@ -38,6 +40,12 @@ export function useCustomerApi() {
 
     getCustomer: (id: string, init?: any) =>
       unwrap(apiGet<ApiEnvelope<Customer>>(`${basePath}/${id}`, undefined, init)),
+
+    getCustomerEntitlements: (id: string, init?: any) =>
+      unwrap(apiGet<ApiEnvelope<CustomerEntitlementList>>(`${basePath}/${id}/entitlements`, undefined, init)),
+
+    getCustomerTokenBalances: (id: string, init?: any) =>
+      unwrap(apiGet<ApiEnvelope<CustomerTokenBalanceList>>(`${basePath}/${id}/tokens`, undefined, init)),
 
     createCustomer: (payload: CustomerCreatePayload, init?: any) =>
       unwrap(apiPost<ApiEnvelope<Customer>>(basePath, payload, init)),
@@ -75,4 +83,3 @@ export function useCustomerApi() {
       unwrap(apiGet<ApiEnvelope<JobStatus>>(`jobs/${taskId}`, undefined, init)),
   };
 }
-

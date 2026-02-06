@@ -55,6 +55,8 @@ import {
   requestMiniAppPayment,
 } from "@/services/miniapp-payment";
 import { miniAppGetMyOrder } from "@/services/miniapp-order";
+import { miniAppBatchSkus } from "@/services/miniapp-sku";
+import { miniAppGetProduct } from "@/services/miniapp-product";
 
 const topInset = ref(44);
 
@@ -161,15 +163,45 @@ function toMall() {
 }
 
 function toProfile() {
-  if (orderId.value) return uni.navigateTo({ url: `/pages/order/detail?id=${encodeURIComponent(orderId.value)}` });
+  if (orderId.value) return gotoOrderDetail();
   uni.navigateTo({ url: "/pages/order/list" });
 }
 
-function gotoOrderDetail() {
+async function resolveOrderDetailRoute(id: string) {
+  try {
+    const detail = await miniAppGetMyOrder(id);
+    const skuIds = Array.from(new Set((detail?.items || []).map((x: any) => String(x?.skuId || "").trim()).filter(Boolean)));
+    if (!skuIds.length) return `/pages/order/detail?id=${encodeURIComponent(id)}`;
+    const resp = await miniAppBatchSkus(skuIds);
+    const spuIds = Array.from(
+      new Set((resp?.items || []).map((x: any) => String(x?.spuId || "").trim()).filter(Boolean)),
+    );
+    if (!spuIds.length) return `/pages/order/detail?id=${encodeURIComponent(id)}`;
+    const types = await Promise.all(
+      spuIds.map(async (spuId) => {
+        try {
+          const p = await miniAppGetProduct(spuId);
+          return String((p as any)?.type || "").trim().toLowerCase();
+        } catch {
+          return "";
+        }
+      }),
+    );
+    if (types.length && types.every((t) => t === "subscription")) {
+      return `/pages/membership/order-detail?id=${encodeURIComponent(id)}`;
+    }
+  } catch {
+    // ignore
+  }
+  return `/pages/order/detail?id=${encodeURIComponent(id)}`;
+}
+
+async function gotoOrderDetail() {
   if (redirected.value) return;
   redirected.value = true;
   if (orderId.value) {
-    uni.redirectTo({ url: `/pages/order/detail?id=${encodeURIComponent(orderId.value)}` });
+    const url = await resolveOrderDetailRoute(orderId.value);
+    uni.redirectTo({ url });
     return;
   }
   uni.redirectTo({ url: "/pages/order/list" });

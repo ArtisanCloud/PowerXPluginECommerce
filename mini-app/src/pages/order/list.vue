@@ -105,6 +105,7 @@ type OrderCardVM = OrderSummary & {
     skuLabel?: string;
     thumb: string;
   };
+  isSubscription?: boolean;
 };
 
 const storeName = "官方自营旗舰店";
@@ -134,6 +135,7 @@ const orders = ref<OrderCardVM[]>([]);
 const detailsByOrderId = new Map<string, OrderDetail>();
 const skuById = ref<Map<string, MiniAppSkuBatchItem>>(new Map());
 const spuCoverById = ref<Map<string, string>>(new Map());
+const spuTypeById = ref<Map<string, string>>(new Map());
 const brokenThumbOrderIds = ref<Set<string>>(new Set());
 
 function ensureTopInset() {
@@ -164,6 +166,11 @@ function onSearch() {
 function openDetail(orderId: string) {
   const id = String(orderId || "").trim();
   if (!id) return;
+  const card = orders.value.find((o) => String(o.orderId || "").trim() === id);
+  if (card?.isSubscription) {
+    uni.navigateTo({ url: `/pages/membership/order-detail?id=${encodeURIComponent(id)}` });
+    return;
+  }
   uni.navigateTo({ url: `/pages/order/detail?id=${encodeURIComponent(id)}` });
 }
 
@@ -314,6 +321,7 @@ function buildCardFromDetail(summary: OrderSummary, detail?: OrderDetail) {
   const skuLabel = String(sku?.code || "").trim() || undefined;
   const spuId = String((sku as any)?.spuId || "").trim();
   const coverUrl = spuId ? String(spuCoverById.value.get(spuId) || "").trim() : "";
+  const spuType = spuId ? String(spuTypeById.value.get(spuId) || "").trim().toLowerCase() : "";
   const thumbKey = String(spuId || summary.orderId || summary.orderNo || first.skuId || "").trim();
   const thumb =
     (brokenThumbOrderIds.value.has(id) ? "" : "") ||
@@ -329,6 +337,7 @@ function buildCardFromDetail(summary: OrderSummary, detail?: OrderDetail) {
       skuLabel,
       thumb,
     },
+    isSubscription: spuType === "subscription",
   } as OrderCardVM;
 }
 
@@ -368,17 +377,21 @@ async function enrichOrdersWithDetail(summaries: OrderSummary[]) {
   );
   if (spuIds.length) {
     const next = new Map<string, string>(spuCoverById.value);
+    const nextType = new Map<string, string>(spuTypeById.value);
     await mapWithConcurrency(spuIds.filter((id) => !next.has(id)), 6, async (spuId) => {
       try {
         const p = await miniAppGetProduct(spuId);
         const coverUrl = String((p as any)?.coverUrl || "").trim();
         if (coverUrl) next.set(spuId, coverUrl);
+        const pType = String((p as any)?.type || "").trim();
+        if (pType) nextType.set(spuId, pType);
       } catch {
         // ignore
       }
       return null as any;
     });
     spuCoverById.value = next;
+    spuTypeById.value = nextType;
   }
 
   const nextCards = summaries.map((s) => buildCardFromDetail(s));
@@ -395,6 +408,7 @@ async function loadFirstPage() {
   detailsByOrderId.clear();
   skuById.value = new Map();
   spuCoverById.value = new Map();
+  spuTypeById.value = new Map();
   brokenThumbOrderIds.value = new Set();
   try {
     const resp = await miniAppListMyOrders({ page: 1, pageSize: pageSize.value });

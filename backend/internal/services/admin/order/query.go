@@ -92,6 +92,9 @@ func (s *Service) GetOrderDetail(ctx context.Context, tenantUUID, orderID string
 			LineAmount: it.LineAmount,
 		})
 	}
+	if len(items) == 0 {
+		items = buildFallbackItems(ord.PriceSnapshot, ord.SellabilitySnap)
+	}
 
 	evs := make([]OrderEventDTO, 0, len(events))
 	for _, ev := range events {
@@ -126,4 +129,66 @@ func (s *Service) GetOrderDetail(ctx context.Context, tenantUUID, orderID string
 		Items:  items,
 		Events: evs,
 	}, nil
+}
+
+type priceSnapshotItem struct {
+	SKUID string `json:"skuId"`
+	Qty   int64  `json:"qty"`
+}
+
+type priceSnapshotPayload struct {
+	Items []priceSnapshotItem `json:"items"`
+}
+
+type sellabilityItem struct {
+	SKUID string `json:"skuId"`
+	Price *struct {
+		Amount   float64 `json:"amount"`
+		Currency string  `json:"currency"`
+	} `json:"price"`
+}
+
+type sellabilitySnapshotPayload struct {
+	Items []sellabilityItem `json:"items"`
+}
+
+func buildFallbackItems(priceSnapRaw, sellSnapRaw []byte) []OrderItemDTO {
+	if len(priceSnapRaw) == 0 {
+		return nil
+	}
+	var priceSnap priceSnapshotPayload
+	if err := json.Unmarshal(priceSnapRaw, &priceSnap); err != nil {
+		return nil
+	}
+	if len(priceSnap.Items) == 0 {
+		return nil
+	}
+	priceMap := map[string]int64{}
+	if len(sellSnapRaw) > 0 {
+		var sellSnap sellabilitySnapshotPayload
+		if err := json.Unmarshal(sellSnapRaw, &sellSnap); err == nil {
+			for _, it := range sellSnap.Items {
+				if it.Price == nil || it.Price.Amount <= 0 {
+					continue
+				}
+				priceMap[strings.TrimSpace(it.SKUID)] = int64(it.Price.Amount * 100)
+			}
+		}
+	}
+	items := make([]OrderItemDTO, 0, len(priceSnap.Items))
+	for _, it := range priceSnap.Items {
+		skuID := strings.TrimSpace(it.SKUID)
+		if skuID == "" || it.Qty <= 0 {
+			continue
+		}
+		unit := priceMap[skuID]
+		items = append(items, OrderItemDTO{
+			SKUID:       skuID,
+			Qty:         it.Qty,
+			UnitPrice:   unit,
+			LineAmount:  unit * it.Qty,
+			PriceSource: "snapshot",
+		})
+	}
+	return items
 }

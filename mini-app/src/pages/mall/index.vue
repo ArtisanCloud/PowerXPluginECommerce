@@ -449,7 +449,8 @@ async function loadProducts(reset: boolean) {
     total.value = Number(resp?.total || 0);
     page.value = Number(resp?.page || (reset ? 1 : nextPage));
     const items = Array.isArray(resp?.items) ? resp.items : [];
-    const mapped: Product[] = items.map((it) => {
+    const visibleItems = items.filter((it) => String(it?.type || "").toLowerCase() !== "subscription");
+    const mapped: Product[] = visibleItems.map((it) => {
       const sellability = it.sellability;
       const disabled = sellability && sellability.sellable === false;
       const reasonCode = (sellability?.reasons || [])[0] || "";

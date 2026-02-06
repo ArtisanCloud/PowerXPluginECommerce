@@ -70,7 +70,7 @@
             @click="toggleMembershipTiers"
           >
             <UIcon name="i-heroicons-star" class="w-4 h-4 mr-3"/>
-            会员等级
+            会籍管理
             <UIcon
               :name="
                 showMembershipTiers
@@ -83,18 +83,18 @@
 
           <div v-show="showMembershipTiers" class="ml-6 mt-1 space-y-1">
             <UButton
-              to="/customer/membership/tiers"
+              to="/customer/membership"
               variant="ghost"
               color="neutral"
               size="sm"
               class="w-full justify-start text-sm"
               :class="{
                 'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
-                  $route.path === '/customer/membership/tiers',
+                  $route.path === '/customer/membership',
               }"
             >
-              <UIcon name="i-heroicons-list-bullet" class="w-3 h-3 mr-2"/>
-              等级管理
+              <UIcon name="i-heroicons-home" class="w-3 h-3 mr-2"/>
+              会籍总览
             </UButton>
             <UButton
               to="/customer/membership/benefits"
@@ -108,7 +108,21 @@
               }"
             >
               <UIcon name="i-heroicons-gift" class="w-3 h-3 mr-2"/>
-              等级权益
+              会籍权益
+            </UButton>
+            <UButton
+              to="/customer/membership/tiers"
+              variant="ghost"
+              color="neutral"
+              size="sm"
+              class="w-full justify-start text-sm"
+              :class="{
+                'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
+                  $route.path === '/customer/membership/tiers',
+              }"
+            >
+              <UIcon name="i-heroicons-list-bullet" class="w-3 h-3 mr-2"/>
+              会籍等级
             </UButton>
             <UButton
               to="/customer/membership/rules"
@@ -122,7 +136,7 @@
               }"
             >
               <UIcon name="i-heroicons-cog-6-tooth" class="w-3 h-3 mr-2"/>
-              等级规则
+              会籍规则
             </UButton>
             <UButton
               to="/customer/membership/analytics"
@@ -136,7 +150,7 @@
               }"
             >
               <UIcon name="i-heroicons-chart-bar" class="w-3 h-3 mr-2"/>
-              客户分布分析
+              会籍分析
             </UButton>
           </div>
 
@@ -1307,7 +1321,8 @@ watch(
       showAfterSales.value = true;
     }
     // 会员等级相关路由
-    if (newPath.startsWith("/customer/membership/tiers") ||
+    if (newPath === "/customer/membership" ||
+      newPath.startsWith("/customer/membership/tiers") ||
       newPath.startsWith("/customer/membership/benefits") ||
       newPath.startsWith("/customer/membership/rules") ||
       newPath.startsWith("/customer/membership/analytics")) {

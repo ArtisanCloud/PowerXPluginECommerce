@@ -178,16 +178,17 @@ type subscriptionPlanListResponse struct {
 }
 
 type miniAppSubscriptionPlan struct {
-	ID           string  `json:"id"`
-	SKUID        string  `json:"skuId,omitempty"`
-	PlanCode     string  `json:"planCode"`
-	Name         string  `json:"name"`
-	BillingCycle string  `json:"billingCycle"`
-	BillingValue int     `json:"billingValue,omitempty"`
-	Price        float64 `json:"price"`
-	Currency     string  `json:"currency"`
-	TrialDays    int     `json:"trialDays,omitempty"`
-	AutoRenew    bool    `json:"autoRenew,omitempty"`
-	CancelPolicy string  `json:"cancelPolicy,omitempty"`
-	Status       string  `json:"status,omitempty"`
+	ID           string   `json:"id"`
+	SKUID        string   `json:"skuId,omitempty"`
+	PlanCode     string   `json:"planCode"`
+	Name         string   `json:"name"`
+	BillingCycle string   `json:"billingCycle"`
+	BillingValue int      `json:"billingValue,omitempty"`
+	Price        float64  `json:"price"`
+	Currency     string   `json:"currency"`
+	TrialDays    int      `json:"trialDays,omitempty"`
+	AutoRenew    bool     `json:"autoRenew,omitempty"`
+	CancelPolicy string   `json:"cancelPolicy,omitempty"`
+	Status       string   `json:"status,omitempty"`
+	BenefitIDs   []string `json:"benefitIds,omitempty"`
 }

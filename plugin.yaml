@@ -172,6 +172,8 @@ rbac:
       actions: [read, manage]
     - resource: com.powerx.plugin.ecommerce:channel.note
       actions: [read, create]
+    - resource: com.powerx.plugin.ecommerce:membership
+      actions: [read, write]
 
 permissions:
   - resource: com.powerx.plugin.ecommerce:product.sku
@@ -200,6 +202,8 @@ permissions:
     actions: [read, manage]
   - resource: com.powerx.plugin.ecommerce:channel.note
     actions: [read, create]
+  - resource: com.powerx.plugin.ecommerce:membership
+    actions: [read, write]
 
 agents:
   - id: com.powerx.plugin.ecommerce.assistant

@@ -35,6 +35,30 @@ export interface Customer {
   metadata?: Record<string, any>;
 }
 
+export interface CustomerEntitlement {
+  id: string;
+  serviceCode: string;
+  quantity: number;
+  validFrom?: string;
+  validTo?: string;
+  stackPolicy?: string;
+  sourceType?: string;
+  sourceId?: string;
+}
+
+export interface CustomerEntitlementList {
+  items: CustomerEntitlement[];
+}
+
+export interface CustomerTokenBalance {
+  tokenCode: string;
+  balance: number;
+}
+
+export interface CustomerTokenBalanceList {
+  items: CustomerTokenBalance[];
+}
+
 export interface SavedView {
   id: string;
   name: string;

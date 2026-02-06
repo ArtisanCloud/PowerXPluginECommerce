@@ -40,11 +40,29 @@
 - [x] T012 [US3] 新增客户权益查询接口（`backend/internal/transport/http/miniapp` 或 `admin`）
 - [x] T013 [US3] 新增代币余额查询接口（`backend/internal/transport/http/miniapp` 或 `admin`）
 - [x] T014 [US3] mini-app 订单/会员视图展示权益与代币余额（`mini-app/src/pages/order` 或 `profile`）
+- [x] T017 [US3] web-admin 展示客户权益与代币（`web-admin/app/pages/customer` 或相关组件）
+- [x] T018 [US3] 订阅计划绑定字段校验提示（`web-admin/app/components/product/SubscriptionPlanPanel.vue`）
+- [x] T019 [US3] 订阅发放审计日志（`backend/internal/observability` 或 payments logger）
 
 ## Phase 6: Polish & Cross-Cutting
 
-- [ ] T015 补充 quickstart 验证步骤与预期结果（`specs/010-membership-entitlements/quickstart.md`）
-- [ ] T016 记录文档变更索引（`docs/plan/customer/readme.md`）
+- [x] T015 补充 quickstart 验证步骤与预期结果（`specs/010-membership-entitlements/quickstart.md`）
+- [x] T016 记录文档变更索引（`docs/plan/customer/readme.md`）
+
+## Phase 7: Admin 会籍管理入口 (P2)
+
+**Goal**: 后台可查看会籍/权益配置与客户会籍详情。
+
+**Independent Test**: 进入后台会籍管理页与客户详情页可查看会籍/权益/代币信息。
+
+- [x] T020 [US4] web-admin 新增会籍管理入口（侧边栏/页面骨架）
+- [x] T021 [US4] 会籍等级列表与权益配置展示（读取后端列表）
+- [x] T022 [US4] 客户详情会籍/权益/代币视图对齐并补齐字段
+- [x] T023 [US4] 后端新增会籍等级/权益列表查询接口（admin）
+- [x] T024 [US4] 后端补齐会籍管理 RBAC 映射与权限说明
+- [x] T025 [US4] 后台手动发放/回收权益（admin API + 审计）
+- [x] T026 [US4] 后台手动调整代币余额（admin API + 审计）
+- [x] T027 [US4] web-admin 客户详情新增“手动调整”操作入口（含权限控制）
 
 ## Dependencies
 

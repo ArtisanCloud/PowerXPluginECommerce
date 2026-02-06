@@ -12,6 +12,8 @@ func RegisterRoutes(rg *gin.RouterGroup, deps *app.Deps) {
 	}
 	h := NewHandler(deps)
 	group := rg.Group("/membership")
+	group.GET("/benefits", h.ListBenefits)
+	group.GET("/profile", h.GetProfile)
 	group.GET("/entitlements", h.ListEntitlements)
 	group.GET("/tokens", h.GetTokenBalances)
 }

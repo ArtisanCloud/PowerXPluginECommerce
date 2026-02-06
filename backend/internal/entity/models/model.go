@@ -79,6 +79,7 @@ const (
 	TableProductSpuLocales               = "product_spu_locales"
 	TableProductSpuChannels              = "product_spu_channels"
 	TableProductSpuSubscriptionPlans     = "product_spu_subscription_plans"
+	TableProductSpuSubscriptionPlanLinks = "product_spu_subscription_plan_benefits"
 	TableProductSpuImportTasks           = "product_spu_import_tasks"
 	TableProductSpuExportTasks           = "product_spu_export_tasks"
 	TableProductSpuApprovals             = "product_spu_approvals"

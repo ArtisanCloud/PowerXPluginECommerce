@@ -706,8 +706,20 @@
           "orders": "Orders",
           "afterSales": "After-sales",
           "points": "Points & Growth",
+          "entitlements": "Entitlements",
           "notes": "Notes",
           "audit": "Audit"
+        },
+        "entitlements": {
+          "loadError": "Failed to load entitlements or tokens",
+          "tokens": "Token balances",
+          "tokenTypes": "{count} token types",
+          "entitlements": "Available entitlements",
+          "emptyTokens": "No token balances yet",
+          "emptyEntitlements": "No entitlements yet",
+          "unlimited": "Unlimited",
+          "noExpiry": "No expiry",
+          "validityRange": "Validity: {from} - {to}"
         },
         "empty": "Select a customer to view details",
         "lastOrder": "Last order time",

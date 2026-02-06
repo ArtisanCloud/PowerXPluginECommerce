@@ -9,6 +9,7 @@ var ProductSPUTables = []interface{}{
 	&productmodel.SPULocale{},
 	&productmodel.ChannelVisibility{},
 	&productmodel.SubscriptionPlan{},
+	&productmodel.SubscriptionPlanBenefit{},
 	&productmodel.SPUImportTask{},
 	&productmodel.SPUExportTask{},
 	&productmodel.SPUApprovalRecord{},

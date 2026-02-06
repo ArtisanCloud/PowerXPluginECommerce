@@ -7,7 +7,7 @@
 
 ## Summary
 
-订阅支付成功后自动生成会籍、发放权益与代币余额，支持组合型权益、默认可叠加、幂等防重复，并提供客户查询视图。
+订阅支付成功后自动生成会籍、发放权益与代币余额，支持组合型权益、默认可叠加、幂等防重复，并提供客户查询视图与后台会籍管理入口。
 
 ## Technical Context
 
@@ -58,7 +58,7 @@ mini-app/
 └── src/
 ```
 
-**Structure Decision**: 该功能涉及后端支付回调、会籍/权益/代币数据模型与服务，以及 web-admin/mini-app 查询展示。
+**Structure Decision**: 该功能涉及后端支付回调、会籍/权益/代币数据模型与服务，以及 web-admin/mini-app 查询展示与后台会籍管理页。
 
 ## Complexity Tracking
 

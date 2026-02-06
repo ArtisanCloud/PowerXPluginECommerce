@@ -11,12 +11,14 @@ import (
 	"time"
 
 	customermodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/customer"
+	ordermodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/order"
 	customerrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/customer"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	taskcenter "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/taskcenter"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/datatypes"
+	"gorm.io/gorm"
 )
 
 // Service 提供客户域的占位实现，依赖宿主 DB。
@@ -36,6 +38,14 @@ func NewService(deps *app.Deps) *Service {
 		repo: customerrepo.NewRepository(deps.DB),
 		jobs: taskcenter.DefaultStore(),
 	}
+}
+
+// DB exposes the underlying DB handle for read-only feature extensions.
+func (s *Service) DB() *gorm.DB {
+	if s == nil || s.deps == nil {
+		return nil
+	}
+	return s.deps.DB
 }
 
 // ListFilters 描述查询条件。
@@ -71,6 +81,12 @@ func (s *Service) GetCustomer(ctx context.Context, id string) (*Customer, error)
 		return nil, ErrCustomerNotFound
 	}
 	result := convertEntityToCustomer(entity)
+	if entity.LastOrderAt == nil {
+		if lastAt, lastAmount, err := s.fetchLastOrderSnapshot(ctx, entity.CustomerID); err == nil && lastAt != nil {
+			result.LastOrderAt = lastAt.UTC().Format(time.RFC3339)
+			result.LastOrderAmount = lastAmount
+		}
+	}
 	return &result, nil
 }
 
@@ -231,6 +247,34 @@ func copyCustomerToEntity(entity *customermodel.Customer, c Customer) {
 	if updated := parseTime(c.UpdatedAt); !updated.IsZero() {
 		entity.UpdatedAt = updated
 	}
+}
+
+func (s *Service) fetchLastOrderSnapshot(ctx context.Context, customerID string) (*time.Time, float64, error) {
+	if s == nil || s.deps == nil || s.deps.DB == nil {
+		return nil, 0, nil
+	}
+	tenantUUID, err := authx.RequireTenantUUID(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	type row struct {
+		CreatedAt   time.Time `gorm:"column:created_at"`
+		TotalAmount int64     `gorm:"column:total_amount"`
+	}
+	var last row
+	if err := s.deps.DB.WithContext(ctx).
+		Model(&ordermodel.Order{}).
+		Select("created_at, total_amount").
+		Where("tenant_uuid = ? AND customer_id = ?", tenantUUID, strings.TrimSpace(customerID)).
+		Order("created_at DESC").
+		Limit(1).
+		Scan(&last).Error; err != nil {
+		return nil, 0, err
+	}
+	if last.CreatedAt.IsZero() {
+		return nil, 0, nil
+	}
+	return &last.CreatedAt, float64(last.TotalAmount) / 100.0, nil
 }
 
 const importJobType = "customer_import"

@@ -19,6 +19,8 @@ func RegisterRoutes(rg *gin.RouterGroup, deps *app.Deps) {
 		group.POST("import", handler.CreateImportTask)
 		group.POST("", handler.CreateCustomer)
 		group.GET(":id", handler.GetCustomer)
+		group.GET(":id/entitlements", handler.ListCustomerEntitlements)
+		group.GET(":id/tokens", handler.GetCustomerTokenBalances)
 		group.PATCH(":id", handler.UpdateCustomer)
 		group.DELETE(":id", handler.DeleteCustomer)
 	}
