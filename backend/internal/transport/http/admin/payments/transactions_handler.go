@@ -49,6 +49,8 @@ func (h *TransactionHandler) List(c *gin.Context) {
 	filter := paymentsvc.TransactionListFilter{
 		Status:     strings.TrimSpace(c.Query("status")),
 		ProviderID: providerID,
+		OrderID:    strings.TrimSpace(c.Query("orderId")),
+		OrderNo:    strings.TrimSpace(c.Query("orderNo")),
 		From:       from,
 		To:         to,
 	}

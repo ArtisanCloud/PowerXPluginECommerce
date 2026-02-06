@@ -47,6 +47,12 @@ func (s *TransactionService) ListTransactions(ctx context.Context, tenantUUID, a
 	if filter.ProviderID > 0 {
 		query = query.Where("provider_id = ?", filter.ProviderID)
 	}
+	if v := strings.TrimSpace(filter.OrderID); v != "" {
+		query = query.Where("order_id = ?", v)
+	}
+	if v := strings.TrimSpace(filter.OrderNo); v != "" {
+		query = query.Where("order_no = ?", v)
+	}
 	if filter.From != nil {
 		query = query.Where("created_at >= ?", filter.From.UTC())
 	}

@@ -295,6 +295,30 @@
       </UTable>
     </UCard>
 
+    <UCard title="支付交易记录">
+      <UTable :columns="paymentColumns" :data="paymentTransactions" :loading="paymentLoading">
+        <template #transactionNo-cell="{ row }">
+          <code class="text-xs">{{ row.original.transactionNo }}</code>
+        </template>
+        <template #amountTotal-cell="{ row }">
+          <div class="text-right tabular-nums">
+            {{ formatMoney(row.original.amountCurrency || detail?.summary?.amounts?.currency || "CNY", row.original.amountTotal) }}
+          </div>
+        </template>
+        <template #status-cell="{ row }">
+          <UBadge :color="paymentStatusColor(row.original.status)" variant="subtle">
+            {{ paymentStatusLabel(row.original.status) }}
+          </UBadge>
+        </template>
+        <template #createdAt-cell="{ row }">
+          {{ formatTime(row.original.createdAt) }}
+        </template>
+        <template #completedAt-cell="{ row }">
+          {{ row.original.completedAt ? formatTime(row.original.completedAt) : "-" }}
+        </template>
+      </UTable>
+    </UCard>
+
     <UCard title="手动收款记录">
       <UTable :columns="manualColumns" :data="manualLogs" :loading="manualLoading">
         <template #amountMinor-cell="{ row }">
@@ -547,7 +571,7 @@ import { useOrderApi } from "~/composables/api/useOrder";
 import { useSkuApi } from "~/composables/api/useSku";
 import { usePaymentsApi } from "~/composables/api/usePayments";
 import { useAuthService } from "~/composables/api/services/authService";
-import type { ManualPaymentReview, ManualPaymentReviewLog } from "~/types/payments";
+import type { ManualPaymentReview, ManualPaymentReviewLog, PaymentTransaction } from "~/types/payments";
 import type { OrderBenefitReview, OrderDetail, OrderEvent, OrderItem, ShippingAddress } from "~/types/order";
 
 definePageMeta({
@@ -576,6 +600,8 @@ const manualSubmitting = ref(false);
 const manualLoading = ref(false);
 const manualReviews = ref<ManualPaymentReview[]>([]);
 const manualLogs = ref<ManualPaymentReviewLog[]>([]);
+const paymentTransactions = ref<PaymentTransaction[]>([]);
+const paymentLoading = ref(false);
 const currentReviewId = ref<number | null>(null);
 const rejectReason = ref("");
 const updating = ref(false);
@@ -652,6 +678,15 @@ const manualColumns = computed<TableColumn<ManualPaymentReviewLog>[]>(() => [
   { id: "actions", header: "操作", meta: { class: { td: "text-right" } } },
 ]);
 
+const paymentColumns = computed<TableColumn<PaymentTransaction>[]>(() => [
+  { accessorKey: "transactionNo", header: "支付单号" },
+  { accessorKey: "payMethod", header: "支付方式" },
+  { accessorKey: "amountTotal", header: "金额", meta: { class: { td: "text-right" } } },
+  { accessorKey: "status", header: "状态" },
+  { accessorKey: "createdAt", header: "创建时间" },
+  { accessorKey: "completedAt", header: "完成时间" },
+]);
+
 const benefitColumns = computed<TableColumn<OrderBenefitReview>[]>(() => [
   { id: "select", header: "", meta: { class: { td: "w-10" } } },
   { accessorKey: "benefitType", header: "类型" },
@@ -697,6 +732,28 @@ const statusColor = (st: string) => {
     paid: "success",
     cancelled: "neutral",
     draft: "info",
+  };
+  return map[st] || "neutral";
+};
+
+const paymentStatusLabel = (st: string) => {
+  const map: Record<string, string> = {
+    pending_payment: "待支付",
+    paying: "支付中",
+    paid: "已支付",
+    failed: "失败",
+    cancelled: "已取消",
+  };
+  return map[st] || st || "-";
+};
+
+const paymentStatusColor = (st: string) => {
+  const map: Record<string, "warning" | "success" | "neutral" | "info" | "error" | "primary"> = {
+    pending_payment: "warning",
+    paying: "info",
+    paid: "success",
+    failed: "error",
+    cancelled: "neutral",
   };
   return map[st] || "neutral";
 };
@@ -774,10 +831,12 @@ const loadOperatorNames = async (ids: string[]) => {
   const unique = Array.from(new Set(ids.map((id) => String(id || "").trim()).filter(Boolean)));
   const pending = unique.filter((id) => !operatorMap.value[id]);
   if (!pending.length) return;
-  const results = await Promise.allSettled(pending.map((id) => authService.getUser(id)));
+  const adminIds = pending.filter((id) => /^\d+$/.test(id));
+  if (!adminIds.length) return;
+  const results = await Promise.allSettled(adminIds.map((id) => authService.getUser(id)));
   const next = { ...operatorMap.value };
   results.forEach((res, idx) => {
-    const id = pending[idx];
+    const id = adminIds[idx];
     if (res.status === "fulfilled") {
       const user = res.value?.data;
       const name = user?.display_name || user?.email || user?.phone || user?.id || id;
@@ -790,8 +849,10 @@ const loadOperatorNames = async (ids: string[]) => {
 const syncOperatorMap = async () => {
   const ids = new Set<string>();
   (detail.value?.events || []).forEach((event) => {
-    const id = String(event.operator || "").trim();
-    if (id) ids.add(id);
+    if (event.operatorType === "admin") {
+      const id = String(event.operator || "").trim();
+      if (id) ids.add(id);
+    }
   });
   (manualReviews.value || []).forEach((row) => {
     if (row.submittedBy) ids.add(String(row.submittedBy));
@@ -847,6 +908,7 @@ const fetchDetail = async () => {
     await Promise.all([
       loadSkuMeta(detail.value?.items || []),
     ]);
+    await fetchPaymentTransactions();
     await fetchManualReviews();
     await fetchBenefitReviews();
     await syncOperatorMap();
@@ -858,6 +920,23 @@ const fetchDetail = async () => {
     });
   } finally {
     loading.value = false;
+  }
+};
+
+const fetchPaymentTransactions = async () => {
+  if (!id.value) return;
+  paymentLoading.value = true;
+  try {
+    paymentTransactions.value = await paymentsApi.listTransactions({ orderId: id.value });
+  } catch (e: any) {
+    toast.add({
+      title: "加载支付单失败",
+      description: e?.message || "请稍后重试",
+      color: "error",
+    });
+    paymentTransactions.value = [];
+  } finally {
+    paymentLoading.value = false;
   }
 };
 

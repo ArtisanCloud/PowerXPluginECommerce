@@ -191,15 +191,57 @@
                   </div>
                 </div>
               </div>
-              <div v-else-if="item.value === 'orders'" class="space-y-3 rounded-xl border border-gray-100 p-4 dark:border-gray-800">
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                  {{ t('customer.directory.drawer.lastOrder') }}
-                </p>
-                <p class="text-lg font-semibold text-gray-900 dark:text-white">
-                  {{ formatDate(customer.lastOrderAt) }}
-                </p>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                  {{ t('customer.directory.drawer.lastOrderAmount', { amount: formattedAmount }) }}
+              <div v-else-if="item.value === 'orders'" class="space-y-4 rounded-xl border border-gray-100 p-4 dark:border-gray-800">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                      {{ t('customer.directory.drawer.lastOrder') }}
+                    </p>
+                    <p class="text-lg font-semibold text-gray-900 dark:text-white">
+                      {{ formatDate(customer.lastOrderAt) }}
+                    </p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                      {{ t('customer.directory.drawer.lastOrderAmount', { amount: formattedAmount }) }}
+                    </p>
+                  </div>
+                  <UBadge v-if="ordersTotal" size="xs" variant="soft" color="primary">
+                    {{ t('customer.directory.status.total', { total: ordersTotal }) }}
+                  </UBadge>
+                </div>
+
+                <div v-if="ordersLoading" class="space-y-2">
+                  <USkeleton class="h-10 rounded-xl" />
+                  <USkeleton class="h-10 rounded-xl" />
+                </div>
+                <div v-else-if="orders.length" class="space-y-2">
+                  <div
+                    v-for="order in orders"
+                    :key="order.orderId"
+                    class="flex items-center justify-between gap-3 rounded-xl border border-gray-100 px-3 py-2 text-sm text-gray-700 dark:border-gray-800 dark:text-gray-200"
+                  >
+                    <div class="min-w-0">
+                      <p class="truncate font-medium text-gray-900 dark:text-white">
+                        {{ order.orderNo }}
+                      </p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400">
+                        {{ formatDate(order.createdAt) }}
+                      </p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <UBadge :color="statusColor(order.status)" variant="soft">
+                        {{ statusLabel(order.status) }}
+                      </UBadge>
+                      <span class="text-sm font-semibold text-gray-900 dark:text-white">
+                        ¥{{ formatOrderAmount(order.amounts?.total) }}
+                      </span>
+                      <UButton size="xs" variant="ghost" @click="openOrderDetail(order.orderId)">
+                        查看
+                      </UButton>
+                    </div>
+                  </div>
+                </div>
+                <p v-else class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t('customer.directory.drawer.lastOrder') }}：{{ t('customer.directory.drawer.unknown') }}
                 </p>
               </div>
               <div v-else-if="item.value === 'addresses'" class="space-y-3">
@@ -424,12 +466,14 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { useI18n, useToast } from "#imports";
+import { useI18n, useToast, useRouter } from "#imports";
 import CustomerAddressBookPanel from "~/components/customer/CustomerAddressBookPanel.vue";
 import { useCustomerApi } from "~/composables/api/useCustomer";
+import { useOrderApi } from "~/composables/api/useOrder";
 import { useMembershipAdminApi } from "~/composables/api/useMembership";
 import { useCustomerStore } from "~/stores/customer";
 import type { Customer, CustomerEntitlement, CustomerTokenBalance } from "~/types/customer";
+import type { OrderSummary } from "~/types/order";
 
 const props = defineProps<{
   customer: Customer | null
@@ -448,7 +492,9 @@ const { t, locale } = useI18n()
 const toast = useToast()
 const store = useCustomerStore()
 const customerApi = useCustomerApi()
+const orderApi = useOrderApi()
 const membershipApi = useMembershipAdminApi()
+const router = useRouter()
 
 const open = computed({
   get: () => props.modelValue,
@@ -470,6 +516,9 @@ const entitlements = ref<CustomerEntitlement[]>([])
 const tokenBalances = ref<CustomerTokenBalance[]>([])
 const membershipLoading = ref(false)
 const membershipError = ref('')
+const ordersLoading = ref(false)
+const orders = ref<OrderSummary[]>([])
+const ordersTotal = ref(0)
 const grantModalOpen = ref(false)
 const tokenModalOpen = ref(false)
 const grantForm = reactive({
@@ -604,6 +653,7 @@ const formatCurrency = (value?: number | null) => {
 }
 
 const formattedAmount = computed(() => formatCurrency(props.customer?.lastOrderAmount))
+const formatOrderAmount = (value?: number | null) => formatCurrency(value ? value / 100 : 0)
 const formatQuantity = (value?: number | null) => {
   if (value === undefined || value === null) {
     return t('customer.directory.drawer.unknown')
@@ -764,6 +814,11 @@ const handleDelete = () => {
   }
 }
 
+const openOrderDetail = (orderId: string) => {
+  if (!orderId) return
+  router.push(`/market/orders/${orderId}`)
+}
+
 const resetGrantForm = () => {
   grantForm.serviceCode = ''
   grantForm.quantity = 1
@@ -869,6 +924,30 @@ const loadMembershipAssets = async () => {
   }
 }
 
+const loadCustomerOrders = async () => {
+  if (!props.customer?.id) {
+    orders.value = []
+    ordersTotal.value = 0
+    return
+  }
+  try {
+    ordersLoading.value = true
+    const resp = await orderApi.listOrders({
+      customerId: props.customer.id,
+      page: 1,
+      pageSize: 5,
+    })
+    orders.value = resp?.items ?? []
+    ordersTotal.value = resp?.total ?? 0
+  } catch (error) {
+    orders.value = []
+    ordersTotal.value = 0
+    console.error(error)
+  } finally {
+    ordersLoading.value = false
+  }
+}
+
 const tabs = computed(() => [
   { label: t("customer.directory.drawer.tabs.overview"), value: "overview" },
   { label: t("customer.directory.drawer.tabs.orders"), value: "orders" },
@@ -894,9 +973,12 @@ watch(
       entitlements.value = []
       tokenBalances.value = []
       membershipError.value = ''
+      orders.value = []
+      ordersTotal.value = 0
       return
     }
     loadMembershipAssets()
+    loadCustomerOrders()
   },
   { immediate: true },
 )
