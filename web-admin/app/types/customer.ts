@@ -33,6 +33,7 @@ export interface Customer {
   maskedFields?: string[];
   membershipSnapshot?: MembershipSnapshot;
   metadata?: Record<string, any>;
+  progress?: number;
 }
 
 export interface CustomerEntitlement {
@@ -166,6 +167,7 @@ export interface BulkReminderPayload {
   channel: string;
   templateId: string;
   metadata?: Record<string, any>;
+  progress?: number;
 }
 
 export interface CustomerExportPayload {
@@ -181,6 +183,7 @@ export interface JobStatus {
   completedAt?: string;
   createdAt?: string;
   metadata?: Record<string, any>;
+  progress?: number;
 }
 
 export interface BulkTask extends JobStatus {

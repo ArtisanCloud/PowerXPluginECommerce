@@ -220,6 +220,38 @@ export const useProductSkuStore = defineStore('product-sku', {
 			if (!taskId) return
 			this.bulkTaskStatus[taskId] = status
 		},
+		applyBulkTaskEvent(event: any) {
+			const payload = (event?.payload ?? event ?? {}) as Record<string, any>
+			const taskId = String(payload.taskId ?? payload.task_id ?? payload.id ?? "").trim()
+			if (!taskId) return
+
+			const current = this.bulkTasks[taskId]
+			const nextStatus = normalizeBulkTaskEventStatus(payload.status ?? payload.state ?? current?.status)
+			const now = new Date().toISOString()
+
+			const merged: SkuBulkTask = {
+				taskId,
+				taskType: (payload.taskType ?? payload.task_type ?? current?.taskType ?? "import") as SkuBulkTask["taskType"],
+				scope: payload.scope ?? current?.scope,
+				operation: payload.operation ?? current?.operation,
+				status: nextStatus,
+				approvalRequired: Boolean(payload.approvalRequired ?? payload.approval_required ?? current?.approvalRequired ?? false),
+				approvalState: (payload.approvalState ?? payload.approval_state ?? current?.approvalState) as SkuBulkTask["approvalState"],
+				approvalReason: payload.approvalReason ?? payload.approval_reason ?? current?.approvalReason,
+				approvalThreshold: payload.approvalThreshold ?? payload.approval_threshold ?? current?.approvalThreshold,
+				affectedCount: payload.affectedCount ?? payload.affected_count ?? current?.affectedCount,
+				submittedBy: payload.submittedBy ?? payload.submitted_by ?? current?.submittedBy,
+				approvedBy: payload.approvedBy ?? payload.approved_by ?? current?.approvedBy,
+				approvedAt: payload.approvedAt ?? payload.approved_at ?? current?.approvedAt,
+				errorReportUrl: payload.errorReportUrl ?? payload.error_report ?? current?.errorReportUrl,
+				stats: payload.stats ?? current?.stats,
+				createdAt: payload.createdAt ?? payload.created_at ?? current?.createdAt ?? now,
+				updatedAt: payload.updatedAt ?? payload.updated_at ?? now,
+				result: payload.result ?? current?.result,
+			}
+
+			this.trackBulkTask(merged)
+		},
 		async fetchGeneratorCandidates(spuId: string, request: SkuGeneratorRequest) {
 			const api = useSkuApi()
 			this.generatorLoading = true
@@ -331,6 +363,22 @@ function normalizeSpec(spec: any): SkuSpecValue {
 		specName: spec?.spec_name ?? spec?.specName,
 		valueId: spec?.value_id ?? spec?.valueId,
 		valueName: spec?.value_name ?? spec?.valueName,
+	}
+}
+
+function normalizeBulkTaskEventStatus(raw: any): SkuBulkTaskStatus {
+	const normalized = String(raw ?? 'pending').trim().toLowerCase()
+	switch (normalized) {
+		case 'success':
+			return 'succeeded'
+		case 'succeeded':
+		case 'failed':
+		case 'cancelled':
+		case 'running':
+		case 'approved':
+			return normalized as SkuBulkTaskStatus
+		default:
+			return 'pending'
 	}
 }
 

@@ -13,7 +13,7 @@
 | --- | --- |
 | RBAC（路由级） | 需要具备类目相关资源权限（例如 `com.powerx.plugin.ecommerce:product.category:manage`、`com.powerx.plugin.ecommerce:product.category.template:manage`、`com.powerx.plugin.ecommerce:product.category.mapping:manage`、`com.powerx.plugin.ecommerce:product.category.import:manage`） |
 | 环境 | 已完成迁移：`make migrate`；或直接 `make dev`（会自动 migrate 后启动后端） |
-| 账号/租户 | 需要可用租户与可登录账号；所有请求需携带 `X-Tenant-UUID`（如默认租户 `00000000-0000-0000-0000-000000000001`） |
+| 账号/租户 | 需要可用租户与可登录账号；所有请求需带租户上下文（宿主鉴权上下文或 query `tenant_uuid`，如默认租户 `00000000-0000-0000-0000-000000000001`） |
 
 > 提示：管理端 API 需要管理员 JWT；miniapp API 需要“客户（customer）鉴权 token”（详见下文的 miniapp 验证步骤）。
 
@@ -62,7 +62,7 @@
 
 ### 2) miniapp 获取可展示类目树（US1）
 
-miniapp 的“开放只读接口”不要求管理员 JWT/RBAC，也不要求 customer token，但**必须携带租户上下文**（`X-Tenant-UUID` 或 `tenant_uuid`）。
+miniapp 的“开放只读接口”不要求管理员 JWT/RBAC，也不要求 customer token，但**必须携带租户上下文**（宿主鉴权上下文或 `tenant_uuid`）。
 
 1. 直接调用：
    - `GET /api/v1/mini-app/categories/tree`

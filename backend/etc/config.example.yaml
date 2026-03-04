@@ -3,7 +3,14 @@
 #
 # Auth / IAM 相关环境变量速查（未在 YAML 中硬编码，以免泄露敏感信息）：
 #   POWERX_CORE_ENDPOINT      - Delegated 模式访问宿主 Core API 的基址（默认 http://localhost:8077）
-#   POWERX_AUTH_TOKEN         - 插件向宿主 Core 鉴权用的服务 Token
+#   PX_GATEWAY_BASE_URL       - Gateway 基址（不带 API 前缀，例如 http://localhost:8077）
+#   PX_GATEWAY_API_PREFIX     - Gateway API 前缀（默认 /api/v1）
+#   PX_GATEWAY_AUTH_SCHEME    - Gateway 鉴权方案：bearer / apikey
+#   PX_GATEWAY_API_KEY        - ApiKey 鉴权凭证（当 PX_GATEWAY_AUTH_SCHEME=apikey）
+#   PX_TOOL_TOKEN             - 插件向宿主网关/能力出站鉴权 Token（优先）
+#   PX_PLUGIN_TOOL_TOKEN      - 宿主注入的插件出站 Token（次优先）
+#   PX_GATEWAY_TIMEOUT        - Gateway 调用超时（支持 duration 或秒数，默认 60s）
+#   POWERX_AUTH_TOKEN         - 兼容旧变量（最低优先）
 #   POWERX_RBAC_DELEGATE      - 设为 true/1/on 时强制走 Delegated IAM（即使 POWERX_PROXY!=1）
 #   PLUGIN_IAM_ADMIN_EMAIL    - Local 模式默认管理员邮箱（用于 migrate/seed）
 #   PLUGIN_IAM_ADMIN_PASSWORD - Local 模式默认管理员密码（用于 migrate/seed）
@@ -17,6 +24,8 @@ server:
 # gRPC 上游（可选，默认关闭）
 grpc_upstream:
   address: "localhost:8079"
+  # tenant_uuid 将优先从 PX_TOOL_TOKEN/PX_PLUGIN_TOOL_TOKEN 的 tid 推导；
+  # 此字段仅作为本地兜底（旧配置兼容）。
   tenant_uuid: "00000000-0000-0000-0000-000000000001"
   use_tls: false
   connect_mode: "lazy"
@@ -41,6 +50,11 @@ database:
 
 runtime:
   run_migrate: false
+  drivers:
+    websocket: auto
+    event_topic: auto
+    task: auto
+    cache: auto
 
 runtime_ops:
   heartbeat_seconds: 15

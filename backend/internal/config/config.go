@@ -1,6 +1,8 @@
 package config
 
 import (
+	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -128,6 +130,7 @@ type ServerConfig struct {
 // RuntimeConfig 运行时配置
 type RuntimeConfig struct {
 	RunMigrate bool `yaml:"run_migrate" json:"run_migrate"`
+	Drivers    *RuntimeDriversConfig `yaml:"drivers" json:"drivers"`
 }
 
 // RuntimeOpsDefaults 定义 runtime ops 所需的默认限值与窗口
@@ -451,6 +454,7 @@ func getDefaultConfig() *Config {
 		},
 		Runtime: &RuntimeConfig{
 			RunMigrate: false,
+			Drivers:    &RuntimeDriversConfig{},
 		},
 		RuntimeOps: &RuntimeOpsDefaults{
 			HeartbeatSeconds:           15,
@@ -863,11 +867,19 @@ func loadEnvConfig(cfg *Config) {
 	if grpcToken := resolveConfigValue(os.Getenv("POWERX_GRPC_UPSTREAM_TOKEN")); grpcToken != "" {
 		cfg.GRPCUpstream.Token = grpcToken
 	}
+	if token, _ := bootstrapToolToken(); token != "" {
+		cfg.GRPCUpstream.Token = token
+	}
 	if grpcTenantUUID := resolveConfigValue(os.Getenv("POWERX_GRPC_UPSTREAM_TENANT_UUID")); grpcTenantUUID != "" {
 		cfg.GRPCUpstream.TenantUUID = grpcTenantUUID
 	} else if grpcTenantUuid := resolveConfigValue(os.Getenv("POWERX_GRPC_UPSTREAM_TENANT_ID")); grpcTenantUuid != "" {
 		// 兼容旧变量 POWERX_GRPC_UPSTREAM_TENANT_ID，后续统一迁移为 *_TENANT_UUID。
 		cfg.GRPCUpstream.TenantUUID = grpcTenantUuid
+	}
+	if token, _ := bootstrapToolToken(); token != "" {
+		if tid, ok := bootstrapTenantIDFromToken(token); ok {
+			cfg.GRPCUpstream.TenantUUID = tid
+		}
 	}
 	if grpcUseTLS := resolveConfigValue(os.Getenv("POWERX_GRPC_UPSTREAM_USE_TLS")); strings.EqualFold(grpcUseTLS, "true") {
 		cfg.GRPCUpstream.UseTLS = true
@@ -1149,6 +1161,56 @@ func truthyEnv(value string) bool {
 		return true
 	default:
 		return false
+	}
+}
+
+func bootstrapToolToken() (token string, source string) {
+	if v := strings.TrimSpace(os.Getenv("PX_TOOL_TOKEN")); v != "" {
+		return v, "env:PX_TOOL_TOKEN"
+	}
+	if v := strings.TrimSpace(os.Getenv("PX_PLUGIN_TOOL_TOKEN")); v != "" {
+		return v, "env:PX_PLUGIN_TOOL_TOKEN"
+	}
+	if v := strings.TrimSpace(os.Getenv("POWERX_AUTH_TOKEN")); v != "" {
+		return v, "env:POWERX_AUTH_TOKEN"
+	}
+	return "", ""
+}
+
+func bootstrapTenantIDFromToken(token string) (string, bool) {
+	token = strings.TrimSpace(token)
+	if token == "" {
+		return "", false
+	}
+	parts := strings.Split(token, ".")
+	if len(parts) < 2 {
+		return "", false
+	}
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return "", false
+	}
+	claims := map[string]any{}
+	if err := json.Unmarshal(payload, &claims); err != nil {
+		return "", false
+	}
+	tid := strings.TrimSpace(toStringClaim(claims["tid"]))
+	if tid == "" {
+		return "", false
+	}
+	return strings.ToLower(tid), true
+}
+
+func toStringClaim(v any) string {
+	switch x := v.(type) {
+	case string:
+		return x
+	case json.Number:
+		return x.String()
+	case float64:
+		return strconv.FormatFloat(x, 'f', -1, 64)
+	default:
+		return ""
 	}
 }
 

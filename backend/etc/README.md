@@ -56,11 +56,20 @@ Skeleton 与 Base 插件保持相同的字段结构，可直接复用宿主侧�
 | `POWERX_RUN_MIGRATE` | 设置为 `true` 强制执行数据库迁移 |
 | `POWERX_LOG_LEVEL` | 覆盖日志级别（debug/info/warn/error） |
 | `POWERX_CORE_ENDPOINT` | Delegated 模式访问宿主 Core API 的基址（如 `http://localhost:8077`） |
-| `POWERX_AUTH_TOKEN` | 插件 → 宿主 Core 调用时使用的服务 Token |
+| `PX_GATEWAY_BASE_URL` | Gateway 基址（不带前缀，例如 `http://localhost:8077`） |
+| `PX_GATEWAY_API_PREFIX` | Gateway API 前缀（默认 `/api/v1`） |
+| `PX_GATEWAY_AUTH_SCHEME` | Gateway 鉴权方案：`bearer` / `apikey` |
+| `PX_GATEWAY_API_KEY` | 当 `PX_GATEWAY_AUTH_SCHEME=apikey` 时使用的 API Key |
+| `PX_TOOL_TOKEN` | 插件出站调用宿主能力/网关使用的 Token（最高优先） |
+| `PX_PLUGIN_TOOL_TOKEN` | 宿主注入的插件出站 Token（次优先） |
+| `PX_GATEWAY_TIMEOUT` | Gateway 调用超时（支持 `60s` 或 `60`，默认 `60s`） |
+| `POWERX_AUTH_TOKEN` | 兼容旧变量，仅当前两者缺失时回退使用 |
 | `POWERX_RBAC_DELEGATE` | 设为 `true/1/on` 时强制使用宿主 IAM；`false` 时可落到本地 IAM |
 | `PLUGIN_IAM_ADMIN_EMAIL` | Local 模式默认管理员邮箱，`go run ./cmd/database setup` 时必填 |
 | `PLUGIN_IAM_ADMIN_PASSWORD` | Local 模式默认管理员密码，配合上方邮箱使用 |
 
+> 统一口径：租户来源优先从 `PX_TOOL_TOKEN`/`PX_PLUGIN_TOOL_TOKEN` 的 `tid` claim 解析；`PX_TENANT_UUID` 不再作为运行决策输入。
+>
 > 建议在生产环境通过配置文件写入敏感信息，仅在必要时才使用环境变量覆盖。
 
 ## 安全基线

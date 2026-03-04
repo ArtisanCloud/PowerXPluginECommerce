@@ -25,7 +25,7 @@ func NewIAMResolver(cfg *config.Config) *IAMResolver {
 		}
 	}
 
-	if truthy(os.Getenv("POWERX_RBAC_DELEGATE")) {
+	if envTruthy("POWERX_RBAC_DELEGATE") {
 		return &IAMResolver{mode: iamservice.IAMModeDelegated, source: "env:POWERX_RBAC_DELEGATE"}
 	}
 
@@ -60,14 +60,5 @@ func parseIAMMode(val string) (iamservice.IAMMode, bool) {
 		return iamservice.IAMModeLocal, true
 	default:
 		return iamservice.IAMMode(""), false
-	}
-}
-
-func truthy(value string) bool {
-	switch strings.ToLower(strings.TrimSpace(value)) {
-	case "1", "true", "yes", "on":
-		return true
-	default:
-		return false
 	}
 }

@@ -95,8 +95,7 @@
 2) 调用接口：
 
 ```bash
-curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products/{spuId}/sellability?channel=official&locale=zh-CN' \\
-  -H 'X-Tenant-UUID: 00000000-0000-0000-0000-000000000001'
+curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products/{spuId}/sellability?channel=official&locale=zh-CN&tenant_uuid=00000000-0000-0000-0000-000000000001'
 ```
 
 3) 预期：

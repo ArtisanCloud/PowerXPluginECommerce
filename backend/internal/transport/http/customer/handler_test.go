@@ -96,6 +96,23 @@ func TestCreateImportTask(t *testing.T) {
 	}, 2*time.Second, 20*time.Millisecond)
 }
 
+func TestCreateExportTask(t *testing.T) {
+	deps := newHandlerDeps(t)
+	handler := NewHandler(deps)
+	ctx, rec := newJSONRequest(t, http.MethodPost, "/customers/export", map[string]any{
+		"fields": []string{"id", "name", "phone"},
+	})
+	ctx.Set(httpmw.TenantUUIDContextKey, "tenant-handler")
+	ctx.Request = ctx.Request.WithContext(authx.ContextWithTenantUUID(ctx.Request.Context(), "tenant-handler"))
+	handler.CreateExportTask(ctx)
+	require.Equal(t, http.StatusOK, rec.Code)
+	payload := parseResponse(t, rec.Body.Bytes())
+	require.True(t, payload["success"].(bool))
+	data := payload["data"].(map[string]any)
+	taskID := data["taskId"].(string)
+	require.NotEmpty(t, taskID)
+}
+
 func TestDownloadImportTemplate(t *testing.T) {
 	handler := NewHandler(newHandlerDeps(t))
 	ctx, rec := newJSONRequest(t, http.MethodGet, "/customers/import/template", nil)

@@ -2,7 +2,7 @@
 
 本指南用于指导小程序以“只读/游客态”方式访问电商插件的开放接口，典型场景：**按类目展示商品列表**、**进入商品详情后加载 SKU 列表**，以及（可选）**一次性获取规格维度/取值与 SKU 映射用于规格选择**。
 
-> 说明：mini-app 接口不继承管理端的 JWT/RBAC（无需管理员 JWT），但**必须携带租户上下文**（`X-Tenant-UUID` 或 `tenant_uuid`）。
+> 说明：mini-app 接口不继承管理端的 JWT/RBAC（无需管理员 JWT），但**必须携带租户上下文**（宿主鉴权上下文或 `tenant_uuid`）。
 
 ## 基本约定
 
@@ -11,12 +11,11 @@
 - 默认：`/api/v1`
 - 若宿主配置了自定义 `APIPrefix`，则以宿主为准（例如 `/api/v2`）。
 
-### 必须的 Header / Query
+### 必须的租户参数
 
 | 名称 | 位置 | 是否必填 | 说明 |
 | --- | --- | --- | --- |
-| `X-Tenant-UUID` | Header | 是 | 租户 UUID；本地默认 `00000000-0000-0000-0000-000000000001` |
-| `tenant_uuid` | Query | 否 | Header 不方便时可用（同等生效） |
+| `tenant_uuid` | Query | 是（直连模式） | 租户 UUID；本地默认 `00000000-0000-0000-0000-000000000001`。若走宿主签名上下文可省略。 |
 
 ### 鉴权（可选）
 
@@ -48,8 +47,7 @@
 **示例**
 
 ```bash
-curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/categories/tree' \
-  -H 'X-Tenant-UUID: 00000000-0000-0000-0000-000000000001'
+curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/categories/tree?tenant_uuid=00000000-0000-0000-0000-000000000001'
 ```
 
 ## 2) 按类目展示商品（SPU）列表
@@ -101,29 +99,25 @@ curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/categories/tree' \
 **示例：按类目路径前缀筛选**
 
 ```bash
-curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products?categoryPathPrefix=/root/child/&page=1&pageSize=20' \
-  -H 'X-Tenant-UUID: 00000000-0000-0000-0000-000000000001'
+curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products?categoryPathPrefix=/root/child/&page=1&pageSize=20&tenant_uuid=00000000-0000-0000-0000-000000000001'
 ```
 
 **示例：类目 + 标签联合筛选**
 
 ```bash
-curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products?categoryPathPrefix=/root/child/&tags=bestsellers,imported&page=1&pageSize=20' \
-  -H 'X-Tenant-UUID: 00000000-0000-0000-0000-000000000001'
+curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products?categoryPathPrefix=/root/child/&tags=bestsellers,imported&page=1&pageSize=20&tenant_uuid=00000000-0000-0000-0000-000000000001'
 ```
 
 **示例：按价格排序（从低到高）**
 
 ```bash
-curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products?sort=price&order=asc&page=1&pageSize=20' \
-  -H 'X-Tenant-UUID: 00000000-0000-0000-0000-000000000001'
+curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products?sort=price&order=asc&page=1&pageSize=20&tenant_uuid=00000000-0000-0000-0000-000000000001'
 ```
 
 **示例：价格区间 + 有库存**
 
 ```bash
-curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products?minPrice=99&maxPrice=199&inStock=true&page=1&pageSize=20' \
-  -H 'X-Tenant-UUID: 00000000-0000-0000-0000-000000000001'
+curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products?minPrice=99&maxPrice=199&inStock=true&page=1&pageSize=20&tenant_uuid=00000000-0000-0000-0000-000000000001'
 ```
 
 ## 2.1) 获取商品可用标签（Tag）列表
@@ -150,8 +144,7 @@ curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products?minPrice=99&maxPrice=19
 **示例**
 
 ```bash
-curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products/tags?limit=20' \
-  -H 'X-Tenant-UUID: 00000000-0000-0000-0000-000000000001'
+curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products/tags?limit=20&tenant_uuid=00000000-0000-0000-0000-000000000001'
 ```
 
 ## 3) 获取商品（SPU）详情
@@ -169,8 +162,7 @@ curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products/tags?limit=20' \
 **示例**
 
 ```bash
-curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products/{spuId}' \
-  -H 'X-Tenant-UUID: 00000000-0000-0000-0000-000000000001'
+curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products/{spuId}?tenant_uuid=00000000-0000-0000-0000-000000000001'
 ```
 
 ## 3.1) 获取商品详情（含规格与 SKU 映射，用于规格选择）
@@ -193,8 +185,7 @@ curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products/{spuId}' \
 **示例**
 
 ```bash
-curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products/{spuId}/detail' \
-  -H 'X-Tenant-UUID: 00000000-0000-0000-0000-000000000001'
+curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products/{spuId}/detail?tenant_uuid=00000000-0000-0000-0000-000000000001'
 ```
 
 ## 4) 获取商品下的 SKU 列表
@@ -218,8 +209,7 @@ curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products/{spuId}/detail' \
 **示例**
 
 ```bash
-curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products/{spuId}/skus?page=1&pageSize=50' \
-  -H 'X-Tenant-UUID: 00000000-0000-0000-0000-000000000001'
+curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products/{spuId}/skus?page=1&pageSize=50&tenant_uuid=00000000-0000-0000-0000-000000000001'
 ```
 
 ## 4.1) 获取可售性聚合结果（价格/库存/渠道可见性）
@@ -295,15 +285,14 @@ curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products/{spuId}/skus?page=1&pag
 **示例**
 
 ```bash
-curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products/{spuId}/plans' \
-  -H 'X-Tenant-UUID: 00000000-0000-0000-0000-000000000001'
+curl -sS 'http://127.0.0.1:8086/api/v1/mini-app/products/{spuId}/plans?tenant_uuid=00000000-0000-0000-0000-000000000001'
 ```
 
 ## 常见问题
 
 ### 401：tenant context missing
 
-- 确认携带 `X-Tenant-UUID`（或 `tenant_uuid`）且为合法 UUID。
+- 确认携带 `tenant_uuid` 且为合法 UUID（或走宿主签名上下文）。
 - 若在 PowerX 宿主内调用，可确认宿主是否注入了 tenant 上下文。
 
 ### 400：only published products are accessible via mini-app

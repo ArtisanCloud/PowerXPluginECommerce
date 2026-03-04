@@ -10,10 +10,13 @@ import (
 func RBACEntries(prefix string) map[string]authx.Permission {
 	base := strings.TrimRight(prefix, "/") + "/admin/runtime"
 	return map[string]authx.Permission{
-		"POST:" + base + "/bootstrap":         {Resource: "runtime.ops", Action: "manage"},
-		"POST:" + base + "/sessions/register": {Resource: "runtime.ops", Action: "manage"},
-		"GET:" + base + "/quota/status":       {Resource: "runtime.ops", Action: "read"},
-		"POST:" + base + "/quota/overrides":   {Resource: "runtime.ops", Action: "manage"},
-		"GET:" + base + "/metrics":            {Resource: "runtime.ops", Action: "observe"},
+		"POST:" + base + "/bootstrap":                    {Resource: "runtime.ops", Action: "manage"},
+		"POST:" + base + "/sessions/register":            {Resource: "runtime.ops", Action: "manage"},
+		"POST:" + base + "/internal/event-fabric/topics": {Resource: "runtime.ops", Action: "manage"},
+		"POST:" + base + "/internal/ws-bus/grant":        {Resource: "runtime.ops", Action: "manage"},
+		"POST:" + base + "/internal/ws-bus/publish":      {Resource: "runtime.ops", Action: "manage"},
+		"GET:" + base + "/quota/status":                  {Resource: "runtime.ops", Action: "read"},
+		"POST:" + base + "/quota/overrides":              {Resource: "runtime.ops", Action: "manage"},
+		"GET:" + base + "/metrics":                       {Resource: "runtime.ops", Action: "observe"},
 	}
 }

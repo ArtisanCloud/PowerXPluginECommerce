@@ -12,7 +12,6 @@ import type {
   CustomerListResponse,
   CustomerTokenBalanceList,
   CustomerUpdatePayload,
-  JobStatus,
   MembershipFilters,
   MembershipListResponse,
 } from "~/types/customer";
@@ -73,13 +72,11 @@ export function useCustomerApi() {
     requestExport: (payload: CustomerExportPayload, init?: any) =>
       unwrap(apiPost<ApiEnvelope<{ taskId: string }>>(`${basePath}/export`, payload, init)),
 
-    requestImport: (file: File, init?: any) => {
+    requestImport: (file: File, conflictStrategy: "fail" | "skip" = "fail", init?: any) => {
       const form = new FormData();
       form.append("file", file);
+      form.append("conflict_strategy", conflictStrategy);
       return unwrap(apiPost<ApiEnvelope<{ taskId: string }>>(`${basePath}/import`, form, init));
     },
-
-    fetchJobStatus: (taskId: string, init?: any) =>
-      unwrap(apiGet<ApiEnvelope<JobStatus>>(`jobs/${taskId}`, undefined, init)),
   };
 }

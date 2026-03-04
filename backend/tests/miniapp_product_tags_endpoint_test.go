@@ -58,7 +58,7 @@ func TestMiniAppProductTagsEndpointReturnsDistinctTags(t *testing.T) {
 	miniapp.RegisterRoutes(root, deps)
 
 	req := httptest.NewRequest(http.MethodGet, "/api/v1/mini-app/products/tags?limit=50", nil)
-	req.Header.Set("X-Tenant-UUID", tenantUUID)
+	req.URL.RawQuery = "tenant_uuid=" + tenantUUID
 	rec := httptest.NewRecorder()
 	engine.ServeHTTP(rec, req)
 

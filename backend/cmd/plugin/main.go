@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strconv"
 	"strings"
 	"syscall"
 	"time"
@@ -19,6 +20,7 @@ import (
 	repository "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/plugin"
 	grpcserver "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/grpc/server"
 	channelmasterjobs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/jobs/channel/master"
+	integrationjobs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/jobs/integration"
 	marketplacejobs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/jobs/marketplace"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	manifestx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/manifestx"
@@ -27,6 +29,7 @@ import (
 	channelobs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/channel/master"
 	opsmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/operations"
 	pluginrouter "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/router"
+	eventfabricruntime "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/runtime/eventfabric"
 	httpserver "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/server"
 	agent "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/agent"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/authproxy"
@@ -36,6 +39,8 @@ import (
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/utils"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/taskbus"
+	wstransport "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/websocket"
+	wstransportbus "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/websocket/bus"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -60,6 +65,40 @@ func main() {
 	if len(masking.PIIFields) > 0 {
 		placeholder := masking.LogRedaction.Placeholder
 		logger.ConfigurePrivacyMasker(masking.PIIFields, placeholder)
+	}
+
+	manifestPath, executionPath := eventfabricruntime.ResolvePaths()
+	if manifestPath == "" || executionPath == "" {
+		logger.WithFields(logger.Fields{
+			"plugin_yaml":       manifestPath,
+			"event_fabric_yaml": executionPath,
+			"strict_validation": strings.TrimSpace(os.Getenv("POWERX_EVENT_FABRIC_STRICT")) != "",
+		}).Warn("event fabric alignment skipped: declaration files not found")
+	} else {
+		manifestTopics, mErr := eventfabricruntime.LoadManifestTopics(manifestPath)
+		executionTopics, eErr := eventfabricruntime.LoadExecutionTopics(executionPath)
+		if mErr != nil || eErr != nil {
+			logger.WithFields(logger.Fields{
+				"manifest_err":  errorString(mErr),
+				"execution_err": errorString(eErr),
+				"plugin_yaml":   manifestPath,
+				"event_fabric":  executionPath,
+			}).Warn("event fabric alignment check failed to parse")
+		} else {
+			localTopics := make([]string, 0, len(executionTopics))
+			for _, topic := range executionTopics {
+				localTopics = append(localTopics, topic.Topic)
+			}
+			wstransportbus.DefaultTopicRegistry.Register(localTopics)
+			if err := eventfabricruntime.ValidateConsistency(manifestTopics, executionTopics); err != nil {
+				if strings.TrimSpace(os.Getenv("POWERX_EVENT_FABRIC_STRICT")) == "1" {
+					logger.WithError(err).Fatal("event fabric declaration mismatch")
+				}
+				logger.WithError(err).Warn("event fabric declaration mismatch")
+			} else {
+				logger.WithField("topics", len(localTopics)).Info("event fabric declaration aligned")
+			}
+		}
 	}
 
 	// ★ 在这里把 HTTP/GRPC 的占位符先解析掉（一定要在起服务之前）
@@ -102,10 +141,36 @@ func main() {
 	}
 
 	iamResolver := pluginbootstrap.NewIAMResolver(cfg)
+	runtimeDecision := pluginbootstrap.ResolveRuntimeModeDecision(cfg, iamResolver.Mode().String(), iamResolver.Source())
+	wsDriver := cfg.ResolveWebSocketDriver()
+	eventTopicDriver := cfg.ResolveEventTopicDriver()
+	taskDriver := cfg.ResolveTaskDriver()
+	cacheDriver := cfg.ResolveCacheDriver()
+	upstreamAddr := ""
+	upstreamTenant := ""
+	if cfg.GRPCUpstream != nil {
+		upstreamAddr = strings.TrimSpace(cfg.GRPCUpstream.Address)
+		upstreamTenant = strings.TrimSpace(cfg.GRPCUpstream.TenantUUID)
+	}
 	logger.WithFields(logger.Fields{
-		"mode":   iamResolver.Mode(),
-		"source": iamResolver.Source(),
-	}).Info("IAM mode resolved")
+		"matrix":                     "IAMMode × POWERX_PROXY × POWERX_RBAC_DELEGATE",
+		"iam_input":                  runtimeDecision.IAMInput,
+		"iam_mode":                   runtimeDecision.IAMMode,
+		"iam_source":                 runtimeDecision.IAMSource,
+		"powerx_proxy":               runtimeDecision.PowerXProxy,
+		"powerx_rbac_delegate":       runtimeDecision.RBACDelegate,
+		"capability_route":           runtimeDecision.CapabilityRoute,
+		"ws_route":                   runtimeDecision.WSRoute,
+		"outbound_token_source":      runtimeDecision.OutboundTokenSource,
+		"gateway_readiness":          runtimeDecision.GatewayReady,
+		"gateway_token_tenant_tid":   runtimeDecision.TokenTenantID,
+		"gateway_upstream_address":   upstreamAddr,
+		"gateway_upstream_tenant_id": upstreamTenant,
+		"ws_driver":                  wsDriver,
+		"event_topic_driver":         eventTopicDriver,
+		"task_driver":                taskDriver,
+		"cache_driver":               cacheDriver,
+	}).Info("runtime mode decision resolved")
 	auth.ObserveMode(iamResolver.Mode().String())
 
 	var authClient *authproxy.DelegatedClient
@@ -137,26 +202,83 @@ func main() {
 	var licenseCache marketplacesvc.LicenseCache
 	cacheCfg := cfg.LicenseCacheConfig()
 	cacheLogger := logger.WithField("component", "marketplace_license_cache")
-	if strings.EqualFold(strings.TrimSpace(cacheCfg.Provider), "redis") {
-		if lc, err := marketplacesvc.NewRedisLicenseCache(cacheCfg.RedisURL, cacheCfg.KeyPrefix, cacheLogger); err != nil {
-			cacheLogger.WithError(err).Warn("license cache initialization failed")
-		} else {
-			licenseCache = lc
+	cacheProvider := strings.ToLower(strings.TrimSpace(cacheCfg.Provider))
+	switch cacheDriver {
+	case config.RuntimeDriverFramework:
+		cacheLogger.WithField("driver", cacheDriver).Info("license cache uses framework/host side")
+	default:
+		switch cacheProvider {
+		case "redis":
+			if lc, err := marketplacesvc.NewRedisLicenseCache(cacheCfg.RedisURL, cacheCfg.KeyPrefix, cacheLogger); err != nil {
+				cacheLogger.WithError(err).Warn("license cache initialization failed")
+			} else {
+				licenseCache = lc
+			}
+		case "", "memory", "local":
+			licenseCache = marketplacesvc.NewMemoryLicenseCache(cacheLogger)
+		default:
+			cacheLogger.WithField("provider", cacheProvider).Warn("unsupported license cache provider, fallback to memory")
+			licenseCache = marketplacesvc.NewMemoryLicenseCache(cacheLogger)
 		}
 	}
 
 	var taskBusClient taskbus.Client
-	if cfg.TaskBusEnabled() {
-		switch cfg.TaskBusAdapter() {
+	taskBusEnabled := cfg.TaskBusEnabled()
+	taskBusAdapter := cfg.TaskBusAdapter()
+	if taskBusAdapter == "" {
+		taskBusAdapter = taskDriver
+	}
+	if taskBusAdapter == config.RuntimeDriverFramework {
+		taskBusAdapter = "framework"
+	} else if taskBusAdapter == config.RuntimeDriverLocal {
+		taskBusAdapter = "local"
+	}
+	if !taskBusEnabled && !runtimeDecision.PowerXProxy {
+		// Standalone 默认启用本地 TaskBus，避免未配置时退化为 noop 导致前端 WS 订阅后收不到事件。
+		taskBusEnabled = true
+		if strings.TrimSpace(taskBusAdapter) == "" {
+			taskBusAdapter = "local"
+		}
+		logger.WithFields(logger.Fields{
+			"powerx_proxy": runtimeDecision.PowerXProxy,
+			"adapter":      taskBusAdapter,
+		}).Info("taskbus auto-enabled for standalone mode")
+	}
+	if !taskBusEnabled && taskBusAdapter == "framework" {
+		taskBusEnabled = true
+	}
+
+	if taskBusEnabled {
+		switch taskBusAdapter {
+		case "framework", "powerx", "host":
+			frameworkTaskBus, err := taskbus.NewFrameworkClient(taskbus.FrameworkClientConfig{
+				Mode:           "taskbus",
+				Enabled:        true,
+				FallbackLocal:  true,
+				LocalQueueSize: 1024,
+				SourcePlugin:   app.PluginID,
+				PayloadVersion: "v1",
+			}, logger.WithField("component", "taskbus-framework"))
+			if err != nil {
+				logger.WithError(err).Warn("failed to initialize framework taskbus adapter, falling back to local")
+				taskBusClient = taskbus.NewLocalClient(logger.WithField("component", "taskbus-local"))
+			} else {
+				taskBusClient = frameworkTaskBus
+			}
 		case "", "local":
 			taskBusClient = taskbus.NewLocalClient(logger.WithField("component", "taskbus-local"))
 		default:
-			logger.WithField("adapter", cfg.TaskBusAdapter()).Warn("unsupported taskbus adapter, falling back to noop")
+			logger.WithField("adapter", taskBusAdapter).Warn("unsupported taskbus adapter, falling back to noop")
 			taskBusClient = taskbus.NewNoopClient()
 		}
 	} else {
 		taskBusClient = taskbus.NewNoopClient()
 	}
+
+	logger.WithFields(logger.Fields{
+		"enabled": taskBusEnabled,
+		"adapter": taskBusAdapter,
+	}).Info("taskbus resolved")
 
 	deps := &app.Deps{
 		DB:                  queryDB,
@@ -175,6 +297,8 @@ func main() {
 		IAMDirectory:        localIAM,
 		TaskBus:             taskBusClient,
 	}
+
+	wstransport.RegisterTaskBusBridge(deps.TaskBus)
 
 	customerAuthenticator, localCustomerAuth, err := pluginbootstrap.BuildCustomerAuthenticator(cfg, deps)
 	if err != nil {
@@ -221,6 +345,7 @@ func main() {
 		Listen:     cfg.Server.BindAddr,
 		Env:        cfg.Server.Mode,
 		Standalone: true,
+		Gateway:    resolveFrameworkGatewayConfig(),
 	}
 	fwApp := fwbootstrap.NewApp(appCfg)
 
@@ -239,30 +364,37 @@ func main() {
 	// 使用 errgroup 并发启动服务器
 	g, groupCtx := errgroup.WithContext(ctx)
 
+	schedulerBridge := integrationjobs.NewSchedulerBridgeFromEnv(logger.WithField("component", "scheduler-bridge"))
+	workerSpecs := make([]integrationjobs.WorkerSpec, 0, 4)
 	if syncJob != nil {
-		g.Go(func() error {
-			syncJob.Run(groupCtx)
-			return nil
+		workerSpecs = append(workerSpecs, integrationjobs.WorkerSpec{
+			Name:     syncJob.Name(),
+			Interval: syncJob.Interval(),
+			RunOnce:  syncJob.RunOnce,
 		})
 	}
 	if renewalJob != nil {
-		g.Go(func() error {
-			renewalJob.Run(groupCtx)
-			return nil
+		workerSpecs = append(workerSpecs, integrationjobs.WorkerSpec{
+			Name:     renewalJob.Name(),
+			Interval: renewalJob.Interval(),
+			RunOnce:  renewalJob.RunOnce,
 		})
 	}
 	if credentialChecker != nil {
-		g.Go(func() error {
-			credentialChecker.Run(groupCtx)
-			return nil
+		workerSpecs = append(workerSpecs, integrationjobs.WorkerSpec{
+			Name:     credentialChecker.Name(),
+			Interval: credentialChecker.Interval(),
+			RunOnce:  credentialChecker.RunOnce,
 		})
 	}
 	if metricRefresh != nil {
-		g.Go(func() error {
-			metricRefresh.Run(groupCtx)
-			return nil
+		workerSpecs = append(workerSpecs, integrationjobs.WorkerSpec{
+			Name:     metricRefresh.Name(),
+			Interval: metricRefresh.Interval(),
+			RunOnce:  metricRefresh.RunOnce,
 		})
 	}
+	schedulerBridge.StartWorkers(groupCtx, g.Go, workerSpecs...)
 
 	g.Go(func() error {
 		logger.WithField("addr", cfg.Server.BindAddr).Info("Starting HTTP server...")
@@ -311,4 +443,77 @@ func main() {
 	}
 
 	logger.Info("All servers shutdown completed")
+}
+
+func errorString(err error) string {
+	if err == nil {
+		return ""
+	}
+	return err.Error()
+}
+
+func resolveFrameworkGatewayConfig() fwbootstrap.GatewayConfig {
+	toolToken, _ := pluginbootstrap.ResolveToolToken()
+	apiKey := strings.TrimSpace(os.Getenv("PX_GATEWAY_API_KEY"))
+	authScheme := normalizeGatewayAuthScheme(strings.TrimSpace(os.Getenv("PX_GATEWAY_AUTH_SCHEME")), toolToken, apiKey)
+	return fwbootstrap.GatewayConfig{
+		BaseURL:         resolveGatewayBaseURL(),
+		APIPrefix:       resolveGatewayAPIPrefix(),
+		AuthScheme:      authScheme,
+		ToolToken:       toolToken,
+		APIKey:          apiKey,
+		Timeout:         resolveGatewayTimeout(),
+		ContractVersion: strings.TrimSpace(os.Getenv("PX_GATEWAY_CONTRACT_VERSION")),
+	}
+}
+
+func resolveGatewayBaseURL() string {
+	base := strings.TrimSpace(os.Getenv("PX_GATEWAY_BASE_URL"))
+	if base == "" {
+		base = strings.TrimSpace(os.Getenv("POWERX_CORE_ENDPOINT"))
+	}
+	return strings.TrimRight(base, "/")
+}
+
+func resolveGatewayAPIPrefix() string {
+	prefix := strings.TrimSpace(os.Getenv("PX_GATEWAY_API_PREFIX"))
+	if prefix == "" {
+		prefix = "/api/v1"
+	}
+	if !strings.HasPrefix(prefix, "/") {
+		prefix = "/" + prefix
+	}
+	prefix = "/" + strings.Trim(prefix, "/")
+	if prefix == "/" {
+		return ""
+	}
+	return prefix
+}
+
+func resolveGatewayTimeout() time.Duration {
+	const fallback = 60 * time.Second
+	raw := strings.TrimSpace(os.Getenv("PX_GATEWAY_TIMEOUT"))
+	if raw == "" {
+		return fallback
+	}
+	if d, err := time.ParseDuration(raw); err == nil && d > 0 {
+		return d
+	}
+	if sec, err := strconv.Atoi(raw); err == nil && sec > 0 {
+		return time.Duration(sec) * time.Second
+	}
+	return fallback
+}
+
+func normalizeGatewayAuthScheme(raw, toolToken, apiKey string) string {
+	switch strings.ToLower(strings.TrimSpace(raw)) {
+	case "apikey", "api-key", "api_key":
+		return "apikey"
+	case "bearer":
+		return "bearer"
+	}
+	if strings.TrimSpace(apiKey) != "" && strings.TrimSpace(toolToken) == "" {
+		return "apikey"
+	}
+	return "bearer"
 }

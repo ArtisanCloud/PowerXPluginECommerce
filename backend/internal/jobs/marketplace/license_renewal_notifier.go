@@ -50,14 +50,36 @@ func NewLicenseRenewalNotifier(cfg *config.Config, repo ExpiringLicenseLister, l
 	}
 }
 
+// Name returns scheduler worker name.
+func (n *RenewalNotifier) Name() string {
+	return "marketplace.license.renewal.notify"
+}
+
+// Interval returns scheduler interval.
+func (n *RenewalNotifier) Interval() time.Duration {
+	if n == nil || n.interval <= 0 {
+		return time.Hour
+	}
+	return n.interval
+}
+
+// RunOnce executes one renewal reminder scan.
+func (n *RenewalNotifier) RunOnce(ctx context.Context) error {
+	if n == nil {
+		return nil
+	}
+	n.execute(ctx)
+	return nil
+}
+
 // Run starts the reminder loop until the context is canceled.
 func (n *RenewalNotifier) Run(ctx context.Context) {
 	if n == nil {
 		return
 	}
-	n.execute(ctx)
+	_ = n.RunOnce(ctx)
 
-	ticker := time.NewTicker(n.interval)
+	ticker := time.NewTicker(n.Interval())
 	defer ticker.Stop()
 
 	for {
@@ -65,7 +87,7 @@ func (n *RenewalNotifier) Run(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			n.execute(ctx)
+			_ = n.RunOnce(ctx)
 		}
 	}
 }

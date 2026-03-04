@@ -51,21 +51,26 @@
           </p>
         </UFormField>
 
-        <UAlert
-          v-if="importError"
-          color="red"
-          variant="soft"
-          :title="t('customer.directory.import.failed')"
-          :description="importError"
-        />
+        <UFormField label="冲突处理策略">
+          <USelect
+            v-model="conflictStrategy"
+            :items="conflictStrategyOptions"
+            class="w-full"
+          />
+          <p class="mt-1 text-xs text-gray-400">
+            fail：遇到冲突立即失败；skip：跳过冲突行并继续导入。
+          </p>
+        </UFormField>
 
         <UAlert
-          v-else-if="lastTaskId"
-          color="primary"
-          variant="soft"
-          :title="t('customer.directory.import.taskCreated', { id: lastTaskId })"
-          :description="t('customer.directory.import.taskDesc')"
+          v-if="importError"
+          color="error"
+          variant="solid"
+          :title="t('customer.directory.import.failed')"
+          :description="importError"
+          :ui="{ title: 'text-white font-semibold', description: 'text-white/95' }"
         />
+
       </div>
     </template>
 
@@ -88,7 +93,7 @@
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { useI18n } from "#imports";
+import { navigateTo, useI18n } from "#imports";
 import { useApiClient } from "~/composables/api";
 import { useToastAlert } from "~/composables/useToastAlert";
 import { useCustomerStore } from "~/stores/customer";
@@ -112,6 +117,11 @@ const toast = useToastAlert();
 const selectedFile = ref<File | null>(null);
 const selectedFileName = ref("");
 const downloadingTemplate = ref(false);
+const conflictStrategy = ref<"fail" | "skip">("fail");
+const conflictStrategyOptions = [
+  { label: "遇冲突立即失败（推荐）", value: "fail" },
+  { label: "跳过冲突继续导入", value: "skip" },
+];
 const modalUi = {
   content: "max-w-3xl w-[min(95vw,40rem)]",
   header: "px-5 pt-5 pb-4 border-b border-gray-200/40 dark:border-white/10",
@@ -128,13 +138,16 @@ const resolveOpen = computed({
 });
 
 const importing = computed(() => store.importState.submitting);
-const importError = computed(() => store.importState.error);
-const lastTaskId = computed(() => store.importState.lastTaskId);
+const importError = computed(() => {
+  if (store.importState.error) return store.importState.error;
+  return null;
+});
 
 watch(resolveOpen, (value) => {
   if (!value) {
     selectedFile.value = null;
     selectedFileName.value = "";
+    conflictStrategy.value = "fail";
     store.resetImportState();
   }
 });
@@ -207,12 +220,14 @@ const handleSubmit = async () => {
     return;
   }
   try {
-    await store.submitImportTask({
+    const response = await store.submitImportTask({
       file: selectedFile.value,
       context: props.context || "directory",
+      conflictStrategy: conflictStrategy.value,
     });
     emit("submitted");
     closeModal();
+    await navigateTo(`/customer/import-tasks/${response.taskId}`);
   } catch (error) {
     console.error("[CustomerImportDialog] import failed", error);
   }

@@ -39,20 +39,42 @@ func NewCredentialChecker(deps *app.Deps, lead, interval time.Duration, alertEmi
 	}
 }
 
+// Name returns scheduler worker name.
+func (c *CredentialChecker) Name() string {
+	return "channel.master.credential.checker"
+}
+
+// Interval returns scheduler interval.
+func (c *CredentialChecker) Interval() time.Duration {
+	if c == nil || c.interval <= 0 {
+		return time.Hour
+	}
+	return c.interval
+}
+
+// RunOnce executes a single credential scan cycle.
+func (c *CredentialChecker) RunOnce(ctx context.Context) error {
+	if c == nil || c.db == nil {
+		return nil
+	}
+	c.scan(ctx)
+	return nil
+}
+
 // Run starts ticker until context cancelled.
 func (c *CredentialChecker) Run(ctx context.Context) {
 	if c == nil || c.db == nil {
 		return
 	}
-	ticker := time.NewTicker(c.interval)
+	ticker := time.NewTicker(c.Interval())
 	defer ticker.Stop()
-	c.scan(ctx)
+	_ = c.RunOnce(ctx)
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			c.scan(ctx)
+			_ = c.RunOnce(ctx)
 		}
 	}
 }

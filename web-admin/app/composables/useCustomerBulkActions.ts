@@ -1,24 +1,16 @@
-import { ref } from "vue";
 import { useCustomerApi } from "./api";
 import type {
   BulkActionPayload,
   BulkReminderPayload,
   CustomerExportPayload,
-  JobStatus,
 } from "~/types/customer";
 import { useCustomerMetrics } from "./useCustomerMetrics";
 import { useToastAlert } from "./useToastAlert";
-
-const sleep = (ms: number) =>
-  new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
 
 export const useCustomerBulkActions = () => {
   const api = useCustomerApi();
   const metrics = useCustomerMetrics();
   const toast = useToastAlert();
-  const pollingTasks = ref<Record<string, boolean>>({});
 
   const submitBulkAction = async (payload: BulkActionPayload) => {
     if (!payload.ids?.length) {
@@ -101,13 +93,13 @@ export const useCustomerBulkActions = () => {
     }
   };
 
-  const submitImport = async (params: { file: File }) => {
+  const submitImport = async (params: { file: File; conflictStrategy?: "fail" | "skip" }) => {
     if (!params.file) {
       throw new Error("请上传导入文件");
     }
     const tracker = metrics.trackJob("customer_import_task");
     try {
-      const response = await api.requestImport(params.file);
+      const response = await api.requestImport(params.file, params.conflictStrategy || "fail");
       tracker("success", { taskId: response.taskId });
       toast.add({
         title: "导入任务已提交",
@@ -121,43 +113,10 @@ export const useCustomerBulkActions = () => {
     }
   };
 
-  const pollJobOnce = async (taskId: string) => {
-    return api.fetchJobStatus(taskId);
-  };
-
-  const pollJobUntilFinished = async (
-    taskId: string,
-    options?: { intervalMs?: number; timeoutMs?: number }
-  ): Promise<JobStatus> => {
-    const intervalMs = options?.intervalMs ?? 2_000;
-    const timeoutMs = options?.timeoutMs ?? 120_000;
-    const start = Date.now();
-    pollingTasks.value[taskId] = true;
-
-    try {
-      while (true) {
-        const status = await pollJobOnce(taskId);
-        const normalized = (status.status || "").toLowerCase();
-        if (["success", "failed", "error"].includes(normalized)) {
-          return status;
-        }
-        if (Date.now() - start > timeoutMs) {
-          throw new Error("任务执行超时");
-        }
-        await sleep(intervalMs);
-      }
-    } finally {
-      delete pollingTasks.value[taskId];
-    }
-  };
-
   return {
     submitBulkAction,
     submitReminder,
     submitExport,
     submitImport,
-    pollJobOnce,
-    pollJobUntilFinished,
-    pollingTasks,
   };
 };

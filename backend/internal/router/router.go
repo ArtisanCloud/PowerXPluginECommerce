@@ -14,6 +14,7 @@ import (
 	miniappapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/miniapp"
 	pricingapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/pricing"
 	publicauth "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/public"
+	wstransport "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/websocket"
 
 	"github.com/gin-gonic/gin"
 )
@@ -137,6 +138,9 @@ func (r *Router) setupRoutes() {
 	v1.Use(middleware2.JWTAuth(jwtCfg))
 	v1.Use(middleware2.RBAC(rbacCfg, nil, nil))
 	_ = pricingapi.RegisterRoutes(v1, r.deps)
+
+	// 如需调试：打印已注册路由
+	wstransport.RegisterWSRoutes(r.engine, middleware2.JWTAuth(jwtCfg), r.cfg)
 
 	// 如需调试：打印已注册路由
 	// apiRegistry.PrintRegisteredRoutes()

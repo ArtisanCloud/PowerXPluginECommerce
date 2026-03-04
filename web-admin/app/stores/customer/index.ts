@@ -1,8 +1,9 @@
 import { defineStore } from "pinia";
-import { useCustomerApi } from "~/composables/api";
+import { useApiClient, useCustomerApi } from "~/composables/api";
 import { useCustomerMetrics } from "~/composables/useCustomerMetrics";
 import { useMembershipInsights } from "~/composables/useMembershipInsights";
 import { useCustomerBulkActions } from "~/composables/useCustomerBulkActions";
+import { useWsBusClient, type WsBusEvent } from "~/composables/useWsBusClient";
 import type {
 	BulkReminderPayload,
 	BulkTask,
@@ -20,6 +21,53 @@ import type {
 } from "~/types/customer";
 
 const SAVED_VIEWS_KEY = "px_customer_saved_views";
+
+const TASK_PROGRESS_TOPICS = [
+  "task.progress",
+  "powerx.task.progress.v1",
+  "worker.task.updated",
+] as const;
+
+const TERMINAL_TASK_STATUSES = new Set(["success", "failed", "error", "cancelled"]);
+
+const normalizeTaskStatus = (raw?: string) => String(raw || "").trim().toLowerCase();
+
+
+const normalizeProgress = (raw: any, fallback?: number): number | undefined => {
+  const value = Number(raw);
+  if (!Number.isFinite(value)) {
+    return typeof fallback === "number" ? fallback : undefined;
+  }
+  if (value < 0) return 0;
+  if (value > 100) return 100;
+  return Math.round(value);
+};
+
+const resolveTaskIDFromEvent = (event: WsBusEvent): string => {
+  const payload = (event?.payload || {}) as Record<string, any>;
+  return String(
+    payload.taskId || payload.task_id || payload.id || event.taskId || "",
+  ).trim();
+};
+
+const pendingTaskEventPatches = new Map<string, Partial<BulkTask>>();
+
+const mergeTaskPatch = (current: Partial<BulkTask>, incoming: Partial<BulkTask>): Partial<BulkTask> => {
+  return {
+    ...current,
+    ...incoming,
+    progress: normalizeProgress(incoming.progress, normalizeProgress(current.progress)),
+    completedAt: incoming.completedAt || current.completedAt,
+  };
+};
+
+const taskBusBindingState: {
+  bound: boolean;
+  handler: ((event: WsBusEvent) => void) | null;
+} = {
+  bound: false,
+  handler: null,
+};
 
 const createDefaultFilters = (): CustomerListFilters => ({
   keyword: "",
@@ -138,7 +186,7 @@ export const useCustomerStore = defineStore("customer.directory", {
     reminderState: createReminderState(),
     importState: createImportState(),
     exportState: createExportState(),
-    taskPolling: {} as Record<string, boolean>,
+    taskStreamError: "" as string | null,
     mutationState: createMutationState(),
     visibleColumns: [
       "name",
@@ -182,10 +230,15 @@ export const useCustomerStore = defineStore("customer.directory", {
       this.selection = [];
     },
     registerTask(task: BulkTask) {
+      const pendingPatch = pendingTaskEventPatches.get(task.taskId);
+      const mergedTask = pendingPatch ? ({ ...task, ...pendingPatch } as BulkTask) : task;
       this.bulkTasks = [
-        task,
+        mergedTask,
         ...this.bulkTasks.filter((item) => item.taskId !== task.taskId),
       ];
+      if (pendingPatch) {
+        pendingTaskEventPatches.delete(task.taskId);
+      }
     },
     recordCustomerChange(action: "created" | "updated" | "deleted", customer: Customer | { id: string }) {
       if (!customer?.id) return;
@@ -330,52 +383,132 @@ export const useCustomerStore = defineStore("customer.directory", {
       this.setMembershipFilters(payload);
       return this.fetchMemberships();
     },
-    async pollTaskStatus(taskId: string) {
-      if (!taskId || this.taskPolling[taskId]) return;
-      const bulkActions = useCustomerBulkActions();
-      this.taskPolling[taskId] = true;
-      try {
-        const status = await bulkActions.pollJobUntilFinished(taskId, {
-          intervalMs: 5_000,
-        });
-        this.updateTask(taskId, {
-          status: status.status,
-          message: status.message,
-          completedAt: status.completedAt || new Date().toISOString(),
-          downloadUrl: status.downloadUrl,
-        });
-      } catch (error: any) {
-        this.updateTask(taskId, {
-          status: "failed",
-          message: error?.message || "任务执行失败",
-        });
-      } finally {
-        delete this.taskPolling[taskId];
+    bindTaskStream() {
+      const ws = useWsBusClient();
+      const handler = taskBusBindingState.handler || ((event: WsBusEvent) => {
+        this.applyTaskEvent(event);
+      });
+
+      taskBusBindingState.handler = handler;
+      TASK_PROGRESS_TOPICS.forEach((topic) => ws.subscribe(topic, handler));
+      ws.connect();
+      this.taskStreamError = null;
+      taskBusBindingState.bound = true;
+    },
+    applyTaskEvent(event: WsBusEvent) {
+      const taskId = resolveTaskIDFromEvent(event);
+      if (!taskId) {
+        return;
       }
+      const existingTask = this.bulkTasks.find((item) => item.taskId === taskId);
+
+      const payload = (event?.payload || {}) as Record<string, any>;
+      const status = normalizeTaskStatus(payload.status || payload.state || existingTask?.status || "running");
+      const patch: Partial<BulkTask> = {
+        status: (status || existingTask?.status || "running") as BulkTask["status"],
+        message: String(payload.message || payload.error || existingTask?.message || ""),
+        progress: normalizeProgress(payload.progress ?? payload.percent ?? payload.percentage, existingTask?.progress),
+      };
+
+      const isTerminalFailed = status === "failed" || status === "error" || status === "cancelled";
+      const messageText = String(patch.message || payload.message || "");
+      const isImportLike = messageText.includes("导入");
+      const isExportLike = messageText.includes("导出") || Boolean(patch.downloadUrl);
+
+      if (isImportLike && this.importState.lastTaskId !== taskId && this.importState.submitting) {
+        this.importState.lastTaskId = taskId;
+      }
+      if (isExportLike && this.exportState.lastTaskId !== taskId && this.exportState.submitting) {
+        this.exportState.lastTaskId = taskId;
+      }
+      if (taskId === this.importState.lastTaskId) {
+        if (status === "success") {
+          this.importState.error = null;
+        } else if (isTerminalFailed) {
+          this.importState.error = patch.message || "导入任务失败";
+        }
+      }
+      if (taskId === this.exportState.lastTaskId) {
+        if (status === "success") {
+          this.exportState.error = null;
+        } else if (isTerminalFailed) {
+          this.exportState.error = patch.message || "导出任务失败";
+        }
+      }
+
+      const downloadUrl = String(payload.downloadUrl || payload.download_url || "").trim();
+      if (downloadUrl) {
+        patch.downloadUrl = downloadUrl;
+      }
+
+      if (!patch.message && existingTask?.message) {
+        patch.message = existingTask.message;
+      }
+
+      if (TERMINAL_TASK_STATUSES.has(status)) {
+        patch.completedAt = String(payload.completedAt || payload.completed_at || new Date().toISOString());
+        patch.progress = 100;
+      }
+
+      if (!existingTask) {
+        const buffered = pendingTaskEventPatches.get(taskId) || {};
+        const merged = mergeTaskPatch(buffered, patch);
+        pendingTaskEventPatches.set(taskId, merged);
+
+        const messageText = String(merged.message || payload.message || "");
+        const isExport = messageText.includes("导出") || Boolean(merged.downloadUrl);
+        const inferredType = isExport ? "export" : "import";
+
+        this.registerTask({
+          taskId,
+          type: inferredType as BulkTask["type"],
+          status: (merged.status || "running") as BulkTask["status"],
+          progress: normalizeProgress(merged.progress, 0),
+          message: String(merged.message || ""),
+          downloadUrl: String(merged.downloadUrl || "") || undefined,
+          createdAt: new Date().toISOString(),
+          context: "directory",
+          completedAt: merged.completedAt,
+        });
+
+        if (!this.importState.lastTaskId && !isExport) {
+          this.importState.lastTaskId = taskId;
+        }
+        if (!this.exportState.lastTaskId && isExport) {
+          this.exportState.lastTaskId = taskId;
+        }
+        return;
+      }
+
+      this.updateTask(taskId, patch);
     },
     async submitImportTask(params: {
       file: File;
       context?: "directory" | "members";
+      conflictStrategy?: "fail" | "skip";
     }) {
       if (!params.file) {
         throw new Error("请提供导入文件");
       }
       const bulkActions = useCustomerBulkActions();
+      this.bindTaskStream();
       this.importState.submitting = true;
       this.importState.error = null;
       try {
         const response = await bulkActions.submitImport({
           file: params.file,
+          conflictStrategy: params.conflictStrategy || "fail",
         });
         this.importState.lastTaskId = response.taskId;
         this.registerTask({
           taskId: response.taskId,
           type: "import",
           status: "queued",
+          progress: 0,
           createdAt: new Date().toISOString(),
           context: params.context || "directory",
         });
-        this.pollTaskStatus(response.taskId);
+        this.bindTaskStream();
         return response;
       } catch (error: any) {
         this.importState.error =
@@ -388,12 +521,72 @@ export const useCustomerStore = defineStore("customer.directory", {
     resetImportState() {
       this.importState = createImportState();
     },
+    async fetchTaskStatus(taskId: string) {
+      const normalizedTaskID = String(taskId || "").trim();
+      if (!normalizedTaskID) {
+        throw new Error("taskId is required");
+      }
+      const { client } = useApiClient();
+      const resp = await client<{ success?: boolean; data?: any }>(`/admin/jobs/${normalizedTaskID}`, {
+        method: "GET",
+      });
+      const data = (resp && typeof resp === "object" && "data" in (resp as Record<string, any>))
+        ? (resp as Record<string, any>).data
+        : resp;
+      if (!data || typeof data !== "object") {
+        return null;
+      }
+
+      const status = normalizeTaskStatus((data as Record<string, any>).status || "running");
+      const patch: Partial<BulkTask> = {
+        status: (status || "running") as BulkTask["status"],
+        message: String((data as Record<string, any>).message || ""),
+        progress: normalizeProgress(
+          (data as Record<string, any>).progress ??
+            (data as Record<string, any>).metadata?.progress,
+          undefined,
+        ),
+        downloadUrl: String(
+          (data as Record<string, any>).downloadUrl ||
+            (data as Record<string, any>).download_url ||
+            "",
+        ) || undefined,
+      };
+
+      if (TERMINAL_TASK_STATUSES.has(status)) {
+        patch.completedAt = String(
+          (data as Record<string, any>).completedAt ||
+            (data as Record<string, any>).completed_at ||
+            new Date().toISOString(),
+        );
+      }
+
+      const existing = this.bulkTasks.find((item) => item.taskId === normalizedTaskID);
+      if (existing) {
+        this.updateTask(normalizedTaskID, patch);
+      } else {
+        this.registerTask({
+          taskId: normalizedTaskID,
+          type: String((data as Record<string, any>).type || "").includes("export") ? "export" : "import",
+          status: (patch.status || "running") as BulkTask["status"],
+          progress: normalizeProgress(patch.progress, 0),
+          message: patch.message,
+          downloadUrl: patch.downloadUrl,
+          createdAt: String((data as Record<string, any>).createdAt || new Date().toISOString()),
+          completedAt: patch.completedAt,
+          context: "directory",
+        });
+      }
+
+      return this.bulkTasks.find((item) => item.taskId === normalizedTaskID) || null;
+    },
     async submitExportTask(params: {
       fields: string[];
       filters?: CustomerListFilters;
       context?: "directory" | "members";
     }) {
       const bulkActions = useCustomerBulkActions();
+      this.bindTaskStream();
       this.exportState.submitting = true;
       this.exportState.error = null;
       try {
@@ -406,11 +599,12 @@ export const useCustomerStore = defineStore("customer.directory", {
           taskId: response.taskId,
           type: "export",
           status: "queued",
+          progress: 0,
           createdAt: new Date().toISOString(),
           scope: { filters: params.filters },
           context: params.context || "directory",
         });
-        this.pollTaskStatus(response.taskId);
+        this.bindTaskStream();
         return response;
       } catch (error: any) {
         this.exportState.error =
@@ -457,7 +651,7 @@ export const useCustomerStore = defineStore("customer.directory", {
           scope: { ids: [...payload.ids] },
           context: "members",
         });
-        this.pollTaskStatus(response.taskId);
+        this.bindTaskStream();
         metrics.recordReminderResult({
           channel: payload.channel,
           total: payload.ids.length,

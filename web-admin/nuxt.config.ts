@@ -62,7 +62,7 @@ const productSkuApi = {
   export: `${productSkuApiBase}/export`
 }
 const devApiProxyTarget = process.env.NUXT_DEV_API_PROXY || 'http://localhost:8078'
-const devWsProxyTarget = process.env.NUXT_DEV_WS_PROXY || 'ws://127.0.0.1:4000'
+const devWsProxyTarget = process.env.NUXT_DEV_WS_PROXY || devApiProxyTarget.replace(/^http:/i, "ws:").replace(/^https:/i, "wss:")
 const imgSources = ["'self'", "data:", "https://avatars.githubusercontent.com"]
 const extraConnectHosts = new Set<string>()
 const registerConnectOrigin = (candidate?: string | null) => {
@@ -119,7 +119,7 @@ const BRIDGE_DEBUG = rawBridgeDebug !== undefined
 
 const DISABLE_VITE_HMR_OVERLAY = process.env.NUXT_PUBLIC_E2E_HARNESS === '1'
 
-// Dev-time proxy: always forward /api + ws; add /_p/.../api only in proxy mode
+// Dev-time proxy: always forward /api + /api/ws; add /_p/.../api only in proxy mode
 const disableDevProxy = process.env.DISABLE_DEV_PROXY === '1'
 const devProxy: Record<string, any> = {}
 if (!disableDevProxy) {
@@ -128,7 +128,7 @@ if (!disableDevProxy) {
     changeOrigin: true,
     ws: true
   }
-  devProxy['/ws'] = {
+  devProxy['/api/ws'] = {
     target: devWsProxyTarget,
     changeOrigin: true,
     ws: true

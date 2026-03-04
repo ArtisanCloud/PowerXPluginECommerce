@@ -9,7 +9,6 @@ import type {
   CustomerListFilters,
   CustomerListResponse,
   CustomerUpdatePayload,
-  JobStatus,
   MembershipFilters,
   MembershipListResponse,
 } from "~/types/customer";
@@ -152,21 +151,14 @@ export const useCustomerService = () => {
     return unwrap(response);
   };
 
-  const requestImport = async (file: File) => {
+  const requestImport = async (file: File, conflictStrategy: "fail" | "skip" = "fail") => {
     const form = new FormData();
     form.append("file", file);
+    form.append("conflict_strategy", conflictStrategy);
     const response = await client<ApiEnvelope<{ taskId: string }>>(`${basePath}/import`, {
       method: "POST",
       body: form,
     });
-    return unwrap(response);
-  };
-
-  const fetchJobStatus = async (taskId: string) => {
-    if (!taskId) {
-      throw new Error("taskId is required");
-    }
-    const response = await client<ApiEnvelope<JobStatus>>(`/jobs/${taskId}`, { method: "GET" });
     return unwrap(response);
   };
 
@@ -181,6 +173,5 @@ export const useCustomerService = () => {
     requestReminder,
     requestExport,
     requestImport,
-    fetchJobStatus,
   };
 };

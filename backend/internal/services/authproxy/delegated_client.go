@@ -66,7 +66,13 @@ func NewDelegatedClient(baseURL, token string, opts ...Option) (*DelegatedClient
 		pluginID:     strings.TrimSpace(os.Getenv("POWERX_PLUGIN_ID")),
 	}
 	if client.serviceToken == "" {
-		client.serviceToken = strings.TrimSpace(os.Getenv("POWERX_AUTH_TOKEN"))
+		if v := strings.TrimSpace(os.Getenv("PX_TOOL_TOKEN")); v != "" {
+			client.serviceToken = v
+		} else if v := strings.TrimSpace(os.Getenv("PX_PLUGIN_TOOL_TOKEN")); v != "" {
+			client.serviceToken = v
+		} else {
+			client.serviceToken = strings.TrimSpace(os.Getenv("POWERX_AUTH_TOKEN"))
+		}
 	}
 
 	for _, opt := range opts {

@@ -84,6 +84,13 @@ function getTenantUUID() {
   return v || DEFAULT_TENANT_UUID;
 }
 
+function withTenantQuery(path: string) {
+  const tenant = getTenantUUID();
+  if (!tenant) return path;
+  const separator = path.includes("?") ? "&" : "?";
+  return `${path}${separator}tenant_uuid=${encodeURIComponent(tenant)}`;
+}
+
 function getCustomerToken() {
   return String(uni.getStorageSync("miniapp.customer.token") || "").trim();
 }
@@ -110,10 +117,9 @@ export function buildIdempotencyKey(prefix = "pay") {
 }
 
 async function miniAppRequest<T>(opts: MiniAppRequestOptions): Promise<T> {
-  const url = `${getMiniAppBaseUrl()}${opts.path}`;
+  const url = `${getMiniAppBaseUrl()}${withTenantQuery(opts.path)}`;
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
-    "X-Tenant-UUID": getTenantUUID(),
     ...(opts.headers || {}),
   };
   const token = getCustomerToken();
