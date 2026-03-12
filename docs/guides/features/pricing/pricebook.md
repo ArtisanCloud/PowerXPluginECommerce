@@ -258,7 +258,7 @@ Scope 匹配规则：
 
 管理端（`/api/v1/admin/pricing/**`）需要租户上下文与 RBAC 权限，核心资源为：
 
-- `com.powerx.plugin.ecommerce:pricing.pricebook`
+- `com.powerx.plugins.ecommerce:pricing.pricebook`
   - `read`：列表
   - `manage`：创建/更新/删除、创建版本、写入条目
   - `publish`：发布/下线版本

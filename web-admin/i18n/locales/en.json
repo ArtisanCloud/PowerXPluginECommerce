@@ -54,9 +54,9 @@
     "logout": "Logout"
   },
   "menus": {
-    "menu.com.powerx.plugin.ecommerce.channels": "Channel Center",
-    "menu.com.powerx.plugin.ecommerce.channels.list": "Channels",
-    "menu.com.powerx.plugin.ecommerce.channels.approval": "Channel Approvals"
+    "menu.com.powerx.plugins.ecommerce.channels": "Channel Center",
+    "menu.com.powerx.plugins.ecommerce.channels.list": "Channels",
+    "menu.com.powerx.plugins.ecommerce.channels.approval": "Channel Approvals"
   },
   "theme": {
     "light": "Light Theme",
@@ -281,7 +281,7 @@
       "createDescription": "Fill in the basic information to create a SKU record.",
       "detail": "SKU Detail",
       "search": "Search SKU, code or spec",
-    "status": "Status",
+      "status": "Status",
       "category": "Category",
       "brand": "Brand",
       "skuCode": "SKU Code",

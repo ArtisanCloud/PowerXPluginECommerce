@@ -29,7 +29,6 @@ func TestParseTenantIDFromJWT(t *testing.T) {
 
 func TestResolveRuntimeModeDecision(t *testing.T) {
 	t.Setenv("POWERX_PROXY", "1")
-	t.Setenv("POWERX_RBAC_DELEGATE", "0")
 	t.Setenv("PX_TOOL_TOKEN", "eyJhbGciOiJub25lIn0.eyJ0aWQiOiJ0ZW5hbnQtYWJjIn0.")
 
 	d := ResolveRuntimeModeDecision(nil, "local", "config")

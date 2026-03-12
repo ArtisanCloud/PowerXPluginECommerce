@@ -129,7 +129,7 @@ type ServerConfig struct {
 
 // RuntimeConfig 运行时配置
 type RuntimeConfig struct {
-	RunMigrate bool `yaml:"run_migrate" json:"run_migrate"`
+	RunMigrate bool                  `yaml:"run_migrate" json:"run_migrate"`
 	Drivers    *RuntimeDriversConfig `yaml:"drivers" json:"drivers"`
 }
 
@@ -773,6 +773,9 @@ func loadEnvConfig(cfg *Config) {
 	}
 
 	// 数据库配置
+	if driver := resolveConfigValue(os.Getenv("POWERX_DB_DRIVER")); driver != "" {
+		cfg.Database.Driver = driver
+	}
 	if dsn := resolveConfigValue(os.Getenv("POWERX_DB_DSN")); dsn != "" {
 		cfg.Database.DSN = dsn
 	}
@@ -986,6 +989,11 @@ func normalizeConfig(cfg *Config) {
 		cfg.Server.BindAddr = resolveConfigValue(cfg.Server.BindAddr)
 		cfg.Server.LogLevel = strings.ToLower(resolveConfigValue(cfg.Server.LogLevel))
 	}
+	if cfg.Database != nil {
+		cfg.Database.Driver = strings.ToLower(resolveConfigValue(cfg.Database.Driver))
+		cfg.Database.DSN = resolveConfigValue(cfg.Database.DSN)
+		cfg.Database.Schema = resolveConfigValue(cfg.Database.Schema)
+	}
 	if cfg.Logging != nil {
 		cfg.Logging.Level = strings.ToLower(resolveConfigValue(cfg.Logging.Level))
 		cfg.Logging.Format = strings.ToLower(resolveConfigValue(cfg.Logging.Format))
@@ -1004,6 +1012,34 @@ func normalizeConfig(cfg *Config) {
 		cfg.GRPCServer.Addr = resolveConfigValue(cfg.GRPCServer.Addr)
 		normalizeGRPCServerConfig(cfg.GRPCServer)
 	}
+	customerCfg := cfg.CustomerAuthConfigOrDefault()
+	customerCfg.Mode = strings.ToLower(strings.TrimSpace(resolveConfigValue(customerCfg.Mode)))
+	customerCfg.DelegateEndpoint = strings.TrimSpace(resolveConfigValue(customerCfg.DelegateEndpoint))
+	if cfg.ResolveCustomerAuthMode() == CustomerAuthModeDelegate && customerCfg.DelegateEndpoint == "" {
+		if fallback := defaultCustomerDelegateEndpoint(); fallback != "" {
+			customerCfg.DelegateEndpoint = fallback
+		}
+	}
+}
+
+func defaultCustomerDelegateEndpoint() string {
+	base := strings.TrimSpace(resolveConfigValue(os.Getenv("POWERX_CORE_ENDPOINT")))
+	if base == "" {
+		base = strings.TrimSpace(resolveConfigValue(os.Getenv("PX_GATEWAY_BASE_URL")))
+	}
+	if base == "" {
+		return ""
+	}
+	prefix := strings.TrimSpace(resolveConfigValue(os.Getenv("PX_GATEWAY_API_PREFIX")))
+	if prefix == "" {
+		prefix = "/api/v1"
+	}
+	if !strings.HasPrefix(prefix, "/") {
+		prefix = "/" + prefix
+	}
+	base = strings.TrimRight(base, "/")
+	prefix = strings.TrimRight(prefix, "/")
+	return base + prefix + "/customer/auth/validate"
 }
 
 func normalizeGRPCServerConfig(server *GRPCServer) {

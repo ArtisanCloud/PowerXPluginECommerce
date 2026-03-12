@@ -9,7 +9,7 @@ import (
 // RBACEntries declares admin membership route permissions.
 func RBACEntries(prefix string) map[string]authx.Permission {
 	base := strings.TrimRight(prefix, "/") + "/admin/membership"
-	res := func() string { return "com.powerx.plugin.ecommerce:membership" }
+	res := func() string { return "com.powerx.plugins.ecommerce:membership" }
 	return map[string]authx.Permission{
 		"GET:" + base + "/tiers":              {Resource: res(), Action: "read"},
 		"GET:" + base + "/benefits":           {Resource: res(), Action: "read"},

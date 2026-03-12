@@ -46,6 +46,36 @@ const isHostMode = () => {
 
 const resolveWsPath = () => '/api/ws'
 
+const toBase64Url = (raw: string) => {
+  try {
+    return btoa(raw).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/g, '')
+  } catch {
+    return ''
+  }
+}
+
+const buildWsBearerProtocol = (token?: string | null) => {
+  const raw = String(token || '').trim()
+  if (!raw) return ''
+  const normalized = /^Bearer\s+/i.test(raw) ? raw.replace(/^Bearer\s+/i, '').trim() : raw
+  if (!normalized) return ''
+  const encoded = toBase64Url(normalized)
+  if (!encoded) return ''
+  return `bearer.${encoded}`
+}
+
+const redactWsURL = (raw: string) => {
+  try {
+    const url = new URL(raw)
+    if (url.searchParams.has('authorization')) {
+      url.searchParams.set('authorization', 'Bearer ***')
+    }
+    return url.toString()
+  } catch {
+    return raw
+  }
+}
+
 const wsOriginFromApiBase = (apiBase?: string | null) => {
   const raw = String(apiBase || '').trim()
   if (!raw) return null
@@ -91,14 +121,8 @@ const resolveWsURL = () => {
     wsURL = new URL(resolveWsPath(), `${protocol}//${window.location.host}`).toString()
   }
 
-  const token = getAuthToken()
-  const url = new URL(wsURL)
-  if (token) {
-    url.searchParams.set('authorization', `Bearer ${token}`)
-  }
-
-  const resolved = url.toString()
-  console.info('[ws-bus] resolved ws url', { resolved, mode, hostMode: isHostMode() })
+  const resolved = String(wsURL || '').trim()
+  console.info('[ws-bus] resolved ws url', { resolved: redactWsURL(resolved), mode, hostMode: isHostMode() })
   return resolved
 }
 
@@ -156,14 +180,20 @@ const dispatchEvent = (message: WsBusEvent) => {
 const bindSocket = () => {
   const wsURL = resolveWsURL()
   if (!wsURL) return
+  const bearerProtocol = buildWsBearerProtocol(getAuthToken())
+  const wsProtocols = bearerProtocol ? [bearerProtocol] : undefined
 
-  console.info('[ws-bus] connecting', { wsURL, topics: desiredTopics() })
-  socket = new WebSocket(wsURL)
+  console.info('[ws-bus] connecting', {
+    wsURL: redactWsURL(wsURL),
+    topics: desiredTopics(),
+    authMode: bearerProtocol ? 'sec-websocket-protocol' : 'none',
+  })
+  socket = wsProtocols ? new WebSocket(wsURL, wsProtocols) : new WebSocket(wsURL)
 
   socket.onopen = () => {
     reconnectAttempts = 0
     subscribedTopics.clear()
-    console.info('[ws-bus] connected', { wsURL, topics: desiredTopics() })
+    console.info('[ws-bus] connected', { wsURL: redactWsURL(wsURL), topics: desiredTopics() })
     ensureSubscriptions()
   }
 

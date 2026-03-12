@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -156,8 +157,15 @@ func (c *DelegatedClient) MeContext(ctx context.Context, accessToken string) (*M
 		"Authorization": fmt.Sprintf("Bearer %s", accessToken),
 	}
 	var resp MeContext
-	if err := c.get(ctx, "/auth/me/context", &resp, headers); err != nil {
-		return nil, err
+	if err := c.get(ctx, "/admin/user/auth/me/context", &resp, headers); err != nil {
+		var perr *ProxyError
+		if errors.As(err, &perr) && perr.Status == http.StatusNotFound {
+			if legacyErr := c.get(ctx, "/auth/me/context", &resp, headers); legacyErr != nil {
+				return nil, legacyErr
+			}
+		} else {
+			return nil, err
+		}
 	}
 	return &resp, nil
 }
@@ -318,8 +326,21 @@ type MeContext struct {
 	IsRoot            bool            `json:"is_root"`
 	CurrentTenantUUID string          `json:"current_tenant_uuid"`
 	CurrentMemberID   *uint64         `json:"current_member_id,omitempty"`
+	Roles             []string        `json:"roles,omitempty"`
+	Permissions       []string        `json:"permissions,omitempty"`
+	Capabilities      *MeCapabilities `json:"capabilities,omitempty"`
 	User              *MeUserBrief    `json:"user,omitempty"`
 	Members           []MeMemberBrief `json:"members"`
+}
+
+type MeCapabilities struct {
+	Templates *MeTemplatesCapability `json:"templates,omitempty"`
+}
+
+type MeTemplatesCapability struct {
+	CanCreate bool `json:"can_create"`
+	CanUpdate bool `json:"can_update"`
+	CanDelete bool `json:"can_delete"`
 }
 
 type MeUserBrief struct {

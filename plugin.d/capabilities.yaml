@@ -1,0 +1,11 @@
+capabilities:
+  imports:
+    - contracts/capabilities/com.powerx.plugins.ecommerce.template.create.yaml
+  provides:
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.template.create.yaml
+      id: com.powerx.plugins.ecommerce.template.create
+      schemas:
+        input: ""
+        output: ""
+      version: 1.0.0
+  required: []

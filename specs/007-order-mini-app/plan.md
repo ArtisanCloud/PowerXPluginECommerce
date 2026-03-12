@@ -1,7 +1,7 @@
 # Implementation Plan: 自营下单（Mini-app 下单 + Admin 代客下单）MVP
 
-**Branch**: `007-order-mini-app` | **Date**: 2026-01-12 | **Spec**: `/private/var/www/html/ArtisanCloud/X/PowerX/Core/Plugins/com.powerx.plugin.ecommerce/specs/007-order-mini-app/spec.md`  
-**Input**: Feature specification from `/private/var/www/html/ArtisanCloud/X/PowerX/Core/Plugins/com.powerx.plugin.ecommerce/specs/007-order-mini-app/spec.md`
+**Branch**: `007-order-mini-app` | **Date**: 2026-01-12 | **Spec**: `/private/var/www/html/ArtisanCloud/X/PowerX/Core/Plugins/com.powerx.plugins.ecommerce/specs/007-order-mini-app/spec.md`  
+**Input**: Feature specification from `/private/var/www/html/ArtisanCloud/X/PowerX/Core/Plugins/com.powerx.plugins.ecommerce/specs/007-order-mini-app/spec.md`
 
 **Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
 
@@ -35,7 +35,7 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-基于 `/private/var/www/html/ArtisanCloud/X/PowerX/Core/Plugins/com.powerx.plugin.ecommerce/.specify/memory/constitution.md`：
+基于 `/private/var/www/html/ArtisanCloud/X/PowerX/Core/Plugins/com.powerx.plugins.ecommerce/.specify/memory/constitution.md`：
 
 - Host Contract First：通过（管理端 `/api/v1/admin/**`；小程序 `/api/v1/mini-app/**`；遵循宿主反代前缀，不新增宿主私有耦合）  
 - Tenant Isolation & Zero Trust：通过（中间件注入 tenant_uuid；Repo 通过 `WithTenantTx/BeginTenantTx` 执行并依赖 RLS；鉴权使用既有 JWT/HMAC 与 customer token 中间件）  

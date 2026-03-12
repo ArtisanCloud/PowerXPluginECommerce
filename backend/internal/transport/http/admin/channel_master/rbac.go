@@ -10,7 +10,7 @@ import (
 func RBACEntries(prefix string) map[string]authx.Permission {
 	base := strings.TrimRight(prefix, "/") + "/admin/channels"
 	res := func(suffix string) string {
-		return "com.powerx.plugin.ecommerce:" + suffix
+		return "com.powerx.plugins.ecommerce:" + suffix
 	}
 	return map[string]authx.Permission{
 		"GET:" + base:                                      {Resource: res("channel.master"), Action: "read"},

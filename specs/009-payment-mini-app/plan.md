@@ -1,6 +1,6 @@
 # Implementation Plan: 小程序支付
 
-**Branch**: `009-payment-mini-app` | **Date**: 2026-01-19 | **Spec**: `/private/var/www/html/ArtisanCloud/X/PowerX/Core/Plugins/com.powerx.plugin.ecommerce/specs/009-payment-mini-app/spec.md`  
+**Branch**: `009-payment-mini-app` | **Date**: 2026-01-19 | **Spec**: `/private/var/www/html/ArtisanCloud/X/PowerX/Core/Plugins/com.powerx.plugins.ecommerce/specs/009-payment-mini-app/spec.md`  
 **Input**: Feature specification from `/specs/009-payment-mini-app/spec.md`
 
 ## Summary
@@ -56,7 +56,7 @@ web-admin/
 
 ## Phase 0: Research
 
-输出：`/private/var/www/html/ArtisanCloud/X/PowerX/Core/Plugins/com.powerx.plugin.ecommerce/specs/009-payment-mini-app/research.md`
+输出：`/private/var/www/html/ArtisanCloud/X/PowerX/Core/Plugins/com.powerx.plugins.ecommerce/specs/009-payment-mini-app/research.md`
 
 ## Phase 1: Design & Contracts
 

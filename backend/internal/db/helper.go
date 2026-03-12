@@ -20,8 +20,14 @@ func createSchema(schema string) error {
 	if db == nil || db.Dialector == nil || db.Dialector.Name() != "postgres" {
 		return nil
 	}
-	if strings.TrimSpace(schema) == "" {
+	schema = strings.TrimSpace(schema)
+	if schema == "" {
 		return errors.New("empty schema")
+	}
+	// public 是 PostgreSQL 内置 schema，普通账号通常没有 CREATE DATABASE/SCHEMA 权限；
+	// 对 public 跳过 CREATE，避免安装迁移因权限不足失败。
+	if strings.EqualFold(schema, "public") {
+		return nil
 	}
 	sqlText := fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s", qi(schema))
 	if err := db.Exec(sqlText).Error; err != nil {
@@ -116,7 +122,8 @@ func isPermissionDenied(err error) bool {
 	if errors.As(err, &sqlErr) {
 		return sqlErr.SQLState() == "42501"
 	}
-	return strings.Contains(err.Error(), "42501")
+	msg := strings.ToLower(err.Error())
+	return strings.Contains(msg, "42501") || strings.Contains(msg, "permission denied")
 }
 
 func schemaExists(schema string) (bool, error) {

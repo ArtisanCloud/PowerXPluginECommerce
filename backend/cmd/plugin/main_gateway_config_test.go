@@ -50,3 +50,16 @@ func TestResolveFrameworkGatewayConfig_ApiKey(t *testing.T) {
 		t.Fatalf("unexpected api prefix: %s", cfg.APIPrefix)
 	}
 }
+
+func TestResolveFrameworkGatewayConfig_DefaultsToApiKeyWhenAPIKeyPresent(t *testing.T) {
+	t.Setenv("PX_GATEWAY_BASE_URL", "http://127.0.0.1:8077")
+	t.Setenv("PX_GATEWAY_API_PREFIX", "/api/v1")
+	t.Setenv("PX_GATEWAY_AUTH_SCHEME", "")
+	t.Setenv("PX_GATEWAY_API_KEY", "key-123")
+	t.Setenv("PX_TOOL_TOKEN", "token-demo")
+
+	cfg := resolveFrameworkGatewayConfig()
+	if cfg.AuthScheme != "apikey" {
+		t.Fatalf("unexpected auth scheme: %s", cfg.AuthScheme)
+	}
+}

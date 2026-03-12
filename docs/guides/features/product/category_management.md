@@ -11,7 +11,7 @@
 
 | 类型 | 需求 |
 | --- | --- |
-| RBAC（路由级） | 需要具备类目相关资源权限（例如 `com.powerx.plugin.ecommerce:product.category:manage`、`com.powerx.plugin.ecommerce:product.category.template:manage`、`com.powerx.plugin.ecommerce:product.category.mapping:manage`、`com.powerx.plugin.ecommerce:product.category.import:manage`） |
+| RBAC（路由级） | 需要具备类目相关资源权限（例如 `com.powerx.plugins.ecommerce:product.category:manage`、`com.powerx.plugins.ecommerce:product.category.template:manage`、`com.powerx.plugins.ecommerce:product.category.mapping:manage`、`com.powerx.plugins.ecommerce:product.category.import:manage`） |
 | 环境 | 已完成迁移：`make migrate`；或直接 `make dev`（会自动 migrate 后启动后端） |
 | 账号/租户 | 需要可用租户与可登录账号；所有请求需带租户上下文（宿主鉴权上下文或 query `tenant_uuid`，如默认租户 `00000000-0000-0000-0000-000000000001`） |
 

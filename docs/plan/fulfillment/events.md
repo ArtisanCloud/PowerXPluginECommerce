@@ -4,7 +4,7 @@
 
 ## 0. 对齐口径（PowerXPlugin 最新）
 - 租户来源统一：不再依赖 `PX_TENANT_UUID`，租户一律从 `PX_TOOL_TOKEN` / `PX_PLUGIN_TOOL_TOKEN` 的 `tid` 解析。
-- 模式决策统一：`IAMMode` + `POWERX_PROXY` + `POWERX_RBAC_DELEGATE` 必须可解释、可观测（2x2x2）。
+- 模式决策统一：`IAMMode` + `POWERX_PROXY` 必须可解释、可观测（2x2）。
 - 当 `IAMMode=local && POWERX_PROXY=1`：
   - 插件 IAM 走本地；
   - WS/能力出站走宿主；
@@ -73,12 +73,12 @@ interface JobQueue {
 - `reverse.waybill.created`
 
 ## 5. 模式切换策略
-- 配置项：`IAMMode`、`POWERX_PROXY`、`POWERX_RBAC_DELEGATE`、`PX_GATEWAY_BASE_URL`、`PX_TOOL_TOKEN`
+- 配置项：`IAMMode`、`POWERX_PROXY`、`PX_GATEWAY_BASE_URL`、`PX_TOOL_TOKEN`
 - `standalone`：允许本地运行，但事件与任务接口保持 framework 同构。
 - `host`：通过 PowerX Framework 注入统一实现。
 - 最小环境变量集：
   - 必须：`POWERX_PROXY`、`IAMMode`、`PX_GATEWAY_BASE_URL`、`PX_TOOL_TOKEN`（或 `PX_PLUGIN_TOOL_TOKEN`）
-  - 可选：`PX_TOOL_REFRESH_TOKEN`、`POWERX_RBAC_DELEGATE`、`POWERX_INTERNAL_ROUTES`、`POWERX_AUTH_OPTIONAL`
+  - 可选：`PX_TOOL_REFRESH_TOKEN`、`POWERX_INTERNAL_ROUTES`、`POWERX_AUTH_OPTIONAL`
   - 已废弃为决策输入：`PX_TENANT_UUID`
 
 ## 6. 幂等与一致性

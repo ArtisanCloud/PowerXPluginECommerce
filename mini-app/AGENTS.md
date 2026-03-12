@@ -2,7 +2,7 @@
 
 ## 项目结构与模块组织
 
-- 说明：本目录 `mini-app/` 是 `com.powerx.plugin.ecommerce` 插件仓库的一部分（仓库根在上一级目录）。
+- 说明：本目录 `mini-app/` 是 `com.powerx.plugins.ecommerce` 插件仓库的一部分（仓库根在上一级目录）。
 - `backend/`：Go 插件后端（入口：`backend/cmd/plugin`），HTTP 前缀默认 `/api/v1`；mini-app 相关接口在 `backend/internal/transport/http/miniapp/`。
 - `web-admin/`：Nuxt 4 管理端（面向运营/管理员），构建产物在 `web-admin/.output/`，菜单与路由由 `plugin.yaml` 声明。
 - `mini-app/`：`uni-app + Vue3` 客户端（面向 C 端/小程序/H5）。当前仍是脚手架页面，实际业务联调需要对接后端 mini-app API。

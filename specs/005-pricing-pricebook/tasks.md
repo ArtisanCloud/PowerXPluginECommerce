@@ -1,6 +1,6 @@
 # Tasks: 定价中心—价目表（Pricebook）与基础查价
 
-**Input**: Design documents from `/private/var/www/html/ArtisanCloud/X/PowerX/Core/Plugins/com.powerx.plugin.ecommerce/specs/005-pricing-pricebook/`  
+**Input**: Design documents from `/private/var/www/html/ArtisanCloud/X/PowerX/Core/Plugins/com.powerx.plugins.ecommerce/specs/005-pricing-pricebook/`  
 **Prerequisites**: `plan.md`、`spec.md`（用户故事）、`research.md`、`data-model.md`、`contracts/`、`quickstart.md`  
 **Contracts**: `specs/005-pricing-pricebook/contracts/pricing-pricebooks.openapi.yaml`
 

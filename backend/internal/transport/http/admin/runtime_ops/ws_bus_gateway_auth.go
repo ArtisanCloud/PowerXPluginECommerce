@@ -78,7 +78,7 @@ func resolveGatewayAuthScheme() string {
 	if explicit != "" {
 		return explicit
 	}
-	if strings.TrimSpace(os.Getenv("PX_GATEWAY_API_KEY")) != "" && strings.TrimSpace(os.Getenv("PX_TOOL_TOKEN")) == "" && strings.TrimSpace(os.Getenv("PX_PLUGIN_TOOL_TOKEN")) == "" {
+	if strings.TrimSpace(os.Getenv("PX_GATEWAY_API_KEY")) != "" {
 		return "apikey"
 	}
 	return "bearer"

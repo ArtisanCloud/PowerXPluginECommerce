@@ -7,7 +7,7 @@
 # =========================
 
 # ===== 基础信息 =====
-PLUGIN_ID           ?= com.powerx.plugins.base
+PLUGIN_ID           ?= com.powerx.plugins.ecommerce
 # 从 plugin.yaml 读取版本（若失败则默认 0.1.0）
 VERSION             ?= $(shell awk -F': *' '/^version:/ {print $$2; exit}' plugin.yaml 2>/dev/null || echo "0.1.0")
 
@@ -37,7 +37,8 @@ RELEASE_WEBADMIN_DIR?= $(RELEASE_DIR)/web-admin
 RELEASE_WEBADMIN_OUTPUT ?= $(RELEASE_WEBADMIN_DIR)/.output
 
 # ===== URL / 端口 =====
-POWERX_ADMIN_BASE   ?= /_p/$(PLUGIN_ID)/admin/    # Host 构建时写入到前端 baseURL
+# Host 构建时写入到前端 baseURL
+POWERX_ADMIN_BASE   ?= /_p/$(PLUGIN_ID)/admin/
 HOST_PORT           ?= 4100                       # 运行 Host 产物时的本地端口
 STANDALONE_PORT     ?= 4200                       # 运行 Standalone 产物时的本地端口
 CHECK_PORT          ?= 4999                       # 临时检查端口（不要和上面冲突）
@@ -154,6 +155,14 @@ dist: build frontend-build
 	@awk -v ver="$(VERSION)" 'BEGIN{patched=0} /^[[:space:]]*version:[[:space:]]*/ && !patched {print "version: " ver; patched=1; next} {print} END{if(!patched) print "version: " ver}' plugin.yaml > $(DIST_DIR)/plugin.yaml
 	@cp $(BUILD_DIR)/plugin $(DIST_BACKEND_BIN)/
 	@if [ -f "$(BUILD_DIR)/migrate" ]; then cp $(BUILD_DIR)/migrate $(DIST_BACKEND_BIN)/; fi
+	@if [ -d "backend/etc" ]; then \
+	  mkdir -p $(DIST_DIR)/backend/etc; \
+	  cp -R backend/etc/. $(DIST_DIR)/backend/etc/; \
+	fi
+	@if [ -d "config" ]; then \
+	  mkdir -p $(DIST_DIR)/config; \
+	  cp -R config/. $(DIST_DIR)/config/; \
+	fi
 	@if [ -d "$(FRONTEND_OUTPUT)" ] && [ -n "$$(ls -A $(FRONTEND_OUTPUT) 2>/dev/null)" ]; then \
 	  echo "复制前端构建产物 -> $(DIST_WEBADMIN_OUTPUT)"; \
 	  cp -R $(FRONTEND_OUTPUT)/. $(DIST_WEBADMIN_OUTPUT)/; \
@@ -163,6 +172,14 @@ dist: build frontend-build
 	@if [ -d "$(FRONTEND_DIR)/i18n" ]; then \
 	  mkdir -p $(DIST_WEBADMIN_DIR)/i18n; \
 	  cp -R $(FRONTEND_DIR)/i18n/. $(DIST_WEBADMIN_DIR)/i18n/; \
+	fi
+	@if [ -d "plugin.d" ]; then \
+	  mkdir -p $(DIST_DIR)/plugin.d; \
+	  cp -R plugin.d/. $(DIST_DIR)/plugin.d/; \
+	fi
+	@if [ -d "contracts" ]; then \
+	  mkdir -p $(DIST_DIR)/contracts; \
+	  cp -R contracts/. $(DIST_DIR)/contracts/; \
 	fi
 	@if [ -f README.md ]; then cp README.md $(DIST_DIR)/; fi
 
@@ -176,10 +193,26 @@ release: build frontend-build
 	@awk -v ver="$(VERSION)" 'BEGIN{patched=0} /^[[:space:]]*version:[[:space:]]*/ && !patched {print "version: " ver; patched=1; next} {print} END{if(!patched) print "version: " ver}' plugin.yaml > $(RELEASE_DIR)/plugin.yaml
 	@cp $(BUILD_DIR)/plugin $(RELEASE_BACKEND_BIN)/
 	@if [ -f "$(BUILD_DIR)/migrate" ]; then cp $(BUILD_DIR)/migrate $(RELEASE_BACKEND_BIN)/; fi
+	@if [ -d "backend/etc" ]; then \
+	  mkdir -p $(RELEASE_DIR)/backend/etc; \
+	  cp -R backend/etc/. $(RELEASE_DIR)/backend/etc/; \
+	fi
+	@if [ -d "config" ]; then \
+	  mkdir -p $(RELEASE_DIR)/config; \
+	  cp -R config/. $(RELEASE_DIR)/config/; \
+	fi
 	@cp -R $(FRONTEND_OUTPUT)/. $(RELEASE_WEBADMIN_OUTPUT)/
 	@if [ -d "$(FRONTEND_DIR)/i18n" ]; then \
 	  mkdir -p $(RELEASE_WEBADMIN_DIR)/i18n; \
 	  cp -R $(FRONTEND_DIR)/i18n/. $(RELEASE_WEBADMIN_DIR)/i18n/; \
+	fi
+	@if [ -d "plugin.d" ]; then \
+	  mkdir -p $(RELEASE_DIR)/plugin.d; \
+	  cp -R plugin.d/. $(RELEASE_DIR)/plugin.d/; \
+	fi
+	@if [ -d "contracts" ]; then \
+	  mkdir -p $(RELEASE_DIR)/contracts; \
+	  cp -R contracts/. $(RELEASE_DIR)/contracts/; \
 	fi
 	@if [ -f README.md ]; then cp README.md $(RELEASE_DIR)/; fi
 

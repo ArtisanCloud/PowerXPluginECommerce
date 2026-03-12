@@ -85,6 +85,23 @@ func TestResolveWSBusGatewayAuth_ApiKey(t *testing.T) {
 	}
 }
 
+func TestResolveWSBusGatewayAuth_DefaultsToApiKeyWhenAPIKeyPresent(t *testing.T) {
+	t.Setenv("PX_GATEWAY_AUTH_SCHEME", "")
+	t.Setenv("PX_GATEWAY_API_KEY", "k_test_123")
+	t.Setenv("PX_TOOL_TOKEN", "eyJhbGciOiJub25lIn0.eyJ0aWQiOiJ0ZW5hbnQtdDEifQ.")
+
+	c, _ := gin.CreateTestContext(httptest.NewRecorder())
+	c.Request = httptest.NewRequest("POST", "/", nil)
+
+	decision := resolveWSBusGatewayAuth(c, &app.Deps{IAMMode: authx.IAMModeLocal})
+	if decision.GatewayAuthScheme != "apikey" {
+		t.Fatalf("unexpected auth scheme: %s", decision.GatewayAuthScheme)
+	}
+	if decision.Authorization != "ApiKey k_test_123" {
+		t.Fatalf("unexpected authorization: %s", decision.Authorization)
+	}
+}
+
 func TestResolveWSBusGatewayAuth_Timeout(t *testing.T) {
 	t.Setenv("PX_GATEWAY_TIMEOUT", "75")
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())

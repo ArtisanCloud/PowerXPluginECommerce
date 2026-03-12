@@ -137,10 +137,32 @@ export interface RefreshTokenParams {
   refreshToken: string;
 }
 
+export interface AuthMeContextResponse {
+  is_root?: boolean;
+  current_tenant_uuid?: string;
+  current_member_id?: number;
+  user?: Record<string, any>;
+  members?: Array<Record<string, any>>;
+  roles?: string[];
+  permissions?: string[];
+  capabilities?: {
+    templates?: {
+      can_create?: boolean;
+      can_update?: boolean;
+      can_delete?: boolean;
+    };
+  };
+  [key: string]: any;
+}
+
 export interface ChangePasswordParams {
   oldPassword: string;
   newPassword: string;
   confirmPassword: string;
+}
+
+export interface SwitchTenantParams {
+  tenant_uuid: string;
 }
 
 export interface ResetPasswordParams {
@@ -188,7 +210,24 @@ const normalizeBody = (body: any) => {
 export const useAuthService = () => {
   const { client } = useApiClient();
   const adminBaseUrl = "/admin"; // 添加管理员基础URL
-  const baseUrl = adminBaseUrl + "/user/auth";
+  const resolveAuthBaseUrl = () => {
+    // 鉴权接口必须走宿主主路由，不随 `/_p/<plugin>/api/v1` 前缀。
+    if (process.client && typeof window !== "undefined") {
+      return `${window.location.origin}/api/v1/admin/user/auth`;
+    }
+    try {
+      const runtime = useRuntimeConfig();
+      const coreBase = String(runtime.public?.powerxCoreBase || "").trim();
+      if (/^https?:\/\//i.test(coreBase)) {
+        const normalized = coreBase.replace(/\/+$/, "").replace(/\/api\/v1$/i, "");
+        return `${normalized}/api/v1/admin/user/auth`;
+      }
+    } catch {
+      // noop
+    }
+    return "/api/v1/admin/user/auth";
+  };
+  const baseUrl = resolveAuthBaseUrl();
 
   const request = <T>(url: string, opts: FetchOptions = {}) => {
     const { body, ...rest } = opts;
@@ -291,6 +330,19 @@ export const useAuthService = () => {
     getCurrentUser: () => {
       return request<ApiResponse<UserInfoResponse>>(`${baseUrl}/me`, {
         method: "GET",
+      });
+    },
+
+    getMeContext: () => {
+      return request<ApiResponse<AuthMeContextResponse>>(`${baseUrl}/me/context`, {
+        method: "GET",
+      });
+    },
+
+    switchTenant: (data: SwitchTenantParams) => {
+      return request<ApiResponse<AuthMeContextResponse>>(`${baseUrl}/me/switch-tenant`, {
+        method: "POST",
+        body: data,
       });
     },
 

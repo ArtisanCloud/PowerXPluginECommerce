@@ -1,6 +1,6 @@
 # plugin.yaml 是 PowerX 插件管理器读取的 Manifest，声明插件固定的元信息与能力。
 # 生成后请根据实际情况补充描述、数据使用、权限等信息。
-id: com.powerx.plugin.ecommerce
+id: com.powerx.plugins.ecommerce
 name: Powerx Plugin Ecommerce Plugin
 version: 0.3.0
 description: "Powerx Plugin Ecommerce Plugin 插件描述"
@@ -17,11 +17,13 @@ runtime:
   kind: process
   entry: backend/bin/plugin
   env:
-    POWERX_BIND_ADDR: ${POWERX_BIND_ADDR:-:8086}
+    POWERX_BIND_ADDR: ${POWERX_BIND_ADDR:-:__POWERX_DYNAMIC_PORT__}
+    IAMMode: "delegated"
+    IAM_MODE: "delegated"
     POWERX_PROXY: "1"
-    POWERX_PLUGIN_ID: "com.powerx.plugin.ecommerce"
+    POWERX_PLUGIN_ID: "com.powerx.plugins.ecommerce"
     POWERX_SECURITY_JWT_ISSUER: "powerx-auth"
-    POWERX_SECURITY_JWT_AUDIENCE: "plugin:com.powerx.plugin.ecommerce"
+    POWERX_SECURITY_JWT_AUDIENCE: "plugin:com.powerx.plugins.ecommerce"
     POWERX_SECURITY_JWT_SECRET: "${POWERX_AUTH_JWTSECRET}"
   health:
     http: /healthz
@@ -45,6 +47,7 @@ frontend:
       env:
         NODE_ENV: production
         NITRO_HOST: 127.0.0.1
+        IAMMode: "delegated"
         POWERX_PROXY: "1"
       health:
         http: /healthz
@@ -61,11 +64,11 @@ frontend:
         - zh-CN
         - en
     menus:
-      - id: plugins.com.powerx.plugin.ecommerce.products
+      - id: plugins.com.powerx.plugins.ecommerce.products
         title: 商品中心
         title_i18n:
           namespace: menus
-          key: menu.com.powerx.plugin.ecommerce.products
+          key: menu.com.powerx.plugins.ecommerce.products
           default: Product Center
         icon: i-heroicons-archive-box
         path: /product
@@ -73,71 +76,71 @@ frontend:
         order: 5
         slot: group.plugins
         required_policies:
-          - com.powerx.plugin.ecommerce:product.sku:read
+          - com.powerx.plugins.ecommerce:product.sku:read
         children:
-          - id: plugins.com.powerx.plugin.ecommerce.products.skus
+          - id: plugins.com.powerx.plugins.ecommerce.products.skus
             title: SKU 管理
             title_i18n:
               namespace: menus
-              key: menu.com.powerx.plugin.ecommerce.products.skus
+              key: menu.com.powerx.plugins.ecommerce.products.skus
               default: SKU Management
             icon: i-heroicons-squares-2x2
             path: /product/skus
             route: product/skus
             order: 1
             required_policies:
-              - com.powerx.plugin.ecommerce:product.sku:manage
-              - com.powerx.plugin.ecommerce:product.sku.bulk:manage
-          - id: plugins.com.powerx.plugin.ecommerce.products.inventory
+              - com.powerx.plugins.ecommerce:product.sku:manage
+              - com.powerx.plugins.ecommerce:product.sku.bulk:manage
+          - id: plugins.com.powerx.plugins.ecommerce.products.inventory
             title: 库存与变体
             title_i18n:
               namespace: menus
-              key: menu.com.powerx.plugin.ecommerce.products.inventory
+              key: menu.com.powerx.plugins.ecommerce.products.inventory
               default: Inventory & Variants
             icon: i-heroicons-chart-bar-square
             path: /product/inventory
             route: product/inventory
             order: 2
             required_policies:
-              - com.powerx.plugin.ecommerce:product.sku.inventory:read
-              - com.powerx.plugin.ecommerce:product.sku.channel:manage
-      - id: plugins.com.powerx.plugin.ecommerce.channels
+              - com.powerx.plugins.ecommerce:product.sku.inventory:read
+              - com.powerx.plugins.ecommerce:product.sku.channel:manage
+      - id: plugins.com.powerx.plugins.ecommerce.channels
         title: 渠道中心
         title_i18n:
           namespace: menus
-          key: menu.com.powerx.plugin.ecommerce.channels
+          key: menu.com.powerx.plugins.ecommerce.channels
           default: Channel Center
         icon: i-heroicons-shopping-bag
         path: /channels
         route: channels
         order: 10
         slot: group.plugins
-        required_policies: [com.powerx.plugin.ecommerce:channel.master:read]
+        required_policies: [com.powerx.plugins.ecommerce:channel.master:read]
         children:
-          - id: plugins.com.powerx.plugin.ecommerce.channels.list
+          - id: plugins.com.powerx.plugins.ecommerce.channels.list
             title: 渠道列表
             title_i18n:
               namespace: menus
-              key: menu.com.powerx.plugin.ecommerce.channels.list
+              key: menu.com.powerx.plugins.ecommerce.channels.list
               default: Channels
             icon: i-heroicons-rectangle-stack
             path: /channels
             route: channels
             order: 1
             required_policies:
-              - com.powerx.plugin.ecommerce:channel.master:read
-          - id: plugins.com.powerx.plugin.ecommerce.channels.approval
+              - com.powerx.plugins.ecommerce:channel.master:read
+          - id: plugins.com.powerx.plugins.ecommerce.channels.approval
             title: 渠道审批
             title_i18n:
               namespace: menus
-              key: menu.com.powerx.plugin.ecommerce.channels.approval
+              key: menu.com.powerx.plugins.ecommerce.channels.approval
               default: Channel Approvals
             icon: i-heroicons-check-badge
             path: /channels/approval
             route: channels/approval
             order: 2
             required_policies:
-              - com.powerx.plugin.ecommerce:channel.master:approve
+              - com.powerx.plugins.ecommerce:channel.master:approve
 
 routes:
   basePath: /api/v1
@@ -146,110 +149,114 @@ routes:
 
 rbac:
   resources:
-    - resource: com.powerx.plugin.ecommerce:product.sku
+    - resource: com.powerx.plugins.ecommerce:product.sku
       actions: [read, manage]
-    - resource: com.powerx.plugin.ecommerce:product.sku.bulk
+    - resource: com.powerx.plugins.ecommerce:product.sku.bulk
       actions: [read, manage]
-    - resource: com.powerx.plugin.ecommerce:product.sku.channel
+    - resource: com.powerx.plugins.ecommerce:product.sku.channel
       actions: [read, manage]
-    - resource: com.powerx.plugin.ecommerce:product.sku.inventory
+    - resource: com.powerx.plugins.ecommerce:product.sku.inventory
       actions: [read, manage]
-    - resource: com.powerx.plugin.ecommerce:product.sku.serial
+    - resource: com.powerx.plugins.ecommerce:product.sku.serial
       actions: [read, manage]
-    - resource: com.powerx.plugin.ecommerce:product.sku.barcode
+    - resource: com.powerx.plugins.ecommerce:product.sku.barcode
       actions: [read, manage]
-    - resource: com.powerx.plugin.ecommerce:channel.master
+    - resource: com.powerx.plugins.ecommerce:channel.master
       actions: [read, create, update, approve]
-    - resource: com.powerx.plugin.ecommerce:channel.credential
+    - resource: com.powerx.plugins.ecommerce:channel.credential
       actions: [read, manage]
-    - resource: com.powerx.plugin.ecommerce:channel.alert
+    - resource: com.powerx.plugins.ecommerce:channel.alert
       actions: [read, manage]
-    - resource: com.powerx.plugin.ecommerce:channel.strategy
+    - resource: com.powerx.plugins.ecommerce:channel.strategy
       actions: [read, manage]
-    - resource: com.powerx.plugin.ecommerce:channel.sync
+    - resource: com.powerx.plugins.ecommerce:channel.sync
       actions: [read, trigger]
-    - resource: com.powerx.plugin.ecommerce:channel.task
+    - resource: com.powerx.plugins.ecommerce:channel.task
       actions: [read, manage]
-    - resource: com.powerx.plugin.ecommerce:channel.note
+    - resource: com.powerx.plugins.ecommerce:channel.note
       actions: [read, create]
-    - resource: com.powerx.plugin.ecommerce:membership
+    - resource: com.powerx.plugins.ecommerce:membership
       actions: [read, write]
+    - resource: com.powerx.plugins.ecommerce:template
+      actions: [read, manage]
 
 permissions:
-  - resource: com.powerx.plugin.ecommerce:product.sku
+  - resource: com.powerx.plugins.ecommerce:product.sku
     actions: [read, manage]
-  - resource: com.powerx.plugin.ecommerce:product.sku.bulk
+  - resource: com.powerx.plugins.ecommerce:product.sku.bulk
     actions: [read, manage]
-  - resource: com.powerx.plugin.ecommerce:product.sku.channel
+  - resource: com.powerx.plugins.ecommerce:product.sku.channel
     actions: [read, manage]
-  - resource: com.powerx.plugin.ecommerce:product.sku.inventory
+  - resource: com.powerx.plugins.ecommerce:product.sku.inventory
     actions: [read, manage]
-  - resource: com.powerx.plugin.ecommerce:product.sku.serial
+  - resource: com.powerx.plugins.ecommerce:product.sku.serial
     actions: [read, manage]
-  - resource: com.powerx.plugin.ecommerce:product.sku.barcode
+  - resource: com.powerx.plugins.ecommerce:product.sku.barcode
     actions: [read, manage]
-  - resource: com.powerx.plugin.ecommerce:channel.master
+  - resource: com.powerx.plugins.ecommerce:channel.master
     actions: [read, create, update, approve]
-  - resource: com.powerx.plugin.ecommerce:channel.credential
+  - resource: com.powerx.plugins.ecommerce:channel.credential
     actions: [read, manage]
-  - resource: com.powerx.plugin.ecommerce:channel.alert
+  - resource: com.powerx.plugins.ecommerce:channel.alert
     actions: [read, manage]
-  - resource: com.powerx.plugin.ecommerce:channel.strategy
+  - resource: com.powerx.plugins.ecommerce:channel.strategy
     actions: [read, manage]
-  - resource: com.powerx.plugin.ecommerce:channel.sync
+  - resource: com.powerx.plugins.ecommerce:channel.sync
     actions: [read, trigger]
-  - resource: com.powerx.plugin.ecommerce:channel.task
+  - resource: com.powerx.plugins.ecommerce:channel.task
     actions: [read, manage]
-  - resource: com.powerx.plugin.ecommerce:channel.note
+  - resource: com.powerx.plugins.ecommerce:channel.note
     actions: [read, create]
-  - resource: com.powerx.plugin.ecommerce:membership
+  - resource: com.powerx.plugins.ecommerce:membership
     actions: [read, write]
+  - resource: com.powerx.plugins.ecommerce:template
+    actions: [read, manage]
 
 agents:
-  - id: com.powerx.plugin.ecommerce.assistant
-    plugin_id: com.powerx.plugin.ecommerce
+  - id: com.powerx.plugins.ecommerce.assistant
+    plugin_id: com.powerx.plugins.ecommerce
     name: Powerx Plugin Ecommerce Plugin 助理
     description: "Powerx Plugin Ecommerce Plugin 内置 Agent"
     default_tools:
-      - com.powerx.plugin.ecommerce.template.create
+      - com.powerx.plugins.ecommerce.template.create
 
 capabilities:
   provides:
-    - id: com.powerx.plugin.ecommerce.template.create
+    - id: com.powerx.plugins.ecommerce.template.create
       version: 1.0.0
-      descriptor: contracts/capabilities/com.powerx.plugin.ecommerce.template.create.yaml
+      descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.template.create.yaml
       schemas:
-        input: contracts/schema/input/com.powerx.plugin.ecommerce.template.create.json
-        output: contracts/schema/output/com.powerx.plugin.ecommerce.template.create.json
+        input: schema/input/com.powerx.plugins.ecommerce.template.create.json
+        output: schema/output/com.powerx.plugins.ecommerce.template.create.json
 
 agent_tools:
-  - id: com.powerx.plugin.ecommerce.template.create
-    capability: com.powerx.plugin.ecommerce.template.create
+  - id: com.powerx.plugins.ecommerce.template.create
+    capability: com.powerx.plugins.ecommerce.template.create
     handler: backend/internal/handlers/capabilities/template/create_handler.go
     description: 创建示例模板
 
 exposure:
   channels:
     - type: rest
-      capability: com.powerx.plugin.ecommerce.template.create
+      capability: com.powerx.plugins.ecommerce.template.create
       entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/resources
       method: POST
       auth: jwt
-      rbac: com.powerx.plugin.ecommerce:template
+      rbac: com.powerx.plugins.ecommerce:template
     - type: agent_tool
-      capability: com.powerx.plugin.ecommerce.template.create
-      agent_tool_id: com.powerx.plugin.ecommerce.template.create
+      capability: com.powerx.plugins.ecommerce.template.create
+      agent_tool_id: com.powerx.plugins.ecommerce.template.create
 
 # 工具清单侧重声明接口契约，真实业务参数通过 config.yaml 或环境变量注入
 tools:
-  - id: com.powerx.plugin.ecommerce.template.create
-    plugin_id: com.powerx.plugin.ecommerce
+  - id: com.powerx.plugins.ecommerce.template.create
+    plugin_id: com.powerx.plugins.ecommerce
     name: 创建示例
     description: 创建示例数据
     transport: http
     endpoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/resources
     method: POST
-    rbac_resource: com.powerx.plugin.ecommerce:template
+    rbac_resource: com.powerx.plugins.ecommerce:template
 
 dependencies:
   requires: []

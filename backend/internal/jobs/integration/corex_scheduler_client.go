@@ -35,7 +35,7 @@ func NewCoreXSchedulerClientFromEnv(timeout time.Duration) (*CoreXSchedulerClien
 	}
 	ownerID := strings.TrimSpace(os.Getenv("POWERX_PLUGIN_ID"))
 	if ownerID == "" {
-		ownerID = "com.powerx.plugin.ecommerce"
+		ownerID = "com.powerx.plugins.ecommerce"
 	}
 	if timeout <= 0 {
 		timeout = 10 * time.Second

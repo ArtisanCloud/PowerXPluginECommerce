@@ -11,7 +11,7 @@
 #   PX_PLUGIN_TOOL_TOKEN      - 宿主注入的插件出站 Token（次优先）
 #   PX_GATEWAY_TIMEOUT        - Gateway 调用超时（支持 duration 或秒数，默认 60s）
 #   POWERX_AUTH_TOKEN         - 兼容旧变量（最低优先）
-#   POWERX_RBAC_DELEGATE      - 设为 true/1/on 时强制走 Delegated IAM（即使 POWERX_PROXY!=1）
+#   IAM_MODE / POWERX_IAM_MODE - IAM 模式（local / delegated）
 #   PLUGIN_IAM_ADMIN_EMAIL    - Local 模式默认管理员邮箱（用于 migrate/seed）
 #   PLUGIN_IAM_ADMIN_PASSWORD - Local 模式默认管理员密码（用于 migrate/seed）
 
@@ -82,7 +82,7 @@ context:
   jwks_url: ""
   issuer: ""
   audience: ""
-  # IAM 模式解析优先级：context.iam_mode > POWERX_RBAC_DELEGATE > POWERX_PROXY
+  # IAM 模式解析优先级：context.iam_mode > POWERX_PROXY
   # 可选值：local / delegated；留空表示 auto（按环境推断）
   iam_mode: ""
   ttl: "5m"

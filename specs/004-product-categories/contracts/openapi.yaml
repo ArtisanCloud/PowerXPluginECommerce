@@ -1,11 +1,11 @@
 openapi: 3.0.3
 info:
-  title: com.powerx.plugin.ecommerce - Product Categories
+  title: com.powerx.plugins.ecommerce - Product Categories
   version: "0.1.0"
   description: |
     商品类目、类目模板与渠道映射的合同（用于联调与测试）。
 servers:
-  - url: /_p/com.powerx.plugin.ecommerce/api/v1
+  - url: /_p/com.powerx.plugins.ecommerce/api/v1
 paths:
   /admin/product/categories/tree:
     get:

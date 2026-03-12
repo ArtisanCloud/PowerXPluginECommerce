@@ -470,32 +470,32 @@ func seedCustomerPermissions(db *gorm.DB) (map[string]uint64, error) {
 
 	productPermissions := []iammodel.Permission{
 		// SKU 基础
-		{Resource: "com.powerx.plugin.ecommerce:product.sku", Action: "read", Description: "查看 SKU 列表与详情"},
-		{Resource: "com.powerx.plugin.ecommerce:product.sku", Action: "manage", Description: "创建/编辑/删除 SKU"},
+		{Resource: "com.powerx.plugins.ecommerce:product.sku", Action: "read", Description: "查看 SKU 列表与详情"},
+		{Resource: "com.powerx.plugins.ecommerce:product.sku", Action: "manage", Description: "创建/编辑/删除 SKU"},
 		// SKU 批量任务
-		{Resource: "com.powerx.plugin.ecommerce:product.sku.bulk", Action: "read", Description: "查看 SKU 批量任务"},
-		{Resource: "com.powerx.plugin.ecommerce:product.sku.bulk", Action: "manage", Description: "提交/审批/重试 SKU 批量任务"},
+		{Resource: "com.powerx.plugins.ecommerce:product.sku.bulk", Action: "read", Description: "查看 SKU 批量任务"},
+		{Resource: "com.powerx.plugins.ecommerce:product.sku.bulk", Action: "manage", Description: "提交/审批/重试 SKU 批量任务"},
 		// 渠道映射
-		{Resource: "com.powerx.plugin.ecommerce:product.sku.channel", Action: "read", Description: "查看 SKU 渠道映射"},
-		{Resource: "com.powerx.plugin.ecommerce:product.sku.channel", Action: "manage", Description: "维护 SKU 渠道映射与发布"},
+		{Resource: "com.powerx.plugins.ecommerce:product.sku.channel", Action: "read", Description: "查看 SKU 渠道映射"},
+		{Resource: "com.powerx.plugins.ecommerce:product.sku.channel", Action: "manage", Description: "维护 SKU 渠道映射与发布"},
 		// 库存
-		{Resource: "com.powerx.plugin.ecommerce:product.sku.inventory", Action: "read", Description: "查看 SKU 库存与快照"},
-		{Resource: "com.powerx.plugin.ecommerce:product.sku.inventory", Action: "manage", Description: "调整 SKU 库存策略"},
+		{Resource: "com.powerx.plugins.ecommerce:product.sku.inventory", Action: "read", Description: "查看 SKU 库存与快照"},
+		{Resource: "com.powerx.plugins.ecommerce:product.sku.inventory", Action: "manage", Description: "调整 SKU 库存策略"},
 		// 序列号与条码
-		{Resource: "com.powerx.plugin.ecommerce:product.sku.serial", Action: "read", Description: "查看 SKU 序列号/批次"},
-		{Resource: "com.powerx.plugin.ecommerce:product.sku.serial", Action: "manage", Description: "录入或导出 SKU 序列号/批次"},
-		{Resource: "com.powerx.plugin.ecommerce:product.sku.barcode", Action: "read", Description: "查看 SKU 条码"},
-		{Resource: "com.powerx.plugin.ecommerce:product.sku.barcode", Action: "manage", Description: "生成/校验 SKU 条码"},
+		{Resource: "com.powerx.plugins.ecommerce:product.sku.serial", Action: "read", Description: "查看 SKU 序列号/批次"},
+		{Resource: "com.powerx.plugins.ecommerce:product.sku.serial", Action: "manage", Description: "录入或导出 SKU 序列号/批次"},
+		{Resource: "com.powerx.plugins.ecommerce:product.sku.barcode", Action: "read", Description: "查看 SKU 条码"},
+		{Resource: "com.powerx.plugins.ecommerce:product.sku.barcode", Action: "manage", Description: "生成/校验 SKU 条码"},
 
 		// 商品类目（004-product-categories）
-		{Resource: "com.powerx.plugin.ecommerce:product.category", Action: "read", Description: "查看类目树、类目列表与审计记录"},
-		{Resource: "com.powerx.plugin.ecommerce:product.category", Action: "manage", Description: "创建/编辑/迁移/启停类目"},
-		{Resource: "com.powerx.plugin.ecommerce:product.category.template", Action: "read", Description: "查看类目模板、预览与历史版本"},
-		{Resource: "com.powerx.plugin.ecommerce:product.category.template", Action: "manage", Description: "创建/编辑/发布/回滚类目模板"},
-		{Resource: "com.powerx.plugin.ecommerce:product.category.mapping", Action: "read", Description: "查看渠道类目映射"},
-		{Resource: "com.powerx.plugin.ecommerce:product.category.mapping", Action: "manage", Description: "维护渠道类目映射"},
-		{Resource: "com.powerx.plugin.ecommerce:product.category.import", Action: "read", Description: "导出类目/映射 CSV"},
-		{Resource: "com.powerx.plugin.ecommerce:product.category.import", Action: "manage", Description: "导入类目/映射 CSV"},
+		{Resource: "com.powerx.plugins.ecommerce:product.category", Action: "read", Description: "查看类目树、类目列表与审计记录"},
+		{Resource: "com.powerx.plugins.ecommerce:product.category", Action: "manage", Description: "创建/编辑/迁移/启停类目"},
+		{Resource: "com.powerx.plugins.ecommerce:product.category.template", Action: "read", Description: "查看类目模板、预览与历史版本"},
+		{Resource: "com.powerx.plugins.ecommerce:product.category.template", Action: "manage", Description: "创建/编辑/发布/回滚类目模板"},
+		{Resource: "com.powerx.plugins.ecommerce:product.category.mapping", Action: "read", Description: "查看渠道类目映射"},
+		{Resource: "com.powerx.plugins.ecommerce:product.category.mapping", Action: "manage", Description: "维护渠道类目映射"},
+		{Resource: "com.powerx.plugins.ecommerce:product.category.import", Action: "read", Description: "导出类目/映射 CSV"},
+		{Resource: "com.powerx.plugins.ecommerce:product.category.import", Action: "manage", Description: "导入类目/映射 CSV"},
 	}
 
 	customerPermissions = append(customerPermissions, productPermissions...)
@@ -673,7 +673,6 @@ func seedDebugCustomerAccount(db *gorm.DB) error {
 	// 约束条件：
 	// - POWERX_PROXY=0（非宿主代理）
 	// - IAM_MODE=local（本地模式）
-	// - POWERX_RBAC_DELEGATE=false（非 delegated）
 	if !shouldSeedDebugCustomerAccount() {
 		return nil
 	}
@@ -747,11 +746,6 @@ func shouldSeedDebugCustomerAccount() bool {
 
 	// IAM 非 local 时不写入（避免污染非本地环境）
 	if v := strings.ToLower(strings.TrimSpace(os.Getenv("IAM_MODE"))); v != "" && v != "local" {
-		return false
-	}
-
-	// delegated RBAC 环境不写入
-	if v := strings.ToLower(strings.TrimSpace(os.Getenv("POWERX_RBAC_DELEGATE"))); v == "1" || v == "true" {
 		return false
 	}
 

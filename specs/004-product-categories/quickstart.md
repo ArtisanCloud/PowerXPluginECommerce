@@ -22,6 +22,6 @@
 
 ## 联调入口（路径约定）
 
-- 管理端 API 前缀：`/_p/com.powerx.plugin.ecommerce/api/v1/admin/**`
-- miniapp API 前缀：`/_p/com.powerx.plugin.ecommerce/api/v1/mini-app/**`
+- 管理端 API 前缀：`/_p/com.powerx.plugins.ecommerce/api/v1/admin/**`
+- miniapp API 前缀：`/_p/com.powerx.plugins.ecommerce/api/v1/mini-app/**`
 

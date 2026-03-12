@@ -64,13 +64,24 @@ Skeleton 与 Base 插件保持相同的字段结构，可直接复用宿主侧�
 | `PX_PLUGIN_TOOL_TOKEN` | 宿主注入的插件出站 Token（次优先） |
 | `PX_GATEWAY_TIMEOUT` | Gateway 调用超时（支持 `60s` 或 `60`，默认 `60s`） |
 | `POWERX_AUTH_TOKEN` | 兼容旧变量，仅当前两者缺失时回退使用 |
-| `POWERX_RBAC_DELEGATE` | 设为 `true/1/on` 时强制使用宿主 IAM；`false` 时可落到本地 IAM |
+| `IAM_MODE` / `POWERX_IAM_MODE` | 显式指定 IAM 模式：`local` / `delegated` |
 | `PLUGIN_IAM_ADMIN_EMAIL` | Local 模式默认管理员邮箱，`go run ./cmd/database setup` 时必填 |
 | `PLUGIN_IAM_ADMIN_PASSWORD` | Local 模式默认管理员密码，配合上方邮箱使用 |
 
 > 统一口径：租户来源优先从 `PX_TOOL_TOKEN`/`PX_PLUGIN_TOOL_TOKEN` 的 `tid` claim 解析；`PX_TENANT_UUID` 不再作为运行决策输入。
 >
 > 建议在生产环境通过配置文件写入敏感信息，仅在必要时才使用环境变量覆盖。
+
+## IAM / Proxy 四态矩阵（推荐默认）
+
+| IAM_MODE | POWERX_PROXY | 语义 |
+| --- | --- | --- |
+| `delegated` | `1` | 宿主安装默认（推荐） |
+| `local` | `0` | 本地开发默认（推荐） |
+| `local` | `1` | 本地 IAM + 宿主路由（兼容态） |
+| `delegated` | `0` | 直连 delegated（按网关配置调试） |
+
+> Capability Lab 能否调用 CoreX 能力，判定依据始终是“网关配置 + 凭证”是否完整，不以 `POWERX_PROXY` 作为功能开关。
 
 ## 安全基线
 

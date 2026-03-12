@@ -15,7 +15,6 @@ type RuntimeModeDecision struct {
 	IAMMode             string
 	IAMSource           string
 	PowerXProxy         bool
-	RBACDelegate        bool
 	CapabilityRoute     string
 	WSRoute             string
 	OutboundTokenSource string
@@ -27,7 +26,6 @@ func ResolveRuntimeModeDecision(cfg *config.Config, iamMode string, iamSource st
 	token, tokenSource := ResolveToolToken()
 	tenantID, _ := ParseTenantIDFromJWT(token)
 	proxy := envTruthy("POWERX_PROXY")
-	rbacDelegate := envTruthy("POWERX_RBAC_DELEGATE")
 	capRoute := "local"
 	wsRoute := "local"
 	if proxy {
@@ -39,7 +37,6 @@ func ResolveRuntimeModeDecision(cfg *config.Config, iamMode string, iamSource st
 		IAMMode:             strings.ToLower(strings.TrimSpace(iamMode)),
 		IAMSource:           strings.TrimSpace(iamSource),
 		PowerXProxy:         proxy,
-		RBACDelegate:        rbacDelegate,
 		CapabilityRoute:     capRoute,
 		WSRoute:             wsRoute,
 		OutboundTokenSource: tokenSource,

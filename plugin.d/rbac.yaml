@@ -1,0 +1,15 @@
+permissions:
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:template
+rbac:
+  resources:
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:template
+routes:
+  adminManifest: /api/v1/admin/manifest
+  basePath: /api/v1
+  rbac: /api/v1/admin/rbac

@@ -1,11 +1,9 @@
 package runtime_ops
 
 import (
-	"context"
 	"net/http"
 	"strings"
 
-	fwwsbus "github.com/ArtisanCloud/PowerXPlugin/framework/backend/go/runtime/wsbus"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/websocket/bus"
@@ -41,9 +39,9 @@ func (h *WSBusHandler) Grant(c *gin.Context) {
 		return
 	}
 	auth := resolveWSBusGatewayAuth(c, h.deps)
-	topics, result := fwwsbus.ExpandTopicsForRegister(req.Topics)
-	if !result.OK {
-		c.JSON(http.StatusBadRequest, gin.H{"error_code": result.ErrorCode, "error": result.ErrorMessage})
+	topics := normalizeTopicsForRegister(req.Topics)
+	if len(topics) == 0 {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "topics is required"})
 		return
 	}
 	tenant, tenantRequired := h.resolveForwardTenant(req.TenantUUID, auth)
@@ -54,69 +52,25 @@ func (h *WSBusHandler) Grant(c *gin.Context) {
 	driver := h.resolveEventTopicDriver(auth)
 
 	h.logResolvedAuth("grant."+driver, strings.Join(topics, ","), auth)
-	if driver == "local" {
-		for _, topic := range topics {
-			if !bus.DefaultTopicRegistry.Exists(topic) {
-				c.JSON(http.StatusBadRequest, gin.H{"error": "topic not found", "topic": topic, "hint": "create topic before grant"})
-				return
-			}
-			bus.DefaultACLRegistry.Grant(tenant, topic, req.Actions)
+	for _, topic := range topics {
+		if !bus.DefaultTopicRegistry.Exists(topic) {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "topic not found", "topic": topic, "hint": "create topic before grant"})
+			return
 		}
-		c.JSON(http.StatusAccepted, gin.H{
-			"ok":                   true,
-			"action":               "grant",
-			"topics":               topics,
-			"actions":              normalizeGrantActions(req.Actions),
-			"driver":               driver,
-			"gateway_token_source": auth.Source,
-			"tenant_id":            tenant,
-			"proxied":              auth.ProxyEnabled,
-			"iam_mode":             auth.IAMMode,
-			"message":              "ws bus grant applied (local acl)",
-		})
-		return
-	}
-	if !auth.hasGatewayCredential() {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "ws bus gateway credential unavailable", "source": gatewayAuthSource(auth)})
-		return
-	}
-	hostClient, err := fwwsbus.NewHostClient(fwwsbus.HostClientConfig{
-		BaseURL:    auth.GatewayBaseURL,
-		APIPrefix:  auth.GatewayAPIPrefix,
-		AuthScheme: auth.GatewayAuthScheme,
-		Token:      auth.GatewayToken,
-		APIKey:     auth.GatewayAPIKey,
-		TenantUUID: tenant,
-		Timeout:    auth.GatewayTimeout,
-	})
-	if err != nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "ws bus host client init failed", "details": err.Error()})
-		return
-	}
-	traceID := strings.TrimSpace(req.TraceID)
-	if traceID == "" {
-		traceID = strings.TrimSpace(c.GetHeader("X-Request-ID"))
-	}
-	result = hostClient.RegisterTopics(context.Background(), topics, fwwsbus.PublishOptions{
-		TenantUUID:  tenant,
-		TraceID:     traceID,
-		BearerToken: bearerToken(auth.Authorization),
-	})
-	if !result.OK {
-		c.JSON(http.StatusBadRequest, gin.H{"error_code": result.ErrorCode, "error": result.ErrorMessage})
-		return
+		bus.DefaultACLRegistry.Grant(tenant, topic, req.Actions)
 	}
 
 	c.JSON(http.StatusAccepted, gin.H{
 		"ok":                   true,
 		"action":               "grant",
 		"topics":               topics,
+		"actions":              normalizeGrantActions(req.Actions),
 		"driver":               driver,
 		"gateway_token_source": auth.Source,
-		"tenant_id":            strings.TrimSpace(auth.TenantID),
+		"tenant_id":            tenant,
 		"proxied":              auth.ProxyEnabled,
 		"iam_mode":             auth.IAMMode,
-		"message":              "ws bus grant forwarded",
+		"message":              "ws bus grant applied (local acl)",
 	})
 }
 
@@ -145,56 +99,15 @@ func (h *WSBusHandler) Publish(c *gin.Context) {
 	if traceID == "" {
 		traceID = strings.TrimSpace(c.GetHeader("X-Request-ID"))
 	}
-	if driver == "local" {
-		if !bus.DefaultTopicRegistry.Exists(req.Topic) {
-			c.JSON(http.StatusBadRequest, gin.H{"error": "topic not found", "topic": req.Topic, "hint": "create topic before publish"})
-			return
-		}
-		if !bus.DefaultACLRegistry.Allowed(tenant, req.Topic, "publish") {
-			c.JSON(http.StatusForbidden, gin.H{"error": "publish not granted", "topic": req.Topic, "tenant_uuid": tenant})
-			return
-		}
-		bus.DefaultHub.Publish(tenant, req.Topic, req.Payload, traceID)
-		c.JSON(http.StatusAccepted, gin.H{
-			"ok":                   true,
-			"action":               "publish",
-			"topic":                req.Topic,
-			"payload":              req.Payload,
-			"driver":               driver,
-			"gateway_token_source": auth.Source,
-			"tenant_id":            tenant,
-			"proxied":              auth.ProxyEnabled,
-			"iam_mode":             auth.IAMMode,
-			"message":              "ws bus publish accepted (local driver)",
-		})
+	if !bus.DefaultTopicRegistry.Exists(req.Topic) {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "topic not found", "topic": req.Topic, "hint": "create topic before publish"})
 		return
 	}
-	if !auth.hasGatewayCredential() {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "ws bus gateway credential unavailable", "source": gatewayAuthSource(auth)})
+	if !bus.DefaultACLRegistry.Allowed(tenant, req.Topic, "publish") {
+		c.JSON(http.StatusForbidden, gin.H{"error": "publish not granted", "topic": req.Topic, "tenant_uuid": tenant})
 		return
 	}
-	hostClient, err := fwwsbus.NewHostClient(fwwsbus.HostClientConfig{
-		BaseURL:    auth.GatewayBaseURL,
-		APIPrefix:  auth.GatewayAPIPrefix,
-		AuthScheme: auth.GatewayAuthScheme,
-		Token:      auth.GatewayToken,
-		APIKey:     auth.GatewayAPIKey,
-		TenantUUID: tenant,
-		Timeout:    auth.GatewayTimeout,
-	})
-	if err != nil {
-		c.JSON(http.StatusServiceUnavailable, gin.H{"error": "ws bus host client init failed", "details": err.Error()})
-		return
-	}
-	result := hostClient.Publish(context.Background(), req.Topic, req.Payload, fwwsbus.PublishOptions{
-		TenantUUID:  tenant,
-		TraceID:     traceID,
-		BearerToken: bearerToken(auth.Authorization),
-	})
-	if !result.OK {
-		c.JSON(http.StatusBadRequest, gin.H{"error_code": result.ErrorCode, "error": result.ErrorMessage})
-		return
-	}
+	bus.DefaultHub.Publish(tenant, req.Topic, req.Payload, traceID)
 
 	c.JSON(http.StatusAccepted, gin.H{
 		"ok":                   true,
@@ -203,10 +116,10 @@ func (h *WSBusHandler) Publish(c *gin.Context) {
 		"payload":              req.Payload,
 		"driver":               driver,
 		"gateway_token_source": auth.Source,
-		"tenant_id":            strings.TrimSpace(auth.TenantID),
+		"tenant_id":            tenant,
 		"proxied":              auth.ProxyEnabled,
 		"iam_mode":             auth.IAMMode,
-		"message":              "ws bus publish forwarded",
+		"message":              "ws bus publish accepted (local driver)",
 	})
 }
 
@@ -223,9 +136,6 @@ func (h *WSBusHandler) resolveForwardTenant(requestTenant string, auth wsBusGate
 }
 
 func (h *WSBusHandler) resolveEventTopicDriver(auth wsBusGatewayAuthDecision) string {
-	if auth.ProxyEnabled {
-		return "framework"
-	}
 	if h == nil || h.deps == nil || h.deps.Config == nil {
 		return "local"
 	}
@@ -234,6 +144,26 @@ func (h *WSBusHandler) resolveEventTopicDriver(auth wsBusGatewayAuthDecision) st
 		return "local"
 	}
 	return driver
+}
+
+func normalizeTopicsForRegister(topics []string) []string {
+	if len(topics) == 0 {
+		return nil
+	}
+	out := make([]string, 0, len(topics))
+	seen := make(map[string]struct{}, len(topics))
+	for _, topic := range topics {
+		t := strings.TrimSpace(topic)
+		if t == "" {
+			continue
+		}
+		if _, ok := seen[t]; ok {
+			continue
+		}
+		seen[t] = struct{}{}
+		out = append(out, t)
+	}
+	return out
 }
 
 func (h *WSBusHandler) logResolvedAuth(action string, topic string, auth wsBusGatewayAuthDecision) {

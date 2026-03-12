@@ -7,9 +7,8 @@ import (
 	"strings"
 	"time"
 
-	frameworkevent "github.com/ArtisanCloud/PowerXPlugin/framework/backend/go/event"
-	"github.com/ArtisanCloud/PowerXPlugin/framework/backend/go/eventbridge"
-	frameworktaskbus "github.com/ArtisanCloud/PowerXPlugin/framework/backend/go/runtime/taskbus"
+	frameworkevent "github.com/ArtisanCloud/PowerXPlugin/framework/event"
+	"github.com/ArtisanCloud/PowerXPlugin/framework/eventbridge"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	"github.com/sirupsen/logrus"
 )
@@ -52,16 +51,7 @@ func NewFrameworkClient(cfg FrameworkClientConfig, logger *logrus.Entry) (*Frame
 		return nil, err
 	}
 
-	provider := frameworktaskbus.NewHostProvider(frameworktaskbus.HostProviderConfig{
-		BaseURL:        normalized.BaseURL,
-		Token:          normalized.Token,
-		TenantUUID:     normalized.TenantUUID,
-		UserAgent:      normalized.UserAgent,
-		Timeout:        normalized.Timeout,
-		SourcePlugin:   normalized.SourcePlugin,
-		PayloadVersion: normalized.PayloadVersion,
-	})
-	emitter, err := factory.WithTaskBusProvider(eventbridge.NewTaskBusEmitterAdapter(provider)).NewEmitter()
+	emitter, err := factory.NewEmitter()
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +172,7 @@ func normalizeFrameworkConfig(cfg FrameworkClientConfig) FrameworkClientConfig {
 		cfg.Timeout = 10 * time.Second
 	}
 	if strings.TrimSpace(cfg.SourcePlugin) == "" {
-		cfg.SourcePlugin = "com.powerx.plugin.ecommerce"
+		cfg.SourcePlugin = "com.powerx.plugins.ecommerce"
 	}
 	if strings.TrimSpace(cfg.PayloadVersion) == "" {
 		cfg.PayloadVersion = "v1"

@@ -153,12 +153,11 @@ func main() {
 		upstreamTenant = strings.TrimSpace(cfg.GRPCUpstream.TenantUUID)
 	}
 	logger.WithFields(logger.Fields{
-		"matrix":                     "IAMMode × POWERX_PROXY × POWERX_RBAC_DELEGATE",
+		"matrix":                     "IAMMode × POWERX_PROXY",
 		"iam_input":                  runtimeDecision.IAMInput,
 		"iam_mode":                   runtimeDecision.IAMMode,
 		"iam_source":                 runtimeDecision.IAMSource,
 		"powerx_proxy":               runtimeDecision.PowerXProxy,
-		"powerx_rbac_delegate":       runtimeDecision.RBACDelegate,
 		"capability_route":           runtimeDecision.CapabilityRoute,
 		"ws_route":                   runtimeDecision.WSRoute,
 		"outbound_token_source":      runtimeDecision.OutboundTokenSource,
@@ -338,7 +337,8 @@ func main() {
 	// 创建 gRPC 服务器（可选）
 	gs, err := grpcserver.NewGRPCServer(ctx, deps, cfg.GRPCServer)
 	if err != nil {
-		logger.WithError(err).Fatal("Failed to create gRPC server")
+		logger.WithError(err).Error("Failed to create gRPC server, continue with HTTP server only")
+		gs = nil
 	}
 
 	appCfg := &fwbootstrap.Config{
@@ -394,8 +394,6 @@ func main() {
 			RunOnce:  metricRefresh.RunOnce,
 		})
 	}
-	schedulerBridge.StartWorkers(groupCtx, g.Go, workerSpecs...)
-
 	g.Go(func() error {
 		logger.WithField("addr", cfg.Server.BindAddr).Info("Starting HTTP server...")
 		return fwApp.Run()
@@ -406,6 +404,9 @@ func main() {
 			return gs.Serve(groupCtx)
 		})
 	}
+
+	// 先启动 HTTP/GRPC，再并发注册调度任务，避免调度桥接阻塞健康检查。
+	schedulerBridge.StartWorkers(groupCtx, g.Go, workerSpecs...)
 
 	// 等待中断信号
 	quit := make(chan os.Signal, 1)
@@ -454,15 +455,13 @@ func errorString(err error) string {
 
 func resolveFrameworkGatewayConfig() fwbootstrap.GatewayConfig {
 	toolToken, _ := pluginbootstrap.ResolveToolToken()
-	apiKey := strings.TrimSpace(os.Getenv("PX_GATEWAY_API_KEY"))
-	authScheme := normalizeGatewayAuthScheme(strings.TrimSpace(os.Getenv("PX_GATEWAY_AUTH_SCHEME")), toolToken, apiKey)
 	return fwbootstrap.GatewayConfig{
 		BaseURL:         resolveGatewayBaseURL(),
-		APIPrefix:       resolveGatewayAPIPrefix(),
-		AuthScheme:      authScheme,
 		ToolToken:       toolToken,
-		APIKey:          apiKey,
+		TenantID:        strings.TrimSpace(os.Getenv("PX_TENANT_UUID")),
+		GRPCTarget:      strings.TrimSpace(os.Getenv("PX_GATEWAY_GRPC_TARGET")),
 		Timeout:         resolveGatewayTimeout(),
+		UserAgent:       strings.TrimSpace(os.Getenv("PX_GATEWAY_USER_AGENT")),
 		ContractVersion: strings.TrimSpace(os.Getenv("PX_GATEWAY_CONTRACT_VERSION")),
 	}
 }
@@ -512,7 +511,7 @@ func normalizeGatewayAuthScheme(raw, toolToken, apiKey string) string {
 	case "bearer":
 		return "bearer"
 	}
-	if strings.TrimSpace(apiKey) != "" && strings.TrimSpace(toolToken) == "" {
+	if strings.TrimSpace(apiKey) != "" {
 		return "apikey"
 	}
 	return "bearer"
