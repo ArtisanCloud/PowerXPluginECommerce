@@ -64,83 +64,95 @@ frontend:
         - zh-CN
         - en
     menus:
-      - id: plugins.com.powerx.plugins.ecommerce.products
-        title: 商品中心
+      - id: plugins.com.powerx.plugins.ecommerce
+        title: PowerX Ecommerce Plugin
         title_i18n:
           namespace: menus
-          key: menu.com.powerx.plugins.ecommerce.products
-          default: Product Center
-        icon: i-heroicons-archive-box
+          key: menu.com.powerx.plugins.ecommerce.console
+          default: PowerX Ecommerce Console
+        icon: i-heroicons-clipboard-document-check
         path: /product
         route: product
-        order: 5
+        order: 20
         slot: group.plugins
         required_policies:
           - com.powerx.plugins.ecommerce:product.sku:read
         children:
-          - id: plugins.com.powerx.plugins.ecommerce.products.skus
-            title: SKU 管理
+          - id: plugins.com.powerx.plugins.ecommerce.products
+            title: 商品中心
             title_i18n:
               namespace: menus
-              key: menu.com.powerx.plugins.ecommerce.products.skus
-              default: SKU Management
-            icon: i-heroicons-squares-2x2
-            path: /product/skus
-            route: product/skus
+              key: menu.com.powerx.plugins.ecommerce.products
+              default: Product Center
+            icon: i-heroicons-archive-box
+            path: /product
+            route: product
             order: 1
             required_policies:
-              - com.powerx.plugins.ecommerce:product.sku:manage
-              - com.powerx.plugins.ecommerce:product.sku.bulk:manage
-          - id: plugins.com.powerx.plugins.ecommerce.products.inventory
-            title: 库存与变体
+              - com.powerx.plugins.ecommerce:product.sku:read
+            children:
+              - id: plugins.com.powerx.plugins.ecommerce.products.skus
+                title: SKU 管理
+                title_i18n:
+                  namespace: menus
+                  key: menu.com.powerx.plugins.ecommerce.products.skus
+                  default: SKU Management
+                icon: i-heroicons-squares-2x2
+                path: /product/skus
+                route: product/skus
+                order: 1
+                required_policies:
+                  - com.powerx.plugins.ecommerce:product.sku:manage
+                  - com.powerx.plugins.ecommerce:product.sku.bulk:manage
+              - id: plugins.com.powerx.plugins.ecommerce.products.inventory
+                title: 库存与变体
+                title_i18n:
+                  namespace: menus
+                  key: menu.com.powerx.plugins.ecommerce.products.inventory
+                  default: Inventory & Variants
+                icon: i-heroicons-chart-bar-square
+                path: /product/inventory
+                route: product/inventory
+                order: 2
+                required_policies:
+                  - com.powerx.plugins.ecommerce:product.sku.inventory:read
+                  - com.powerx.plugins.ecommerce:product.sku.channel:manage
+          - id: plugins.com.powerx.plugins.ecommerce.channels
+            title: 渠道中心
             title_i18n:
               namespace: menus
-              key: menu.com.powerx.plugins.ecommerce.products.inventory
-              default: Inventory & Variants
-            icon: i-heroicons-chart-bar-square
-            path: /product/inventory
-            route: product/inventory
-            order: 2
-            required_policies:
-              - com.powerx.plugins.ecommerce:product.sku.inventory:read
-              - com.powerx.plugins.ecommerce:product.sku.channel:manage
-      - id: plugins.com.powerx.plugins.ecommerce.channels
-        title: 渠道中心
-        title_i18n:
-          namespace: menus
-          key: menu.com.powerx.plugins.ecommerce.channels
-          default: Channel Center
-        icon: i-heroicons-shopping-bag
-        path: /channels
-        route: channels
-        order: 10
-        slot: group.plugins
-        required_policies: [com.powerx.plugins.ecommerce:channel.master:read]
-        children:
-          - id: plugins.com.powerx.plugins.ecommerce.channels.list
-            title: 渠道列表
-            title_i18n:
-              namespace: menus
-              key: menu.com.powerx.plugins.ecommerce.channels.list
-              default: Channels
-            icon: i-heroicons-rectangle-stack
+              key: menu.com.powerx.plugins.ecommerce.channels
+              default: Channel Center
+            icon: i-heroicons-shopping-bag
             path: /channels
             route: channels
-            order: 1
-            required_policies:
-              - com.powerx.plugins.ecommerce:channel.master:read
-          - id: plugins.com.powerx.plugins.ecommerce.channels.approval
-            title: 渠道审批
-            title_i18n:
-              namespace: menus
-              key: menu.com.powerx.plugins.ecommerce.channels.approval
-              default: Channel Approvals
-            icon: i-heroicons-check-badge
-            path: /channels/approval
-            route: channels/approval
             order: 2
-            required_policies:
-              - com.powerx.plugins.ecommerce:channel.master:approve
+            required_policies: [com.powerx.plugins.ecommerce:channel.master:read]
+            children:
+              - id: plugins.com.powerx.plugins.ecommerce.channels.list
+                title: 渠道列表
+                title_i18n:
+                  namespace: menus
+                  key: menu.com.powerx.plugins.ecommerce.channels.list
+                  default: Channels
+                icon: i-heroicons-rectangle-stack
+                path: /channels
+                route: channels
+                order: 1
+                required_policies:
+                  - com.powerx.plugins.ecommerce:channel.master:read
+              - id: plugins.com.powerx.plugins.ecommerce.channels.approval
+                title: 渠道审批
+                title_i18n:
+                  namespace: menus
+                  key: menu.com.powerx.plugins.ecommerce.channels.approval
+                  default: Channel Approvals
+                icon: i-heroicons-check-badge
+                path: /channels/approval
+                route: channels/approval
+                order: 2
+                required_policies:
+                  - com.powerx.plugins.ecommerce:channel.master:approve
 
 routes:
   basePath: /api/v1
