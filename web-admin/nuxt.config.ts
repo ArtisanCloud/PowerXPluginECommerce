@@ -1,5 +1,44 @@
+import { existsSync, readFileSync } from "node:fs";
+import { resolve as resolvePath } from "node:path";
 import { defineNuxtConfig } from "nuxt/config";
 import { definePowerXAdminConfig } from "@artisan-cloud/plugin-framework-admin";
+
+const loadBackendEnvFallback = () => {
+  const candidates = [
+    resolvePath(process.cwd(), "..", "backend", ".env.local"),
+    resolvePath(process.cwd(), "..", "backend", ".env"),
+  ];
+  for (const file of candidates) {
+    if (!existsSync(file)) {
+      continue;
+    }
+    const content = readFileSync(file, "utf-8");
+    for (const line of content.split(/\r?\n/)) {
+      const trimmed = line.trim();
+      if (!trimmed || trimmed.startsWith("#")) {
+        continue;
+      }
+      const idx = trimmed.indexOf("=");
+      if (idx <= 0) {
+        continue;
+      }
+      const key = trimmed.slice(0, idx).trim();
+      if (!key || process.env[key] !== undefined) {
+        continue;
+      }
+      let value = trimmed.slice(idx + 1).trim();
+      if (
+        (value.startsWith('"') && value.endsWith('"')) ||
+        (value.startsWith("'") && value.endsWith("'"))
+      ) {
+        value = value.slice(1, -1);
+      }
+      process.env[key] = value;
+    }
+  }
+};
+
+loadBackendEnvFallback();
 
 // Print key env vars to aid debugging
 if (!process.env.QUIET_START) {
@@ -89,6 +128,7 @@ const registerConnectOrigin = (candidate?: string | null) => {
 const powerxCoreBase =
   process.env.NUXT_PUBLIC_POWERX_CORE_BASE ||
   process.env.POWERX_CORE_ENDPOINT ||
+  process.env.PX_GATEWAY_BASE_URL ||
   "http://localhost:8077";
 
 const INSIDE_POWERX = process.env.POWERX_PROXY === "1";

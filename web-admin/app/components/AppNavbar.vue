@@ -15,8 +15,12 @@
         </h1>
       </div>
 
-      <!-- 中间快捷操作 -->
-      <div class="flex items-center space-x-4"></div>
+      <!-- 中间运行模式提示 -->
+      <div class="flex items-center space-x-3">
+        <p class="text-xs text-gray-400">
+          {{ iamModeDescription }}
+        </p>
+      </div>
 
       <!-- 右侧控制区 -->
       <div class="flex items-center space-x-4">
@@ -59,6 +63,9 @@ const { t } = useI18n();
 const runtimeConfig = useRuntimeConfig();
 const auth = useAuth();
 const colorMode = useColorMode();
+const iamModeDescription = computed(() =>
+  runtimeConfig.public.insidePowerX ? "通过宿主 PowerX 鉴权" : "当前使用本地目录与 STS"
+);
 
 const navbarClass = computed(() =>
   colorMode.value === "dark"

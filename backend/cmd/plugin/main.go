@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"syscall"
@@ -48,6 +49,8 @@ func main() {
 	rootCtx := context.Background()
 	ctx, cancel := context.WithCancel(rootCtx)
 	defer cancel()
+
+	loadLocalEnvFallback()
 
 	if os.Getenv("CONFIG_PATH") == "" && os.Getenv("POWERX_PLUGIN_CONFIG_DIR") != "" {
 		os.Setenv("CONFIG_PATH", os.Getenv("POWERX_PLUGIN_CONFIG_DIR"))
@@ -515,4 +518,42 @@ func normalizeGatewayAuthScheme(raw, toolToken, apiKey string) string {
 		return "apikey"
 	}
 	return "bearer"
+}
+
+func loadLocalEnvFallback() {
+	candidates := []string{
+		".env.local",
+		".env",
+		filepath.Join("backend", ".env.local"),
+		filepath.Join("backend", ".env"),
+	}
+	for _, file := range candidates {
+		data, err := os.ReadFile(file)
+		if err != nil {
+			continue
+		}
+		lines := strings.Split(string(data), "\n")
+		for _, line := range lines {
+			trimmed := strings.TrimSpace(line)
+			if trimmed == "" || strings.HasPrefix(trimmed, "#") {
+				continue
+			}
+			idx := strings.Index(trimmed, "=")
+			if idx <= 0 {
+				continue
+			}
+			key := strings.TrimSpace(trimmed[:idx])
+			if key == "" || os.Getenv(key) != "" {
+				continue
+			}
+			val := strings.TrimSpace(trimmed[idx+1:])
+			if len(val) >= 2 {
+				if (strings.HasPrefix(val, "\"") && strings.HasSuffix(val, "\"")) ||
+					(strings.HasPrefix(val, "'") && strings.HasSuffix(val, "'")) {
+					val = val[1 : len(val)-1]
+				}
+			}
+			_ = os.Setenv(key, val)
+		}
+	}
 }

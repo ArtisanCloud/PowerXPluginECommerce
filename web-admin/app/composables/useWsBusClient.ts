@@ -38,10 +38,30 @@ const normalizeTopic = (topic?: string) => String(topic || '').trim()
 const isHostMode = () => {
   try {
     const cfg = useRuntimeConfig()
-    return Boolean(cfg.public?.insidePowerX)
+    if (Boolean(cfg.public?.insidePowerX)) return true
   } catch {
-    return false
+    // ignore
   }
+
+  if (typeof window !== 'undefined') {
+    const p = String(window.location.pathname || '')
+    // 兼容 env 未注入 insidePowerX 的场景：根据宿主嵌入路径兜底识别
+    if (/\/_p\/[^/]+\/admin(?:\/|$)/.test(p)) {
+      return true
+    }
+  }
+
+  try {
+    const cfg = useRuntimeConfig()
+    const base = String(cfg.public?.pluginAdminBase || '').trim()
+    if (base && typeof window !== 'undefined') {
+      return String(window.location.pathname || '').startsWith(base.replace(/\/+$/, ''))
+    }
+  } catch {
+    // ignore
+  }
+
+  return false
 }
 
 const resolveWsPath = () => '/api/ws'
@@ -102,23 +122,22 @@ const wsOriginFromApiBase = (apiBase?: string | null) => {
 const resolveWsURL = () => {
   if (typeof window === 'undefined') return ''
 
-  let wsURL = ''
-  let mode = 'window-host'
+  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  // 与其他插件对齐：默认同源 /api/ws，经由当前站点代理转发。
+  let wsURL = new URL(resolveWsPath(), `${protocol}//${window.location.host}`).toString()
+  let mode = isHostMode() ? 'host-same-origin' : 'same-origin'
+
+  // 允许通过 runtimeConfig.public.wsBaseUrl 显式覆盖（仅在明确配置时生效）。
   try {
     const cfg = useRuntimeConfig()
-    const runtimeApiBase = String(cfg.public?.apiBaseUrl || '').trim()
-    const derived = wsOriginFromApiBase(runtimeApiBase)
-    if (derived) {
+    const runtimeWsBase = String((cfg.public as any)?.wsBaseUrl || '').trim()
+    if (runtimeWsBase) {
+      const derived = wsOriginFromApiBase(runtimeWsBase) || runtimeWsBase
       wsURL = derived
-      mode = 'runtime-api-base'
+      mode = 'runtime-ws-base'
     }
   } catch {
     // ignore
-  }
-
-  if (!wsURL) {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-    wsURL = new URL(resolveWsPath(), `${protocol}//${window.location.host}`).toString()
   }
 
   const resolved = String(wsURL || '').trim()

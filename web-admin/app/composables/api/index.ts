@@ -10,6 +10,11 @@ export * from "./useOrder";
 export * from "./usePricebook";
 export * from "./useProductSpec";
 export * from "./usePayments";
+export * from "./useCapabilityCatalog";
+export * from "./useCapabilityRegistry";
+export * from "./useCapabilityExposure";
+export * from "./useCapabilityLifecycle";
+export * from "./useMcpSession";
 export {
   useApiClient,
   apiGet,

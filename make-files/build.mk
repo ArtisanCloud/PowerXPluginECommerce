@@ -76,6 +76,8 @@ frontend-build: ## 构建 Host 包（POWERX_PROXY=1, baseURL=$(POWERX_ADMIN_BASE
 	@echo "==> 构建 web-admin（Host 包） POWERX_PROXY=1 baseURL=$(POWERX_ADMIN_BASE)"
 	cd $(FRONTEND_DIR) && \
 	  POWERX_PROXY=1 \
+	  NUXT_PUBLIC_API_BASE= \
+	  NUXT_PUBLIC_API_PREFIX= \
 	  POWERX_ADMIN_BASE="$(POWERX_ADMIN_BASE)" \
 	  NODE_ENV=production \
 	  npx nuxi build

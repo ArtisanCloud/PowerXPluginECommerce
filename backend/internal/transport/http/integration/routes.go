@@ -14,6 +14,7 @@ func RegisterAPIRoutes(rg *gin.RouterGroup, deps *app.Deps) {
 	handler := NewHandler(deps)
 	group := rg.Group("/integration")
 	{
+		group.POST("/capabilities/invoke", handler.InvokeCapability)
 		group.POST("/dispatch", handler.Dispatch)
 
 		group.GET("/grant-matrix", handler.ListGrantMatrix)

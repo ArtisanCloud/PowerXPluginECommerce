@@ -1,7 +1,10 @@
 import { ofetch, type FetchResponse, type OFetch } from "ofetch";
 import { resolveApiBase } from "~/composables/api/_base";
+import { getAuthToken } from "~/composables/api/_base";
 
 const DEFAULT_ENDPOINT = "/integration/capabilities/invoke";
+
+const isAbsoluteURL = (value?: string) => /^https?:\/\//i.test(String(value || ""));
 
 export interface PowerXCapabilityRequest {
   capabilityId: string;
@@ -55,6 +58,9 @@ interface BridgeOptions {
 }
 
 const combineURL = (base?: string, endpoint?: string) => {
+  if (isAbsoluteURL(endpoint)) {
+    return String(endpoint);
+  }
   const normalizedBase = (base || "").replace(/\/+$/, "");
   const normalizedEndpoint = ("/" + (endpoint || "").replace(/^\/+/, "")).replace(/\/{2,}/g, "/");
   if (!normalizedBase) {
@@ -125,6 +131,16 @@ const createBridge = (options: BridgeOptions): PowerXCapabilityBridge => {
         "Content-Type": "application/json",
         ...(request.headers || {}),
       };
+      const existingAuthorization =
+        headers["Authorization"] || headers["authorization"] || "";
+      if (!existingAuthorization) {
+        const token = getAuthToken();
+        if (token) {
+          headers["Authorization"] = /^Bearer\s/i.test(String(token))
+            ? String(token)
+            : `Bearer ${token}`;
+        }
+      }
       if (request.requestId && !headers["X-Request-ID"]) {
         headers["X-Request-ID"] = request.requestId;
       }
