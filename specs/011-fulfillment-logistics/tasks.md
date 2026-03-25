@@ -109,11 +109,11 @@
 
 ### Implementation for User Story 4
 
-- [ ] T032 [P] [US4] 实现第三方适配器接口与默认实现骨架（`backend/internal/services/admin/logistics/integrations/{adapter.go,self_adapter.go}`）
-- [ ] T033 [P] [US4] 实现 provider 配置与服务编码映射存取（`backend/internal/services/admin/logistics/integrations/config_service.go`）
-- [ ] T034 [US4] 将 waybill/track 流程接入适配器分发（`backend/internal/services/admin/logistics/waybill_service.go`）
-- [ ] T035 [US4] 扩展承运商管理页面支持 provider 配置（`web-admin/app/pages/shipping/carriers.vue`）
-- [ ] T036 [US4] 增加 US4 回归测试（连通性失败、回调幂等、provider 切换）（`backend/internal/services/admin/logistics/integrations/*_test.go`）
+- [X] T032 [P] [US4] 实现第三方适配器接口与默认实现骨架（`backend/internal/services/admin/logistics/integrations/{adapter.go,self_adapter.go}`）
+- [X] T033 [P] [US4] 实现 provider 配置与服务编码映射存取（`backend/internal/services/admin/logistics/integrations/config_service.go`）
+- [X] T034 [US4] 将 waybill/track 流程接入适配器分发（`backend/internal/services/admin/logistics/waybill_service.go`）
+- [X] T035 [US4] 扩展承运商管理页面支持 provider 配置（`web-admin/app/pages/shipping/carriers.vue`）
+- [X] T036 [US4] 增加 US4 回归测试（连通性失败、回调幂等、provider 切换）（`backend/internal/services/admin/logistics/integrations/*_test.go`）
 
 **Checkpoint**: All user stories should now be independently functional
 

@@ -10,6 +10,7 @@ import (
 	LogisticsModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/logistics"
 	LogisticsRepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/logistics"
 	LogisticsObs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/logistics"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/logistics/integrations"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/datatypes"
@@ -19,6 +20,9 @@ import (
 type WaybillService struct {
 	waybillRepo *LogisticsRepo.WaybillRepository
 	trackRepo   *LogisticsRepo.TrackingEventRepository
+	carrierRepo *LogisticsRepo.CarrierRepository
+	configSvc   *integrations.ConfigService
+	adapters    map[string]integrations.Adapter
 	emitter     *LogisticsObs.Emitter
 }
 
@@ -29,6 +33,9 @@ func NewWaybillService(deps *app.Deps) *WaybillService {
 	return &WaybillService{
 		waybillRepo: LogisticsRepo.NewWaybillRepository(deps.DB),
 		trackRepo:   LogisticsRepo.NewTrackingEventRepository(deps.DB),
+		carrierRepo: LogisticsRepo.NewCarrierRepository(deps.DB),
+		configSvc:   integrations.NewConfigService(),
+		adapters:    integrations.NewAdapterRegistry(),
 		emitter:     LogisticsObs.NewEmitter(deps.RuntimeLogger(context.Background(), "logistics-waybill", nil)),
 	}
 }
@@ -63,28 +70,62 @@ func (s *WaybillService) List(ctx context.Context, tenantUUID string) ([]Logisti
 }
 
 func (s *WaybillService) Create(ctx context.Context, tenantUUID string, req CreateWaybillRequest) (*LogisticsModel.Waybill, string, error) {
-	if s == nil || s.waybillRepo == nil {
+	if s == nil || s.waybillRepo == nil || s.carrierRepo == nil {
 		return nil, "", errors.New("waybill service unavailable")
 	}
 	ctx = withTenantContext(ctx, tenantUUID)
 	if strings.TrimSpace(req.OrderID) == "" || strings.TrimSpace(req.CarrierID) == "" || strings.TrimSpace(req.ServiceCode) == "" {
 		return nil, "", errors.New("order_id/carrier_id/service_code required")
 	}
+	carrier, err := s.carrierRepo.GetByID(ctx, req.CarrierID)
+	if err != nil {
+		return nil, "", err
+	}
+	if !strings.EqualFold(carrier.Status, "active") {
+		return nil, "", errors.New("carrier is not active")
+	}
+	adapter, provider := s.resolveAdapter(carrier)
+	resolvedServiceCode := s.configSvc.ResolveServiceCode(carrier, req.ServiceCode)
+	adapterResult, adapterErr := adapter.CreateWaybill(ctx, carrier, integrations.WaybillCreateInput{
+		OrderID:     strings.TrimSpace(req.OrderID),
+		ServiceCode: resolvedServiceCode,
+		WaybillNo:   strings.TrimSpace(req.WaybillNo),
+		Metadata: map[string]any{
+			"provider": provider,
+		},
+	})
+	if adapterErr != nil && strings.TrimSpace(req.ManualFallbackReason) == "" {
+		return nil, "", adapterErr
+	}
 	waybillNo := strings.TrimSpace(req.WaybillNo)
+	if adapterResult != nil && strings.TrimSpace(adapterResult.WaybillNo) != "" {
+		waybillNo = strings.TrimSpace(adapterResult.WaybillNo)
+	}
 	if waybillNo == "" {
 		waybillNo = fmt.Sprintf("WB%s", time.Now().UTC().Format("20060102150405"))
 	}
+	metadata := map[string]any{"provider": provider}
+	if adapterResult != nil && len(adapterResult.Metadata) > 0 {
+		metadata["adapter"] = adapterResult.Metadata
+	}
+	if adapterErr != nil && strings.TrimSpace(req.ManualFallbackReason) != "" {
+		metadata["fallback"] = map[string]any{
+			"reason":  strings.TrimSpace(req.ManualFallbackReason),
+			"adapter": adapterErr.Error(),
+		}
+	}
+	metadataBytes, _ := jsonBytes(metadata, []byte("{}"))
 	wb := &LogisticsModel.Waybill{
 		ID:          utils.NewUUID(),
 		OrderID:     strings.TrimSpace(req.OrderID),
 		CarrierID:   strings.TrimSpace(req.CarrierID),
-		ServiceCode: strings.TrimSpace(req.ServiceCode),
+		ServiceCode: strings.TrimSpace(resolvedServiceCode),
 		WaybillNo:   waybillNo,
 		Status:      "created",
-		Metadata:    datatypes.JSON([]byte("{}")),
+		Metadata:    datatypes.JSON(metadataBytes),
 	}
-	if strings.TrimSpace(req.ManualFallbackReason) != "" {
-		wb.Metadata = datatypes.JSON([]byte(fmt.Sprintf(`{"manual_fallback_reason":%q}`, strings.TrimSpace(req.ManualFallbackReason))))
+	if adapterResult != nil && strings.TrimSpace(adapterResult.Status) != "" {
+		wb.Status = strings.TrimSpace(adapterResult.Status)
 	}
 	if err := s.waybillRepo.Create(ctx, wb); err != nil {
 		return nil, "", err
@@ -128,7 +169,7 @@ func (s *WaybillService) Cancel(ctx context.Context, tenantUUID, waybillID strin
 }
 
 func (s *WaybillService) AppendTracking(ctx context.Context, tenantUUID, waybillID string, req AppendTrackingRequest) (*LogisticsModel.TrackingEvent, string, error) {
-	if s == nil || s.waybillRepo == nil || s.trackRepo == nil {
+	if s == nil || s.waybillRepo == nil || s.trackRepo == nil || s.carrierRepo == nil {
 		return nil, "", errors.New("waybill service unavailable")
 	}
 	ctx = withTenantContext(ctx, tenantUUID)
@@ -136,6 +177,11 @@ func (s *WaybillService) AppendTracking(ctx context.Context, tenantUUID, waybill
 	if err != nil {
 		return nil, "", err
 	}
+	carrier, err := s.carrierRepo.GetByID(ctx, wb.CarrierID)
+	if err != nil {
+		return nil, "", err
+	}
+	adapter, _ := s.resolveAdapter(carrier)
 	eventID := strings.TrimSpace(req.EventID)
 	if eventID == "" {
 		eventID = utils.NewUUID()
@@ -149,7 +195,7 @@ func (s *WaybillService) AppendTracking(ctx context.Context, tenantUUID, waybill
 		WaybillID:   wb.ID,
 		WaybillNo:   wb.WaybillNo,
 		EventID:     eventID,
-		Status:      normalizeTrackingStatus(req.Status),
+		Status:      normalizeTrackingStatus(adapter.NormalizeTrackingStatus(req.Status)),
 		Source:      defaultString(req.Source, "manual"),
 		Description: strings.TrimSpace(req.Description),
 		OccurredAt:  req.OccurredAt,
@@ -205,4 +251,21 @@ func (s *WaybillService) emitEvent(tenantUUID, waybillNo, status, action, result
 		Result:     strings.TrimSpace(result),
 		EmittedAt:  time.Now().UTC(),
 	})
+}
+
+func (s *WaybillService) resolveAdapter(carrier *LogisticsModel.Carrier) (integrations.Adapter, string) {
+	provider := "self"
+	if s != nil && s.configSvc != nil {
+		provider = s.configSvc.ResolveProvider(carrier)
+	}
+	provider = strings.TrimSpace(strings.ToLower(provider))
+	if provider == "" {
+		provider = "self"
+	}
+	if s != nil && s.adapters != nil {
+		if adapter, ok := s.adapters[provider]; ok && adapter != nil {
+			return adapter, provider
+		}
+	}
+	return integrations.NewSelfAdapter("self"), "self"
 }

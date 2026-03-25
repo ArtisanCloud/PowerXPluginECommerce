@@ -10,6 +10,7 @@ import (
 	LogisticsModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/logistics"
 	LogisticsRepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/logistics"
 	LogisticsObs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/logistics"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/logistics/integrations"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/datatypes"
@@ -20,6 +21,8 @@ type CarrierService struct {
 	deps        *app.Deps
 	carrierRepo *LogisticsRepo.CarrierRepository
 	emitter     *LogisticsObs.Emitter
+	configSvc   *integrations.ConfigService
+	adapters    map[string]integrations.Adapter
 }
 
 func NewCarrierService(deps *app.Deps) *CarrierService {
@@ -30,6 +33,8 @@ func NewCarrierService(deps *app.Deps) *CarrierService {
 		deps:        deps,
 		carrierRepo: LogisticsRepo.NewCarrierRepository(deps.DB),
 		emitter:     LogisticsObs.NewEmitter(deps.RuntimeLogger(context.Background(), "logistics-carrier", nil)),
+		configSvc:   integrations.NewConfigService(),
+		adapters:    integrations.NewAdapterRegistry(),
 	}
 }
 
@@ -139,14 +144,39 @@ func (s *CarrierService) TestConnectivity(ctx context.Context, tenantUUID, carri
 	if err != nil {
 		return nil, err
 	}
-	reachable := strings.EqualFold(carrier.Status, "active")
-	msg := "carrier reachable"
-	if !reachable {
-		msg = "carrier is not active"
+	if !strings.EqualFold(carrier.Status, "active") {
+		msg := "carrier is not active"
+		result := &TestCarrierResult{CarrierID: carrier.ID, Reachable: false, Message: msg}
+		s.emitAudit(ctx, tenantUUID, "carrier.test", carrier.ID, "reachable=false")
+		return result, nil
+	}
+	adapter, provider := s.resolveAdapter(carrier)
+	reachable := true
+	msg := fmt.Sprintf("carrier reachable via provider=%s", provider)
+	if err := adapter.TestConnectivity(ctx, carrier); err != nil {
+		reachable = false
+		msg = err.Error()
 	}
 	result := &TestCarrierResult{CarrierID: carrier.ID, Reachable: reachable, Message: msg}
 	s.emitAudit(ctx, tenantUUID, "carrier.test", carrier.ID, fmt.Sprintf("reachable=%v", reachable))
 	return result, nil
+}
+
+func (s *CarrierService) resolveAdapter(carrier *LogisticsModel.Carrier) (integrations.Adapter, string) {
+	provider := "self"
+	if s != nil && s.configSvc != nil {
+		provider = s.configSvc.ResolveProvider(carrier)
+	}
+	provider = strings.TrimSpace(strings.ToLower(provider))
+	if provider == "" {
+		provider = "self"
+	}
+	if s != nil && s.adapters != nil {
+		if adapter, ok := s.adapters[provider]; ok && adapter != nil {
+			return adapter, provider
+		}
+	}
+	return integrations.NewSelfAdapter("self"), "self"
 }
 
 func (s *CarrierService) emitAudit(ctx context.Context, tenantUUID, action, targetID, result string) {

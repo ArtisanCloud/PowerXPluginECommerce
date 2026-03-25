@@ -76,10 +76,14 @@
             <span class="text-xs text-gray-500 dark:text-gray-400">{{ getValue().toFixed(1) }}</span>
           </div>
         </template>
-        <template #actions-cell>
+        <template #actions-cell="{ row }">
           <div class="flex gap-2">
-            <UButton size="xs" variant="ghost">配置服务</UButton>
-            <UButton size="xs" variant="ghost" color="primary">查看 SLA</UButton>
+            <UButton size="xs" variant="ghost" @click="switchProvider(row.original)">
+              切换 Provider
+            </UButton>
+            <UButton size="xs" variant="ghost" color="primary" @click="testProvider(row.original)">
+              连通性测试
+            </UButton>
           </div>
         </template>
       </UTable>
@@ -99,7 +103,10 @@ type CarrierStatus = "active" | "monitor" | "suspended";
 
 type Carrier = {
   id: string;
+  code: string;
+  type: string;
   name: string;
+  provider: string;
   coverage: string;
   contact: string;
   phone: string;
@@ -107,6 +114,8 @@ type Carrier = {
   avgTime: string;
   onTimeRate: number;
   rating: number;
+  rawConfig: Record<string, any>;
+  rawCapabilities: Record<string, any>;
 };
 
 const logisticsApi = useLogisticsApi();
@@ -133,7 +142,10 @@ const loadCarriers = async () => {
     const avgHours = Number(cfg.avgHours ?? cfg.avg_hours ?? 0);
     return {
       id: row.id,
+      code: row.code,
+      type: row.type,
       name: row.name || row.code,
+      provider: String(cfg.provider || row.type || "self"),
       coverage: String(cap.coverage || row.type || "未配置"),
       contact: row.contactName || "-",
       phone: row.contactPhone || "-",
@@ -141,6 +153,8 @@ const loadCarriers = async () => {
       avgTime: avgHours > 0 ? `${(avgHours / 24).toFixed(1)} 天` : "-",
       onTimeRate,
       rating,
+      rawConfig: cfg,
+      rawCapabilities: cap,
     };
   });
 };
@@ -167,6 +181,7 @@ const coverageOptions = computed(() =>
 
 const columns = computed<TableColumn<Carrier>[]>(() => [
   { accessorKey: "name", header: "承运商" },
+  { accessorKey: "provider", header: "Provider" },
   { accessorKey: "coverage", header: "覆盖范围" },
   { accessorKey: "avgTime", header: "平均时效" },
   {
@@ -183,6 +198,32 @@ const columns = computed<TableColumn<Carrier>[]>(() => [
   },
   { id: "actions", header: "操作" },
 ]);
+
+const providerCycle = ["self", "sf", "jd", "cainiao", "dhl", "other"];
+
+const switchProvider = async (carrier: Carrier) => {
+  const idx = providerCycle.indexOf(String(carrier.provider || "self"));
+  const nextProvider = providerCycle[(idx + 1) % providerCycle.length];
+  await logisticsApi.upsertCarrier({
+    id: carrier.id,
+    name: carrier.name,
+    code: carrier.code,
+    type: carrier.type || "self",
+    status: carrier.status === "suspended" ? "disabled" : "active",
+    contact_name: carrier.contact === "-" ? "" : carrier.contact,
+    contact_phone: carrier.phone === "-" ? "" : carrier.phone,
+    capabilities: carrier.rawCapabilities,
+    config: {
+      ...carrier.rawConfig,
+      provider: nextProvider,
+    },
+  });
+  await loadCarriers();
+};
+
+const testProvider = async (carrier: Carrier) => {
+  await logisticsApi.testCarrier(carrier.id);
+};
 
 const filteredCarriers = computed(() =>
   carriers.value.filter((carrier) => {
