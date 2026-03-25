@@ -71,13 +71,13 @@
 
 ### Implementation for User Story 2
 
-- [ ] T020 [P] [US2] 实现 FulfillmentTask/FulfillmentTaskLog 模型与仓储（`backend/internal/entity/models/fulfillment/*.go`、`backend/internal/entity/repository/fulfillment/*_repository.go`）
-- [ ] T021 [P] [US2] 实现 FulfillmentException 模型与仓储（`backend/internal/entity/models/fulfillment/exception.go`、`backend/internal/entity/repository/fulfillment/exception_repository.go`）
-- [ ] T022 [US2] 实现任务编排与状态推进 Service（`backend/internal/services/admin/fulfillment/task_service.go`）
-- [ ] T023 [US2] 实现异常处理与 24h 自动升级 Service（`backend/internal/services/admin/fulfillment/exception_service.go`）
-- [ ] T024 [US2] 实现履约任务 admin HTTP Handler 与路由（`backend/internal/transport/http/admin/fulfillment/{handler.go,routes.go,dto.go}`）
-- [ ] T025 [US2] 在 web-admin 对齐任务看板与异常入口（`web-admin/app/pages/shipping/tasks.vue`）
-- [ ] T026 [US2] 增加 US2 回归测试（任务状态机、异常升级）（`backend/internal/services/admin/fulfillment/*_test.go`）
+- [X] T020 [P] [US2] 实现 FulfillmentTask/FulfillmentTaskLog 模型与仓储（`backend/internal/entity/models/fulfillment/*.go`、`backend/internal/entity/repository/fulfillment/*_repository.go`）
+- [X] T021 [P] [US2] 实现 FulfillmentException 模型与仓储（`backend/internal/entity/models/fulfillment/exception.go`、`backend/internal/entity/repository/fulfillment/exception_repository.go`）
+- [X] T022 [US2] 实现任务编排与状态推进 Service（`backend/internal/services/admin/fulfillment/task_service.go`）
+- [X] T023 [US2] 实现异常处理与 24h 自动升级 Service（`backend/internal/services/admin/fulfillment/exception_service.go`）
+- [X] T024 [US2] 实现履约任务 admin HTTP Handler 与路由（`backend/internal/transport/http/admin/fulfillment/{handler.go,routes.go,dto.go}`）
+- [X] T025 [US2] 在 web-admin 对齐任务看板与异常入口（`web-admin/app/pages/shipping/tasks.vue`）
+- [X] T026 [US2] 增加 US2 回归测试（任务状态机、异常升级）（`backend/internal/services/admin/fulfillment/*_test.go`）
 
 **Checkpoint**: User Stories 1 and 2 both work independently
 

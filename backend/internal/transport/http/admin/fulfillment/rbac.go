@@ -16,6 +16,7 @@ func RBACEntries(prefix string) map[string]AuthX.Permission {
 		"GET:" + base + "/tasks":                {Resource: res("fulfillment.task"), Action: "read"},
 		"POST:" + base + "/tasks":               {Resource: res("fulfillment.task"), Action: "manage"},
 		"PATCH:" + base + "/tasks/:id/complete": {Resource: res("fulfillment.task"), Action: "manage"},
+		"GET:" + base + "/exceptions":           {Resource: res("fulfillment.exception"), Action: "read"},
 		"POST:" + base + "/exceptions":          {Resource: res("fulfillment.exception"), Action: "manage"},
 	}
 }
