@@ -18,9 +18,15 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	}
 	handler := NewHandler(membershipsvc.NewService(deps))
 	rg.GET("/tiers", handler.ListTiers)
+	rg.POST("/tiers", handler.CreateTier)
+	rg.PATCH("/tiers/:id/status", handler.UpdateTierStatus)
+	rg.DELETE("/tiers/:id", handler.DeleteTier)
 	rg.GET("/benefits", handler.ListBenefits)
+	rg.POST("/benefits", handler.CreateBenefit)
 	rg.POST("/entitlements/grant", handler.GrantEntitlement)
 	rg.POST("/entitlements/revoke", handler.RevokeEntitlement)
 	rg.POST("/tokens/adjust", handler.AdjustToken)
+	rg.GET("/tokens/transactions", handler.ListTokenTransactions)
+	rg.POST("/points/redeem", handler.RedeemPointsBenefit)
 	return rg
 }

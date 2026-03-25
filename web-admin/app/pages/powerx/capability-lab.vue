@@ -400,6 +400,8 @@ import { computed, nextTick, onMounted, reactive, ref, watch } from 'vue'
 import { useRoute, useRouter, useRuntimeConfig } from '#imports'
 import { useCapabilityLab } from '~/composables/useCapabilityLab'
 import { useCapabilityCatalogApi } from '~/composables/api/useCapabilityCatalog'
+import { useManagedQuerySync } from '~/composables/useManagedQuerySync'
+import { collectManagedQueryValues, createManagedQueryKeySet, normalizeQueryToStringRecord, parseAliasedQueryValue, warnUnknownManagedQueryKeys } from '~/utils/query-sync-debug'
 import { useUserStore } from '~/stores/user'
 
 definePageMeta({
@@ -459,27 +461,43 @@ const sourceListLoading = ref(false)
 const capabilityLoadError = ref('')
 const selectedModule = ref('')
 const selectedSource = ref('corex')
+const querySyncReady = ref(false)
 const sourceOptions = ref([
   { label: 'corex · PowerX 底座', value: 'corex' },
   { label: 'plugin · 插件能力', value: 'plugin' },
   { label: 'all · 全部来源', value: 'all' }
 ])
+const MANAGED_QUERY_KEYS = ['source'] as const
+const MANAGED_QUERY_KEY_SET = createManagedQueryKeySet(MANAGED_QUERY_KEYS)
+
+const buildCapabilityLabQueryFromState = () => {
+  const currentQuery = normalizeQueryToStringRecord(route.query as Record<string, unknown>)
+
+  const preservedQueryEntries = Object.entries(currentQuery)
+    .filter(([key]) => !MANAGED_QUERY_KEY_SET.has(key))
+    .sort(([a], [b]) => a.localeCompare(b))
+
+  const nextQuery: Record<string, string> = {}
+  preservedQueryEntries.forEach(([key, value]) => {
+    nextQuery[key] = value
+  })
+  nextQuery.source = selectedSource.value
+  return nextQuery
+}
+
+const { queueManagedQuerySync: queueCapabilityLabQuerySync } = useManagedQuerySync({
+  route,
+  router,
+  buildNextQuery: buildCapabilityLabQueryFromState,
+  isReady: () => querySyncReady.value,
+  debugStats: { page: 'capability-lab', logEvery: 10 },
+})
 
 function normalizeSourceQuery(value?: string | null) {
   const normalized = String(value || '').trim().toLowerCase()
   if (!normalized) return 'all'
   if (normalized === 'any') return 'all'
   if (normalized === 'platform') return 'corex'
-  return normalized
-}
-
-function parseSourceFromRouteQuery(value: unknown): string | null {
-  const source = Array.isArray(value) ? value[0] : value
-  if (typeof source !== 'string') return null
-  const normalized = source.trim().toLowerCase()
-  if (!normalized) return null
-  if (normalized === 'platform') return 'corex'
-  if (normalized === 'any') return 'all'
   return normalized
 }
 
@@ -657,7 +675,23 @@ const {
 } = useCapabilityLab()
 
 onMounted(async () => {
-  const querySource = parseSourceFromRouteQuery(route.query?.source)
+  warnUnknownManagedQueryKeys({
+    scope: 'capability-lab',
+    rawQuery: route.query as Record<string, unknown>,
+    managedKeys: MANAGED_QUERY_KEYS,
+    managedKeySet: MANAGED_QUERY_KEY_SET,
+    keyPrefixes: ['source'],
+    emitConsole: false,
+    debugStats: { page: 'capability-lab', logEvery: 1 },
+  })
+  const managedQuery = collectManagedQueryValues({
+    rawQuery: route.query as Record<string, unknown>,
+    managedKeys: MANAGED_QUERY_KEYS,
+  })
+  const querySource = parseAliasedQueryValue(managedQuery.source, {
+    platform: 'corex',
+    any: 'all',
+  })
   if (querySource) {
     ensureSelectedSourceInOptions(querySource)
     selectedSource.value = querySource
@@ -665,6 +699,7 @@ onMounted(async () => {
   await fetchCapabilitySources()
   ensureSelectedSourceInOptions(selectedSource.value)
   await fetchCapabilityOptions()
+  querySyncReady.value = true
 })
 
 const moduleOptions = computed(() => {
@@ -1384,14 +1419,12 @@ watch(
   () => {
     selectedModule.value = ''
     form.capabilityId = ''
-    const currentRouteSource = parseSourceFromRouteQuery(route.query?.source)
+    const currentRouteSource = parseAliasedQueryValue(route.query?.source, {
+      platform: 'corex',
+      any: 'all',
+    })
     if (currentRouteSource !== selectedSource.value) {
-      router.replace({
-        query: {
-          ...route.query,
-          source: selectedSource.value
-        }
-      })
+      void queueCapabilityLabQuerySync()
     }
     fetchCapabilityOptions()
   }
@@ -1400,7 +1433,10 @@ watch(
 watch(
   () => route.query?.source,
   (value) => {
-    const sourceFromRoute = parseSourceFromRouteQuery(value)
+    const sourceFromRoute = parseAliasedQueryValue(value, {
+      platform: 'corex',
+      any: 'all',
+    })
     if (!sourceFromRoute || sourceFromRoute === selectedSource.value) {
       return
     }

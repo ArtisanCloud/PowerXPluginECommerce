@@ -184,7 +184,7 @@
         </div>
       </template>
 
-      <UTable :columns="columns" :data="filteredAccounts">
+      <UTable :columns="columns" :data="filteredAccounts" :loading="loading || adjusting">
         <template #customer-cell="{ row }">
           <div class="flex items-center gap-3">
             <UAvatar
@@ -257,7 +257,7 @@
       <template #footer>
         <div class="flex items-center justify-between">
           <div class="text-sm text-gray-500 dark:text-gray-400">
-            显示第 {{ (currentPage - 1) * pageSize + 1 }} 到 {{ Math.min(currentPage * pageSize, totalAccounts) }} 条，共 {{ totalAccounts }} 条
+            显示第 {{ totalAccounts === 0 ? 0 : (currentPage - 1) * pageSize + 1 }} 到 {{ Math.min(currentPage * pageSize, totalAccounts) }} 条，共 {{ totalAccounts }} 条
           </div>
           <UPagination
             v-model="currentPage"
@@ -290,281 +290,54 @@
 </template>
 
 <script setup lang="ts">
-// 导入模态框组件
+import { computed, onMounted, ref, watch } from "vue";
+import { navigateTo, useToast } from "#imports";
 import BatchAdjustGrowthValueModal from "~/components/modals/BatchAdjustGrowthValueModal.vue";
+import { useCustomerApi } from "~/composables/api/useCustomer";
+import { useMembershipAdminApi } from "~/composables/api/useMembership";
+import type { MembershipInsight } from "~/types/customer";
 
-// 模态框状态
+type GrowthAccount = {
+  id: string;
+  customerId: string;
+  customerName: string;
+  customerPhone: string;
+  avatar: string;
+  levelName: string;
+  levelColor: string;
+  balance: number;
+};
+
+type PromotionRule = {
+  id: string;
+  levelName: string;
+  levelColor: string;
+  type: "auto" | "manual";
+  growthValueThreshold: number | null;
+  status: string;
+};
+
+const customerApi = useCustomerApi();
+const membershipApi = useMembershipAdminApi();
+const toast = useToast();
+
 const showBatchAdjustModal = ref(false);
 const showAdjustModal = ref(false);
+const loading = ref(false);
+const adjusting = ref(false);
 
-// 当前操作的账户
-const currentAccount = ref<any>(null);
-
-// 搜索
+const currentAccount = ref<GrowthAccount | null>(null);
 const searchQuery = ref("");
 
-// 分页
 const currentPage = ref(1);
 const pageSize = ref(10);
-const totalAccounts = ref(1245);
-const pageCount = computed(() => Math.ceil(totalAccounts.value / pageSize.value));
 
-// 统计数据
-const totalBalance = ref(2456789);
-const todayEarned = ref(12450);
-const recentPromotions = ref(23);
+const todayEarned = ref(0);
 
-// 等级晋升规则数据
-const promotionRules = ref([
-  {
-    id: 1,
-    levelName: "青铜会员",
-    levelColor: "#CD7F32",
-    type: "auto",
-    growthValueThreshold: 0,
-    status: "active"
-  },
-  {
-    id: 2,
-    levelName: "白银会员",
-    levelColor: "#C0C0C0",
-    type: "auto",
-    growthValueThreshold: 500,
-    status: "active"
-  },
-  {
-    id: 3,
-    levelName: "黄金会员",
-    levelColor: "#FFD700",
-    type: "auto",
-    growthValueThreshold: 2000,
-    status: "active"
-  },
-  {
-    id: 4,
-    levelName: "铂金会员",
-    levelColor: "#E5E4E2",
-    type: "auto",
-    growthValueThreshold: 5000,
-    status: "active"
-  },
-  {
-    id: 5,
-    levelName: "钻石会员",
-    levelColor: "#B9F2FF",
-    type: "auto",
-    growthValueThreshold: 15000,
-    status: "active"
-  },
-  {
-    id: 6,
-    levelName: "黑金会员",
-    levelColor: "#000000",
-    type: "manual",
-    growthValueThreshold: 50000,
-    status: "active"
-  },
-]);
+const promotionRules = ref<PromotionRule[]>([]);
+const accounts = ref<GrowthAccount[]>([]);
+const customers = ref<Array<{ id: string; name: string; phone: string; avatar: string; growthValue: number; selected: boolean }>>([]);
 
-// 账户数据
-const accounts = ref([
-  {
-    id: "acc_1",
-    customerName: "张三",
-    customerPhone: "13800138001",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=1",
-    levelName: "钻石会员",
-    levelColor: "#B9F2FF",
-    balance: 12500,
-    customerId: "cust_1",
-  },
-  {
-    id: "acc_2",
-    customerName: "李四",
-    customerPhone: "13800138002",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=2",
-    levelName: "铂金会员",
-    levelColor: "#E5E4E2",
-    balance: 8650,
-    customerId: "cust_2",
-  },
-  {
-    id: "acc_3",
-    customerName: "王五",
-    customerPhone: "13800138003",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=3",
-    levelName: "黄金会员",
-    levelColor: "#FFD700",
-    balance: 5200,
-    customerId: "cust_3",
-  },
-  {
-    id: "acc_4",
-    customerName: "赵六",
-    customerPhone: "13800138004",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=4",
-    levelName: "白银会员",
-    levelColor: "#C0C0C0",
-    balance: 2450,
-    customerId: "cust_4",
-  },
-  {
-    id: "acc_5",
-    customerName: "孙七",
-    customerPhone: "13800138005",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=5",
-    levelName: "青铜会员",
-    levelColor: "#CD7F32",
-    balance: 800,
-    customerId: "cust_5",
-  },
-  {
-    id: "acc_6",
-    customerName: "周八",
-    customerPhone: "13800138006",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=6",
-    levelName: "钻石会员",
-    levelColor: "#B9F2FF",
-    balance: 14200,
-    customerId: "cust_6",
-  },
-  {
-    id: "acc_7",
-    customerName: "吴九",
-    customerPhone: "13800138007",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=7",
-    levelName: "铂金会员",
-    levelColor: "#E5E4E2",
-    balance: 7800,
-    customerId: "cust_7",
-  },
-  {
-    id: "acc_8",
-    customerName: "郑十",
-    customerPhone: "13800138008",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=8",
-    levelName: "黄金会员",
-    levelColor: "#FFD700",
-    balance: 4500,
-    customerId: "cust_8",
-  },
-  {
-    id: "acc_9",
-    customerName: "王芳",
-    customerPhone: "13800138009",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=9",
-    levelName: "白银会员",
-    levelColor: "#C0C0C0",
-    balance: 1800,
-    customerId: "cust_9",
-  },
-  {
-    id: "acc_10",
-    customerName: "李明",
-    customerPhone: "13800138010",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=10",
-    levelName: "青铜会员",
-    levelColor: "#CD7F32",
-    balance: 350,
-    customerId: "cust_10",
-  },
-]);
-
-// 过滤后的账户列表
-const filteredAccounts = computed(() => {
-  if (!searchQuery.value) return accounts.value;
-  return accounts.value.filter(
-    (account) =>
-      account.customerName.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      account.customerPhone.includes(searchQuery.value)
-  );
-});
-
-// 客户数据（用于批量调整）
-const customers = ref([
-  {
-    id: "cust_1",
-    name: "张三",
-    phone: "13800138001",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=1",
-    growthValue: 12500,
-    selected: false,
-  },
-  {
-    id: "cust_2",
-    name: "李四",
-    phone: "13800138002",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=2",
-    growthValue: 8650,
-    selected: false,
-  },
-  {
-    id: "cust_3",
-    name: "王五",
-    phone: "13800138003",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=3",
-    growthValue: 5200,
-    selected: false,
-  },
-  {
-    id: "cust_4",
-    name: "赵六",
-    phone: "13800138004",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=4",
-    growthValue: 2450,
-    selected: false,
-  },
-  {
-    id: "cust_5",
-    name: "孙七",
-    phone: "13800138005",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=5",
-    growthValue: 800,
-    selected: false,
-  },
-  {
-    id: "cust_6",
-    name: "周八",
-    phone: "13800138006",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=6",
-    growthValue: 14200,
-    selected: false,
-  },
-  {
-    id: "cust_7",
-    name: "吴九",
-    phone: "13800138007",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=7",
-    growthValue: 7800,
-    selected: false,
-  },
-  {
-    id: "cust_8",
-    name: "郑十",
-    phone: "13800138008",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=8",
-    growthValue: 4500,
-    selected: false,
-  },
-  {
-    id: "cust_9",
-    name: "王芳",
-    phone: "13800138009",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=9",
-    growthValue: 1800,
-    selected: false,
-  },
-  {
-    id: "cust_10",
-    name: "李明",
-    phone: "13800138010",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=10",
-    growthValue: 350,
-    selected: false,
-  },
-]);
-
-// 表格列定义
 const columns = [
   { accessorKey: "customer", header: "客户" },
   { accessorKey: "level", header: "会员等级" },
@@ -572,83 +345,196 @@ const columns = [
   { id: "actions", header: "操作" },
 ];
 
-// 打开批量调整模态框
+const filteredAccountsRaw = computed(() => {
+  const keyword = searchQuery.value.trim().toLowerCase();
+  if (!keyword) return accounts.value;
+  return accounts.value.filter(
+    (account) =>
+      account.customerName.toLowerCase().includes(keyword) ||
+      account.customerPhone.includes(keyword),
+  );
+});
+
+const filteredAccounts = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  const end = start + pageSize.value;
+  return filteredAccountsRaw.value.slice(start, end);
+});
+
+const totalAccounts = computed(() => filteredAccountsRaw.value.length);
+const pageCount = computed(() => Math.max(1, Math.ceil(filteredAccountsRaw.value.length / pageSize.value)));
+const totalBalance = computed(() =>
+  accounts.value.reduce((sum, account) => sum + (Number(account.balance) || 0), 0),
+);
+const recentPromotions = computed(() =>
+  promotionRules.value.filter((r) => r.status === "active").length,
+);
+
+const levelColors = ["#CD7F32", "#C0C0C0", "#FFD700", "#E5E4E2", "#B9F2FF", "#111827"];
+const colorOfLevel = (name: string) => {
+  if (!name) return "#9CA3AF";
+  let hash = 0;
+  for (let i = 0; i < name.length; i += 1) hash = (hash << 5) - hash + name.charCodeAt(i);
+  return levelColors[Math.abs(hash) % levelColors.length];
+};
+
+const mapInsightToAccount = (insight: MembershipInsight): GrowthAccount => {
+  const customerId = insight.customer?.id || insight.snapshot?.customerId || "";
+  const customerName = insight.customer?.name || customerId || "未知客户";
+  const customerPhone = insight.customer?.phone || "-";
+  const levelName =
+    insight.snapshot?.tier || insight.customer?.membershipTierLabel || insight.customer?.membershipTier || "未分层";
+  return {
+    id: customerId,
+    customerId,
+    customerName,
+    customerPhone,
+    avatar: `https://api.dicebear.com/7.x/miniavs/svg?seed=${encodeURIComponent(customerId || customerName)}`,
+    levelName,
+    levelColor: colorOfLevel(levelName),
+    balance: Number(insight.snapshot?.growthValue ?? insight.customer?.growthValue ?? 0) || 0,
+  };
+};
+
+const parseRuleThreshold = (rules: Record<string, any>) => {
+  const upgrade = rules?.upgrade;
+  if (upgrade && typeof upgrade === "object" && typeof upgrade.minGrowthValue === "number") {
+    return upgrade.minGrowthValue;
+  }
+  if (typeof rules?.growthValueThreshold === "number") return rules.growthValueThreshold;
+  if (Array.isArray(rules?.conditions)) {
+    const cond = rules.conditions.find((c: any) => c?.type === "growth" && typeof c?.value === "number");
+    if (cond) return cond.value;
+  }
+  return null;
+};
+
+const loadPageData = async () => {
+  try {
+    loading.value = true;
+    const [membersResp, tiersResp] = await Promise.all([
+      customerApi.listMembers({ page: 1, pageSize: 1000 }),
+      membershipApi.listTiers(),
+    ]);
+
+    const rows = (membersResp?.data || []) as MembershipInsight[];
+    accounts.value = rows.map(mapInsightToAccount);
+
+    customers.value = accounts.value.map((account) => ({
+      id: account.customerId,
+      name: account.customerName,
+      phone: account.customerPhone,
+      avatar: account.avatar,
+      growthValue: account.balance,
+      selected: false,
+    }));
+
+    promotionRules.value = (tiersResp?.items || []).map((tier: any) => {
+      const rules = tier?.rules && typeof tier.rules === "object" ? tier.rules : {};
+      return {
+        id: String(tier.id || ""),
+        levelName: String(tier.name || "未命名等级"),
+        levelColor: colorOfLevel(String(tier.name || "")),
+        type: rules?.upgradeType === "manual" || rules?.type === "manual" ? "manual" : "auto",
+        growthValueThreshold: parseRuleThreshold(rules),
+        status: String(tier.status || "draft"),
+      } as PromotionRule;
+    });
+  } catch (error: any) {
+    toast.add({ title: "加载成长值数据失败", description: error?.message || "请稍后重试", color: "error" });
+  } finally {
+    loading.value = false;
+  }
+};
+
 const openBatchAdjustModal = () => {
   showBatchAdjustModal.value = true;
 };
 
-// 处理批量调整提交
-const handleBatchAdjustSubmit = async (data) => {
+const handleBatchAdjustSubmit = async (data: { type: "add" | "deduct"; growthValue: number; reason: string; customerIds: string[] }) => {
+  if (!data.customerIds?.length) return;
   try {
-    // 模拟API调用
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    adjusting.value = true;
+    const delta = data.type === "add" ? Math.abs(data.growthValue) : -Math.abs(data.growthValue);
+    let successCount = 0;
 
-    // 更新账户成长值
-    accounts.value.forEach((account) => {
-      const customer = customers.value.find((c) =>
-        data.customerIds.includes(c.id) && c.id === account.customerId
-      );
-      if (customer) {
-        if (data.type === "add") {
-          account.balance += data.growthValue;
-        } else {
-          account.balance = Math.max(0, account.balance - data.growthValue);
-        }
+    for (const customerId of data.customerIds) {
+      try {
+        await membershipApi.adjustToken({
+          customerId,
+          tokenCode: "growth_value",
+          delta,
+          reason: data.reason,
+        });
+        successCount += 1;
+      } catch {
+        // noop
       }
-    });
+    }
 
-    // 显示成功消息
-    alert(`成功为 ${data.customerIds.length} 个客户${data.type === "add" ? "赠送" : "扣减"}成长值`);
-  } catch (error) {
-    console.error("批量调整成长值失败:", error);
-    alert("批量调整成长值失败，请重试");
+    await loadPageData();
+    toast.add({
+      title: "批量调整完成",
+      description: `成功 ${successCount}/${data.customerIds.length} 个客户`,
+      color: successCount > 0 ? "success" : "error",
+    });
+  } catch (error: any) {
+    toast.add({ title: "批量调整成长值失败", description: error?.message || "请稍后重试", color: "error" });
+  } finally {
+    adjusting.value = false;
   }
 };
 
-// 处理批量调整关闭
 const handleBatchAdjustClose = () => {
   showBatchAdjustModal.value = false;
 };
 
-// 打开调整模态框
-const adjustGrowthValue = (account: any, type: string) => {
+const adjustGrowthValue = (account: GrowthAccount) => {
   currentAccount.value = account;
   showAdjustModal.value = true;
 };
 
-// 处理调整提交
-const handleAdjustSubmit = async (data) => {
+const handleAdjustSubmit = async (data: { type: "add" | "deduct"; growthValue: number; reason: string; accountId: string }) => {
   try {
-    // 模拟API调用
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    adjusting.value = true;
+    const delta = data.type === "add" ? Math.abs(data.growthValue) : -Math.abs(data.growthValue);
 
-    // 更新账户成长值
-    const account = accounts.value.find((a) => a.id === data.accountId);
-    if (account) {
-      if (data.type === "add") {
-        account.balance += data.growthValue;
-      } else {
-        account.balance = Math.max(0, account.balance - data.growthValue);
-      }
-    }
+    await membershipApi.adjustToken({
+      customerId: data.accountId,
+      tokenCode: "growth_value",
+      delta,
+      reason: data.reason,
+    });
 
-    // 显示成功消息
-    alert(`${data.type === "add" ? "赠送" : "扣减"}成长值成功`);
-  } catch (error) {
-    console.error("调整成长值失败:", error);
-    alert("调整成长值失败，请重试");
+    await loadPageData();
+    toast.add({ title: `${data.type === "add" ? "赠送" : "扣减"}成长值成功`, color: "success" });
+  } catch (error: any) {
+    toast.add({ title: "调整成长值失败", description: error?.message || "请稍后重试", color: "error" });
+  } finally {
+    adjusting.value = false;
   }
 };
 
-// 处理调整关闭
 const handleAdjustClose = () => {
   showAdjustModal.value = false;
   currentAccount.value = null;
 };
 
-// 查看账户详情
-const viewAccountDetails = (account: any) => {
-  // 跳转到账户详情页面
+const viewAccountDetails = (account: GrowthAccount) => {
   navigateTo(`/customer/membership/growth-value/accounts/${account.id}`);
 };
+
+watch(searchQuery, () => {
+  currentPage.value = 1;
+});
+
+watch(pageCount, (value) => {
+  if (currentPage.value > value) {
+    currentPage.value = value;
+  }
+});
+
+onMounted(() => {
+  loadPageData();
+});
 </script>

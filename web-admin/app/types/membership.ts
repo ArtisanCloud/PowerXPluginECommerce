@@ -26,6 +26,24 @@ export type MembershipBenefitList = {
   items: MembershipBenefit[];
 };
 
+export type CreateTierRequest = {
+  name: string;
+  code: string;
+  status?: string;
+  rules?: Record<string, any> | null;
+};
+
+export type UpdateTierStatusRequest = {
+  status: string;
+};
+
+export type CreateBenefitRequest = {
+  name: string;
+  type?: string;
+  status?: string;
+  items?: any;
+};
+
 export type GrantEntitlementRequest = {
   customerId: string;
   serviceCode: string;
@@ -46,4 +64,37 @@ export type AdjustTokenRequest = {
   tokenCode: string;
   delta: number;
   reason?: string;
+};
+
+export type MembershipTokenTransaction = {
+  id: string;
+  customerId: string;
+  tokenCode: string;
+  delta: number;
+  sourceType: string;
+  sourceId: string;
+  createdAt: string;
+};
+
+export type MembershipTokenTransactionList = {
+  items: MembershipTokenTransaction[];
+  total?: number;
+  page?: number;
+  pageSize?: number;
+};
+
+export type RedeemPointsBenefitRequest = {
+  customerId: string;
+  benefitId: string;
+  pointsCost: number;
+  reason?: string;
+  sourceId?: string;
+};
+
+export type RedeemPointsBenefitResult = {
+  benefitId: string;
+  customerId: string;
+  transactionId: string;
+  balance: number;
+  grantedServices: string[];
 };
