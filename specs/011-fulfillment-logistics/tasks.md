@@ -48,16 +48,16 @@
 
 ### Implementation for User Story 1
 
-- [ ] T010 [P] [US1] 实现 Carrier/CarrierService 模型与仓储（`backend/internal/entity/models/logistics/carrier*.go`、`backend/internal/entity/repository/logistics/carrier*_repository.go`）
-- [ ] T011 [P] [US1] 实现 RateTemplate/RateZone 模型与仓储（`backend/internal/entity/models/logistics/rate_template*.go`、`backend/internal/entity/repository/logistics/rate_template*_repository.go`）
-- [ ] T012 [P] [US1] 实现 Waybill/TrackingEvent 模型与仓储（`backend/internal/entity/models/logistics/waybill*.go`、`backend/internal/entity/repository/logistics/waybill*_repository.go`）
-- [ ] T013 [US1] 实现承运商管理 Service（增改停用/连通性测试）（`backend/internal/services/admin/logistics/carrier_service.go`）
-- [ ] T014 [US1] 实现运费模板 Service（草稿/发布/只读约束）（`backend/internal/services/admin/logistics/rate_template_service.go`）
-- [ ] T015 [US1] 实现运单与轨迹 Service（订单触发主入口、人工补录、状态源优先级）（`backend/internal/services/admin/logistics/waybill_service.go`）
-- [ ] T016 [US1] 实现 webhook 幂等处理（事件ID+运单号）（`backend/internal/services/admin/logistics/webhook_service.go`）
-- [ ] T017 [US1] 实现物流 admin HTTP Handler 与路由（`backend/internal/transport/http/admin/logistics/{handler.go,routes.go,dto.go}`）
-- [ ] T018 [US1] 对齐 shipping 页面 API 调用（承运商/模板/运单）并打通列表与详情（`web-admin/app/pages/shipping/{carriers.vue,templates.vue,waybills.vue}`、`web-admin/app/composables/api/useLogistics.ts`）
-- [ ] T019 [US1] 增加 US1 回归测试（仓储+service 单测）（`backend/internal/services/admin/logistics/*_test.go`、`backend/internal/entity/repository/logistics/*_test.go`）
+- [X] T010 [P] [US1] 实现 Carrier/CarrierService 模型与仓储（`backend/internal/entity/models/logistics/carrier*.go`、`backend/internal/entity/repository/logistics/carrier*_repository.go`）
+- [X] T011 [P] [US1] 实现 RateTemplate/RateZone 模型与仓储（`backend/internal/entity/models/logistics/rate_template*.go`、`backend/internal/entity/repository/logistics/rate_template*_repository.go`）
+- [X] T012 [P] [US1] 实现 Waybill/TrackingEvent 模型与仓储（`backend/internal/entity/models/logistics/waybill*.go`、`backend/internal/entity/repository/logistics/waybill*_repository.go`）
+- [X] T013 [US1] 实现承运商管理 Service（增改停用/连通性测试）（`backend/internal/services/admin/logistics/carrier_service.go`）
+- [X] T014 [US1] 实现运费模板 Service（草稿/发布/只读约束）（`backend/internal/services/admin/logistics/rate_template_service.go`）
+- [X] T015 [US1] 实现运单与轨迹 Service（订单触发主入口、人工补录、状态源优先级）（`backend/internal/services/admin/logistics/waybill_service.go`）
+- [X] T016 [US1] 实现 webhook 幂等处理（事件ID+运单号）（`backend/internal/services/admin/logistics/webhook_service.go`）
+- [X] T017 [US1] 实现物流 admin HTTP Handler 与路由（`backend/internal/transport/http/admin/logistics/{handler.go,routes.go,dto.go}`）
+- [X] T018 [US1] 对齐 shipping 页面 API 调用（承运商/模板/运单）并打通列表与详情（`web-admin/app/pages/shipping/{carriers.vue,templates.vue,waybills.vue}`、`web-admin/app/composables/api/useLogistics.ts`）
+- [X] T019 [US1] 增加 US1 回归测试（仓储+service 单测）（`backend/internal/services/admin/logistics/*_test.go`、`backend/internal/entity/repository/logistics/*_test.go`）
 
 **Checkpoint**: User Story 1 should be fully functional and independently testable
 

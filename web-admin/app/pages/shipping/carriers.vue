@@ -89,6 +89,7 @@
 
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
+import { useLogisticsApi } from "~/composables/api";
 
 definePageMeta({
   name: "shipping-carriers",
@@ -108,56 +109,45 @@ type Carrier = {
   rating: number;
 };
 
-const carriers = ref<Carrier[]>([
-  {
-    id: "SF-EXPRESS",
-    name: "顺丰速运",
-    coverage: "全国+跨境",
-    contact: "张伟",
-    phone: "4008-111-111",
-    status: "active",
-    avgTime: "1.6 天",
-    onTimeRate: 98.2,
-    rating: 4.8,
-  },
-  {
-    id: "JD-LOGISTICS",
-    name: "京东物流",
-    coverage: "全国",
-    contact: "李婷",
-    phone: "950616",
-    status: "active",
-    avgTime: "1.8 天",
-    onTimeRate: 96.5,
-    rating: 4.6,
-  },
-  {
-    id: "BEST-LOGISTICS",
-    name: "百世快运",
-    coverage: "华东/华南",
-    contact: "陈凯",
-    phone: "95320",
-    status: "monitor",
-    avgTime: "2.6 天",
-    onTimeRate: 91.4,
-    rating: 4.0,
-  },
-  {
-    id: "YT-EXPRESS",
-    name: "圆通速递",
-    coverage: "全国",
-    contact: "赵敏",
-    phone: "95554",
-    status: "suspended",
-    avgTime: "3.1 天",
-    onTimeRate: 87.9,
-    rating: 3.6,
-  },
-]);
+const logisticsApi = useLogisticsApi();
+const carriers = ref<Carrier[]>([]);
 
 const keyword = ref("");
 const statusFilter = ref<CarrierStatus | "">("");
 const coverageFilter = ref("");
+
+const normalizeStatus = (status: string): CarrierStatus => {
+  const v = String(status || "").toLowerCase();
+  if (v === "active") return "active";
+  if (v === "disabled" || v === "inactive") return "suspended";
+  return "monitor";
+};
+
+const loadCarriers = async () => {
+  const rows = await logisticsApi.listCarriers();
+  carriers.value = rows.map((row) => {
+    const cfg = (row.config || {}) as Record<string, any>;
+    const cap = (row.capabilities || {}) as Record<string, any>;
+    const onTimeRate = Number(cfg.onTimeRate ?? cfg.on_time_rate ?? 0);
+    const rating = Number(cfg.rating ?? 0);
+    const avgHours = Number(cfg.avgHours ?? cfg.avg_hours ?? 0);
+    return {
+      id: row.id,
+      name: row.name || row.code,
+      coverage: String(cap.coverage || row.type || "未配置"),
+      contact: row.contactName || "-",
+      phone: row.contactPhone || "-",
+      status: normalizeStatus(row.status),
+      avgTime: avgHours > 0 ? `${(avgHours / 24).toFixed(1)} 天` : "-",
+      onTimeRate,
+      rating,
+    };
+  });
+};
+
+onMounted(() => {
+  loadCarriers();
+});
 
 const statusOptions = [
   { label: "全部状态", value: "" },
@@ -182,7 +172,7 @@ const columns = computed<TableColumn<Carrier>[]>(() => [
   {
     accessorKey: "onTimeRate",
     header: "准时率",
-    cell: ({ getValue }) => `${getValue().toFixed(1)}%`,
+    cell: ({ getValue }) => `${Number(getValue() || 0).toFixed(1)}%`,
   },
   { accessorKey: "rating", header: "评分" },
   { accessorKey: "status", header: "状态" },
@@ -219,29 +209,30 @@ const getStatusMeta = (status: CarrierStatus | "") => {
   }
 };
 
-const summaryCards = computed(() => [
-  {
-    title: "合作承运商",
-    value: carriers.value.filter((item) => item.status === "active").length,
-    trend: 1.2,
-  },
-  {
-    title: "平均准时率",
-    value:
-      (
-        carriers.value.reduce((sum, carrier) => sum + carrier.onTimeRate, 0) /
-        carriers.value.length
-      ).toFixed(1) + "%",
-    trend: 0.6,
-  },
-  {
-    title: "平均评分",
-    value:
-      (
-        carriers.value.reduce((sum, carrier) => sum + carrier.rating, 0) /
-        carriers.value.length
+const summaryCards = computed(() => {
+  const total = carriers.value.length || 1;
+  return [
+    {
+      title: "合作承运商",
+      value: carriers.value.filter((item) => item.status === "active").length,
+      trend: 0,
+    },
+    {
+      title: "平均准时率",
+      value:
+        (
+          carriers.value.reduce((sum, carrier) => sum + carrier.onTimeRate, 0) /
+          total
+        ).toFixed(1) + "%",
+      trend: 0,
+    },
+    {
+      title: "平均评分",
+      value: (
+        carriers.value.reduce((sum, carrier) => sum + carrier.rating, 0) / total
       ).toFixed(1),
-    trend: -0.3,
-  },
-]);
+      trend: 0,
+    },
+  ];
+});
 </script>

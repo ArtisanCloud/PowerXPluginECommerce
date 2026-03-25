@@ -102,6 +102,7 @@
 
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
+import { useLogisticsApi } from "~/composables/api";
 
 definePageMeta({
   name: "shipping-waybills",
@@ -118,6 +119,7 @@ type TimelineNode = {
 };
 
 type Waybill = {
+  id: string;
   orderNo: string;
   waybillNo: string;
   carrier: string;
@@ -128,75 +130,64 @@ type Waybill = {
   timeline: TimelineNode[];
 };
 
-const waybills = ref<Waybill[]>([
-  {
-    orderNo: "SO2024021001",
-    waybillNo: "SF123456789",
-    carrier: "顺丰速运",
-    channel: "自营商城",
-    status: "in-transit",
-    progress: 60,
-    eta: "2 月 12 日",
-    timeline: [
-      { time: "02-10 09:30", city: "上海", status: "已揽收", message: "顺丰快递员已揽收包裹" },
-      { time: "02-10 18:10", city: "上海转运中心", status: "出发", message: "包裹已发往北京集散中心" },
-      {
-        time: "02-11 08:20",
-        city: "北京集散中心",
-        status: "到达",
-        message: "包裹到达目的地集散中心",
-      },
-    ],
-  },
-  {
-    orderNo: "SO2024020908",
-    waybillNo: "JD987654321",
-    carrier: "京东物流",
-    channel: "京东自营",
-    status: "delivered",
-    progress: 100,
-    eta: "已签收",
-    timeline: [
-      {
-        time: "02-08 10:05",
-        city: "广州",
-        status: "已揽收",
-        message: "京东快递揽收完成",
-      },
-      {
-        time: "02-09 14:22",
-        city: "武汉",
-        status: "派送中",
-        message: "派送员正在派送",
-      },
-      {
-        time: "02-09 18:40",
-        city: "武汉",
-        status: "已签收",
-        message: "客户签收完成",
-      },
-    ],
-  },
-  {
-    orderNo: "SO2024020703",
-    waybillNo: "YT246801357",
-    carrier: "圆通速递",
-    channel: "天猫旗舰店",
-    status: "delay",
-    progress: 42,
-    eta: "待定",
-    timeline: [
-      { time: "02-07 11:05", city: "深圳", status: "已揽收", message: "包裹入仓" },
-      {
-        time: "02-08 19:40",
-        city: "长沙转运中心",
-        status: "异常",
-        message: "天气原因导致航班延误",
-        exception: "延误预警",
-      },
-    ],
-  },
-]);
+const logisticsApi = useLogisticsApi();
+const waybills = ref<Waybill[]>([]);
+const carrierMap = ref<Record<string, string>>({});
+
+const normalizeStatus = (status: string): WaybillStatus => {
+  const v = String(status || "").toLowerCase();
+  if (v === "delivered" || v === "signed") return "delivered";
+  if (v === "delay" || v === "exception") return "delay";
+  if (v === "in_transit" || v === "in-transit" || v === "shipping") return "in-transit";
+  return "created";
+};
+
+const progressByStatus = (status: WaybillStatus): number => {
+  switch (status) {
+    case "delivered":
+      return 100;
+    case "delay":
+      return 45;
+    case "in-transit":
+      return 60;
+    default:
+      return 15;
+  }
+};
+
+const loadWaybills = async () => {
+  const [carriers, rows] = await Promise.all([
+    logisticsApi.listCarriers(),
+    logisticsApi.listWaybills(),
+  ]);
+  carrierMap.value = Object.fromEntries(carriers.map((item) => [item.id, item.name]));
+  waybills.value = rows.map((row) => {
+    const status = normalizeStatus(row.status);
+    return {
+      id: row.id,
+      orderNo: row.orderId,
+      waybillNo: row.waybillNo,
+      carrier: carrierMap.value[row.carrierId] || row.carrierId,
+      channel: row.serviceCode || "标准",
+      status,
+      progress: progressByStatus(status),
+      eta: status === "delivered" ? "已签收" : "待更新",
+      timeline: [],
+    };
+  });
+};
+
+const loadWaybillDetail = async (waybill: Waybill) => {
+  const detail = await logisticsApi.getWaybillDetail(waybill.id);
+  const timeline: TimelineNode[] = detail.tracking.map((node) => ({
+    time: node.occurredAt ? node.occurredAt.replace("T", " ").slice(0, 16) : "-",
+    city: String(node.payload?.city || "-"),
+    status: node.status,
+    message: node.description || "-",
+    exception: node.status === "exception" ? "异常" : undefined,
+  }));
+  waybill.timeline = timeline;
+};
 
 const keyword = ref("");
 const carrierFilter = ref("");
@@ -245,22 +236,33 @@ const filteredWaybills = computed(() =>
 
 watch(
   filteredWaybills,
-  (list) => {
+  async (list) => {
     if (!selectedWaybill.value && list.length) {
       selectedWaybill.value = list[0];
-    } else if (
+      await loadWaybillDetail(list[0]);
+      return;
+    }
+    if (
       selectedWaybill.value &&
       !list.some((waybill) => waybill.waybillNo === selectedWaybill.value?.waybillNo)
     ) {
       selectedWaybill.value = list[0] ?? null;
+      if (list[0]) {
+        await loadWaybillDetail(list[0]);
+      }
     }
   },
   { immediate: true },
 );
 
-const selectWaybill = (waybill: Waybill) => {
+const selectWaybill = async (waybill: Waybill) => {
   selectedWaybill.value = waybill;
+  await loadWaybillDetail(waybill);
 };
+
+onMounted(async () => {
+  await loadWaybills();
+});
 
 const statusMeta = (status: WaybillStatus | "") => {
   switch (status) {
@@ -277,3 +279,4 @@ const statusMeta = (status: WaybillStatus | "") => {
   }
 };
 </script>
+

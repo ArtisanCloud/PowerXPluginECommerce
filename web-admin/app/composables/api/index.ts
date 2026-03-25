@@ -15,6 +15,7 @@ export * from "./useCapabilityRegistry";
 export * from "./useCapabilityExposure";
 export * from "./useCapabilityLifecycle";
 export * from "./useMcpSession";
+export * from "./useLogistics";
 export {
   useApiClient,
   apiGet,

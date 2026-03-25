@@ -115,6 +115,7 @@
 
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
+import { useLogisticsApi } from "~/composables/api";
 
 definePageMeta({
   name: "shipping-templates",
@@ -135,54 +136,52 @@ type Template = {
   lastUpdate: string;
 };
 
-const templates = ref<Template[]>([
-  {
-    id: "TMP-001",
-    name: "全国标准模板",
-    channel: "自营商城",
-    billing: "weight",
-    status: "enabled",
-    defaultRule: { region: "大陆 1kg 内", fee: "¥12" },
-    lastUpdate: "2024-02-10",
-  },
-  {
-    id: "TMP-002",
-    name: "华南极速达",
-    channel: "京东自营",
-    billing: "piece",
-    status: "enabled",
-    defaultRule: { region: "珠三角", fee: "¥15" },
-    lastUpdate: "2024-02-08",
-  },
-  {
-    id: "TMP-003",
-    name: "跨境保税仓",
-    channel: "天猫国际",
-    billing: "weight",
-    status: "disabled",
-    defaultRule: { region: "保税区入仓", fee: "¥28" },
-    lastUpdate: "2024-01-30",
-  },
-]);
+const logisticsApi = useLogisticsApi();
+const templates = ref<Template[]>([]);
 
-const heatmap = ref([
-  {
-    id: "RT-1",
-    name: "华北 → 华东",
-    channel: "自营商城",
-    baseFee: "¥13",
-    extraFee: "¥3 /kg",
-    leadTime: "2.2 天",
-  },
-  {
-    id: "RT-2",
-    name: "华南 → 华中",
-    channel: "京东自营",
-    baseFee: "¥15",
-    extraFee: "¥2.5 /kg",
-    leadTime: "1.8 天",
-  },
-]);
+const normalizeBilling = (v: string): BillingType => {
+  const val = String(v || "").toLowerCase();
+  if (val === "piece") return "piece";
+  if (val === "volume") return "volume";
+  return "weight";
+};
+
+const loadTemplates = async () => {
+  const rows = await logisticsApi.listTemplates();
+  templates.value = rows.map((row) => {
+    const channels = Array.isArray(row.channels) ? row.channels : [];
+    const rules = (row.rules || {}) as Record<string, any>;
+    const defaultZone = (rules.defaultZone || rules.default_zone || {}) as Record<string, any>;
+    const baseFee = Number(defaultZone.firstFee ?? defaultZone.first_fee ?? 0);
+    return {
+      id: row.id,
+      name: row.name,
+      channel: String(channels[0] || "未配置"),
+      billing: normalizeBilling(String(rules.billing || rules.billing_type || "weight")),
+      status: row.status === "published" ? "enabled" : "disabled",
+      defaultRule: {
+        region: String(defaultZone.region || "默认区域"),
+        fee: `¥${baseFee.toFixed(2)}`,
+      },
+      lastUpdate: row.updatedAt ? row.updatedAt.slice(0, 10) : "-",
+    };
+  });
+};
+
+onMounted(() => {
+  loadTemplates();
+});
+
+const heatmap = computed(() =>
+  templates.value.slice(0, 4).map((item, idx) => ({
+    id: item.id,
+    name: item.defaultRule.region,
+    channel: item.channel,
+    baseFee: item.defaultRule.fee,
+    extraFee: "按规则计算",
+    leadTime: `${1.5 + idx * 0.3} 天`,
+  })),
+);
 
 const keyword = ref("");
 const channelFilter = ref("");
@@ -216,7 +215,7 @@ const columns = computed<TableColumn<Template>[]>(() => [
         piece: "按件数",
         volume: "按体积",
       };
-      return map[getValue()];
+      return map[getValue() as BillingType] || "按重量";
     },
   },
   { accessorKey: "defaultRule", header: "基础规则" },
@@ -237,3 +236,4 @@ const filteredTemplates = computed(() =>
   }),
 );
 </script>
+
