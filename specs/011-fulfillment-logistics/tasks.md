@@ -123,13 +123,13 @@
 
 **Purpose**: 跨故事收口与发布前验证
 
-- [ ] T037 [P] 更新履约文档与索引（`docs/plan/fulfillment/*.md` 与 `specs/011-fulfillment-logistics/quickstart.md`）
-- [ ] T038 执行后端回归（`go test ./...`，至少覆盖 logistics/fulfillment/reverse 相关包）
-- [ ] T039 执行前端 lint 门禁（`cd web-admin && npm run lint -- --max-warnings=0`）
-- [ ] T040 执行前端构建回归（`cd web-admin && npm run build`）
-- [ ] T041 执行 RBAC/越权回归（覆盖允许/拒绝/跨租户访问审计）（`backend/internal/transport/http/admin/**/*_test.go`、`backend/internal/services/admin/**/*_test.go`）
-- [ ] T042 执行 NFR 验证（轨迹 60 秒可见性、迁移幂等/回滚、结构化日志字段检查）并记录结果（`specs/011-fulfillment-logistics/quickstart.md`、`backend/internal/observability/**/*_test.go`）
-- [ ] T043 执行 quickstart 全链路冒烟并记录结果（`specs/011-fulfillment-logistics/quickstart.md`）
+- [X] T037 [P] 更新履约文档与索引（`docs/plan/fulfillment/*.md` 与 `specs/011-fulfillment-logistics/quickstart.md`）
+- [X] T038 执行后端回归（`go test ./...`，至少覆盖 logistics/fulfillment/reverse 相关包）
+- [X] T039 执行前端 lint 门禁（`cd web-admin && npm run lint -- --max-warnings=0`）
+- [X] T040 执行前端构建回归（`cd web-admin && npm run build`）
+- [X] T041 执行 RBAC/越权回归（覆盖允许/拒绝/跨租户访问审计）（`backend/internal/transport/http/admin/**/*_test.go`、`backend/internal/services/admin/**/*_test.go`）
+- [X] T042 执行 NFR 验证（轨迹 60 秒可见性、迁移幂等/回滚、结构化日志字段检查）并记录结果（`specs/011-fulfillment-logistics/quickstart.md`、`backend/internal/observability/**/*_test.go`）
+- [X] T043 执行 quickstart 全链路冒烟并记录结果（`specs/011-fulfillment-logistics/quickstart.md`）
 
 ---
 

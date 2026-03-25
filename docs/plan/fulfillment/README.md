@@ -101,6 +101,7 @@
 
 ## 11. 文档索引
 - `index.md`
+- `specs/011-fulfillment-logistics/quickstart.md`（实现回归与发布前门禁执行记录）
 - `shipping.md`
 - `reverse-logistics.md`
 - `tasks.md`

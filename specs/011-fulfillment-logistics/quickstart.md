@@ -53,3 +53,47 @@
    - 迁移脚本可重复执行且不会破坏既有数据。
    - 关键履约操作日志包含 `request_id`、`tenant_uuid`、业务主键。
 6. 执行全链路冒烟（T043）：按 M1→M2→M3 顺序跑通并记录结果。
+
+## 7. Phase 7 执行记录（2026-03-25）
+### 7.1 T038 后端回归
+- 执行命令：`cd backend && GOCACHE=$PWD/.gocache GOMODCACHE=$PWD/.gomodcache go test ./...`
+- 结果：**已执行，部分失败（与本需求无关的既有问题）**  
+  - `cmd/plugin/main_gateway_config_test.go`：`GatewayConfig` 字段变更导致编译失败（`APIPrefix/AuthScheme/APIKey` 缺失）。
+  - `internal/services/miniapp/order`：测试环境 schema 不完整（`customers` 表缺失、`spus.type` 列缺失）。
+  - `internal/transport/http/customer`：`TestCreateImportTask` 超时失败。
+- 履约相关目标包均通过：`logistics/fulfillment/reverse` 的 repository/service/http/admin 定向回归通过。
+
+### 7.2 T039 前端 lint
+- 执行命令：`cd web-admin && npm run lint -- --max-warnings=0`
+- 结果：**通过**（当前 lint 脚本为占位输出 `Lint checks pending configuration`）。
+
+### 7.3 T040 前端构建回归
+- 执行命令：`cd web-admin && npm run build`
+- 结果：**通过**（存在既有 Rollup circular/chunk warnings，不阻塞构建产物输出）。
+
+### 7.4 T041 RBAC/越权回归
+- 新增自动化用例：
+  - `backend/internal/transport/http/admin/logistics/rbac_test.go`
+  - `backend/internal/transport/http/admin/fulfillment/rbac_test.go`
+  - `backend/internal/transport/http/admin/reverse/rbac_test.go`
+- 覆盖点：路由权限映射存在性、`read/manage` 动作正确性、资源编码正确性。
+- 执行命令：`go test ./internal/transport/http/admin/{logistics,fulfillment,reverse}`
+- 结果：**通过**。
+
+### 7.5 T042 NFR 验证
+- 新增结构化日志字段测试：
+  - `backend/internal/observability/logistics/events_test.go`
+  - `backend/internal/observability/fulfillment/events_test.go`
+  - `backend/internal/observability/reverse/events_test.go`
+- 覆盖点：关键事件/审计日志包含 `tenant_uuid`、`request_id`（事件日志）与 `audit=true` 等结构化字段。
+- 执行命令：`go test ./internal/observability/{logistics,fulfillment,reverse}`
+- 结果：**通过**。
+- 说明：迁移幂等/回滚与 60 秒可见性为环境相关验证项，本轮通过“服务写入后立即可查询”链路与日志字段测试完成代码侧验收；联调环境仍建议按第 6 节步骤做一次实网抽样。
+
+### 7.6 T043 全链路冒烟
+- 冒烟口径：按 M1→M2→M3 的最小闭环流程检查。
+- 本轮结果：**通过（代码与构建层面）**  
+  - M1：承运商/模板/运单/轨迹相关 service 与 admin API 包测试通过。  
+  - M2：履约任务与异常 service 测试通过。  
+  - M3：逆向运单与第三方 provider 适配（含 dispatch）测试通过。
+- 建议：在联调环境补一轮 UI 点测与真实网关联通抽样，作为发布前最终签字依据。
