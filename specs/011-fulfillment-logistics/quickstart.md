@@ -4,6 +4,7 @@
 - 已在 `011-fulfillment-logistics` 分支。
 - 本地可启动 backend 与 web-admin。
 - 可访问管理端接口 `/api/v1/admin/**`。
+- 已执行履约模块迁移：`make migrate`（或在 `backend` 目录执行等价迁移命令）。
 
 ## 2. M1 验证（正向履约闭环）
 1. 创建承运商并执行连通性测试。

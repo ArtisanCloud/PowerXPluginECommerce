@@ -155,4 +155,18 @@ const (
 	TablePaymentRefunds             = "payment_refunds"
 	TablePaymentManualReviews       = "payment_manual_reviews"
 	TablePaymentManualReviewLogs    = "payment_manual_review_logs"
+
+	// Fulfillment & Logistics
+	TableLogisticsCarriers              = "logistics_carriers"
+	TableLogisticsCarrierServices       = "logistics_carrier_services"
+	TableLogisticsRateTemplates         = "logistics_rate_templates"
+	TableLogisticsRateZones             = "logistics_rate_zones"
+	TableLogisticsWaybills              = "logistics_waybills"
+	TableLogisticsTrackingEvents        = "logistics_tracking_events"
+	TableFulfillmentTasks               = "fulfillment_tasks"
+	TableFulfillmentTaskLogs            = "fulfillment_task_logs"
+	TableFulfillmentExceptions          = "fulfillment_exceptions"
+	TableReverseWaybills                = "reverse_waybills"
+	TableReverseWaybillTrackingEvents   = "reverse_waybill_tracking_events"
+	TableReverseWaybillWarehouseResults = "reverse_waybill_warehouse_results"
 )

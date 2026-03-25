@@ -29,12 +29,12 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 定义物流域模型常量与表名映射（`backend/internal/entity/models/model.go` + `backend/internal/entity/models/logistics/*.go`）
-- [ ] T005 [P] 实现物流域 Repository 基类与 tenant 事务接入（`backend/internal/entity/repository/logistics/*.go`）
-- [ ] T006 [P] 实现履约/逆向域 Repository 基类与 tenant 事务接入（`backend/internal/entity/repository/fulfillment/*.go`、`backend/internal/entity/repository/reverse/*.go`）
-- [ ] T007 注册迁移入口并补充迁移说明（`backend/cmd/database/migrate/migrate.go`、`specs/011-fulfillment-logistics/quickstart.md`）
-- [ ] T008 [P] 定义 RBAC scope 与 admin 路由挂载（`backend/internal/transport/http/admin/*/rbac.go`、`backend/internal/transport/http/admin/*/routes.go`）
-- [ ] T009 [P] 实现履约域审计/事件基础能力（`backend/internal/observability/{logistics,fulfillment,reverse}/*.go`）
+- [X] T004 定义物流域模型常量与表名映射（`backend/internal/entity/models/model.go` + `backend/internal/entity/models/logistics/*.go`）
+- [X] T005 [P] 实现物流域 Repository 基类与 tenant 事务接入（`backend/internal/entity/repository/logistics/*.go`）
+- [X] T006 [P] 实现履约/逆向域 Repository 基类与 tenant 事务接入（`backend/internal/entity/repository/fulfillment/*.go`、`backend/internal/entity/repository/reverse/*.go`）
+- [X] T007 注册迁移入口并补充迁移说明（`backend/cmd/database/migrate/migrate.go`、`specs/011-fulfillment-logistics/quickstart.md`）
+- [X] T008 [P] 定义 RBAC scope 与 admin 路由挂载（`backend/internal/transport/http/admin/*/rbac.go`、`backend/internal/transport/http/admin/*/routes.go`）
+- [X] T009 [P] 实现履约域审计/事件基础能力（`backend/internal/observability/{logistics,fulfillment,reverse}/*.go`）
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
