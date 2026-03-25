@@ -91,11 +91,11 @@
 
 ### Implementation for User Story 3
 
-- [ ] T027 [P] [US3] 实现 ReverseWaybill 与相关日志模型/仓储（`backend/internal/entity/models/reverse/*.go`、`backend/internal/entity/repository/reverse/*_repository.go`）
-- [ ] T028 [US3] 实现逆向物流 Service（创建、轨迹、回仓结论、补偿衔接）（`backend/internal/services/admin/reverse/waybill_service.go`）
-- [ ] T029 [US3] 实现逆向 admin HTTP Handler 与路由（`backend/internal/transport/http/admin/reverse/{handler.go,routes.go,dto.go}`）
-- [ ] T030 [US3] 对齐 web-admin 逆向入口与详情展示（`web-admin/app/pages/shipping/reverse-waybills.vue`）
-- [ ] T031 [US3] 增加 US3 回归测试（逆向状态流转、回仓结论约束）（`backend/internal/services/admin/reverse/*_test.go`）
+- [X] T027 [P] [US3] 实现 ReverseWaybill 与相关日志模型/仓储（`backend/internal/entity/models/reverse/*.go`、`backend/internal/entity/repository/reverse/*_repository.go`）
+- [X] T028 [US3] 实现逆向物流 Service（创建、轨迹、回仓结论、补偿衔接）（`backend/internal/services/admin/reverse/waybill_service.go`）
+- [X] T029 [US3] 实现逆向 admin HTTP Handler 与路由（`backend/internal/transport/http/admin/reverse/{handler.go,routes.go,dto.go}`）
+- [X] T030 [US3] 对齐 web-admin 逆向入口与详情展示（`web-admin/app/pages/shipping/reverse-waybills.vue`）
+- [X] T031 [US3] 增加 US3 回归测试（逆向状态流转、回仓结论约束）（`backend/internal/services/admin/reverse/*_test.go`）
 
 **Checkpoint**: User Stories 1~3 are independently functional
 

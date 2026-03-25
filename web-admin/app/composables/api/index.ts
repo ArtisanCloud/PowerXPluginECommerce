@@ -17,6 +17,7 @@ export * from "./useCapabilityLifecycle";
 export * from "./useMcpSession";
 export * from "./useLogistics";
 export * from "./useFulfillment";
+export * from "./useReverse";
 export {
   useApiClient,
   apiGet,
