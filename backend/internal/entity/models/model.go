@@ -165,6 +165,8 @@ const (
 	TableLogisticsTrackingEvents        = "logistics_tracking_events"
 	TableFulfillmentTasks               = "fulfillment_tasks"
 	TableFulfillmentTaskLogs            = "fulfillment_task_logs"
+	TableFulfillmentWaves               = "fulfillment_waves"
+	TableFulfillmentWaveTaskLinks       = "fulfillment_wave_task_links"
 	TableFulfillmentExceptions          = "fulfillment_exceptions"
 	TableReverseWaybills                = "reverse_waybills"
 	TableReverseWaybillTrackingEvents   = "reverse_waybill_tracking_events"

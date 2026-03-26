@@ -61,6 +61,50 @@ func (r *WaybillRepository) GetByWaybillNo(ctx context.Context, waybillNo string
 	return &row, nil
 }
 
+func (r *WaybillRepository) ListByOrderID(ctx context.Context, orderID string) ([]LogisticsModel.Waybill, error) {
+	tenantUUID, err := RequireTenantUUID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var rows []LogisticsModel.Waybill
+	err = r.DB.WithContext(ctx).
+		Where("tenant_uuid = ? AND order_id = ?", tenantUUID, strings.TrimSpace(orderID)).
+		Order("package_no ASC, created_at ASC").
+		Find(&rows).Error
+	return rows, err
+}
+
+func (r *WaybillRepository) GetByOrderAndPackageKey(ctx context.Context, orderID, packageKey string) (*LogisticsModel.Waybill, error) {
+	tenantUUID, err := RequireTenantUUID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var row LogisticsModel.Waybill
+	err = r.DB.WithContext(ctx).
+		Where("tenant_uuid = ? AND order_id = ? AND package_key = ?", tenantUUID, strings.TrimSpace(orderID), strings.TrimSpace(packageKey)).
+		First(&row).Error
+	if err != nil {
+		return nil, err
+	}
+	return &row, nil
+}
+
+func (r *WaybillRepository) NextPackageNo(ctx context.Context, orderID string) (int, error) {
+	tenantUUID, err := RequireTenantUUID(ctx)
+	if err != nil {
+		return 0, err
+	}
+	var maxNo int
+	if err := r.DB.WithContext(ctx).
+		Model(&LogisticsModel.Waybill{}).
+		Where("tenant_uuid = ? AND order_id = ?", tenantUUID, strings.TrimSpace(orderID)).
+		Select("COALESCE(MAX(package_no), 0)").
+		Scan(&maxNo).Error; err != nil {
+		return 0, err
+	}
+	return maxNo + 1, nil
+}
+
 func (r *WaybillRepository) Create(ctx context.Context, waybill *LogisticsModel.Waybill) error {
 	if waybill == nil {
 		return gorm.ErrInvalidData

@@ -2,6 +2,7 @@ package logistics
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
@@ -14,6 +15,7 @@ import (
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/datatypes"
+	"gorm.io/gorm"
 )
 
 // WaybillService handles waybill creation/query/tracking flows.
@@ -41,11 +43,15 @@ func NewWaybillService(deps *app.Deps) *WaybillService {
 }
 
 type CreateWaybillRequest struct {
-	OrderID              string `json:"order_id"`
-	CarrierID            string `json:"carrier_id"`
-	ServiceCode          string `json:"service_code"`
-	WaybillNo            string `json:"waybill_no,omitempty"`
-	ManualFallbackReason string `json:"manual_fallback_reason,omitempty"`
+	OrderID              string   `json:"order_id"`
+	CarrierID            string   `json:"carrier_id"`
+	ServiceCode          string   `json:"service_code"`
+	WaybillNo            string   `json:"waybill_no,omitempty"`
+	ManualFallbackReason string   `json:"manual_fallback_reason,omitempty"`
+	PackageNo            int      `json:"package_no,omitempty"`
+	PackageKey           string   `json:"package_key,omitempty"`
+	ShipmentItems        []string `json:"shipment_items,omitempty"`
+	OrderItemCount       int      `json:"order_item_count,omitempty"`
 }
 
 type AppendTrackingRequest struct {
@@ -77,6 +83,24 @@ func (s *WaybillService) Create(ctx context.Context, tenantUUID string, req Crea
 	if strings.TrimSpace(req.OrderID) == "" || strings.TrimSpace(req.CarrierID) == "" || strings.TrimSpace(req.ServiceCode) == "" {
 		return nil, "", errors.New("order_id/carrier_id/service_code required")
 	}
+	req.ShipmentItems = normalizeShipmentItems(req.ShipmentItems)
+	packageNo := req.PackageNo
+	if packageNo <= 0 {
+		nextNo, err := s.waybillRepo.NextPackageNo(ctx, req.OrderID)
+		if err != nil {
+			return nil, "", err
+		}
+		packageNo = nextNo
+	}
+	packageKey := strings.TrimSpace(req.PackageKey)
+	if packageKey == "" {
+		packageKey = fmt.Sprintf("%s#%d", strings.TrimSpace(req.OrderID), packageNo)
+	}
+	if existing, err := s.waybillRepo.GetByOrderAndPackageKey(ctx, req.OrderID, packageKey); err == nil && existing != nil {
+		return existing, "replayed", nil
+	} else if err != nil && !errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, "", err
+	}
 	carrier, err := s.carrierRepo.GetByID(ctx, req.CarrierID)
 	if err != nil {
 		return nil, "", err
@@ -104,31 +128,68 @@ func (s *WaybillService) Create(ctx context.Context, tenantUUID string, req Crea
 	if waybillNo == "" {
 		waybillNo = fmt.Sprintf("WB%s", time.Now().UTC().Format("20060102150405"))
 	}
+	existing, err := s.waybillRepo.ListByOrderID(ctx, req.OrderID)
+	if err != nil {
+		return nil, "", err
+	}
+	orderItemCount := resolveOrderItemCount(req.OrderItemCount, existing)
+	orderFulfillmentStatus := calculateOrderFulfillmentStatus(existing, req.ShipmentItems, orderItemCount)
 	metadata := map[string]any{"provider": provider}
 	if adapterResult != nil && len(adapterResult.Metadata) > 0 {
 		metadata["adapter"] = adapterResult.Metadata
 	}
+	if len(req.ShipmentItems) > 0 {
+		metadata["shipment_items"] = req.ShipmentItems
+	}
+	if orderItemCount > 0 {
+		metadata["order_item_count"] = orderItemCount
+	}
+	metadata["package_no"] = packageNo
+	metadata["package_key"] = packageKey
+	metadata["order_fulfillment_status"] = orderFulfillmentStatus
 	if adapterErr != nil && strings.TrimSpace(req.ManualFallbackReason) != "" {
 		metadata["fallback"] = map[string]any{
 			"reason":  strings.TrimSpace(req.ManualFallbackReason),
 			"adapter": adapterErr.Error(),
 		}
 	}
+	shipmentItemsBytes, _ := jsonBytes(req.ShipmentItems, []byte("[]"))
 	metadataBytes, _ := jsonBytes(metadata, []byte("{}"))
 	wb := &LogisticsModel.Waybill{
-		ID:          utils.NewUUID(),
-		OrderID:     strings.TrimSpace(req.OrderID),
-		CarrierID:   strings.TrimSpace(req.CarrierID),
-		ServiceCode: strings.TrimSpace(resolvedServiceCode),
-		WaybillNo:   waybillNo,
-		Status:      "created",
-		Metadata:    datatypes.JSON(metadataBytes),
+		ID:                     utils.NewUUID(),
+		OrderID:                strings.TrimSpace(req.OrderID),
+		CarrierID:              strings.TrimSpace(req.CarrierID),
+		ServiceCode:            strings.TrimSpace(resolvedServiceCode),
+		WaybillNo:              waybillNo,
+		PackageNo:              packageNo,
+		PackageKey:             packageKey,
+		ShipmentItems:          datatypes.JSON(shipmentItemsBytes),
+		OrderItemCount:         orderItemCount,
+		OrderFulfillmentStatus: orderFulfillmentStatus,
+		Status:                 "created",
+		Metadata:               datatypes.JSON(metadataBytes),
 	}
 	if adapterResult != nil && strings.TrimSpace(adapterResult.Status) != "" {
 		wb.Status = strings.TrimSpace(adapterResult.Status)
 	}
 	if err := s.waybillRepo.Create(ctx, wb); err != nil {
 		return nil, "", err
+	}
+	for i := range existing {
+		needsSave := false
+		if existing[i].OrderFulfillmentStatus != orderFulfillmentStatus {
+			existing[i].OrderFulfillmentStatus = orderFulfillmentStatus
+			needsSave = true
+		}
+		if orderItemCount > 0 && existing[i].OrderItemCount != orderItemCount {
+			existing[i].OrderItemCount = orderItemCount
+			needsSave = true
+		}
+		if needsSave {
+			if err := s.waybillRepo.Save(ctx, &existing[i]); err != nil {
+				return nil, "", err
+			}
+		}
 	}
 	idemStatus := "created"
 	s.emitEvent(tenantUUID, wb.WaybillNo, wb.Status, "waybill.create", idemStatus)
@@ -268,4 +329,64 @@ func (s *WaybillService) resolveAdapter(carrier *LogisticsModel.Carrier) (integr
 		}
 	}
 	return integrations.NewSelfAdapter("self"), "self"
+}
+
+func normalizeShipmentItems(items []string) []string {
+	if len(items) == 0 {
+		return nil
+	}
+	seen := make(map[string]struct{}, len(items))
+	cleaned := make([]string, 0, len(items))
+	for _, item := range items {
+		val := strings.TrimSpace(item)
+		if val == "" {
+			continue
+		}
+		if _, ok := seen[val]; ok {
+			continue
+		}
+		seen[val] = struct{}{}
+		cleaned = append(cleaned, val)
+	}
+	return cleaned
+}
+
+func resolveOrderItemCount(requestCount int, existing []LogisticsModel.Waybill) int {
+	maxCount := requestCount
+	for i := range existing {
+		if existing[i].OrderItemCount > maxCount {
+			maxCount = existing[i].OrderItemCount
+		}
+	}
+	return maxCount
+}
+
+func calculateOrderFulfillmentStatus(existing []LogisticsModel.Waybill, shipmentItems []string, orderItemCount int) string {
+	if orderItemCount <= 0 {
+		return "partial_shipped"
+	}
+	shipped := make(map[string]struct{}, orderItemCount)
+	for i := range existing {
+		for _, item := range extractShipmentItems(existing[i].ShipmentItems) {
+			shipped[item] = struct{}{}
+		}
+	}
+	for _, item := range shipmentItems {
+		shipped[item] = struct{}{}
+	}
+	if len(shipped) >= orderItemCount {
+		return "fully_shipped"
+	}
+	return "partial_shipped"
+}
+
+func extractShipmentItems(raw datatypes.JSON) []string {
+	if len(raw) == 0 {
+		return nil
+	}
+	var items []string
+	if err := json.Unmarshal(raw, &items); err != nil {
+		return nil
+	}
+	return normalizeShipmentItems(items)
 }

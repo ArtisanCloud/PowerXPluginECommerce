@@ -15,6 +15,7 @@ type Handler struct {
 	carrierSvc *logisticssvc.CarrierService
 	rateSvc    *logisticssvc.RateTemplateService
 	waybillSvc *logisticssvc.WaybillService
+	billingSvc *logisticssvc.BillingService
 	webhookSvc *logisticssvc.WebhookService
 }
 
@@ -22,9 +23,10 @@ func NewHandler(
 	carrierSvc *logisticssvc.CarrierService,
 	rateSvc *logisticssvc.RateTemplateService,
 	waybillSvc *logisticssvc.WaybillService,
+	billingSvc *logisticssvc.BillingService,
 	webhookSvc *logisticssvc.WebhookService,
 ) *Handler {
-	return &Handler{carrierSvc: carrierSvc, rateSvc: rateSvc, waybillSvc: waybillSvc, webhookSvc: webhookSvc}
+	return &Handler{carrierSvc: carrierSvc, rateSvc: rateSvc, waybillSvc: waybillSvc, billingSvc: billingSvc, webhookSvc: webhookSvc}
 }
 
 func (h *Handler) ListCarriers(c *gin.Context) {
@@ -200,6 +202,10 @@ func (h *Handler) CreateWaybill(c *gin.Context) {
 		ServiceCode:          strings.TrimSpace(payload.ServiceCode),
 		WaybillNo:            strings.TrimSpace(payload.WaybillNo),
 		ManualFallbackReason: strings.TrimSpace(payload.ManualFallbackReason),
+		PackageNo:            payload.PackageNo,
+		PackageKey:           strings.TrimSpace(payload.PackageKey),
+		ShipmentItems:        payload.ShipmentItems,
+		OrderItemCount:       payload.OrderItemCount,
 	})
 	if err != nil {
 		contracts.ResponseBadRequest(c, err.Error())
@@ -293,6 +299,70 @@ func (h *Handler) CancelWaybill(c *gin.Context) {
 		return
 	}
 	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) UpdateWaybillCost(c *gin.Context) {
+	if h == nil || h.billingSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "logistics billing service unavailable", nil)
+		return
+	}
+	waybillID := strings.TrimSpace(c.Param("id"))
+	if waybillID == "" {
+		contracts.ResponseBadRequest(c, "waybill id is required")
+		return
+	}
+	var payload updateWaybillCostRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		contracts.ResponseBadRequest(c, "invalid request body: "+err.Error())
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.billingSvc.UpdateWaybillCost(c.Request.Context(), tenantUUID, waybillID, logisticssvc.UpdateWaybillCostRequest{
+		ActualFeeAmount: payload.ActualFeeAmount,
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) BillingSummary(c *gin.Context) {
+	if h == nil || h.billingSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "logistics billing service unavailable", nil)
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	query := logisticssvc.BillingQuery{
+		CarrierID: strings.TrimSpace(c.Query("carrier_id")),
+		From:      strings.TrimSpace(c.Query("from")),
+		To:        strings.TrimSpace(c.Query("to")),
+	}
+	snapshot, err := h.billingSvc.Snapshot(c.Request.Context(), tenantUUID, query)
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, snapshot)
+}
+
+func (h *Handler) ExportBilling(c *gin.Context) {
+	if h == nil || h.billingSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "logistics billing service unavailable", nil)
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	query := logisticssvc.BillingQuery{
+		CarrierID: strings.TrimSpace(c.Query("carrier_id")),
+		From:      strings.TrimSpace(c.Query("from")),
+		To:        strings.TrimSpace(c.Query("to")),
+	}
+	payload, err := h.billingSvc.ExportPayload(c.Request.Context(), tenantUUID, query, strings.TrimSpace(c.Query("format")))
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, payload)
 }
 
 func (h *Handler) HandleWebhook(c *gin.Context) {

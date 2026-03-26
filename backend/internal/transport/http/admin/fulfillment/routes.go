@@ -18,11 +18,17 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	}
 	handler := NewHandler(
 		fulfillmentsvc.NewTaskService(deps),
+		fulfillmentsvc.NewWaveService(deps),
 		fulfillmentsvc.NewExceptionService(deps),
 	)
 	rg.GET("/tasks", handler.ListTasks)
 	rg.POST("/tasks", handler.CreateTask)
 	rg.PATCH("/tasks/:id/complete", handler.CompleteTask)
+	rg.GET("/waves", handler.ListWaves)
+	rg.POST("/waves", handler.CreateWave)
+	rg.GET("/waves/:id", handler.GetWave)
+	rg.PATCH("/waves/:id/advance", handler.AdvanceWave)
+	rg.PATCH("/waves/:id/tasks/:task_id/reassign", handler.ReassignWaveTask)
 	rg.GET("/exceptions", handler.ListExceptions)
 	rg.POST("/exceptions", handler.ReportException)
 	return rg

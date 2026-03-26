@@ -133,6 +133,42 @@
 
 ---
 
+## Phase 8: Iteration-2 - User Story 5/6/7（履约增强）
+
+**Purpose**: 在既有履约闭环基础上补齐高频运营能力（部分发货、多包裹、波次批量、成本对账）。
+
+### User Story 5 - 一单多包裹与部分发货（P1）
+
+- [X] T044 [P] [US5] 扩展运单模型支持订单多包裹标识与包裹序号（`backend/internal/entity/models/logistics/waybill*.go`）
+- [X] T045 [US5] 实现订单履约聚合状态计算（部分发货/全部发货）（`backend/internal/services/admin/logistics/waybill_service.go`）
+- [X] T046 [US5] 扩展运单创建接口支持包裹级明细（`backend/internal/transport/http/admin/logistics/{dto.go,handler.go}`）
+- [X] T047 [US5] 在运单页面展示同订单多包裹分组与聚合状态（`web-admin/app/pages/shipping/waybills.vue`）
+- [X] T048 [US5] 增加 US5 回归测试（部分发货、重复补发幂等、状态聚合一致性）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### User Story 6 - 波次拣货与批量履约（P2）
+
+- [X] T049 [P] [US6] 新增波次模型与仓储（`backend/internal/entity/models/fulfillment/wave*.go`、`backend/internal/entity/repository/fulfillment/wave*_repository.go`）
+- [X] T050 [US6] 实现波次创建/挂接/批量推进服务（`backend/internal/services/admin/fulfillment/wave_service.go`）
+- [X] T051 [US6] 实现波次 admin HTTP Handler 与路由（`backend/internal/transport/http/admin/fulfillment/{wave_handler.go,routes.go,dto.go}`）
+- [X] T052 [US6] 新增波次管理页面（创建、批量执行、失败回执）（`web-admin/app/pages/shipping/waves.vue`）
+- [X] T053 [US6] 增加 US6 回归测试（批量部分失败、重分配、审计字段）（`backend/internal/services/admin/fulfillment/*_test.go`）
+
+### User Story 7 - 履约成本与承运商对账（P3）
+
+- [X] T054 [P] [US7] 扩展运单成本字段与对账投影仓储（`backend/internal/entity/models/logistics/waybill*.go`、`backend/internal/entity/repository/logistics/billing*_repository.go`）
+- [X] T055 [US7] 实现成本回填与差异计算服务（`backend/internal/services/admin/logistics/billing_service.go`）
+- [X] T056 [US7] 实现承运商账单查询与导出接口（`backend/internal/transport/http/admin/logistics/{billing_handler.go,routes.go,dto.go}`）
+- [X] T057 [US7] 新增对账页面（聚合统计、差异明细、导出入口）（`web-admin/app/pages/shipping/billing.vue`）
+- [X] T058 [US7] 增加 US7 回归测试（差异计算准确性、导出参数校验、租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### Iteration-2 Polish
+
+- [X] T059 [P] 更新 M4 quickstart 与执行记录模板（`specs/011-fulfillment-logistics/quickstart.md`）
+- [X] T060 执行 M4 后端回归（`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment`）
+- [X] T061 执行 M4 前端构建与页面回归（`cd web-admin && npm run build`）
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -141,7 +177,8 @@
 - **Foundational (Phase 2)**: Depends on Setup completion - BLOCKS all user stories
 - **User Stories (Phase 3+)**: Depend on Foundational completion
   - 建议按 P1 → P2 → P3(P3.1/P3.2)推进
-- **Polish (Phase 7)**: Depends on all target user stories completion
+- **Polish (Phase 7)**: Depends on M1~M3 completion
+- **Iteration-2 (Phase 8)**: Depends on Phase 7 completion
 
 ### User Story Dependencies
 
@@ -149,6 +186,9 @@
 - **US2 (P2)**: 依赖 US1 的订单到运单基础语义，但可独立验收任务/异常能力
 - **US3 (P3)**: 依赖售后上下文，可独立于 US2 实现
 - **US4 (P3)**: 依赖 US1 的运单/轨迹主流程，作为适配扩展层
+- **US5 (P1)**: 依赖 US1 的运单主流程，扩展为多包裹与部分发货
+- **US6 (P2)**: 依赖 US2 的任务模型，扩展波次批量执行
+- **US7 (P3)**: 依赖 US1/US4 的运单与承运商配置，补齐成本对账
 
 ### Within Each User Story
 

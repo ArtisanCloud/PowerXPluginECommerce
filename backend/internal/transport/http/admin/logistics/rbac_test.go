@@ -20,4 +20,13 @@ func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 	if perm.Resource != "com.powerx.plugins.ecommerce:logistics.waybill" {
 		t.Fatalf("unexpected resource %s", perm.Resource)
 	}
+
+	exportKey := "GET:/api/v1/admin/logistics/billing/export"
+	exportPerm, ok := entries[exportKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", exportKey)
+	}
+	if exportPerm.Action != "export" {
+		t.Fatalf("expected export action, got %s", exportPerm.Action)
+	}
 }

@@ -35,6 +35,17 @@
 - 三方接入不改变业务入口语义。
 - 逆向链路可闭环并记录回仓结论。
 
+## 4.1 M4 验证（履约增强：多包裹/波次/对账）
+1. 在同一订单下创建两个包裹运单（部分发货场景）。
+2. 查询订单履约聚合状态，确认先显示“部分发货”，全部发出后显示“全部发货”。
+3. 创建波次并执行批量推进，观察部分失败任务的逐条回执。
+4. 回填实际运费，查看承运商账单聚合与差异明细。
+
+预期结果：
+- 同一订单可关联多个包裹运单并可按包裹追踪。
+- 波次批量操作支持部分成功，不回滚已成功项。
+- 对账页面可展示预估/实际差异并支持导出。
+
 ## 5. 回归检查
 - 幂等：重复回调不产生重复记录。
 - 多租户：跨租户数据不可见不可改。
@@ -97,3 +108,23 @@
   - M2：履约任务与异常 service 测试通过。  
   - M3：逆向运单与第三方 provider 适配（含 dispatch）测试通过。
 - 建议：在联调环境补一轮 UI 点测与真实网关联通抽样，作为发布前最终签字依据。
+
+## 8. Iteration-2 执行记录（2026-03-26）
+### 8.1 T059 M4 quickstart 模板更新
+- 已补充 M4 验证章节（`4.1`），覆盖：
+  - 一单多包裹与部分发货聚合状态
+  - 波次批量推进与部分失败回执
+  - 履约成本回填与承运商对账导出
+
+### 8.2 T060 M4 后端回归
+- 执行命令：  
+  `cd backend && GOCACHE=$PWD/.gocache GOMODCACHE=$PWD/.gomodcache go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment`
+- 结果：**通过**
+
+### 8.3 T061 M4 前端构建与页面回归
+- 执行命令：`cd web-admin && npm run build`
+- 结果：**通过**（存在既有 Rollup circular/chunk warnings，不阻塞）
+- 页面范围：
+  - `shipping/waybills`（多包裹与部分发货展示）
+  - `shipping/waves`（波次管理）
+  - `shipping/billing`（履约成本对账）

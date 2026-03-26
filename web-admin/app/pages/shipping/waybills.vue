@@ -38,6 +38,26 @@
       </template>
 
       <UTable :columns="columns" :data="filteredWaybills">
+        <template #orderNo-cell="{ row }">
+          <div class="space-y-1">
+            <p class="font-medium text-gray-900 dark:text-white">{{ row.original.orderNo }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              {{ orderSummary(row.original).packageCount }} 包裹 ·
+              {{ orderStatusMeta(orderSummary(row.original).aggregateStatus).label }}
+            </p>
+          </div>
+        </template>
+        <template #packageNo-cell="{ row }">
+          <div class="flex items-center gap-2">
+            <UBadge color="neutral" variant="soft">包裹 #{{ row.original.packageNo }}</UBadge>
+            <span class="text-xs text-gray-500">{{ row.original.packageKey || "-" }}</span>
+          </div>
+        </template>
+        <template #orderFulfillmentStatus-cell="{ getValue }">
+          <UBadge :color="orderStatusMeta(getValue()).color" variant="subtle">
+            {{ orderStatusMeta(getValue()).label }}
+          </UBadge>
+        </template>
         <template #status-cell="{ getValue }">
           <UBadge :color="statusMeta(getValue()).color" variant="subtle">
             {{ statusMeta(getValue()).label }}
@@ -122,6 +142,10 @@ type Waybill = {
   id: string;
   orderNo: string;
   waybillNo: string;
+  packageNo: number;
+  packageKey: string;
+  orderFulfillmentStatus: "partial_shipped" | "fully_shipped";
+  shipmentItems: string[];
   carrier: string;
   channel: string;
   status: WaybillStatus;
@@ -167,6 +191,11 @@ const loadWaybills = async () => {
       id: row.id,
       orderNo: row.orderId,
       waybillNo: row.waybillNo,
+      packageNo: row.packageNo || 1,
+      packageKey: row.packageKey || "",
+      orderFulfillmentStatus:
+        row.orderFulfillmentStatus === "fully_shipped" ? "fully_shipped" : "partial_shipped",
+      shipmentItems: row.shipmentItems || [],
       carrier: carrierMap.value[row.carrierId] || row.carrierId,
       channel: row.serviceCode || "标准",
       status,
@@ -214,16 +243,25 @@ const statusOptions = [
 const columns = computed<TableColumn<Waybill>[]>(() => [
   { accessorKey: "orderNo", header: "订单号" },
   { accessorKey: "waybillNo", header: "运单号" },
+  { accessorKey: "packageNo", header: "包裹" },
   { accessorKey: "carrier", header: "承运商" },
   { accessorKey: "channel", header: "渠道" },
+  { accessorKey: "orderFulfillmentStatus", header: "订单履约" },
   { accessorKey: "status", header: "状态" },
   { accessorKey: "progress", header: "进度" },
   { accessorKey: "eta", header: "预计到达" },
   { id: "actions", header: "操作" },
 ]);
 
+const groupedWaybills = computed(() =>
+  [...waybills.value].sort((a, b) => {
+    if (a.orderNo === b.orderNo) return a.packageNo - b.packageNo;
+    return a.orderNo.localeCompare(b.orderNo);
+  }),
+);
+
 const filteredWaybills = computed(() =>
-  waybills.value.filter((waybill) => {
+  groupedWaybills.value.filter((waybill) => {
     const matchesKeyword =
       !keyword.value ||
       waybill.orderNo.includes(keyword.value) ||
@@ -278,5 +316,22 @@ const statusMeta = (status: WaybillStatus | "") => {
       return { label: "未知", color: "neutral" as const };
   }
 };
-</script>
 
+const orderSummary = (waybill: Waybill) => {
+  const siblings = waybills.value.filter((row) => row.orderNo === waybill.orderNo);
+  const aggregateStatus = siblings.some((row) => row.orderFulfillmentStatus === "fully_shipped")
+    ? "fully_shipped"
+    : "partial_shipped";
+  return {
+    packageCount: siblings.length,
+    aggregateStatus,
+  };
+};
+
+const orderStatusMeta = (status: string) => {
+  if (status === "fully_shipped") {
+    return { label: "全部发货", color: "success" as const };
+  }
+  return { label: "部分发货", color: "warning" as const };
+};
+</script>

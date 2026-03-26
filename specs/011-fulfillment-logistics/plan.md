@@ -9,6 +9,7 @@
 - M1：正向履约闭环（承运商+模板+运单+轨迹）
 - M2：履约任务与异常升级
 - M3：第三方承运商适配与逆向增强
+- M4：履约增强（部分发货与多包裹、波次批量执行、履约成本对账）
 
 技术路径采用现有 PowerXPlugin 分层架构（HTTP Handler → Service → Repository），保持多租户 RLS、RBAC、审计与事件一致性，避免引入平行机制。
 
@@ -22,7 +23,7 @@
 **Project Type**: Web application（backend + web-admin）  
 **Performance Goals**: 轨迹状态更新 1 分钟内可见；95% 订单可完成运单创建并进入可追踪状态  
 **Constraints**: 多租户隔离（tenant_uuid + RLS）；幂等键为“事件ID+运单号”；异常 24h 自动升级；保持宿主/standalone 语义一致  
-**Scale/Scope**: 面向单插件多租户运营场景，覆盖履约主链路 + 仓内任务 + 逆向 + 三方适配
+**Scale/Scope**: 面向单插件多租户运营场景，覆盖履约主链路 + 仓内任务 + 逆向 + 三方适配 + 履约增强对账
 
 ## Constitution Check
 
@@ -99,6 +100,13 @@ web-admin/
 1. 按 M1/M2/M3 将任务拆分为可独立验收的 stories。  
 2. 明确每个 story 的测试入口（API、页面、事件、异常场景）。  
 3. 生成后续 `/speckit.tasks` 所需输入（按优先级与依赖排序）。
+
+## Phase 3: Iteration-2 Planning (M4)
+
+1. 设计一单多包裹与部分发货模型扩展（订单聚合状态与包裹明细关联）。  
+2. 设计波次（Wave）实体、批量推进接口与部分失败回执协议。  
+3. 设计履约成本字段与承运商账单聚合/导出接口。  
+4. 规划 M4 独立验收路径并补充 quickstart。
 
 ## Complexity Tracking
 

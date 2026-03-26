@@ -8,6 +8,9 @@
         </p>
       </div>
       <div class="flex flex-wrap gap-2">
+        <UButton color="neutral" variant="ghost" icon="i-heroicons-queue-list" to="/shipping/waves">
+          波次管理
+        </UButton>
         <UInput v-model="newTask.orderId" class="w-40" placeholder="订单ID" />
         <UInput v-model="newTask.warehouseId" class="w-40" placeholder="仓ID" />
         <UButton color="primary" icon="i-heroicons-plus" @click="createTask">
@@ -197,4 +200,3 @@ onMounted(() => {
   loadAll();
 });
 </script>
-

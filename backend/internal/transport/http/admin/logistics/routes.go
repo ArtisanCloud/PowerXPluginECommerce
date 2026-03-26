@@ -20,6 +20,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 		logisticssvc.NewCarrierService(deps),
 		logisticssvc.NewRateTemplateService(deps),
 		logisticssvc.NewWaybillService(deps),
+		logisticssvc.NewBillingService(deps),
 		logisticssvc.NewWebhookService(deps),
 	)
 
@@ -38,6 +39,9 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.GET("/waybills/:id", handler.GetWaybill)
 	rg.POST("/waybills/:id/track", handler.AppendTracking)
 	rg.POST("/waybills/:id/cancel", handler.CancelWaybill)
+	rg.PATCH("/waybills/:id/cost", handler.UpdateWaybillCost)
+	rg.GET("/billing/summary", handler.BillingSummary)
+	rg.GET("/billing/export", handler.ExportBilling)
 
 	rg.POST("/webhook", handler.HandleWebhook)
 	return rg

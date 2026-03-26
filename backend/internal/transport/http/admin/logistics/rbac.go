@@ -25,6 +25,9 @@ func RBACEntries(prefix string) map[string]AuthX.Permission {
 		"GET:" + base + "/waybills/:id":           {Resource: res("logistics.waybill"), Action: "read"},
 		"POST:" + base + "/waybills/:id/track":    {Resource: res("logistics.waybill"), Action: "manage"},
 		"POST:" + base + "/waybills/:id/cancel":   {Resource: res("logistics.waybill"), Action: "manage"},
+		"PATCH:" + base + "/waybills/:id/cost":    {Resource: res("logistics.billing"), Action: "manage"},
+		"GET:" + base + "/billing/summary":        {Resource: res("logistics.billing"), Action: "read"},
+		"GET:" + base + "/billing/export":         {Resource: res("logistics.billing"), Action: "export"},
 		"POST:" + base + "/webhook":               {Resource: res("logistics.webhook"), Action: "manage"},
 	}
 }

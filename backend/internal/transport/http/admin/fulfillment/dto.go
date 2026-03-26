@@ -19,3 +19,22 @@ type reportExceptionRequest struct {
 	Reason    string         `json:"reason,omitempty"`
 	Metadata  map[string]any `json:"metadata,omitempty"`
 }
+
+type createWaveRequest struct {
+	Name        string         `json:"name,omitempty"`
+	WarehouseID string         `json:"warehouse_id"`
+	TaskIDs     []string       `json:"task_ids"`
+	Metadata    map[string]any `json:"metadata,omitempty"`
+}
+
+type advanceWaveRequest struct {
+	Status      string   `json:"status"`
+	OperatorID  string   `json:"operator_id,omitempty"`
+	FailTaskIDs []string `json:"fail_task_ids,omitempty"`
+	Reason      string   `json:"reason,omitempty"`
+}
+
+type reassignWaveTaskRequest struct {
+	AssignedTo string `json:"assigned_to"`
+	OperatorID string `json:"operator_id,omitempty"`
+}

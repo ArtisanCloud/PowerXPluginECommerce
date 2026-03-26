@@ -21,11 +21,15 @@ type upsertRateTemplateRequest struct {
 }
 
 type createWaybillRequest struct {
-	OrderID              string `json:"order_id"`
-	CarrierID            string `json:"carrier_id"`
-	ServiceCode          string `json:"service_code"`
-	WaybillNo            string `json:"waybill_no,omitempty"`
-	ManualFallbackReason string `json:"manual_fallback_reason,omitempty"`
+	OrderID              string   `json:"order_id"`
+	CarrierID            string   `json:"carrier_id"`
+	ServiceCode          string   `json:"service_code"`
+	WaybillNo            string   `json:"waybill_no,omitempty"`
+	ManualFallbackReason string   `json:"manual_fallback_reason,omitempty"`
+	PackageNo            int      `json:"package_no,omitempty"`
+	PackageKey           string   `json:"package_key,omitempty"`
+	ShipmentItems        []string `json:"shipment_items,omitempty"`
+	OrderItemCount       int      `json:"order_item_count,omitempty"`
 }
 
 type appendTrackingRequest struct {
@@ -43,4 +47,8 @@ type webhookRequest struct {
 	Status     string         `json:"status"`
 	OccurredAt *string        `json:"occurred_at,omitempty"`
 	Payload    map[string]any `json:"payload,omitempty"`
+}
+
+type updateWaybillCostRequest struct {
+	ActualFeeAmount float64 `json:"actual_fee_amount"`
 }

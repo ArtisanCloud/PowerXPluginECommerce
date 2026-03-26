@@ -1,80 +1,104 @@
-package integrations_test
+package logistics
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
+	"time"
 
 	coremodels "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models"
 	LogisticsModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/logistics"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
-	logisticssvc "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/logistics"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
-func TestWaybillService_ProviderSwitchAndWebhookIdempotency(t *testing.T) {
-	db := setupLogisticsIntegrationDB(t, "logistics_us4_dispatch")
-	ctx := authx.ContextWithTenantUUID(context.Background(), "tenant-1")
+func TestBillingService_DiffCalculationAndTenantIsolation(t *testing.T) {
+	db := setupBillingDB(t, "logistics_billing_service")
+	ctx := context.Background()
 
-	require.NoError(t, db.WithContext(ctx).Create(&LogisticsModel.Carrier{
+	svc := NewBillingService(&app.Deps{DB: db})
+	wbRepo := NewWaybillService(&app.Deps{DB: db})
+
+	tenant1 := authx.ContextWithTenantUUID(ctx, "tenant-1")
+	tenant2 := authx.ContextWithTenantUUID(ctx, "tenant-2")
+
+	require.NoError(t, db.WithContext(tenant1).Create(&LogisticsModel.Carrier{
 		ID:         "carrier-1",
 		TenantUUID: "tenant-1",
-		Name:       "顺丰",
-		Code:       "sf",
+		Name:       "Carrier A",
+		Code:       "a",
 		Type:       "self",
 		Status:     "active",
-		Config:     []byte(`{"provider":"sf","service_code_map":{"std":"SF_STD"}}`),
+	}).Error)
+	require.NoError(t, db.WithContext(tenant2).Create(&LogisticsModel.Carrier{
+		ID:         "carrier-2",
+		TenantUUID: "tenant-2",
+		Name:       "Carrier B",
+		Code:       "b",
+		Type:       "self",
+		Status:     "active",
 	}).Error)
 
-	svc := logisticssvc.NewWaybillService(&app.Deps{DB: db})
-	wb1, _, err := svc.Create(ctx, "tenant-1", logisticssvc.CreateWaybillRequest{
-		OrderID:     "order-1",
-		CarrierID:   "carrier-1",
-		ServiceCode: "std",
+	wb1, _, err := wbRepo.Create(tenant1, "tenant-1", CreateWaybillRequest{
+		OrderID:        "order-1",
+		CarrierID:      "carrier-1",
+		ServiceCode:    "std",
+		WaybillNo:      "WB-T1-1",
+		PackageKey:     "order-1-pkg-1",
+		ShipmentItems:  []string{"sku-1"},
+		OrderItemCount: 1,
 	})
 	require.NoError(t, err)
-	require.Equal(t, "SF_STD", wb1.ServiceCode)
+	wb1.FeeAmount = 10
+	require.NoError(t, db.WithContext(tenant1).Save(wb1).Error)
 
-	cfg := map[string]any{"provider": "jd", "service_code_map": map[string]any{"std": "JD_STD"}}
-	raw, _ := json.Marshal(cfg)
-	require.NoError(t, db.WithContext(ctx).Model(&LogisticsModel.Carrier{}).
-		Where("id = ?", "carrier-1").
-		Update("config", raw).Error)
-
-	wb2, _, err := svc.Create(ctx, "tenant-1", logisticssvc.CreateWaybillRequest{
-		OrderID:     "order-2",
-		CarrierID:   "carrier-1",
-		ServiceCode: "std",
+	_, _, err = wbRepo.Create(tenant2, "tenant-2", CreateWaybillRequest{
+		OrderID:        "order-2",
+		CarrierID:      "carrier-2",
+		ServiceCode:    "std",
+		WaybillNo:      "WB-T2-1",
+		PackageKey:     "order-2-pkg-1",
+		ShipmentItems:  []string{"sku-9"},
+		OrderItemCount: 1,
 	})
 	require.NoError(t, err)
-	require.Equal(t, "JD_STD", wb2.ServiceCode)
 
-	_, status, err := svc.AppendTracking(ctx, "tenant-1", wb2.ID, logisticssvc.AppendTrackingRequest{
-		EventID: "evt-1",
-		Status:  "in_transit",
-		Source:  "provider",
-	})
+	updated, err := svc.UpdateWaybillCost(tenant1, "tenant-1", wb1.ID, UpdateWaybillCostRequest{ActualFeeAmount: 12.5})
 	require.NoError(t, err)
-	require.Equal(t, "created", status)
+	require.Equal(t, 12.5, updated.ActualFeeAmount)
+	require.Equal(t, 2.5, updated.FeeDiffAmount)
+	require.Equal(t, "settled", updated.BillingStatus)
+	require.NotNil(t, updated.SettledAt)
 
-	_, status, err = svc.AppendTracking(ctx, "tenant-1", wb2.ID, logisticssvc.AppendTrackingRequest{
-		EventID: "evt-1",
-		Status:  "in_transit",
-		Source:  "provider",
-	})
+	snapshot, err := svc.Snapshot(tenant1, "tenant-1", BillingQuery{})
 	require.NoError(t, err)
-	require.Equal(t, "replayed", status)
+	require.Len(t, snapshot.Items, 1)
+	require.Equal(t, "WB-T1-1", snapshot.Items[0].WaybillNo)
+	require.Len(t, snapshot.Summary, 1)
+	require.Equal(t, 2.5, snapshot.Summary[0].DiffFee)
 }
 
-func setupLogisticsIntegrationDB(t *testing.T, name string) *gorm.DB {
+func TestBillingService_ExportValidation(t *testing.T) {
+	db := setupBillingDB(t, "logistics_billing_export_validate")
+	svc := NewBillingService(&app.Deps{DB: db})
+	ctx := authx.ContextWithTenantUUID(context.Background(), "tenant-1")
+
+	_, err := svc.ExportPayload(ctx, "tenant-1", BillingQuery{From: "bad-time"}, "csv")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "from must be RFC3339")
+
+	_, err = svc.ExportPayload(ctx, "tenant-1", BillingQuery{}, "xlsx")
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "format must be csv or json")
+}
+
+func setupBillingDB(t *testing.T, name string) *gorm.DB {
 	t.Helper()
 	coremodels.ForceSchemaForTests("")
 	db, err := gorm.Open(sqlite.Open("file:"+name+"?mode=memory&cache=shared"), &gorm.Config{DisableForeignKeyConstraintWhenMigrating: true})
 	require.NoError(t, err)
-
 	require.NoError(t, db.Exec(`CREATE TABLE IF NOT EXISTS logistics_carriers (
 		id TEXT PRIMARY KEY,
 		tenant_uuid TEXT NOT NULL,
@@ -132,5 +156,7 @@ func setupLogisticsIntegrationDB(t *testing.T, name string) *gorm.DB {
 	)`).Error)
 	require.NoError(t, db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uk_logistics_tracking_event ON logistics_tracking_events(tenant_uuid, waybill_no, event_id)`).Error)
 
+	// ensure deterministic created_at for billing window filtering if needed
+	require.NoError(t, db.Exec(`UPDATE logistics_waybills SET created_at = ? WHERE created_at IS NULL`, time.Now().UTC()).Error)
 	return db
 }

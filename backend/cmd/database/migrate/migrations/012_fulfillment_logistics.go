@@ -16,6 +16,8 @@ var FulfillmentLogisticsTables = []interface{}{
 	&LogisticsModel.TrackingEvent{},
 	&FulfillmentModel.Task{},
 	&FulfillmentModel.TaskLog{},
+	&FulfillmentModel.Wave{},
+	&FulfillmentModel.WaveTaskLink{},
 	&FulfillmentModel.Exception{},
 	&ReverseModel.Waybill{},
 	&ReverseModel.TrackingEvent{},

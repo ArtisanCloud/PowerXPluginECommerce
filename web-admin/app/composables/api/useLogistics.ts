@@ -53,8 +53,17 @@ export type LogisticsWaybill = {
   carrierId: string;
   serviceCode: string;
   waybillNo: string;
+  packageNo: number;
+  packageKey: string;
+  shipmentItems: string[];
+  orderItemCount: number;
+  orderFulfillmentStatus: string;
   status: string;
   feeAmount: number;
+  actualFeeAmount: number;
+  feeDiffAmount: number;
+  billingStatus: string;
+  settledAt: string;
   labelUrl: string;
   metadata: Record<string, any>;
   createdAt: string;
@@ -77,6 +86,21 @@ export type LogisticsTracking = {
 export type LogisticsWaybillDetail = {
   waybill: LogisticsWaybill;
   tracking: LogisticsTracking[];
+};
+
+export type LogisticsBillingCarrierSummary = {
+  carrierId: string;
+  carrierName: string;
+  waybillCount: number;
+  estimatedFee: number;
+  actualFee: number;
+  diffFee: number;
+  abnormalCount: number;
+};
+
+export type LogisticsBillingSnapshot = {
+  summary: LogisticsBillingCarrierSummary[];
+  items: LogisticsWaybill[];
 };
 
 const normalizeCarrier = (raw: RawRecord): LogisticsCarrier => ({
@@ -111,12 +135,33 @@ const normalizeWaybill = (raw: RawRecord): LogisticsWaybill => ({
   carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
   serviceCode: String(pick(raw, "serviceCode", "service_code") || ""),
   waybillNo: String(pick(raw, "waybillNo", "waybill_no") || ""),
+  packageNo: Number(pick(raw, "packageNo", "package_no") || 1),
+  packageKey: String(pick(raw, "packageKey", "package_key") || ""),
+  shipmentItems: asArray<string>(pick(raw, "shipmentItems", "shipment_items") || []),
+  orderItemCount: Number(pick(raw, "orderItemCount", "order_item_count") || 0),
+  orderFulfillmentStatus: String(
+    pick(raw, "orderFulfillmentStatus", "order_fulfillment_status") || "partial_shipped",
+  ),
   status: String(pick(raw, "status", "status") || "created"),
   feeAmount: Number(pick(raw, "feeAmount", "fee_amount") || 0),
+  actualFeeAmount: Number(pick(raw, "actualFeeAmount", "actual_fee_amount") || 0),
+  feeDiffAmount: Number(pick(raw, "feeDiffAmount", "fee_diff_amount") || 0),
+  billingStatus: String(pick(raw, "billingStatus", "billing_status") || "pending"),
+  settledAt: String(pick(raw, "settledAt", "settled_at") || ""),
   labelUrl: String(pick(raw, "labelUrl", "label_url") || ""),
   metadata: (pick(raw, "metadata", "metadata") || {}) as Record<string, any>,
   createdAt: String(pick(raw, "createdAt", "created_at") || ""),
   updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeBillingSummary = (raw: RawRecord): LogisticsBillingCarrierSummary => ({
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  carrierName: String(pick(raw, "carrierName", "carrier_name") || ""),
+  waybillCount: Number(pick(raw, "waybillCount", "waybill_count") || 0),
+  estimatedFee: Number(pick(raw, "estimatedFee", "estimated_fee") || 0),
+  actualFee: Number(pick(raw, "actualFee", "actual_fee") || 0),
+  diffFee: Number(pick(raw, "diffFee", "diff_fee") || 0),
+  abnormalCount: Number(pick(raw, "abnormalCount", "abnormal_count") || 0),
 });
 
 const normalizeTracking = (raw: RawRecord): LogisticsTracking => ({
@@ -188,6 +233,31 @@ export function useLogisticsApi() {
         waybill: normalizeWaybill((raw?.waybill || {}) as RawRecord),
         tracking: asArray<RawRecord>(raw?.tracking).map(normalizeTracking),
       };
+    },
+
+    updateWaybillCost: async (id: string, payload: { actual_fee_amount: number }, init?: any) => {
+      const raw = await unwrap(apiPatch<ApiEnvelope<RawRecord>>(`${basePath}/waybills/${id}/cost`, payload, init));
+      return normalizeWaybill(raw || {});
+    },
+
+    getBillingSummary: async (
+      query?: { carrier_id?: string; from?: string; to?: string },
+      init?: any,
+    ): Promise<LogisticsBillingSnapshot> => {
+      const raw = await unwrap(
+        apiGet<ApiEnvelope<{ summary: RawRecord[]; items: RawRecord[] }>>(`${basePath}/billing/summary`, query, init),
+      );
+      return {
+        summary: asArray<RawRecord>(raw?.summary).map(normalizeBillingSummary),
+        items: asArray<RawRecord>(raw?.items).map(normalizeWaybill),
+      };
+    },
+
+    exportBilling: async (
+      query?: { carrier_id?: string; from?: string; to?: string; format?: "csv" | "json" | string },
+      init?: any,
+    ) => {
+      return unwrap(apiGet<ApiEnvelope<Record<string, any>>>(`${basePath}/billing/export`, query, init));
     },
   };
 }
