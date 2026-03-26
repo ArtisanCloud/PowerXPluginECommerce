@@ -199,11 +199,11 @@
 
 ### User Story 11 - 逆向质检规则引擎（P3）
 
-- [ ] T077 [P] [US11] 增加逆向质检规则模型与仓储（`backend/internal/entity/models/reverse/inspection_rule*.go`、`backend/internal/entity/repository/reverse/inspection*_repository.go`）
-- [ ] T078 [US11] 实现质检判定服务（可二销/报损/维修）（`backend/internal/services/admin/reverse/inspection_service.go`）
-- [ ] T079 [US11] 实现质检规则与判定接口（`backend/internal/transport/http/admin/reverse/{inspection_handler.go,routes.go,dto.go}`）
-- [ ] T080 [US11] 在逆向页面展示质检结果与建议（`web-admin/app/pages/shipping/reverse-waybills.vue`）
-- [ ] T081 [US11] 增加 US11 回归测试（规则优先级、重复判定幂等）（`backend/internal/services/admin/reverse/*_test.go`）
+- [X] T077 [P] [US11] 增加逆向质检规则模型与仓储（`backend/internal/entity/models/reverse/inspection_rule*.go`、`backend/internal/entity/repository/reverse/inspection*_repository.go`）
+- [X] T078 [US11] 实现质检判定服务（可二销/报损/维修）（`backend/internal/services/admin/reverse/inspection_service.go`）
+- [X] T079 [US11] 实现质检规则与判定接口（`backend/internal/transport/http/admin/reverse/{inspection_handler.go,routes.go,dto.go}`）
+- [X] T080 [US11] 在逆向页面展示质检结果与建议（`web-admin/app/pages/shipping/reverse-waybills.vue`）
+- [X] T081 [US11] 增加 US11 回归测试（规则优先级、重复判定幂等）（`backend/internal/services/admin/reverse/*_test.go`）
 
 ### User Story 12 - 波次智能分组策略（P2）
 

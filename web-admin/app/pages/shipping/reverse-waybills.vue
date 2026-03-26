@@ -83,6 +83,59 @@
           </div>
         </UCard>
       </div>
+
+      <div class="mt-4 grid gap-4 md:grid-cols-2">
+        <UCard>
+          <template #header><div class="font-semibold">质检判定</div></template>
+          <div class="space-y-3">
+            <div class="grid gap-2 md:grid-cols-2">
+              <UInput v-model.number="inspectionInput.damageScore" type="number" placeholder="damage_score（0-10）" />
+              <UInput v-model="inspectionInput.packageStatus" placeholder="package_status（good/damaged/opened）" />
+            </div>
+            <UButton color="primary" icon="i-heroicons-shield-check" @click="runInspection">
+              执行质检判定
+            </UButton>
+            <div class="rounded border border-gray-100 p-3 text-sm dark:border-gray-800">
+              <p class="text-gray-700 dark:text-gray-200">判定结果：{{ detail.waybill.inspectionResult || "-" }}</p>
+              <p class="text-gray-700 dark:text-gray-200">处置建议：{{ detail.waybill.disposition || "-" }}</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                {{ inspectionMessage || "执行质检后会显示命中规则与幂等状态。" }}
+              </p>
+            </div>
+          </div>
+        </UCard>
+
+        <UCard>
+          <template #header>
+            <div class="flex items-center justify-between">
+              <div class="font-semibold">质检规则</div>
+              <UButton size="xs" variant="ghost" @click="seedRules">初始化默认规则</UButton>
+            </div>
+          </template>
+          <div class="space-y-2">
+            <div
+              v-for="rule in inspectionRules"
+              :key="rule.id"
+              class="rounded border border-gray-100 p-3 dark:border-gray-800"
+            >
+              <div class="flex items-center justify-between">
+                <p class="text-sm font-medium text-gray-900 dark:text-white">
+                  P{{ rule.priority }} · {{ rule.name }}
+                </p>
+                <UBadge :color="rule.enabled ? 'success' : 'neutral'" variant="subtle">
+                  {{ rule.enabled ? "启用" : "停用" }}
+                </UBadge>
+              </div>
+              <p class="text-xs text-gray-500 dark:text-gray-400">
+                结果={{ rule.decision }}，建议={{ rule.recommendation }}
+              </p>
+            </div>
+            <p v-if="inspectionRules.length === 0" class="text-xs text-gray-500 dark:text-gray-400">
+              暂无规则，点击“初始化默认规则”快速创建。
+            </p>
+          </div>
+        </UCard>
+      </div>
     </UCard>
   </div>
 </template>
@@ -113,6 +166,12 @@ const form = reactive({
 
 const waybills = ref<WaybillRow[]>([]);
 const detail = ref<any>(null);
+const inspectionRules = ref<any[]>([]);
+const inspectionMessage = ref("");
+const inspectionInput = reactive({
+  damageScore: 0,
+  packageStatus: "good",
+});
 
 const columns = computed<TableColumn<WaybillRow>[]>(() => [
   { accessorKey: "orderId", header: "订单ID" },
@@ -148,6 +207,10 @@ const loadWaybills = async () => {
   }));
 };
 
+const loadInspectionRules = async () => {
+  inspectionRules.value = await reverseApi.listInspectionRules();
+};
+
 const createWaybill = async () => {
   if (!form.orderId || !form.afterSaleId) return;
   await reverseApi.createWaybill({
@@ -161,6 +224,7 @@ const createWaybill = async () => {
 
 const selectWaybill = async (row: WaybillRow) => {
   detail.value = await reverseApi.getWaybillDetail(row.id);
+  inspectionMessage.value = "";
 };
 
 const markReceived = async (id: string) => {
@@ -190,8 +254,54 @@ const recordResult = async () => {
   await loadWaybills();
 };
 
+const runInspection = async () => {
+  const id = detail.value?.waybill?.id;
+  if (!id) return;
+  const decision = await reverseApi.evaluateInspection(id, {
+    attributes: {
+      damage_score: Number(inspectionInput.damageScore || 0),
+      package_status: inspectionInput.packageStatus || "good",
+    },
+  });
+  inspectionMessage.value =
+    `规则：${decision.rule?.name || "默认"}；` +
+    `状态：${decision.idempotencyState || "-"}；` +
+    `建议：${decision.recommendation || "-"}`;
+  detail.value = await reverseApi.getWaybillDetail(id);
+  await loadWaybills();
+};
+
+const seedRules = async () => {
+  if (inspectionRules.value.length > 0) return;
+  await reverseApi.createInspectionRule({
+    name: "高损坏报损",
+    priority: 10,
+    decision: "damaged",
+    recommendation: "compensate",
+    condition: { damage_score: 7 },
+    enabled: true,
+  });
+  await reverseApi.createInspectionRule({
+    name: "开封转维修",
+    priority: 20,
+    decision: "repair",
+    recommendation: "repair",
+    condition: { package_status: "opened" },
+    enabled: true,
+  });
+  await reverseApi.createInspectionRule({
+    name: "完好可二销",
+    priority: 30,
+    decision: "resellable",
+    recommendation: "restock",
+    condition: { package_status: "good" },
+    enabled: true,
+  });
+  await loadInspectionRules();
+};
+
 onMounted(() => {
   loadWaybills();
+  loadInspectionRules();
 });
 </script>
-

@@ -23,4 +23,6 @@ var FulfillmentLogisticsTables = []interface{}{
 	&ReverseModel.Waybill{},
 	&ReverseModel.TrackingEvent{},
 	&ReverseModel.WarehouseResult{},
+	&ReverseModel.InspectionRule{},
+	&ReverseModel.WaybillInspection{},
 }

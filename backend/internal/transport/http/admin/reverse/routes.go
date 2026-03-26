@@ -16,11 +16,14 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	if deps == nil {
 		return rg
 	}
-	handler := NewHandler(reversesvc.NewWaybillService(deps))
+	handler := NewHandler(reversesvc.NewWaybillService(deps), reversesvc.NewInspectionService(deps))
 	rg.GET("/waybills", handler.ListWaybills)
 	rg.POST("/waybills", handler.CreateWaybill)
 	rg.GET("/waybills/:id", handler.GetWaybill)
 	rg.POST("/waybills/:id/track", handler.AppendTracking)
 	rg.POST("/waybills/:id/warehouse-result", handler.RecordWarehouseResult)
+	rg.GET("/inspection/rules", handler.ListInspectionRules)
+	rg.POST("/inspection/rules", handler.CreateInspectionRule)
+	rg.POST("/waybills/:id/inspection", handler.EvaluateInspection)
 	return rg
 }

@@ -172,4 +172,6 @@ const (
 	TableReverseWaybills                = "reverse_waybills"
 	TableReverseWaybillTrackingEvents   = "reverse_waybill_tracking_events"
 	TableReverseWaybillWarehouseResults = "reverse_waybill_warehouse_results"
+	TableReverseInspectionRules         = "reverse_inspection_rules"
+	TableReverseWaybillInspections      = "reverse_waybill_inspections"
 )

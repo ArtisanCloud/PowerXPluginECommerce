@@ -60,6 +60,28 @@ export type ReverseWaybillDetail = {
   compensation: Record<string, any>;
 };
 
+export type ReverseInspectionRule = {
+  id: string;
+  name: string;
+  priority: number;
+  enabled: boolean;
+  condition: Record<string, any>;
+  decision: string;
+  recommendation: string;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type ReverseInspectionDecision = {
+  waybillId: string;
+  rule: ReverseInspectionRule | null;
+  decision: string;
+  recommendation: string;
+  reason: string;
+  idempotencyState: string;
+};
+
 const normalizeWaybill = (raw: RawRecord): ReverseWaybill => ({
   id: String(pick(raw, "id", "id") || ""),
   orderId: String(pick(raw, "orderId", "order_id") || ""),
@@ -91,6 +113,28 @@ const normalizeWarehouseResult = (raw: RawRecord): ReverseWarehouseResult => ({
   notes: String(pick(raw, "notes", "notes") || ""),
   metadata: (pick(raw, "metadata", "metadata") || {}) as Record<string, any>,
   createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+});
+
+const normalizeInspectionRule = (raw: RawRecord): ReverseInspectionRule => ({
+  id: String(pick(raw, "id", "id") || ""),
+  name: String(pick(raw, "name", "name") || ""),
+  priority: Number(pick(raw, "priority", "priority") || 100),
+  enabled: Boolean(pick(raw, "enabled", "enabled")),
+  condition: (pick(raw, "condition", "condition_json") || {}) as Record<string, any>,
+  decision: String(pick(raw, "decision", "decision") || ""),
+  recommendation: String(pick(raw, "recommendation", "recommendation") || ""),
+  notes: String(pick(raw, "notes", "notes") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeInspectionDecision = (raw: RawRecord): ReverseInspectionDecision => ({
+  waybillId: String(pick(raw, "waybillId", "waybill_id") || ""),
+  rule: raw?.rule ? normalizeInspectionRule(raw.rule as RawRecord) : null,
+  decision: String(pick(raw, "decision", "decision") || ""),
+  recommendation: String(pick(raw, "recommendation", "recommendation") || ""),
+  reason: String(pick(raw, "reason", "reason") || ""),
+  idempotencyState: String(pick(raw, "idempotencyState", "idempotency_state") || ""),
 });
 
 export function useReverseApi() {
@@ -150,6 +194,30 @@ export function useReverseApi() {
         waybill: normalizeWaybill((raw?.waybill || {}) as RawRecord),
       };
     },
+
+    listInspectionRules: async (init?: any) => {
+      const raw = await unwrap(
+        apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/inspection/rules`, undefined, init),
+      );
+      return asArray<RawRecord>(raw?.items).map(normalizeInspectionRule);
+    },
+
+    createInspectionRule: async (payload: Record<string, any>, init?: any) => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<RawRecord>>(`${basePath}/inspection/rules`, payload, init),
+      );
+      return normalizeInspectionRule(raw || {});
+    },
+
+    evaluateInspection: async (waybillID: string, payload: Record<string, any>, init?: any) => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<RawRecord>>(
+          `${basePath}/waybills/${waybillID}/inspection`,
+          payload,
+          init,
+        ),
+      );
+      return normalizeInspectionDecision(raw || {});
+    },
   };
 }
-

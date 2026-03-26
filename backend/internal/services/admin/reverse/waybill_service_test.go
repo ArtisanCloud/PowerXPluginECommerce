@@ -105,6 +105,34 @@ func setupReverseServiceDB(t *testing.T, name string) *gorm.DB {
 		updated_at DATETIME,
 		deleted_at DATETIME
 	)`).Error)
+	require.NoError(t, db.Exec(`CREATE TABLE IF NOT EXISTS reverse_inspection_rules (
+		id TEXT PRIMARY KEY,
+		tenant_uuid TEXT NOT NULL,
+		name TEXT NOT NULL,
+		priority INTEGER NOT NULL DEFAULT 100,
+		enabled BOOLEAN NOT NULL DEFAULT 1,
+		condition_json JSON NOT NULL,
+		decision TEXT NOT NULL,
+		recommendation TEXT NOT NULL,
+		notes TEXT,
+		created_at DATETIME,
+		updated_at DATETIME,
+		deleted_at DATETIME
+	)`).Error)
+	require.NoError(t, db.Exec(`CREATE TABLE IF NOT EXISTS reverse_waybill_inspections (
+		id TEXT PRIMARY KEY,
+		tenant_uuid TEXT NOT NULL,
+		waybill_id TEXT NOT NULL,
+		rule_id TEXT,
+		decision TEXT NOT NULL,
+		recommendation TEXT NOT NULL,
+		reason TEXT,
+		attributes JSON NOT NULL,
+		created_at DATETIME,
+		updated_at DATETIME,
+		deleted_at DATETIME
+	)`).Error)
+	require.NoError(t, db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uk_reverse_waybill_inspection ON reverse_waybill_inspections(tenant_uuid, waybill_id)`).Error)
 
 	return db
 }
@@ -128,4 +156,90 @@ func TestReverseWaybillService_TransitionGuard(t *testing.T) {
 		Status: "closed",
 	})
 	require.Error(t, err)
+}
+
+func TestInspectionService_PriorityAndIdempotency(t *testing.T) {
+	db := setupReverseServiceDB(t, "reverse_inspection_priority_idempotency")
+	waybillSvc := NewWaybillService(&app.Deps{DB: db})
+	inspectionSvc := NewInspectionService(&app.Deps{DB: db})
+	ctx := context.Background()
+	tenantUUID := "tenant-inspection"
+
+	waybill, err := waybillSvc.Create(ctx, tenantUUID, CreateWaybillRequest{
+		OrderID:     "order-inspection",
+		AfterSaleID: "after-sale-inspection",
+		Metadata: map[string]any{
+			"package_status": "opened",
+		},
+	})
+	require.NoError(t, err)
+	_, err = waybillSvc.AppendTracking(ctx, tenantUUID, waybill.ID, AppendTrackingRequest{Status: "in_transit"})
+	require.NoError(t, err)
+	_, err = waybillSvc.AppendTracking(ctx, tenantUUID, waybill.ID, AppendTrackingRequest{Status: "received"})
+	require.NoError(t, err)
+
+	_, err = inspectionSvc.CreateRule(ctx, tenantUUID, CreateInspectionRuleRequest{
+		Name:           "开封走维修",
+		Priority:       20,
+		Condition:      map[string]any{"package_status": "opened"},
+		Decision:       "repair",
+		Recommendation: "repair",
+	})
+	require.NoError(t, err)
+	_, err = inspectionSvc.CreateRule(ctx, tenantUUID, CreateInspectionRuleRequest{
+		Name:           "默认可二销",
+		Priority:       30,
+		Condition:      map[string]any{"package_status": "good"},
+		Decision:       "resellable",
+		Recommendation: "restock",
+	})
+	require.NoError(t, err)
+
+	result1, err := inspectionSvc.EvaluateWaybill(ctx, tenantUUID, waybill.ID, EvaluateInspectionRequest{
+		Attributes: map[string]any{"package_status": "opened"},
+	})
+	require.NoError(t, err)
+	require.Equal(t, "repair", result1.Decision)
+	require.Equal(t, "created", result1.IdempotencyState)
+	require.NotNil(t, result1.Rule)
+	require.Equal(t, "开封走维修", result1.Rule.Name)
+
+	result2, err := inspectionSvc.EvaluateWaybill(ctx, tenantUUID, waybill.ID, EvaluateInspectionRequest{
+		Attributes: map[string]any{"package_status": "good"},
+	})
+	require.NoError(t, err)
+	require.Equal(t, "repair", result2.Decision)
+	require.Equal(t, "replayed", result2.IdempotencyState)
+}
+
+func TestInspectionService_TenantIsolation(t *testing.T) {
+	db := setupReverseServiceDB(t, "reverse_inspection_tenant_isolation")
+	inspectionSvc := NewInspectionService(&app.Deps{DB: db})
+
+	_, err := inspectionSvc.CreateRule(context.Background(), "tenant-A", CreateInspectionRuleRequest{
+		Name:           "tenant-A-rule",
+		Priority:       10,
+		Condition:      map[string]any{"package_status": "good"},
+		Decision:       "resellable",
+		Recommendation: "restock",
+	})
+	require.NoError(t, err)
+	_, err = inspectionSvc.CreateRule(context.Background(), "tenant-B", CreateInspectionRuleRequest{
+		Name:           "tenant-B-rule",
+		Priority:       10,
+		Condition:      map[string]any{"package_status": "good"},
+		Decision:       "damaged",
+		Recommendation: "compensate",
+	})
+	require.NoError(t, err)
+
+	rulesA, err := inspectionSvc.ListRules(context.Background(), "tenant-A")
+	require.NoError(t, err)
+	require.Len(t, rulesA, 1)
+	require.Equal(t, "tenant-A-rule", rulesA[0].Name)
+
+	rulesB, err := inspectionSvc.ListRules(context.Background(), "tenant-B")
+	require.NoError(t, err)
+	require.Len(t, rulesB, 1)
+	require.Equal(t, "tenant-B-rule", rulesB[0].Name)
 }

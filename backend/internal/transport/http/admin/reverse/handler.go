@@ -11,11 +11,15 @@ import (
 )
 
 type Handler struct {
-	waybillSvc *reversesvc.WaybillService
+	waybillSvc    *reversesvc.WaybillService
+	inspectionSvc *reversesvc.InspectionService
 }
 
-func NewHandler(waybillSvc *reversesvc.WaybillService) *Handler {
-	return &Handler{waybillSvc: waybillSvc}
+func NewHandler(waybillSvc *reversesvc.WaybillService, inspectionSvc *reversesvc.InspectionService) *Handler {
+	return &Handler{
+		waybillSvc:    waybillSvc,
+		inspectionSvc: inspectionSvc,
+	}
 }
 
 func (h *Handler) ListWaybills(c *gin.Context) {
