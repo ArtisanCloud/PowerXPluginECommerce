@@ -19,6 +19,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	handler := NewHandler(
 		fulfillmentsvc.NewTaskService(deps),
 		fulfillmentsvc.NewWaveService(deps),
+		fulfillmentsvc.NewWaveStrategyService(deps),
 		fulfillmentsvc.NewExceptionService(deps),
 	)
 	rg.GET("/tasks", handler.ListTasks)
@@ -29,6 +30,9 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.GET("/waves/:id", handler.GetWave)
 	rg.PATCH("/waves/:id/advance", handler.AdvanceWave)
 	rg.PATCH("/waves/:id/tasks/:task_id/reassign", handler.ReassignWaveTask)
+	rg.GET("/wave-strategies", handler.ListWaveStrategies)
+	rg.POST("/wave-strategies", handler.CreateWaveStrategy)
+	rg.POST("/wave-strategies/preview", handler.PreviewWaveStrategy)
 	rg.GET("/exceptions", handler.ListExceptions)
 	rg.POST("/exceptions", handler.ReportException)
 	return rg

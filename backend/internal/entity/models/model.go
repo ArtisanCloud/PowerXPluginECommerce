@@ -169,6 +169,7 @@ const (
 	TableFulfillmentWaves               = "fulfillment_waves"
 	TableFulfillmentWaveTaskLinks       = "fulfillment_wave_task_links"
 	TableFulfillmentExceptions          = "fulfillment_exceptions"
+	TableFulfillmentWaveStrategies      = "fulfillment_wave_strategies"
 	TableReverseWaybills                = "reverse_waybills"
 	TableReverseWaybillTrackingEvents   = "reverse_waybill_tracking_events"
 	TableReverseWaybillWarehouseResults = "reverse_waybill_warehouse_results"

@@ -207,11 +207,11 @@
 
 ### User Story 12 - 波次智能分组策略（P2）
 
-- [ ] T082 [P] [US12] 增加波次策略配置模型与仓储（`backend/internal/entity/models/fulfillment/wave_strategy*.go`、`backend/internal/entity/repository/fulfillment/wave_strategy*_repository.go`）
-- [ ] T083 [US12] 实现智能分组服务（仓/承运商/时段/优先级）（`backend/internal/services/admin/fulfillment/wave_strategy_service.go`）
-- [ ] T084 [US12] 实现策略管理与预览接口（`backend/internal/transport/http/admin/fulfillment/{wave_strategy_handler.go,routes.go,dto.go}`）
-- [ ] T085 [US12] 在波次页面增加“智能分组”入口（`web-admin/app/pages/shipping/waves.vue`）
-- [ ] T086 [US12] 增加 US12 回归测试（分组稳定性、部分异常隔离）（`backend/internal/services/admin/fulfillment/*_test.go`）
+- [X] T082 [P] [US12] 增加波次策略配置模型与仓储（`backend/internal/entity/models/fulfillment/wave_strategy*.go`、`backend/internal/entity/repository/fulfillment/wave_strategy*_repository.go`）
+- [X] T083 [US12] 实现智能分组服务（仓/承运商/时段/优先级）（`backend/internal/services/admin/fulfillment/wave_strategy_service.go`）
+- [X] T084 [US12] 实现策略管理与预览接口（`backend/internal/transport/http/admin/fulfillment/{wave_strategy_handler.go,routes.go,dto.go}`）
+- [X] T085 [US12] 在波次页面增加“智能分组”入口（`web-admin/app/pages/shipping/waves.vue`）
+- [X] T086 [US12] 增加 US12 回归测试（分组稳定性、部分异常隔离）（`backend/internal/services/admin/fulfillment/*_test.go`）
 
 ### User Story 13 - 对账异常工单闭环（P3）
 

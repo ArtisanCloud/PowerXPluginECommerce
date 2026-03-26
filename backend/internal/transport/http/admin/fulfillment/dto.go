@@ -38,3 +38,18 @@ type reassignWaveTaskRequest struct {
 	AssignedTo string `json:"assigned_to"`
 	OperatorID string `json:"operator_id,omitempty"`
 }
+
+type createWaveStrategyRequest struct {
+	Name            string         `json:"name"`
+	WarehouseID     string         `json:"warehouse_id,omitempty"`
+	CarrierCode     string         `json:"carrier_code,omitempty"`
+	TimeWindow      string         `json:"time_window,omitempty"`
+	PriorityBand    string         `json:"priority_band,omitempty"`
+	MaxTasksPerWave int            `json:"max_tasks_per_wave,omitempty"`
+	Enabled         *bool          `json:"enabled,omitempty"`
+	Rules           map[string]any `json:"rules,omitempty"`
+}
+
+type previewWaveStrategyRequest struct {
+	StrategyID string `json:"strategy_id"`
+}

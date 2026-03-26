@@ -13,11 +13,22 @@ import (
 type Handler struct {
 	taskSvc      *fulfillmentsvc.TaskService
 	waveSvc      *fulfillmentsvc.WaveService
+	strategySvc  *fulfillmentsvc.WaveStrategyService
 	exceptionSvc *fulfillmentsvc.ExceptionService
 }
 
-func NewHandler(taskSvc *fulfillmentsvc.TaskService, waveSvc *fulfillmentsvc.WaveService, exceptionSvc *fulfillmentsvc.ExceptionService) *Handler {
-	return &Handler{taskSvc: taskSvc, waveSvc: waveSvc, exceptionSvc: exceptionSvc}
+func NewHandler(
+	taskSvc *fulfillmentsvc.TaskService,
+	waveSvc *fulfillmentsvc.WaveService,
+	strategySvc *fulfillmentsvc.WaveStrategyService,
+	exceptionSvc *fulfillmentsvc.ExceptionService,
+) *Handler {
+	return &Handler{
+		taskSvc:      taskSvc,
+		waveSvc:      waveSvc,
+		strategySvc:  strategySvc,
+		exceptionSvc: exceptionSvc,
+	}
 }
 
 func (h *Handler) ListTasks(c *gin.Context) {
@@ -233,6 +244,69 @@ func (h *Handler) ReassignWaveTask(c *gin.Context) {
 		TaskID:     taskID,
 		AssignedTo: strings.TrimSpace(payload.AssignedTo),
 		OperatorID: strings.TrimSpace(payload.OperatorID),
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) ListWaveStrategies(c *gin.Context) {
+	if h == nil || h.strategySvc == nil {
+		contracts.ResponseServiceUnavailable(c, "fulfillment wave strategy service unavailable", nil)
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	rows, err := h.strategySvc.List(c.Request.Context(), tenantUUID)
+	if err != nil {
+		contracts.ResponseInternalError(c, err)
+		return
+	}
+	contracts.ResponseSuccess(c, gin.H{"items": rows})
+}
+
+func (h *Handler) CreateWaveStrategy(c *gin.Context) {
+	if h == nil || h.strategySvc == nil {
+		contracts.ResponseServiceUnavailable(c, "fulfillment wave strategy service unavailable", nil)
+		return
+	}
+	var payload createWaveStrategyRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		contracts.ResponseBadRequest(c, "invalid request body: "+err.Error())
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.strategySvc.Create(c.Request.Context(), tenantUUID, fulfillmentsvc.CreateWaveStrategyRequest{
+		Name:            strings.TrimSpace(payload.Name),
+		WarehouseID:     strings.TrimSpace(payload.WarehouseID),
+		CarrierCode:     strings.TrimSpace(payload.CarrierCode),
+		TimeWindow:      strings.TrimSpace(payload.TimeWindow),
+		PriorityBand:    strings.TrimSpace(payload.PriorityBand),
+		MaxTasksPerWave: payload.MaxTasksPerWave,
+		Enabled:         payload.Enabled,
+		Rules:           payload.Rules,
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) PreviewWaveStrategy(c *gin.Context) {
+	if h == nil || h.strategySvc == nil {
+		contracts.ResponseServiceUnavailable(c, "fulfillment wave strategy service unavailable", nil)
+		return
+	}
+	var payload previewWaveStrategyRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		contracts.ResponseBadRequest(c, "invalid request body: "+err.Error())
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.strategySvc.Preview(c.Request.Context(), tenantUUID, fulfillmentsvc.PreviewWaveStrategyRequest{
+		StrategyID: strings.TrimSpace(payload.StrategyID),
 	})
 	if err != nil {
 		contracts.ResponseBadRequest(c, err.Error())

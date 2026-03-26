@@ -72,6 +72,37 @@ export type FulfillmentWaveDetail = {
   tasks: FulfillmentWaveTaskLink[];
 };
 
+export type FulfillmentWaveStrategy = {
+  id: string;
+  name: string;
+  warehouseId: string;
+  carrierCode: string;
+  timeWindow: string;
+  priorityBand: string;
+  maxTasksPerWave: number;
+  enabled: boolean;
+  rules: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type FulfillmentWaveStrategyPreviewGroup = {
+  groupKey: string;
+  warehouseId: string;
+  carrierCode: string;
+  timeSlot: string;
+  priorityBand: string;
+  taskIds: string[];
+};
+
+export type FulfillmentWaveStrategyPreview = {
+  strategyId: string;
+  strategyName: string;
+  totalCandidate: number;
+  groups: FulfillmentWaveStrategyPreviewGroup[];
+  skippedTaskIds: string[];
+};
+
 const normalizeTask = (raw: RawRecord): FulfillmentTask => ({
   id: String(pick(raw, "id", "id") || ""),
   orderId: String(pick(raw, "orderId", "order_id") || ""),
@@ -116,6 +147,31 @@ const normalizeWaveTaskLink = (raw: RawRecord): FulfillmentWaveTaskLink => ({
   metadata: (pick(raw, "metadata", "metadata") || {}) as Record<string, any>,
   createdAt: String(pick(raw, "createdAt", "created_at") || ""),
   updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeWaveStrategy = (raw: RawRecord): FulfillmentWaveStrategy => ({
+  id: String(pick(raw, "id", "id") || ""),
+  name: String(pick(raw, "name", "name") || ""),
+  warehouseId: String(pick(raw, "warehouseId", "warehouse_id") || ""),
+  carrierCode: String(pick(raw, "carrierCode", "carrier_code") || ""),
+  timeWindow: String(pick(raw, "timeWindow", "time_window") || ""),
+  priorityBand: String(pick(raw, "priorityBand", "priority_band") || ""),
+  maxTasksPerWave: Number(pick(raw, "maxTasksPerWave", "max_tasks_per_wave") || 50),
+  enabled: Boolean(pick(raw, "enabled", "enabled")),
+  rules: (pick(raw, "rules", "rules") || {}) as Record<string, any>,
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeWaveStrategyPreviewGroup = (
+  raw: RawRecord,
+): FulfillmentWaveStrategyPreviewGroup => ({
+  groupKey: String(pick(raw, "groupKey", "group_key") || ""),
+  warehouseId: String(pick(raw, "warehouseId", "warehouse_id") || ""),
+  carrierCode: String(pick(raw, "carrierCode", "carrier_code") || ""),
+  timeSlot: String(pick(raw, "timeSlot", "time_slot") || ""),
+  priorityBand: String(pick(raw, "priorityBand", "priority_band") || ""),
+  taskIds: asArray<string>(pick(raw, "taskIds", "task_ids") || []),
 });
 
 export function useFulfillmentApi() {
@@ -205,6 +261,39 @@ export function useFulfillmentApi() {
         apiPatch<ApiEnvelope<RawRecord>>(`${basePath}/waves/${waveId}/tasks/${taskId}/reassign`, payload, init),
       );
       return normalizeTask(raw || {});
+    },
+
+    listWaveStrategies: async (init?: any) => {
+      const raw = await unwrap(
+        apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/wave-strategies`, undefined, init),
+      );
+      return asArray<RawRecord>(raw?.items).map(normalizeWaveStrategy);
+    },
+
+    createWaveStrategy: async (payload: Record<string, any>, init?: any) => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<RawRecord>>(`${basePath}/wave-strategies`, payload, init),
+      );
+      return normalizeWaveStrategy(raw || {});
+    },
+
+    previewWaveStrategy: async (strategyId: string, init?: any): Promise<FulfillmentWaveStrategyPreview> => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<RawRecord>>(
+          `${basePath}/wave-strategies/preview`,
+          { strategy_id: strategyId },
+          init,
+        ),
+      );
+      return {
+        strategyId: String(pick(raw || {}, "strategyId", "strategy_id") || ""),
+        strategyName: String(pick(raw || {}, "strategyName", "strategy_name") || ""),
+        totalCandidate: Number(pick(raw || {}, "totalCandidate", "total_candidate") || 0),
+        groups: asArray<RawRecord>(pick(raw || {}, "groups", "groups") || []).map(
+          normalizeWaveStrategyPreviewGroup,
+        ),
+        skippedTaskIds: asArray<string>(pick(raw || {}, "skippedTaskIds", "skipped_task_ids") || []),
+      };
     },
   };
 }

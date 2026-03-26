@@ -106,6 +106,21 @@ func setupFulfillmentServiceDB(t *testing.T, name string) *gorm.DB {
 		deleted_at DATETIME
 	)`).Error)
 	require.NoError(t, db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uk_fulfillment_wave_task ON fulfillment_wave_task_links(tenant_uuid, wave_id, task_id)`).Error)
+	require.NoError(t, db.Exec(`CREATE TABLE IF NOT EXISTS fulfillment_wave_strategies (
+		id TEXT PRIMARY KEY,
+		tenant_uuid TEXT NOT NULL,
+		name TEXT NOT NULL,
+		warehouse_id TEXT,
+		carrier_code TEXT,
+		time_window TEXT,
+		priority_band TEXT,
+		max_tasks_per_wave INTEGER NOT NULL DEFAULT 50,
+		enabled BOOLEAN NOT NULL DEFAULT 1,
+		rules JSON NOT NULL,
+		created_at DATETIME,
+		updated_at DATETIME,
+		deleted_at DATETIME
+	)`).Error)
 	require.NoError(t, db.Exec(`CREATE TABLE IF NOT EXISTS fulfillment_exceptions (
 		id TEXT PRIMARY KEY,
 		tenant_uuid TEXT NOT NULL,
