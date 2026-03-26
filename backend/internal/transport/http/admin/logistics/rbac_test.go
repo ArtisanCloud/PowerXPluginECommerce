@@ -62,4 +62,13 @@ func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 	if quotePerm.Action != "read" {
 		t.Fatalf("expected read action, got %s", quotePerm.Action)
 	}
+
+	caseKey := "PATCH:/api/v1/admin/logistics/billing/cases/:id/transition"
+	casePerm, ok := entries[caseKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", caseKey)
+	}
+	if casePerm.Resource != "com.powerx.plugins.ecommerce:logistics.billing.case" {
+		t.Fatalf("unexpected resource %s", casePerm.Resource)
+	}
 }

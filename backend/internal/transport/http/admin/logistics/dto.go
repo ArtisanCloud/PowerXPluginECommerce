@@ -71,3 +71,16 @@ type rateQuoteRequest struct {
 	Volume      float64 `json:"volume,omitempty"`
 	OrderAmount float64 `json:"order_amount,omitempty"`
 }
+
+type createBillingCaseRequest struct {
+	WaybillID string         `json:"waybill_id"`
+	Reason    string         `json:"reason,omitempty"`
+	Metadata  map[string]any `json:"metadata,omitempty"`
+}
+
+type transitionBillingCaseRequest struct {
+	Action     string         `json:"action"`
+	OperatorID string         `json:"operator_id,omitempty"`
+	Note       string         `json:"note,omitempty"`
+	Metadata   map[string]any `json:"metadata,omitempty"`
+}

@@ -215,11 +215,11 @@
 
 ### User Story 13 - 对账异常工单闭环（P3）
 
-- [ ] T087 [P] [US13] 增加对账异常工单模型与仓储（`backend/internal/entity/models/logistics/billing_case*.go`、`backend/internal/entity/repository/logistics/billing_case*_repository.go`）
-- [ ] T088 [US13] 实现异常工单状态机服务（确认/申诉/核销）（`backend/internal/services/admin/logistics/billing_case_service.go`）
-- [ ] T089 [US13] 实现异常工单接口（`backend/internal/transport/http/admin/logistics/{billing_case_handler.go,routes.go,dto.go}`）
-- [ ] T090 [US13] 在对账页面增加异常工单流转视图（`web-admin/app/pages/shipping/billing.vue`）
-- [ ] T091 [US13] 增加 US13 回归测试（状态流转约束、跨租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+- [X] T087 [P] [US13] 增加对账异常工单模型与仓储（`backend/internal/entity/models/logistics/billing_case*.go`、`backend/internal/entity/repository/logistics/billing_case*_repository.go`）
+- [X] T088 [US13] 实现异常工单状态机服务（确认/申诉/核销）（`backend/internal/services/admin/logistics/billing_case_service.go`）
+- [X] T089 [US13] 实现异常工单接口（`backend/internal/transport/http/admin/logistics/{billing_case_handler.go,routes.go,dto.go}`）
+- [X] T090 [US13] 在对账页面增加异常工单流转视图（`web-admin/app/pages/shipping/billing.vue`）
+- [X] T091 [US13] 增加 US13 回归测试（状态流转约束、跨租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
 
 ### User Story 14 - 物流通知中心（P3）
 

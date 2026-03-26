@@ -18,6 +18,7 @@ type Handler struct {
 	quoteSvc   *logisticssvc.RateQuoteService
 	waybillSvc *logisticssvc.WaybillService
 	billingSvc *logisticssvc.BillingService
+	caseSvc    *logisticssvc.BillingCaseService
 	slaSvc     *logisticssvc.SLAService
 	labelSvc   *logisticssvc.LabelPrintService
 	webhookSvc *logisticssvc.WebhookService
@@ -29,11 +30,22 @@ func NewHandler(
 	quoteSvc *logisticssvc.RateQuoteService,
 	waybillSvc *logisticssvc.WaybillService,
 	billingSvc *logisticssvc.BillingService,
+	caseSvc *logisticssvc.BillingCaseService,
 	slaSvc *logisticssvc.SLAService,
 	labelSvc *logisticssvc.LabelPrintService,
 	webhookSvc *logisticssvc.WebhookService,
 ) *Handler {
-	return &Handler{carrierSvc: carrierSvc, rateSvc: rateSvc, quoteSvc: quoteSvc, waybillSvc: waybillSvc, billingSvc: billingSvc, slaSvc: slaSvc, labelSvc: labelSvc, webhookSvc: webhookSvc}
+	return &Handler{
+		carrierSvc: carrierSvc,
+		rateSvc:    rateSvc,
+		quoteSvc:   quoteSvc,
+		waybillSvc: waybillSvc,
+		billingSvc: billingSvc,
+		caseSvc:    caseSvc,
+		slaSvc:     slaSvc,
+		labelSvc:   labelSvc,
+		webhookSvc: webhookSvc,
+	}
 }
 
 func (h *Handler) ListCarriers(c *gin.Context) {

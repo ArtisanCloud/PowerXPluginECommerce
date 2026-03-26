@@ -155,6 +155,23 @@ func setupBillingDB(t *testing.T, name string) *gorm.DB {
 		deleted_at DATETIME
 	)`).Error)
 	require.NoError(t, db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uk_logistics_tracking_event ON logistics_tracking_events(tenant_uuid, waybill_no, event_id)`).Error)
+	require.NoError(t, db.Exec(`CREATE TABLE IF NOT EXISTS logistics_billing_cases (
+		id TEXT PRIMARY KEY,
+		tenant_uuid TEXT NOT NULL,
+		waybill_id TEXT NOT NULL,
+		carrier_id TEXT NOT NULL,
+		case_no TEXT NOT NULL,
+		status TEXT NOT NULL DEFAULT 'open',
+		diff_amount NUMERIC NOT NULL DEFAULT 0,
+		reason TEXT,
+		resolution TEXT,
+		metadata JSON,
+		closed_at DATETIME,
+		created_at DATETIME,
+		updated_at DATETIME,
+		deleted_at DATETIME
+	)`).Error)
+	require.NoError(t, db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uk_logistics_billing_case_no ON logistics_billing_cases(tenant_uuid, case_no)`).Error)
 
 	// ensure deterministic created_at for billing window filtering if needed
 	require.NoError(t, db.Exec(`UPDATE logistics_waybills SET created_at = ? WHERE created_at IS NULL`, time.Now().UTC()).Error)

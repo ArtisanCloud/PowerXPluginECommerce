@@ -103,6 +103,21 @@ export type LogisticsBillingSnapshot = {
   items: LogisticsWaybill[];
 };
 
+export type LogisticsBillingCase = {
+  id: string;
+  waybillId: string;
+  carrierId: string;
+  caseNo: string;
+  status: string;
+  diffAmount: number;
+  reason: string;
+  resolution: string;
+  metadata: Record<string, any>;
+  closedAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type LogisticsLabelPrintTask = {
   id: string;
   requestKey: string;
@@ -279,6 +294,21 @@ const normalizeSLASummary = (raw: RawRecord): LogisticsSLASummaryItem => ({
   deliverySLAHours: Number(pick(raw, "deliverySLAHours", "delivery_sla_hours") || 72),
 });
 
+const normalizeBillingCase = (raw: RawRecord): LogisticsBillingCase => ({
+  id: String(pick(raw, "id", "id") || ""),
+  waybillId: String(pick(raw, "waybillId", "waybill_id") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  caseNo: String(pick(raw, "caseNo", "case_no") || ""),
+  status: String(pick(raw, "status", "status") || "open"),
+  diffAmount: Number(pick(raw, "diffAmount", "diff_amount") || 0),
+  reason: String(pick(raw, "reason", "reason") || ""),
+  resolution: String(pick(raw, "resolution", "resolution") || ""),
+  metadata: (pick(raw, "metadata", "metadata") || {}) as Record<string, any>,
+  closedAt: String(pick(raw, "closedAt", "closed_at") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
 const normalizeRateQuote = (raw: RawRecord): LogisticsRateQuoteResult => {
   const zone = (pick(raw, "matchedZone", "matched_zone") || {}) as RawRecord;
   return {
@@ -389,6 +419,44 @@ export function useLogisticsApi() {
       init?: any,
     ) => {
       return unwrap(apiGet<ApiEnvelope<Record<string, any>>>(`${basePath}/billing/export`, query, init));
+    },
+
+    listBillingCases: async (
+      query?: { carrier_id?: string; status?: string },
+      init?: any,
+    ): Promise<LogisticsBillingCase[]> => {
+      const raw = await unwrap(
+        apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/billing/cases`, query, init),
+      );
+      return asArray<RawRecord>(raw?.items).map(normalizeBillingCase);
+    },
+
+    createBillingCase: async (
+      payload: { waybill_id: string; reason?: string; metadata?: Record<string, any> },
+      init?: any,
+    ): Promise<{ case: LogisticsBillingCase; idempotencyStatus: string }> => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<{ case: RawRecord; idempotency_status: string }>>(
+          `${basePath}/billing/cases`,
+          payload,
+          init,
+        ),
+      );
+      return {
+        case: normalizeBillingCase((raw?.case || {}) as RawRecord),
+        idempotencyStatus: String(raw?.idempotency_status || "created"),
+      };
+    },
+
+    transitionBillingCase: async (
+      id: string,
+      payload: { action: "confirm" | "appeal" | "writeoff"; note?: string; operator_id?: string },
+      init?: any,
+    ): Promise<LogisticsBillingCase> => {
+      const raw = await unwrap(
+        apiPatch<ApiEnvelope<RawRecord>>(`${basePath}/billing/cases/${id}/transition`, payload, init),
+      );
+      return normalizeBillingCase(raw || {});
     },
 
     listLabelPrintTasks: async (query?: { status?: string }, init?: any) => {
