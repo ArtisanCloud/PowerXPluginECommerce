@@ -231,9 +231,9 @@
 
 ### Iteration-3 Polish
 
-- [ ] T097 [P] 更新 M5 quickstart 与执行记录模板（`specs/011-fulfillment-logistics/quickstart.md`）
-- [ ] T098 执行 M5 后端回归（`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/services/admin/reverse ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment ./internal/transport/http/admin/reverse`）
-- [ ] T099 执行 M5 前端构建与页面回归（`cd web-admin && npm run build`）
+- [X] T097 [P] 更新 M5 quickstart 与执行记录模板（`specs/011-fulfillment-logistics/quickstart.md`）
+- [X] T098 执行 M5 后端回归（`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/services/admin/reverse ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment ./internal/transport/http/admin/reverse`）
+- [X] T099 执行 M5 前端构建与页面回归（`cd web-admin && npm run build`）
 
 ---
 

@@ -128,3 +128,56 @@
   - `shipping/waybills`（多包裹与部分发货展示）
   - `shipping/waves`（波次管理）
   - `shipping/billing`（履约成本对账）
+
+## 9. M5 验证（履约运营增强）
+1. 面单打印：批量打印并模拟失败后执行补打，确认失败记录可重试并回执成功/失败条目。
+2. SLA 看板：按时间窗口查看揽收时效、签收时效、异常率，核对聚合统计与明细一致。
+3. 运费试算：在模板页输入区域/重量/件数参数，验证命中规则与计算结果。
+4. 逆向质检：在逆向运单页执行质检判定，确认规则优先级、幂等重放和建议处置一致。
+5. 智能波次：在波次页创建策略并预览分组，按预览批量建波次，确认异常任务不进入候选。
+6. 对账工单：在对账页创建异常工单并执行“确认→申诉→核销”流转，校验状态约束。
+7. 通知中心：配置发货/派送/签收/异常模板，发送通知并验证幂等、失败重试与发送历史。
+
+预期结果：
+- M5 新增页面均可访问并完成核心流程。
+- 对账工单、逆向质检、通知记录具备完整状态可追溯性。
+- 服务侧关键能力（幂等、重试、租户隔离）在回归中通过。
+
+## 10. Iteration-3 执行记录模板（可直接复制）
+```md
+### 10.1 T097 M5 quickstart 与模板更新
+- 变更文件：`specs/011-fulfillment-logistics/quickstart.md`
+- 覆盖范围：US8-US14 验证步骤、M5 发布前检查项
+- 结果：通过/待补充
+
+### 10.2 T098 M5 后端回归
+- 执行命令：`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/services/admin/reverse ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment ./internal/transport/http/admin/reverse`
+- 结果：通过/失败（附失败包与错误）
+
+### 10.3 T099 M5 前端构建与页面回归
+- 执行命令：`cd web-admin && npm run build`
+- 结果：通过/失败
+- 页面回归：`shipping/labels`、`shipping/sla`、`shipping/templates`、`shipping/reverse-waybills`、`shipping/waves`、`shipping/billing`、`shipping/notifications`
+```
+
+## 11. Iteration-3 执行记录（2026-03-26）
+### 11.1 T097 M5 quickstart 与模板更新
+- 已补充 M5 验证章节（第 9 节）与 Iteration-3 执行记录模板（第 10 节）。
+- 覆盖范围：US8-US14 全量验证路径与发布前记录规范。
+
+### 11.2 T098 M5 后端回归
+- 执行命令：  
+  `cd backend && GOCACHE=$PWD/.gocache GOMODCACHE=$PWD/.gomodcache go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/services/admin/reverse ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment ./internal/transport/http/admin/reverse`
+- 结果：**通过**（6 个目标包全部通过，缓存命中）。
+
+### 11.3 T099 M5 前端构建与页面回归
+- 执行命令：`cd web-admin && npm run build`
+- 结果：**通过**（存在既有 Rollup circular/chunk warnings，不阻塞产物输出）。
+- 页面范围：
+  - `shipping/labels`
+  - `shipping/sla`
+  - `shipping/templates`
+  - `shipping/reverse-waybills`
+  - `shipping/waves`
+  - `shipping/billing`
+  - `shipping/notifications`
