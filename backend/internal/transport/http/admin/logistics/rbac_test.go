@@ -89,4 +89,13 @@ func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 	if routingPerm.Resource != "com.powerx.plugins.ecommerce:logistics.routing" {
 		t.Fatalf("unexpected resource %s", routingPerm.Resource)
 	}
+
+	redeliveryKey := "POST:/api/v1/admin/logistics/redelivery/tasks/:id/redispatch"
+	redeliveryPerm, ok := entries[redeliveryKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", redeliveryKey)
+	}
+	if redeliveryPerm.Resource != "com.powerx.plugins.ecommerce:logistics.redelivery" {
+		t.Fatalf("unexpected resource %s", redeliveryPerm.Resource)
+	}
 }

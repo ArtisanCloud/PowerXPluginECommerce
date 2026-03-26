@@ -145,6 +145,22 @@ export type LogisticsRoutingPreview = {
   candidates: LogisticsRoutingCandidate[];
 };
 
+export type LogisticsRedeliveryTask = {
+  id: string;
+  waybillId: string;
+  waybillNo: string;
+  requestKey: string;
+  status: string;
+  attemptNo: number;
+  addressSnapshot: Record<string, any>;
+  lastReason: string;
+  operatorId: string;
+  closedAt: string;
+  metadata: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type LogisticsBillingCarrierSummary = {
   carrierId: string;
   carrierName: string;
@@ -403,6 +419,22 @@ const normalizeRoutingPreview = (raw: RawRecord): LogisticsRoutingPreview => ({
   candidates: asArray<RawRecord>(pick(raw, "candidates", "candidates")).map(normalizeRoutingCandidate),
 });
 
+const normalizeRedeliveryTask = (raw: RawRecord): LogisticsRedeliveryTask => ({
+  id: String(pick(raw, "id", "id") || ""),
+  waybillId: String(pick(raw, "waybillId", "waybill_id") || ""),
+  waybillNo: String(pick(raw, "waybillNo", "waybill_no") || ""),
+  requestKey: String(pick(raw, "requestKey", "request_key") || ""),
+  status: String(pick(raw, "status", "status") || "initiated"),
+  attemptNo: Number(pick(raw, "attemptNo", "attempt_no") || 1),
+  addressSnapshot: (pick(raw, "addressSnapshot", "address_snapshot") || {}) as Record<string, any>,
+  lastReason: String(pick(raw, "lastReason", "last_reason") || ""),
+  operatorId: String(pick(raw, "operatorId", "operator_id") || ""),
+  closedAt: String(pick(raw, "closedAt", "closed_at") || ""),
+  metadata: (pick(raw, "metadata", "metadata") || {}) as Record<string, any>,
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
 const normalizeLabelPrintTask = (raw: RawRecord): LogisticsLabelPrintTask => ({
   id: String(pick(raw, "id", "id") || ""),
   requestKey: String(pick(raw, "requestKey", "request_key") || ""),
@@ -589,6 +621,63 @@ export function useLogisticsApi() {
     ): Promise<LogisticsRoutingPreview> => {
       const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/routing/preview`, payload, init));
       return normalizeRoutingPreview((raw || {}) as RawRecord);
+    },
+
+    listRedeliveryTasks: async (
+      query?: { waybill_id?: string; status?: string },
+      init?: any,
+    ): Promise<LogisticsRedeliveryTask[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/redelivery/tasks`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeRedeliveryTask);
+    },
+
+    initiateRedeliveryTask: async (
+      payload: Record<string, any>,
+      init?: any,
+    ): Promise<{ task: LogisticsRedeliveryTask; idempotencyStatus: string }> => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<{ task: RawRecord; idempotency_status: string }>>(
+          `${basePath}/redelivery/tasks/initiate`,
+          payload,
+          init,
+        ),
+      );
+      return {
+        task: normalizeRedeliveryTask((raw?.task || {}) as RawRecord),
+        idempotencyStatus: String(raw?.idempotency_status || "created"),
+      };
+    },
+
+    updateRedeliveryAddress: async (id: string, payload: Record<string, any>, init?: any): Promise<LogisticsRedeliveryTask> => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<RawRecord>>(`${basePath}/redelivery/tasks/${id}/address`, payload, init),
+      );
+      return normalizeRedeliveryTask((raw || {}) as RawRecord);
+    },
+
+    redispatchRedeliveryTask: async (
+      id: string,
+      payload: Record<string, any>,
+      init?: any,
+    ): Promise<{ task: LogisticsRedeliveryTask; idempotencyStatus: string }> => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<{ task: RawRecord; idempotency_status: string }>>(
+          `${basePath}/redelivery/tasks/${id}/redispatch`,
+          payload,
+          init,
+        ),
+      );
+      return {
+        task: normalizeRedeliveryTask((raw?.task || {}) as RawRecord),
+        idempotencyStatus: String(raw?.idempotency_status || "created"),
+      };
+    },
+
+    closeRedeliveryTask: async (id: string, payload: Record<string, any>, init?: any): Promise<LogisticsRedeliveryTask> => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<RawRecord>>(`${basePath}/redelivery/tasks/${id}/close`, payload, init),
+      );
+      return normalizeRedeliveryTask((raw || {}) as RawRecord);
     },
 
     listWaybillETA: async (

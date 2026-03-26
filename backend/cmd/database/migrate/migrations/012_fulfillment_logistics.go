@@ -15,6 +15,7 @@ var FulfillmentLogisticsTables = []interface{}{
 	&LogisticsModel.RoutingRule{},
 	&LogisticsModel.ETAPolicy{},
 	&LogisticsModel.ETARecord{},
+	&LogisticsModel.RedeliveryTask{},
 	&LogisticsModel.Waybill{},
 	&LogisticsModel.TrackingEvent{},
 	&LogisticsModel.LabelPrintTask{},

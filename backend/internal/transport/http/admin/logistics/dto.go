@@ -86,6 +86,33 @@ type previewRoutingRequest struct {
 	ServiceCode        string  `json:"service_code,omitempty"`
 }
 
+type initiateRedeliveryRequest struct {
+	WaybillID  string         `json:"waybill_id"`
+	RequestKey string         `json:"request_key,omitempty"`
+	Reason     string         `json:"reason,omitempty"`
+	OperatorID string         `json:"operator_id,omitempty"`
+	Address    map[string]any `json:"address,omitempty"`
+	Metadata   map[string]any `json:"metadata,omitempty"`
+}
+
+type updateRedeliveryAddressRequest struct {
+	Address    map[string]any `json:"address"`
+	OperatorID string         `json:"operator_id,omitempty"`
+	Reason     string         `json:"reason,omitempty"`
+}
+
+type redispatchRedeliveryRequest struct {
+	RequestKey string         `json:"request_key,omitempty"`
+	OperatorID string         `json:"operator_id,omitempty"`
+	Reason     string         `json:"reason,omitempty"`
+	Metadata   map[string]any `json:"metadata,omitempty"`
+}
+
+type closeRedeliveryRequest struct {
+	OperatorID string `json:"operator_id,omitempty"`
+	Reason     string `json:"reason,omitempty"`
+}
+
 type batchPrintLabelsRequest struct {
 	WaybillIDs     []string `json:"waybill_ids"`
 	IdempotencyKey string   `json:"idempotency_key,omitempty"`

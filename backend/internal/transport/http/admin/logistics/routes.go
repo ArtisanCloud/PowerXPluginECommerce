@@ -23,6 +23,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 		logisticssvc.NewWaybillService(deps),
 		logisticssvc.NewETAService(deps),
 		logisticssvc.NewRoutingService(deps),
+		logisticssvc.NewRedeliveryService(deps),
 		logisticssvc.NewBillingService(deps),
 		logisticssvc.NewBillingCaseService(deps),
 		logisticssvc.NewNotificationService(deps),
@@ -48,6 +49,11 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.PATCH("/routing/rules/:id", handler.UpsertRoutingRule)
 	rg.DELETE("/routing/rules/:id", handler.DeleteRoutingRule)
 	rg.POST("/routing/preview", handler.PreviewRouting)
+	rg.GET("/redelivery/tasks", handler.ListRedeliveryTasks)
+	rg.POST("/redelivery/tasks/initiate", handler.InitiateRedeliveryTask)
+	rg.POST("/redelivery/tasks/:id/address", handler.UpdateRedeliveryAddress)
+	rg.POST("/redelivery/tasks/:id/redispatch", handler.RedispatchRedeliveryTask)
+	rg.POST("/redelivery/tasks/:id/close", handler.CloseRedeliveryTask)
 	rg.GET("/eta", handler.ListWaybillETA)
 	rg.GET("/eta/:waybill_id", handler.GetWaybillETA)
 	rg.POST("/waybills", handler.CreateWaybill)

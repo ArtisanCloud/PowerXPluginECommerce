@@ -80,6 +80,9 @@
             <UButton size="xs" variant="ghost" color="neutral" @click="openRoutingPreview(row.original)">
               路由预览
             </UButton>
+            <UButton size="xs" variant="ghost" color="warning" @click="openRedelivery(row.original)">
+              失败重派
+            </UButton>
             <UButton size="xs" variant="ghost" @click="selectWaybill(row.original)">
               查看轨迹
             </UButton>
@@ -152,12 +155,50 @@
         </div>
       </template>
     </UModal>
+
+    <UModal v-model:open="redeliveryOpen" title="妥投失败二次派送">
+      <template #body>
+        <div class="space-y-3">
+          <p class="text-xs text-gray-500">运单 {{ redeliveryForm.waybillNo || "-" }} 的失败重派闭环。</p>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <UInput v-model="redeliveryForm.reason" placeholder="原因（failed_delivery）" />
+            <UInput v-model="redeliveryForm.operatorId" placeholder="操作人" />
+            <UInput v-model="redeliveryForm.requestKey" placeholder="请求幂等键（可选）" />
+            <UInput v-model="redeliveryForm.addressLine" placeholder="改址内容（可选）" />
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <UButton color="warning" :loading="redeliveryLoading" @click="initiateRedelivery">发起</UButton>
+            <UButton color="neutral" :loading="redeliveryLoading" :disabled="!redeliveryForm.taskId" @click="updateRedeliveryAddress">
+              改址
+            </UButton>
+            <UButton color="primary" :loading="redeliveryLoading" :disabled="!redeliveryForm.taskId" @click="redispatchRedelivery">
+              重派
+            </UButton>
+            <UButton color="success" :loading="redeliveryLoading" :disabled="!redeliveryForm.taskId" @click="closeRedelivery">
+              关闭
+            </UButton>
+          </div>
+          <UCard>
+            <template #header>
+              <div class="text-sm font-medium">最近任务</div>
+            </template>
+            <ul class="space-y-1 text-xs">
+              <li v-for="task in redeliveryTasks" :key="task.id" class="flex items-center justify-between">
+                <span>{{ task.status }} · attempt={{ task.attemptNo }} · {{ task.lastReason || "-" }}</span>
+                <UButton size="xs" variant="ghost" @click="selectRedeliveryTask(task)">选择</UButton>
+              </li>
+              <li v-if="!redeliveryTasks.length" class="text-gray-500">暂无任务</li>
+            </ul>
+          </UCard>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
-import type { LogisticsWaybillETA } from "~/composables/api/useLogistics";
+import type { LogisticsRedeliveryTask, LogisticsWaybillETA } from "~/composables/api/useLogistics";
 import { useLogisticsApi } from "~/composables/api";
 
 definePageMeta({
@@ -200,6 +241,9 @@ const carrierMap = ref<Record<string, string>>({});
 const routingPreviewOpen = ref(false);
 const routingPreviewLoading = ref(false);
 const routingPreviewResult = ref<any>(null);
+const redeliveryOpen = ref(false);
+const redeliveryLoading = ref(false);
+const redeliveryTasks = ref<LogisticsRedeliveryTask[]>([]);
 const routingForm = reactive({
   waybillNo: "",
   warehouseId: "",
@@ -208,6 +252,15 @@ const routingForm = reactive({
   weight: 1,
   preferredCarrierId: "",
   preferredCarrierName: "",
+});
+const redeliveryForm = reactive({
+  taskId: "",
+  waybillId: "",
+  waybillNo: "",
+  reason: "failed_delivery",
+  operatorId: "admin",
+  requestKey: "",
+  addressLine: "",
 });
 
 const normalizeStatus = (status: string): WaybillStatus => {
@@ -420,6 +473,92 @@ const previewRouting = async () => {
     });
   } finally {
     routingPreviewLoading.value = false;
+  }
+};
+
+const loadRedeliveryTasks = async (waybillId: string) => {
+  redeliveryTasks.value = await logisticsApi.listRedeliveryTasks({ waybill_id: waybillId });
+  if (redeliveryTasks.value.length && !redeliveryForm.taskId) {
+    redeliveryForm.taskId = redeliveryTasks.value[0].id;
+  }
+};
+
+const openRedelivery = async (waybill: Waybill) => {
+  redeliveryForm.taskId = "";
+  redeliveryForm.waybillId = waybill.id;
+  redeliveryForm.waybillNo = waybill.waybillNo;
+  redeliveryForm.reason = "failed_delivery";
+  redeliveryForm.operatorId = "admin";
+  redeliveryForm.requestKey = "";
+  redeliveryForm.addressLine = "";
+  redeliveryOpen.value = true;
+  await loadRedeliveryTasks(waybill.id);
+};
+
+const selectRedeliveryTask = (task: LogisticsRedeliveryTask) => {
+  redeliveryForm.taskId = task.id;
+  redeliveryForm.reason = task.lastReason || redeliveryForm.reason;
+};
+
+const initiateRedelivery = async () => {
+  if (!redeliveryForm.waybillId) return;
+  redeliveryLoading.value = true;
+  try {
+    const resp = await logisticsApi.initiateRedeliveryTask({
+      waybill_id: redeliveryForm.waybillId,
+      request_key: redeliveryForm.requestKey || undefined,
+      reason: redeliveryForm.reason || undefined,
+      operator_id: redeliveryForm.operatorId || undefined,
+      address: redeliveryForm.addressLine ? { line1: redeliveryForm.addressLine } : undefined,
+    });
+    redeliveryForm.taskId = resp.task.id;
+    await loadRedeliveryTasks(redeliveryForm.waybillId);
+  } finally {
+    redeliveryLoading.value = false;
+  }
+};
+
+const updateRedeliveryAddress = async () => {
+  if (!redeliveryForm.taskId) return;
+  redeliveryLoading.value = true;
+  try {
+    await logisticsApi.updateRedeliveryAddress(redeliveryForm.taskId, {
+      address: { line1: redeliveryForm.addressLine || "updated" },
+      operator_id: redeliveryForm.operatorId || undefined,
+      reason: redeliveryForm.reason || undefined,
+    });
+    await loadRedeliveryTasks(redeliveryForm.waybillId);
+  } finally {
+    redeliveryLoading.value = false;
+  }
+};
+
+const redispatchRedelivery = async () => {
+  if (!redeliveryForm.taskId) return;
+  redeliveryLoading.value = true;
+  try {
+    await logisticsApi.redispatchRedeliveryTask(redeliveryForm.taskId, {
+      request_key: redeliveryForm.requestKey || undefined,
+      operator_id: redeliveryForm.operatorId || undefined,
+      reason: redeliveryForm.reason || undefined,
+    });
+    await loadRedeliveryTasks(redeliveryForm.waybillId);
+  } finally {
+    redeliveryLoading.value = false;
+  }
+};
+
+const closeRedelivery = async () => {
+  if (!redeliveryForm.taskId) return;
+  redeliveryLoading.value = true;
+  try {
+    await logisticsApi.closeRedeliveryTask(redeliveryForm.taskId, {
+      operator_id: redeliveryForm.operatorId || undefined,
+      reason: redeliveryForm.reason || undefined,
+    });
+    await loadRedeliveryTasks(redeliveryForm.waybillId);
+  } finally {
+    redeliveryLoading.value = false;
   }
 };
 

@@ -259,11 +259,11 @@
 
 ### User Story 17 - 妥投失败二次派送闭环（P3）
 
-- [ ] T110 [P] [US17] 增加二次派送任务模型与仓储（`backend/internal/entity/models/logistics/redelivery*.go`、`backend/internal/entity/repository/logistics/redelivery*_repository.go`）
-- [ ] T111 [US17] 实现二次派送状态机服务（发起/改址/重派/关闭）（`backend/internal/services/admin/logistics/redelivery_service.go`）
-- [ ] T112 [US17] 实现二次派送接口（`backend/internal/transport/http/admin/logistics/{redelivery_handler.go,routes.go,dto.go}`）
-- [ ] T113 [US17] 在运单页增加“失败重派”流程视图（`web-admin/app/pages/shipping/waybills.vue`）
-- [ ] T114 [US17] 增加 US17 回归测试（状态流转约束、幂等重派）（`backend/internal/services/admin/logistics/*_test.go`）
+- [X] T110 [P] [US17] 增加二次派送任务模型与仓储（`backend/internal/entity/models/logistics/redelivery*.go`、`backend/internal/entity/repository/logistics/redelivery*_repository.go`）
+- [X] T111 [US17] 实现二次派送状态机服务（发起/改址/重派/关闭）（`backend/internal/services/admin/logistics/redelivery_service.go`）
+- [X] T112 [US17] 实现二次派送接口（`backend/internal/transport/http/admin/logistics/{redelivery_handler.go,routes.go,dto.go}`）
+- [X] T113 [US17] 在运单页增加“失败重派”流程视图（`web-admin/app/pages/shipping/waybills.vue`）
+- [X] T114 [US17] 增加 US17 回归测试（状态流转约束、幂等重派）（`backend/internal/services/admin/logistics/*_test.go`）
 
 ### User Story 18 - 物流风控与黑名单（P3）
 
