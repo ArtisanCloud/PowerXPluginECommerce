@@ -103,6 +103,35 @@ export type LogisticsBillingSnapshot = {
   items: LogisticsWaybill[];
 };
 
+export type LogisticsLabelPrintTask = {
+  id: string;
+  requestKey: string;
+  waybillId: string;
+  waybillNo: string;
+  status: string;
+  attemptCount: number;
+  maxAttempts: number;
+  lastError: string;
+  retryQueuedAt: string;
+  printedAt: string;
+  metadata: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsLabelPrintResult = {
+  task: LogisticsLabelPrintTask | null;
+  idempotencyStatus: string;
+  success: boolean;
+  message: string;
+};
+
+export type LogisticsLabelPrintBatchResult = {
+  results: LogisticsLabelPrintResult[];
+  success: number;
+  failed: number;
+};
+
 const normalizeCarrier = (raw: RawRecord): LogisticsCarrier => ({
   id: String(pick(raw, "id", "id") || ""),
   name: String(pick(raw, "name", "name") || ""),
@@ -175,6 +204,29 @@ const normalizeTracking = (raw: RawRecord): LogisticsTracking => ({
   occurredAt: String(pick(raw, "occurredAt", "occurred_at") || ""),
   payload: (pick(raw, "payload", "payload") || {}) as Record<string, any>,
   createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+});
+
+const normalizeLabelPrintTask = (raw: RawRecord): LogisticsLabelPrintTask => ({
+  id: String(pick(raw, "id", "id") || ""),
+  requestKey: String(pick(raw, "requestKey", "request_key") || ""),
+  waybillId: String(pick(raw, "waybillId", "waybill_id") || ""),
+  waybillNo: String(pick(raw, "waybillNo", "waybill_no") || ""),
+  status: String(pick(raw, "status", "status") || "pending"),
+  attemptCount: Number(pick(raw, "attemptCount", "attempt_count") || 0),
+  maxAttempts: Number(pick(raw, "maxAttempts", "max_attempts") || 3),
+  lastError: String(pick(raw, "lastError", "last_error") || ""),
+  retryQueuedAt: String(pick(raw, "retryQueuedAt", "retry_queued_at") || ""),
+  printedAt: String(pick(raw, "printedAt", "printed_at") || ""),
+  metadata: (pick(raw, "metadata", "metadata") || {}) as Record<string, any>,
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeLabelPrintResult = (raw: RawRecord): LogisticsLabelPrintResult => ({
+  task: raw?.task ? normalizeLabelPrintTask(raw.task as RawRecord) : null,
+  idempotencyStatus: String(pick(raw, "idempotencyStatus", "idempotency_status") || "created"),
+  success: Boolean(pick(raw, "success", "success")),
+  message: String(pick(raw, "message", "message") || ""),
 });
 
 export function useLogisticsApi() {
@@ -258,6 +310,35 @@ export function useLogisticsApi() {
       init?: any,
     ) => {
       return unwrap(apiGet<ApiEnvelope<Record<string, any>>>(`${basePath}/billing/export`, query, init));
+    },
+
+    listLabelPrintTasks: async (query?: { status?: string }, init?: any) => {
+      const raw = await unwrap(
+        apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/labels/prints`, query, init),
+      );
+      return asArray<RawRecord>(raw?.items).map(normalizeLabelPrintTask);
+    },
+
+    batchPrintLabels: async (payload: Record<string, any>, init?: any): Promise<LogisticsLabelPrintBatchResult> => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<{ results: RawRecord[]; success: number; failed: number }>>(`${basePath}/labels/prints`, payload, init),
+      );
+      return {
+        results: asArray<RawRecord>(raw?.results).map(normalizeLabelPrintResult),
+        success: Number(raw?.success || 0),
+        failed: Number(raw?.failed || 0),
+      };
+    },
+
+    retryLabelPrint: async (payload: Record<string, any>, init?: any): Promise<LogisticsLabelPrintBatchResult> => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<{ results: RawRecord[]; success: number; failed: number }>>(`${basePath}/labels/prints/retry`, payload, init),
+      );
+      return {
+        results: asArray<RawRecord>(raw?.results).map(normalizeLabelPrintResult),
+        success: Number(raw?.success || 0),
+        failed: Number(raw?.failed || 0),
+      };
     },
   };
 }

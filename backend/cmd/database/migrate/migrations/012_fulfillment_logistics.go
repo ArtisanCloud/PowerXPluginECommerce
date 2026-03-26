@@ -14,6 +14,7 @@ var FulfillmentLogisticsTables = []interface{}{
 	&LogisticsModel.RateZone{},
 	&LogisticsModel.Waybill{},
 	&LogisticsModel.TrackingEvent{},
+	&LogisticsModel.LabelPrintTask{},
 	&FulfillmentModel.Task{},
 	&FulfillmentModel.TaskLog{},
 	&FulfillmentModel.Wave{},

@@ -16,6 +16,7 @@ type Handler struct {
 	rateSvc    *logisticssvc.RateTemplateService
 	waybillSvc *logisticssvc.WaybillService
 	billingSvc *logisticssvc.BillingService
+	labelSvc   *logisticssvc.LabelPrintService
 	webhookSvc *logisticssvc.WebhookService
 }
 
@@ -24,9 +25,10 @@ func NewHandler(
 	rateSvc *logisticssvc.RateTemplateService,
 	waybillSvc *logisticssvc.WaybillService,
 	billingSvc *logisticssvc.BillingService,
+	labelSvc *logisticssvc.LabelPrintService,
 	webhookSvc *logisticssvc.WebhookService,
 ) *Handler {
-	return &Handler{carrierSvc: carrierSvc, rateSvc: rateSvc, waybillSvc: waybillSvc, billingSvc: billingSvc, webhookSvc: webhookSvc}
+	return &Handler{carrierSvc: carrierSvc, rateSvc: rateSvc, waybillSvc: waybillSvc, billingSvc: billingSvc, labelSvc: labelSvc, webhookSvc: webhookSvc}
 }
 
 func (h *Handler) ListCarriers(c *gin.Context) {
@@ -363,6 +365,65 @@ func (h *Handler) ExportBilling(c *gin.Context) {
 		return
 	}
 	contracts.ResponseSuccess(c, payload)
+}
+
+func (h *Handler) ListLabelPrintTasks(c *gin.Context) {
+	if h == nil || h.labelSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "logistics label print service unavailable", nil)
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	rows, err := h.labelSvc.List(c.Request.Context(), tenantUUID, strings.TrimSpace(c.Query("status")), 100)
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, gin.H{"items": rows})
+}
+
+func (h *Handler) BatchPrintLabels(c *gin.Context) {
+	if h == nil || h.labelSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "logistics label print service unavailable", nil)
+		return
+	}
+	var payload batchPrintLabelsRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		contracts.ResponseBadRequest(c, "invalid request body: "+err.Error())
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	result, err := h.labelSvc.BatchPrint(c.Request.Context(), tenantUUID, logisticssvc.BatchPrintLabelsRequest{
+		WaybillIDs:     payload.WaybillIDs,
+		IdempotencyKey: strings.TrimSpace(payload.IdempotencyKey),
+		ReprintReason:  strings.TrimSpace(payload.ReprintReason),
+		MaxAttempts:    payload.MaxAttempts,
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, result)
+}
+
+func (h *Handler) RetryLabelPrint(c *gin.Context) {
+	if h == nil || h.labelSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "logistics label print service unavailable", nil)
+		return
+	}
+	var payload retryLabelPrintRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		contracts.ResponseBadRequest(c, "invalid request body: "+err.Error())
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	result, err := h.labelSvc.RetryFailed(c.Request.Context(), tenantUUID, logisticssvc.RetryLabelPrintRequest{
+		TaskIDs: payload.TaskIDs,
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, result)
 }
 
 func (h *Handler) HandleWebhook(c *gin.Context) {

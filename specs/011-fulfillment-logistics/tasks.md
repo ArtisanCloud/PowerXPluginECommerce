@@ -169,6 +169,74 @@
 
 ---
 
+## Phase 9: Iteration-3 - 履约运营增强（Backlog）
+
+**Purpose**: 在 M4 基础上补齐仓内效率、服务商运营与成本闭环能力。
+
+### User Story 8 - 批量面单打印与补打（P1）
+
+- [X] T062 [P] [US8] 增加面单打印任务模型与仓储（`backend/internal/entity/models/logistics/label_print*.go`、`backend/internal/entity/repository/logistics/label_print*_repository.go`）
+- [X] T063 [US8] 实现批量打印/补打服务（失败重试队列）（`backend/internal/services/admin/logistics/label_print_service.go`）
+- [X] T064 [US8] 实现面单打印 admin 接口（`backend/internal/transport/http/admin/logistics/{label_print_handler.go,routes.go,dto.go}`）
+- [X] T065 [US8] 新增面单打印页面（批量选择、状态回执、补打入口）（`web-admin/app/pages/shipping/labels.vue`）
+- [X] T066 [US8] 增加 US8 回归测试（批量失败重试、幂等补打）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### User Story 9 - 承运商 SLA 看板（P2）
+
+- [ ] T067 [P] [US9] 增加 SLA 指标投影与聚合仓储（`backend/internal/entity/repository/logistics/sla*_repository.go`）
+- [ ] T068 [US9] 实现 SLA 统计服务（揽收时效/签收时效/异常率）（`backend/internal/services/admin/logistics/sla_service.go`）
+- [ ] T069 [US9] 实现 SLA 看板接口（`backend/internal/transport/http/admin/logistics/{sla_handler.go,routes.go,dto.go}`）
+- [ ] T070 [US9] 新增 SLA 看板页面（`web-admin/app/pages/shipping/sla.vue`）
+- [ ] T071 [US9] 增加 US9 回归测试（窗口聚合准确性、租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### User Story 10 - 运费模板模拟器（P2）
+
+- [ ] T072 [P] [US10] 扩展运费规则解析与试算模型（`backend/internal/entity/models/logistics/rate_quote*.go`）
+- [ ] T073 [US10] 实现运费试算服务（地址/重量/件数输入）（`backend/internal/services/admin/logistics/rate_quote_service.go`）
+- [ ] T074 [US10] 实现运费模拟接口（`backend/internal/transport/http/admin/logistics/{rate_quote_handler.go,routes.go,dto.go}`）
+- [ ] T075 [US10] 在模板页面增加“模拟试算”交互（`web-admin/app/pages/shipping/templates.vue`）
+- [ ] T076 [US10] 增加 US10 回归测试（规则命中顺序、边界输入）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### User Story 11 - 逆向质检规则引擎（P3）
+
+- [ ] T077 [P] [US11] 增加逆向质检规则模型与仓储（`backend/internal/entity/models/reverse/inspection_rule*.go`、`backend/internal/entity/repository/reverse/inspection*_repository.go`）
+- [ ] T078 [US11] 实现质检判定服务（可二销/报损/维修）（`backend/internal/services/admin/reverse/inspection_service.go`）
+- [ ] T079 [US11] 实现质检规则与判定接口（`backend/internal/transport/http/admin/reverse/{inspection_handler.go,routes.go,dto.go}`）
+- [ ] T080 [US11] 在逆向页面展示质检结果与建议（`web-admin/app/pages/shipping/reverse-waybills.vue`）
+- [ ] T081 [US11] 增加 US11 回归测试（规则优先级、重复判定幂等）（`backend/internal/services/admin/reverse/*_test.go`）
+
+### User Story 12 - 波次智能分组策略（P2）
+
+- [ ] T082 [P] [US12] 增加波次策略配置模型与仓储（`backend/internal/entity/models/fulfillment/wave_strategy*.go`、`backend/internal/entity/repository/fulfillment/wave_strategy*_repository.go`）
+- [ ] T083 [US12] 实现智能分组服务（仓/承运商/时段/优先级）（`backend/internal/services/admin/fulfillment/wave_strategy_service.go`）
+- [ ] T084 [US12] 实现策略管理与预览接口（`backend/internal/transport/http/admin/fulfillment/{wave_strategy_handler.go,routes.go,dto.go}`）
+- [ ] T085 [US12] 在波次页面增加“智能分组”入口（`web-admin/app/pages/shipping/waves.vue`）
+- [ ] T086 [US12] 增加 US12 回归测试（分组稳定性、部分异常隔离）（`backend/internal/services/admin/fulfillment/*_test.go`）
+
+### User Story 13 - 对账异常工单闭环（P3）
+
+- [ ] T087 [P] [US13] 增加对账异常工单模型与仓储（`backend/internal/entity/models/logistics/billing_case*.go`、`backend/internal/entity/repository/logistics/billing_case*_repository.go`）
+- [ ] T088 [US13] 实现异常工单状态机服务（确认/申诉/核销）（`backend/internal/services/admin/logistics/billing_case_service.go`）
+- [ ] T089 [US13] 实现异常工单接口（`backend/internal/transport/http/admin/logistics/{billing_case_handler.go,routes.go,dto.go}`）
+- [ ] T090 [US13] 在对账页面增加异常工单流转视图（`web-admin/app/pages/shipping/billing.vue`）
+- [ ] T091 [US13] 增加 US13 回归测试（状态流转约束、跨租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### User Story 14 - 物流通知中心（P3）
+
+- [ ] T092 [P] [US14] 增加物流通知模板与发送记录模型（`backend/internal/entity/models/logistics/notification*.go`）
+- [ ] T093 [US14] 实现通知编排服务（发货/派送/签收/异常）（`backend/internal/services/admin/logistics/notification_service.go`）
+- [ ] T094 [US14] 实现通知管理接口（模板管理、发送历史）（`backend/internal/transport/http/admin/logistics/{notification_handler.go,routes.go,dto.go}`）
+- [ ] T095 [US14] 新增通知中心页面（`web-admin/app/pages/shipping/notifications.vue`）
+- [ ] T096 [US14] 增加 US14 回归测试（模板渲染、重试与幂等）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### Iteration-3 Polish
+
+- [ ] T097 [P] 更新 M5 quickstart 与执行记录模板（`specs/011-fulfillment-logistics/quickstart.md`）
+- [ ] T098 执行 M5 后端回归（`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/services/admin/reverse ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment ./internal/transport/http/admin/reverse`）
+- [ ] T099 执行 M5 前端构建与页面回归（`cd web-admin && npm run build`）
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

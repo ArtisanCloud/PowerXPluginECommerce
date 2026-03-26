@@ -163,6 +163,7 @@ const (
 	TableLogisticsRateZones             = "logistics_rate_zones"
 	TableLogisticsWaybills              = "logistics_waybills"
 	TableLogisticsTrackingEvents        = "logistics_tracking_events"
+	TableLogisticsLabelPrintTasks       = "logistics_label_print_tasks"
 	TableFulfillmentTasks               = "fulfillment_tasks"
 	TableFulfillmentTaskLogs            = "fulfillment_task_logs"
 	TableFulfillmentWaves               = "fulfillment_waves"

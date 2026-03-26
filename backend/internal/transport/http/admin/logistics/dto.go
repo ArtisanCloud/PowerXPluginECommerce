@@ -52,3 +52,14 @@ type webhookRequest struct {
 type updateWaybillCostRequest struct {
 	ActualFeeAmount float64 `json:"actual_fee_amount"`
 }
+
+type batchPrintLabelsRequest struct {
+	WaybillIDs     []string `json:"waybill_ids"`
+	IdempotencyKey string   `json:"idempotency_key,omitempty"`
+	ReprintReason  string   `json:"reprint_reason,omitempty"`
+	MaxAttempts    int      `json:"max_attempts,omitempty"`
+}
+
+type retryLabelPrintRequest struct {
+	TaskIDs []string `json:"task_ids,omitempty"`
+}
