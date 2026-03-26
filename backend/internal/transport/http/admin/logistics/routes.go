@@ -19,6 +19,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	handler := NewHandler(
 		logisticssvc.NewCarrierService(deps),
 		logisticssvc.NewRateTemplateService(deps),
+		logisticssvc.NewRateQuoteService(deps),
 		logisticssvc.NewWaybillService(deps),
 		logisticssvc.NewBillingService(deps),
 		logisticssvc.NewSLAService(deps),
@@ -35,6 +36,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.POST("/templates", handler.UpsertTemplate)
 	rg.PATCH("/templates/:id", handler.UpsertTemplate)
 	rg.POST("/templates/:id/publish", handler.PublishTemplate)
+	rg.POST("/templates/:id/quote", handler.QuoteTemplate)
 
 	rg.GET("/waybills", handler.ListWaybills)
 	rg.POST("/waybills", handler.CreateWaybill)

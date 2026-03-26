@@ -15,6 +15,7 @@ import (
 type Handler struct {
 	carrierSvc *logisticssvc.CarrierService
 	rateSvc    *logisticssvc.RateTemplateService
+	quoteSvc   *logisticssvc.RateQuoteService
 	waybillSvc *logisticssvc.WaybillService
 	billingSvc *logisticssvc.BillingService
 	slaSvc     *logisticssvc.SLAService
@@ -25,13 +26,14 @@ type Handler struct {
 func NewHandler(
 	carrierSvc *logisticssvc.CarrierService,
 	rateSvc *logisticssvc.RateTemplateService,
+	quoteSvc *logisticssvc.RateQuoteService,
 	waybillSvc *logisticssvc.WaybillService,
 	billingSvc *logisticssvc.BillingService,
 	slaSvc *logisticssvc.SLAService,
 	labelSvc *logisticssvc.LabelPrintService,
 	webhookSvc *logisticssvc.WebhookService,
 ) *Handler {
-	return &Handler{carrierSvc: carrierSvc, rateSvc: rateSvc, waybillSvc: waybillSvc, billingSvc: billingSvc, slaSvc: slaSvc, labelSvc: labelSvc, webhookSvc: webhookSvc}
+	return &Handler{carrierSvc: carrierSvc, rateSvc: rateSvc, quoteSvc: quoteSvc, waybillSvc: waybillSvc, billingSvc: billingSvc, slaSvc: slaSvc, labelSvc: labelSvc, webhookSvc: webhookSvc}
 }
 
 func (h *Handler) ListCarriers(c *gin.Context) {
@@ -174,6 +176,37 @@ func (h *Handler) PublishTemplate(c *gin.Context) {
 		return
 	}
 	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) QuoteTemplate(c *gin.Context) {
+	if h == nil || h.quoteSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "logistics rate quote service unavailable", nil)
+		return
+	}
+	templateID := strings.TrimSpace(c.Param("id"))
+	if templateID == "" {
+		contracts.ResponseBadRequest(c, "template id is required")
+		return
+	}
+	var payload rateQuoteRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		contracts.ResponseBadRequest(c, "invalid request body: "+err.Error())
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	result, err := h.quoteSvc.Quote(c.Request.Context(), tenantUUID, logisticssvc.QuoteRateRequest{
+		TemplateID:  templateID,
+		Region:      strings.TrimSpace(payload.Region),
+		Weight:      payload.Weight,
+		PieceCount:  payload.PieceCount,
+		Volume:      payload.Volume,
+		OrderAmount: payload.OrderAmount,
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, result)
 }
 
 func (h *Handler) ListWaybills(c *gin.Context) {

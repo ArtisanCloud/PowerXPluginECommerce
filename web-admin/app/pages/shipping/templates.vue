@@ -110,6 +110,35 @@
         </UCard>
       </div>
     </UCard>
+
+    <UCard>
+      <template #header>
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">模拟试算</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400">输入区域与重量/件数/体积，实时计算运费。</p>
+          </div>
+          <UButton color="primary" icon="i-heroicons-calculator" @click="runQuote">开始试算</UButton>
+        </div>
+      </template>
+
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <USelect v-model="quoteForm.templateId" :options="templateOptions" placeholder="选择模板" />
+        <UInput v-model="quoteForm.region" placeholder="区域（如 华东）" />
+        <UInput v-model.number="quoteForm.orderAmount" type="number" placeholder="订单金额（可选）" />
+        <UInput v-model.number="quoteForm.weight" type="number" placeholder="重量 kg（可选）" />
+        <UInput v-model.number="quoteForm.pieceCount" type="number" placeholder="件数（可选）" />
+        <UInput v-model.number="quoteForm.volume" type="number" placeholder="体积（可选）" />
+      </div>
+
+      <div v-if="quoteResult" class="mt-4 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+        <div class="text-sm text-gray-500">模板：{{ quoteResult.template }} · 币种：{{ quoteResult.currency }}</div>
+        <div class="mt-2 text-2xl font-semibold text-primary-600">¥{{ quoteResult.feeAmount.toFixed(2) }}</div>
+        <div class="mt-2 text-sm text-gray-500">
+          匹配区域：{{ quoteResult.matchedZone.region || "-" }} · 计费：{{ quoteResult.billingType }}
+        </div>
+      </div>
+    </UCard>
   </div>
 </template>
 
@@ -138,6 +167,15 @@ type Template = {
 
 const logisticsApi = useLogisticsApi();
 const templates = ref<Template[]>([]);
+const quoteResult = ref<any>(null);
+const quoteForm = reactive({
+  templateId: "",
+  region: "默认区域",
+  weight: 1,
+  pieceCount: 1,
+  volume: 0,
+  orderAmount: 0,
+});
 
 const normalizeBilling = (v: string): BillingType => {
   const val = String(v || "").toLowerCase();
@@ -166,11 +204,32 @@ const loadTemplates = async () => {
       lastUpdate: row.updatedAt ? row.updatedAt.slice(0, 10) : "-",
     };
   });
+  if (!quoteForm.templateId && templates.value.length > 0) {
+    quoteForm.templateId = templates.value[0].id;
+  }
 };
 
 onMounted(() => {
   loadTemplates();
 });
+
+const templateOptions = computed(() =>
+  templates.value.map((item) => ({
+    label: item.name,
+    value: item.id,
+  })),
+);
+
+const runQuote = async () => {
+  if (!quoteForm.templateId) return;
+  quoteResult.value = await logisticsApi.quoteTemplate(quoteForm.templateId, {
+    region: quoteForm.region,
+    weight: Number(quoteForm.weight) || 0,
+    piece_count: Number(quoteForm.pieceCount) || 0,
+    volume: Number(quoteForm.volume) || 0,
+    order_amount: Number(quoteForm.orderAmount) || 0,
+  });
+};
 
 const heatmap = computed(() =>
   templates.value.slice(0, 4).map((item, idx) => ({
@@ -236,4 +295,3 @@ const filteredTemplates = computed(() =>
   }),
 );
 </script>
-

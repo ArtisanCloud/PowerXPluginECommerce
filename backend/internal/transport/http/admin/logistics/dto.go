@@ -63,3 +63,11 @@ type batchPrintLabelsRequest struct {
 type retryLabelPrintRequest struct {
 	TaskIDs []string `json:"task_ids,omitempty"`
 }
+
+type rateQuoteRequest struct {
+	Region      string  `json:"region"`
+	Weight      float64 `json:"weight,omitempty"`
+	PieceCount  int     `json:"piece_count,omitempty"`
+	Volume      float64 `json:"volume,omitempty"`
+	OrderAmount float64 `json:"order_amount,omitempty"`
+}

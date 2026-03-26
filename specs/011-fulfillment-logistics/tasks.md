@@ -191,11 +191,11 @@
 
 ### User Story 10 - 运费模板模拟器（P2）
 
-- [ ] T072 [P] [US10] 扩展运费规则解析与试算模型（`backend/internal/entity/models/logistics/rate_quote*.go`）
-- [ ] T073 [US10] 实现运费试算服务（地址/重量/件数输入）（`backend/internal/services/admin/logistics/rate_quote_service.go`）
-- [ ] T074 [US10] 实现运费模拟接口（`backend/internal/transport/http/admin/logistics/{rate_quote_handler.go,routes.go,dto.go}`）
-- [ ] T075 [US10] 在模板页面增加“模拟试算”交互（`web-admin/app/pages/shipping/templates.vue`）
-- [ ] T076 [US10] 增加 US10 回归测试（规则命中顺序、边界输入）（`backend/internal/services/admin/logistics/*_test.go`）
+- [X] T072 [P] [US10] 扩展运费规则解析与试算模型（`backend/internal/entity/models/logistics/rate_quote*.go`）
+- [X] T073 [US10] 实现运费试算服务（地址/重量/件数输入）（`backend/internal/services/admin/logistics/rate_quote_service.go`）
+- [X] T074 [US10] 实现运费模拟接口（`backend/internal/transport/http/admin/logistics/{rate_quote_handler.go,routes.go,dto.go}`）
+- [X] T075 [US10] 在模板页面增加“模拟试算”交互（`web-admin/app/pages/shipping/templates.vue`）
+- [X] T076 [US10] 增加 US10 回归测试（规则命中顺序、边界输入）（`backend/internal/services/admin/logistics/*_test.go`）
 
 ### User Story 11 - 逆向质检规则引擎（P3）
 

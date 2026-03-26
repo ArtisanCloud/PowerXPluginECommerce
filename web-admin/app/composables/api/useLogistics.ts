@@ -151,6 +151,23 @@ export type LogisticsSLASnapshot = {
   total: LogisticsSLASummaryItem;
 };
 
+export type LogisticsRateQuoteResult = {
+  templateId: string;
+  template: string;
+  currency: string;
+  billingType: string;
+  matchedZone: {
+    region: string;
+    firstMetric: number;
+    firstFee: number;
+    additionalStep: number;
+    additionalFee: number;
+    freeThreshold: number;
+  };
+  feeAmount: number;
+  breakdown: Record<string, any>;
+};
+
 const normalizeCarrier = (raw: RawRecord): LogisticsCarrier => ({
   id: String(pick(raw, "id", "id") || ""),
   name: String(pick(raw, "name", "name") || ""),
@@ -262,6 +279,26 @@ const normalizeSLASummary = (raw: RawRecord): LogisticsSLASummaryItem => ({
   deliverySLAHours: Number(pick(raw, "deliverySLAHours", "delivery_sla_hours") || 72),
 });
 
+const normalizeRateQuote = (raw: RawRecord): LogisticsRateQuoteResult => {
+  const zone = (pick(raw, "matchedZone", "matched_zone") || {}) as RawRecord;
+  return {
+    templateId: String(pick(raw, "templateId", "template_id") || ""),
+    template: String(pick(raw, "template", "template") || ""),
+    currency: String(pick(raw, "currency", "currency") || "CNY"),
+    billingType: String(pick(raw, "billingType", "billing_type") || "weight"),
+    matchedZone: {
+      region: String(pick(zone, "region", "region") || ""),
+      firstMetric: Number(pick(zone, "firstMetric", "first_metric") || 0),
+      firstFee: Number(pick(zone, "firstFee", "first_fee") || 0),
+      additionalStep: Number(pick(zone, "additionalStep", "additional_step") || 0),
+      additionalFee: Number(pick(zone, "additionalFee", "additional_fee") || 0),
+      freeThreshold: Number(pick(zone, "freeThreshold", "free_threshold") || 0),
+    },
+    feeAmount: Number(pick(raw, "feeAmount", "fee_amount") || 0),
+    breakdown: (pick(raw, "breakdown", "breakdown") || {}) as Record<string, any>,
+  };
+};
+
 export function useLogisticsApi() {
   const basePath = "/admin/logistics";
 
@@ -297,6 +334,15 @@ export function useLogisticsApi() {
     publishTemplate: async (id: string, init?: any) => {
       const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/templates/${id}/publish`, {}, init));
       return normalizeTemplate(raw || {});
+    },
+
+    quoteTemplate: async (
+      id: string,
+      payload: { region: string; weight?: number; piece_count?: number; volume?: number; order_amount?: number },
+      init?: any,
+    ): Promise<LogisticsRateQuoteResult> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/templates/${id}/quote`, payload, init));
+      return normalizeRateQuote(raw || {});
     },
 
     listWaybills: async (init?: any) => {
