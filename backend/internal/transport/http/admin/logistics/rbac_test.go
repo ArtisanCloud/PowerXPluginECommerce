@@ -5,8 +5,8 @@ import "testing"
 func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 	entries := RBACEntries("/api/v1")
 
-	if len(entries) < 16 {
-		t.Fatalf("expected at least 16 logistics RBAC entries, got %d", len(entries))
+	if len(entries) < 17 {
+		t.Fatalf("expected at least 17 logistics RBAC entries, got %d", len(entries))
 	}
 
 	key := "POST:/api/v1/admin/logistics/waybills"
@@ -40,5 +40,17 @@ func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 	}
 	if printPerm.Resource != "com.powerx.plugins.ecommerce:logistics.label_print" {
 		t.Fatalf("unexpected resource %s", printPerm.Resource)
+	}
+
+	slaKey := "GET:/api/v1/admin/logistics/sla/dashboard"
+	slaPerm, ok := entries[slaKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", slaKey)
+	}
+	if slaPerm.Action != "read" {
+		t.Fatalf("expected read action, got %s", slaPerm.Action)
+	}
+	if slaPerm.Resource != "com.powerx.plugins.ecommerce:logistics.sla" {
+		t.Fatalf("unexpected resource %s", slaPerm.Resource)
 	}
 }

@@ -132,6 +132,25 @@ export type LogisticsLabelPrintBatchResult = {
   failed: number;
 };
 
+export type LogisticsSLASummaryItem = {
+  carrierId: string;
+  carrierName: string;
+  waybillCount: number;
+  pickupOnTimeCount: number;
+  pickupOnTimeRate: number;
+  signOnTimeCount: number;
+  signOnTimeRate: number;
+  exceptionCount: number;
+  exceptionRate: number;
+  pickupSLAHours: number;
+  deliverySLAHours: number;
+};
+
+export type LogisticsSLASnapshot = {
+  summary: LogisticsSLASummaryItem[];
+  total: LogisticsSLASummaryItem;
+};
+
 const normalizeCarrier = (raw: RawRecord): LogisticsCarrier => ({
   id: String(pick(raw, "id", "id") || ""),
   name: String(pick(raw, "name", "name") || ""),
@@ -227,6 +246,20 @@ const normalizeLabelPrintResult = (raw: RawRecord): LogisticsLabelPrintResult =>
   idempotencyStatus: String(pick(raw, "idempotencyStatus", "idempotency_status") || "created"),
   success: Boolean(pick(raw, "success", "success")),
   message: String(pick(raw, "message", "message") || ""),
+});
+
+const normalizeSLASummary = (raw: RawRecord): LogisticsSLASummaryItem => ({
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  carrierName: String(pick(raw, "carrierName", "carrier_name") || ""),
+  waybillCount: Number(pick(raw, "waybillCount", "waybill_count") || 0),
+  pickupOnTimeCount: Number(pick(raw, "pickupOnTimeCount", "pickup_on_time_count") || 0),
+  pickupOnTimeRate: Number(pick(raw, "pickupOnTimeRate", "pickup_on_time_rate") || 0),
+  signOnTimeCount: Number(pick(raw, "signOnTimeCount", "sign_on_time_count") || 0),
+  signOnTimeRate: Number(pick(raw, "signOnTimeRate", "sign_on_time_rate") || 0),
+  exceptionCount: Number(pick(raw, "exceptionCount", "exception_count") || 0),
+  exceptionRate: Number(pick(raw, "exceptionRate", "exception_rate") || 0),
+  pickupSLAHours: Number(pick(raw, "pickupSLAHours", "pickup_sla_hours") || 24),
+  deliverySLAHours: Number(pick(raw, "deliverySLAHours", "delivery_sla_hours") || 72),
 });
 
 export function useLogisticsApi() {
@@ -338,6 +371,19 @@ export function useLogisticsApi() {
         results: asArray<RawRecord>(raw?.results).map(normalizeLabelPrintResult),
         success: Number(raw?.success || 0),
         failed: Number(raw?.failed || 0),
+      };
+    },
+
+    getSLADashboard: async (
+      query?: { carrier_id?: string; from?: string; to?: string; pickup_sla_hours?: number; delivery_sla_hours?: number },
+      init?: any,
+    ): Promise<LogisticsSLASnapshot> => {
+      const raw = await unwrap(
+        apiGet<ApiEnvelope<{ summary: RawRecord[]; total: RawRecord }>>(`${basePath}/sla/dashboard`, query, init),
+      );
+      return {
+        summary: asArray<RawRecord>(raw?.summary).map(normalizeSLASummary),
+        total: normalizeSLASummary((raw?.total || {}) as RawRecord),
       };
     },
   };

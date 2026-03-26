@@ -21,6 +21,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 		logisticssvc.NewRateTemplateService(deps),
 		logisticssvc.NewWaybillService(deps),
 		logisticssvc.NewBillingService(deps),
+		logisticssvc.NewSLAService(deps),
 		logisticssvc.NewLabelPrintService(deps),
 		logisticssvc.NewWebhookService(deps),
 	)
@@ -43,6 +44,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.PATCH("/waybills/:id/cost", handler.UpdateWaybillCost)
 	rg.GET("/billing/summary", handler.BillingSummary)
 	rg.GET("/billing/export", handler.ExportBilling)
+	rg.GET("/sla/dashboard", handler.SLADashboard)
 	rg.GET("/labels/prints", handler.ListLabelPrintTasks)
 	rg.POST("/labels/prints", handler.BatchPrintLabels)
 	rg.POST("/labels/prints/retry", handler.RetryLabelPrint)

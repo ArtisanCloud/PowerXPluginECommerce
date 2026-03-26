@@ -2,6 +2,7 @@ package logistics
 
 import (
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -16,6 +17,7 @@ type Handler struct {
 	rateSvc    *logisticssvc.RateTemplateService
 	waybillSvc *logisticssvc.WaybillService
 	billingSvc *logisticssvc.BillingService
+	slaSvc     *logisticssvc.SLAService
 	labelSvc   *logisticssvc.LabelPrintService
 	webhookSvc *logisticssvc.WebhookService
 }
@@ -25,10 +27,11 @@ func NewHandler(
 	rateSvc *logisticssvc.RateTemplateService,
 	waybillSvc *logisticssvc.WaybillService,
 	billingSvc *logisticssvc.BillingService,
+	slaSvc *logisticssvc.SLAService,
 	labelSvc *logisticssvc.LabelPrintService,
 	webhookSvc *logisticssvc.WebhookService,
 ) *Handler {
-	return &Handler{carrierSvc: carrierSvc, rateSvc: rateSvc, waybillSvc: waybillSvc, billingSvc: billingSvc, labelSvc: labelSvc, webhookSvc: webhookSvc}
+	return &Handler{carrierSvc: carrierSvc, rateSvc: rateSvc, waybillSvc: waybillSvc, billingSvc: billingSvc, slaSvc: slaSvc, labelSvc: labelSvc, webhookSvc: webhookSvc}
 }
 
 func (h *Handler) ListCarriers(c *gin.Context) {
@@ -365,6 +368,35 @@ func (h *Handler) ExportBilling(c *gin.Context) {
 		return
 	}
 	contracts.ResponseSuccess(c, payload)
+}
+
+func (h *Handler) SLADashboard(c *gin.Context) {
+	if h == nil || h.slaSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "logistics sla service unavailable", nil)
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	query := logisticssvc.SLAQuery{
+		CarrierID: strings.TrimSpace(c.Query("carrier_id")),
+		From:      strings.TrimSpace(c.Query("from")),
+		To:        strings.TrimSpace(c.Query("to")),
+	}
+	if v := strings.TrimSpace(c.Query("pickup_sla_hours")); v != "" {
+		if hours, err := strconv.Atoi(v); err == nil {
+			query.PickupSLAHours = hours
+		}
+	}
+	if v := strings.TrimSpace(c.Query("delivery_sla_hours")); v != "" {
+		if hours, err := strconv.Atoi(v); err == nil {
+			query.DeliverySLAHours = hours
+		}
+	}
+	snapshot, err := h.slaSvc.Snapshot(c.Request.Context(), tenantUUID, query)
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, snapshot)
 }
 
 func (h *Handler) ListLabelPrintTasks(c *gin.Context) {

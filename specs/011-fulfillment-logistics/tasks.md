@@ -183,11 +183,11 @@
 
 ### User Story 9 - 承运商 SLA 看板（P2）
 
-- [ ] T067 [P] [US9] 增加 SLA 指标投影与聚合仓储（`backend/internal/entity/repository/logistics/sla*_repository.go`）
-- [ ] T068 [US9] 实现 SLA 统计服务（揽收时效/签收时效/异常率）（`backend/internal/services/admin/logistics/sla_service.go`）
-- [ ] T069 [US9] 实现 SLA 看板接口（`backend/internal/transport/http/admin/logistics/{sla_handler.go,routes.go,dto.go}`）
-- [ ] T070 [US9] 新增 SLA 看板页面（`web-admin/app/pages/shipping/sla.vue`）
-- [ ] T071 [US9] 增加 US9 回归测试（窗口聚合准确性、租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+- [X] T067 [P] [US9] 增加 SLA 指标投影与聚合仓储（`backend/internal/entity/repository/logistics/sla*_repository.go`）
+- [X] T068 [US9] 实现 SLA 统计服务（揽收时效/签收时效/异常率）（`backend/internal/services/admin/logistics/sla_service.go`）
+- [X] T069 [US9] 实现 SLA 看板接口（`backend/internal/transport/http/admin/logistics/{sla_handler.go,routes.go,dto.go}`）
+- [X] T070 [US9] 新增 SLA 看板页面（`web-admin/app/pages/shipping/sla.vue`）
+- [X] T071 [US9] 增加 US9 回归测试（窗口聚合准确性、租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
 
 ### User Story 10 - 运费模板模拟器（P2）
 
