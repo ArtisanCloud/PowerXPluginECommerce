@@ -21,6 +21,8 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 		logisticssvc.NewRateTemplateService(deps),
 		logisticssvc.NewRateQuoteService(deps),
 		logisticssvc.NewWaybillService(deps),
+		logisticssvc.NewETAService(deps),
+		logisticssvc.NewRoutingService(deps),
 		logisticssvc.NewBillingService(deps),
 		logisticssvc.NewBillingCaseService(deps),
 		logisticssvc.NewNotificationService(deps),
@@ -41,6 +43,13 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.POST("/templates/:id/quote", handler.QuoteTemplate)
 
 	rg.GET("/waybills", handler.ListWaybills)
+	rg.GET("/routing/rules", handler.ListRoutingRules)
+	rg.POST("/routing/rules", handler.UpsertRoutingRule)
+	rg.PATCH("/routing/rules/:id", handler.UpsertRoutingRule)
+	rg.DELETE("/routing/rules/:id", handler.DeleteRoutingRule)
+	rg.POST("/routing/preview", handler.PreviewRouting)
+	rg.GET("/eta", handler.ListWaybillETA)
+	rg.GET("/eta/:waybill_id", handler.GetWaybillETA)
 	rg.POST("/waybills", handler.CreateWaybill)
 	rg.GET("/waybills/:id", handler.GetWaybill)
 	rg.POST("/waybills/:id/track", handler.AppendTracking)

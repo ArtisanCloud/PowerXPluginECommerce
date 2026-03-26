@@ -237,6 +237,50 @@
 
 ---
 
+## Phase 10: Iteration-4 - 履约体验与风控增强（Backlog）
+
+**Purpose**: 在 M5 基础上补齐履约承诺、仓配路由、二次派送与物流风控能力，形成“效率 + 体验 + 风险”闭环。
+
+### User Story 15 - 物流承诺时效与预计达（P2）
+
+- [X] T100 [P] [US15] 增加承诺时效/预计达模型与仓储（`backend/internal/entity/models/logistics/eta*.go`、`backend/internal/entity/repository/logistics/eta*_repository.go`）
+- [X] T101 [US15] 实现 ETA 计算服务（揽收时效/派送时效/预计达时间）（`backend/internal/services/admin/logistics/eta_service.go`）
+- [X] T102 [US15] 实现 ETA 查询接口（`backend/internal/transport/http/admin/logistics/{eta_handler.go,routes.go,dto.go}`）
+- [X] T103 [US15] 在运单页面展示“承诺达/预计达”字段（`web-admin/app/pages/shipping/waybills.vue`）
+- [X] T104 [US15] 增加 US15 回归测试（时效窗口、跨时区与租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### User Story 16 - 仓配路由规则（P2）
+
+- [X] T105 [P] [US16] 增加仓配路由规则模型与仓储（`backend/internal/entity/models/logistics/routing_rule*.go`、`backend/internal/entity/repository/logistics/routing_rule*_repository.go`）
+- [X] T106 [US16] 实现仓配路由决策服务（仓/承运商择优、兜底策略）（`backend/internal/services/admin/logistics/routing_service.go`）
+- [X] T107 [US16] 实现路由规则管理与预览接口（`backend/internal/transport/http/admin/logistics/{routing_handler.go,routes.go,dto.go}`）
+- [X] T108 [US16] 在承运商/运单页增加“路由预览”入口（`web-admin/app/pages/shipping/{carriers.vue,waybills.vue}`）
+- [X] T109 [US16] 增加 US16 回归测试（规则优先级、兜底与异常隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### User Story 17 - 妥投失败二次派送闭环（P3）
+
+- [ ] T110 [P] [US17] 增加二次派送任务模型与仓储（`backend/internal/entity/models/logistics/redelivery*.go`、`backend/internal/entity/repository/logistics/redelivery*_repository.go`）
+- [ ] T111 [US17] 实现二次派送状态机服务（发起/改址/重派/关闭）（`backend/internal/services/admin/logistics/redelivery_service.go`）
+- [ ] T112 [US17] 实现二次派送接口（`backend/internal/transport/http/admin/logistics/{redelivery_handler.go,routes.go,dto.go}`）
+- [ ] T113 [US17] 在运单页增加“失败重派”流程视图（`web-admin/app/pages/shipping/waybills.vue`）
+- [ ] T114 [US17] 增加 US17 回归测试（状态流转约束、幂等重派）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### User Story 18 - 物流风控与黑名单（P3）
+
+- [ ] T115 [P] [US18] 增加物流风控规则与黑名单模型（`backend/internal/entity/models/logistics/risk_rule*.go`、`backend/internal/entity/models/logistics/blacklist*.go`）
+- [ ] T116 [US18] 实现风控评估服务（高风险地址/收件人识别、拦截建议）（`backend/internal/services/admin/logistics/risk_service.go`）
+- [ ] T117 [US18] 实现风控管理接口（规则、命中记录、人工放行）（`backend/internal/transport/http/admin/logistics/{risk_handler.go,routes.go,dto.go}`）
+- [ ] T118 [US18] 新增风控页面（规则管理与命中处置）（`web-admin/app/pages/shipping/risk-control.vue`）
+- [ ] T119 [US18] 增加 US18 回归测试（误拦截豁免、跨租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### Iteration-4 Polish
+
+- [ ] T120 [P] 更新 M6 quickstart 与执行记录模板（`specs/011-fulfillment-logistics/quickstart.md`）
+- [ ] T121 执行 M6 后端回归（`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/services/admin/reverse ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment ./internal/transport/http/admin/reverse`）
+- [ ] T122 执行 M6 前端构建与页面回归（`cd web-admin && npm run build`）
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

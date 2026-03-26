@@ -1,4 +1,4 @@
-import { apiGet, apiPatch, apiPost } from "./_client";
+import { apiDel, apiGet, apiPatch, apiPost } from "./_client";
 import type { ApiResponse } from "./_base";
 
 type ApiEnvelope<T> = ApiResponse<T> & {
@@ -86,6 +86,63 @@ export type LogisticsTracking = {
 export type LogisticsWaybillDetail = {
   waybill: LogisticsWaybill;
   tracking: LogisticsTracking[];
+};
+
+export type LogisticsWaybillETA = {
+  waybillId: string;
+  waybillNo: string;
+  carrierId: string;
+  serviceCode: string;
+  timezone: string;
+  pickupDeadlineAt: string;
+  deliveryDeadlineAt: string;
+  promisedAt: string;
+  estimatedAt: string;
+  delayed: boolean;
+  source: string;
+  lastComputedAt: string;
+};
+
+export type LogisticsRoutingRule = {
+  id: string;
+  name: string;
+  warehouseId: string;
+  destinationZone: string;
+  carrierId: string;
+  serviceCode: string;
+  priority: number;
+  minWeight: number;
+  maxWeight: number;
+  minOrderAmount: number;
+  maxOrderAmount: number;
+  fallback: boolean;
+  enabled: boolean;
+  ruleConfig: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsRoutingCandidate = {
+  carrierId: string;
+  carrierName: string;
+  serviceCode: string;
+  priority: number;
+  score: number;
+  matchedRule: string;
+};
+
+export type LogisticsRoutingPreview = {
+  warehouseId: string;
+  destinationZone: string;
+  carrierId: string;
+  carrierName: string;
+  serviceCode: string;
+  matchedRuleId: string;
+  matchedRuleName: string;
+  strategy: string;
+  fallback: boolean;
+  reason: string;
+  candidates: LogisticsRoutingCandidate[];
 };
 
 export type LogisticsBillingCarrierSummary = {
@@ -289,6 +346,63 @@ const normalizeTracking = (raw: RawRecord): LogisticsTracking => ({
   createdAt: String(pick(raw, "createdAt", "created_at") || ""),
 });
 
+const normalizeWaybillETA = (raw: RawRecord): LogisticsWaybillETA => ({
+  waybillId: String(pick(raw, "waybillId", "waybill_id") || ""),
+  waybillNo: String(pick(raw, "waybillNo", "waybill_no") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  serviceCode: String(pick(raw, "serviceCode", "service_code") || ""),
+  timezone: String(pick(raw, "timezone", "timezone") || "UTC"),
+  pickupDeadlineAt: String(pick(raw, "pickupDeadlineAt", "pickup_deadline_at") || ""),
+  deliveryDeadlineAt: String(pick(raw, "deliveryDeadlineAt", "delivery_deadline_at") || ""),
+  promisedAt: String(pick(raw, "promisedAt", "promised_at") || ""),
+  estimatedAt: String(pick(raw, "estimatedAt", "estimated_at") || ""),
+  delayed: Boolean(pick(raw, "delayed", "delayed")),
+  source: String(pick(raw, "source", "source") || "calculated"),
+  lastComputedAt: String(pick(raw, "lastComputedAt", "last_computed_at") || ""),
+});
+
+const normalizeRoutingRule = (raw: RawRecord): LogisticsRoutingRule => ({
+  id: String(pick(raw, "id", "id") || ""),
+  name: String(pick(raw, "name", "name") || ""),
+  warehouseId: String(pick(raw, "warehouseId", "warehouse_id") || ""),
+  destinationZone: String(pick(raw, "destinationZone", "destination_zone") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  serviceCode: String(pick(raw, "serviceCode", "service_code") || "std"),
+  priority: Number(pick(raw, "priority", "priority") || 100),
+  minWeight: Number(pick(raw, "minWeight", "min_weight") || 0),
+  maxWeight: Number(pick(raw, "maxWeight", "max_weight") || 0),
+  minOrderAmount: Number(pick(raw, "minOrderAmount", "min_order_amount") || 0),
+  maxOrderAmount: Number(pick(raw, "maxOrderAmount", "max_order_amount") || 0),
+  fallback: Boolean(pick(raw, "fallback", "fallback")),
+  enabled: Boolean(pick(raw, "enabled", "enabled")),
+  ruleConfig: (pick(raw, "ruleConfig", "rule_config") || {}) as Record<string, any>,
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeRoutingCandidate = (raw: RawRecord): LogisticsRoutingCandidate => ({
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  carrierName: String(pick(raw, "carrierName", "carrier_name") || ""),
+  serviceCode: String(pick(raw, "serviceCode", "service_code") || "std"),
+  priority: Number(pick(raw, "priority", "priority") || 0),
+  score: Number(pick(raw, "score", "score") || 0),
+  matchedRule: String(pick(raw, "matchedRule", "matched_rule") || ""),
+});
+
+const normalizeRoutingPreview = (raw: RawRecord): LogisticsRoutingPreview => ({
+  warehouseId: String(pick(raw, "warehouseId", "warehouse_id") || ""),
+  destinationZone: String(pick(raw, "destinationZone", "destination_zone") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  carrierName: String(pick(raw, "carrierName", "carrier_name") || ""),
+  serviceCode: String(pick(raw, "serviceCode", "service_code") || "std"),
+  matchedRuleId: String(pick(raw, "matchedRuleId", "matched_rule_id") || ""),
+  matchedRuleName: String(pick(raw, "matchedRuleName", "matched_rule_name") || ""),
+  strategy: String(pick(raw, "strategy", "strategy") || ""),
+  fallback: Boolean(pick(raw, "fallback", "fallback")),
+  reason: String(pick(raw, "reason", "reason") || ""),
+  candidates: asArray<RawRecord>(pick(raw, "candidates", "candidates")).map(normalizeRoutingCandidate),
+});
+
 const normalizeLabelPrintTask = (raw: RawRecord): LogisticsLabelPrintTask => ({
   id: String(pick(raw, "id", "id") || ""),
   requestKey: String(pick(raw, "requestKey", "request_key") || ""),
@@ -442,6 +556,68 @@ export function useLogisticsApi() {
     listWaybills: async (init?: any) => {
       const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/waybills`, undefined, init));
       return asArray<RawRecord>(raw?.items).map(normalizeWaybill);
+    },
+
+    listRoutingRules: async (init?: any): Promise<LogisticsRoutingRule[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/routing/rules`, undefined, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeRoutingRule);
+    },
+
+    upsertRoutingRule: async (payload: Record<string, any>, init?: any): Promise<LogisticsRoutingRule> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/routing/rules`, payload, init));
+      return normalizeRoutingRule((raw || {}) as RawRecord);
+    },
+
+    deleteRoutingRule: async (id: string, init?: any): Promise<{ id: string; deleted: boolean }> => {
+      const raw = await unwrap(apiDel<ApiEnvelope<RawRecord>>(`${basePath}/routing/rules/${id}`, undefined, init));
+      return {
+        id: String(pick((raw || {}) as RawRecord, "id", "id") || id),
+        deleted: Boolean(pick((raw || {}) as RawRecord, "deleted", "deleted")),
+      };
+    },
+
+    previewRouting: async (
+      payload: {
+        warehouse_id?: string;
+        destination_zone?: string;
+        weight?: number;
+        order_amount?: number;
+        preferred_carrier_id?: string;
+        service_code?: string;
+      },
+      init?: any,
+    ): Promise<LogisticsRoutingPreview> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/routing/preview`, payload, init));
+      return normalizeRoutingPreview((raw || {}) as RawRecord);
+    },
+
+    listWaybillETA: async (
+      query?: {
+        waybill_ids?: string[] | string;
+        destination_zone?: string;
+        timezone?: string;
+        force_recompute?: boolean;
+      },
+      init?: any,
+    ): Promise<LogisticsWaybillETA[]> => {
+      const waybillIDs = query?.waybill_ids;
+      const normalizedQuery = {
+        ...query,
+        waybill_ids: Array.isArray(waybillIDs) ? waybillIDs.join(",") : waybillIDs,
+      };
+      const raw = await unwrap(
+        apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/eta`, normalizedQuery, init),
+      );
+      return asArray<RawRecord>(raw?.items).map(normalizeWaybillETA);
+    },
+
+    getWaybillETA: async (
+      id: string,
+      query?: { destination_zone?: string; timezone?: string; force_recompute?: boolean },
+      init?: any,
+    ): Promise<LogisticsWaybillETA> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<RawRecord>>(`${basePath}/eta/${id}`, query, init));
+      return normalizeWaybillETA((raw || {}) as RawRecord);
     },
 
     createWaybill: async (payload: Record<string, any>, init?: any) => {

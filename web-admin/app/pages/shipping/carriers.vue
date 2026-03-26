@@ -78,6 +78,9 @@
         </template>
         <template #actions-cell="{ row }">
           <div class="flex gap-2">
+            <UButton size="xs" variant="ghost" color="neutral" @click="openRoutingPreview(row.original)">
+              路由预览
+            </UButton>
             <UButton size="xs" variant="ghost" @click="switchProvider(row.original)">
               切换 Provider
             </UButton>
@@ -88,6 +91,32 @@
         </template>
       </UTable>
     </UCard>
+
+    <UModal v-model:open="routingPreviewOpen" title="仓配路由预览">
+      <template #body>
+        <div class="space-y-3">
+          <div class="grid gap-2 sm:grid-cols-2">
+            <UInput v-model="routingForm.warehouseId" placeholder="仓库ID（可选）" />
+            <UInput v-model="routingForm.destinationZone" placeholder="目的区域（如 CN-EAST）" />
+            <UInput v-model="routingForm.serviceCode" placeholder="服务编码（默认 std）" />
+            <UInput v-model.number="routingForm.weight" type="number" step="0.1" placeholder="重量(kg)" />
+          </div>
+          <div class="text-xs text-gray-500">
+            当前偏好承运商：{{ routingForm.preferredCarrierName || "未指定" }}
+          </div>
+          <UButton color="primary" :loading="routingPreviewLoading" @click="previewRouting">
+            预览路由
+          </UButton>
+          <UCard v-if="routingPreviewResult">
+            <p class="text-sm">命中策略：{{ routingPreviewResult.strategy }}（{{ routingPreviewResult.reason }}）</p>
+            <p class="text-sm">结果承运商：{{ routingPreviewResult.carrierName }} / {{ routingPreviewResult.serviceCode }}</p>
+            <p class="text-xs text-gray-500">
+              命中规则：{{ routingPreviewResult.matchedRuleName || routingPreviewResult.matchedRuleId || "无（兜底）" }}
+            </p>
+          </UCard>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
 
@@ -120,6 +149,17 @@ type Carrier = {
 
 const logisticsApi = useLogisticsApi();
 const carriers = ref<Carrier[]>([]);
+const routingPreviewOpen = ref(false);
+const routingPreviewLoading = ref(false);
+const routingPreviewResult = ref<any>(null);
+const routingForm = reactive({
+  warehouseId: "",
+  destinationZone: "GLOBAL",
+  serviceCode: "std",
+  weight: 1,
+  preferredCarrierId: "",
+  preferredCarrierName: "",
+});
 
 const keyword = ref("");
 const statusFilter = ref<CarrierStatus | "">("");
@@ -223,6 +263,28 @@ const switchProvider = async (carrier: Carrier) => {
 
 const testProvider = async (carrier: Carrier) => {
   await logisticsApi.testCarrier(carrier.id);
+};
+
+const openRoutingPreview = (carrier: Carrier) => {
+  routingForm.preferredCarrierId = carrier.id;
+  routingForm.preferredCarrierName = carrier.name;
+  routingPreviewResult.value = null;
+  routingPreviewOpen.value = true;
+};
+
+const previewRouting = async () => {
+  routingPreviewLoading.value = true;
+  try {
+    routingPreviewResult.value = await logisticsApi.previewRouting({
+      warehouse_id: routingForm.warehouseId || undefined,
+      destination_zone: routingForm.destinationZone || undefined,
+      service_code: routingForm.serviceCode || undefined,
+      weight: Number(routingForm.weight || 0),
+      preferred_carrier_id: routingForm.preferredCarrierId || undefined,
+    });
+  } finally {
+    routingPreviewLoading.value = false;
+  }
 };
 
 const filteredCarriers = computed(() =>

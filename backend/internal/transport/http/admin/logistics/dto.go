@@ -53,6 +53,39 @@ type updateWaybillCostRequest struct {
 	ActualFeeAmount float64 `json:"actual_fee_amount"`
 }
 
+type etaQueryRequest struct {
+	WaybillIDs      []string `json:"waybill_ids,omitempty"`
+	DestinationZone string   `json:"destination_zone,omitempty"`
+	Timezone        string   `json:"timezone,omitempty"`
+	ForceRecompute  bool     `json:"force_recompute,omitempty"`
+}
+
+type upsertRoutingRuleRequest struct {
+	ID              string         `json:"id,omitempty"`
+	Name            string         `json:"name"`
+	WarehouseID     string         `json:"warehouse_id,omitempty"`
+	DestinationZone string         `json:"destination_zone,omitempty"`
+	CarrierID       string         `json:"carrier_id"`
+	ServiceCode     string         `json:"service_code,omitempty"`
+	Priority        int            `json:"priority,omitempty"`
+	MinWeight       float64        `json:"min_weight,omitempty"`
+	MaxWeight       float64        `json:"max_weight,omitempty"`
+	MinOrderAmount  float64        `json:"min_order_amount,omitempty"`
+	MaxOrderAmount  float64        `json:"max_order_amount,omitempty"`
+	Fallback        *bool          `json:"fallback,omitempty"`
+	Enabled         *bool          `json:"enabled,omitempty"`
+	RuleConfig      map[string]any `json:"rule_config,omitempty"`
+}
+
+type previewRoutingRequest struct {
+	WarehouseID        string  `json:"warehouse_id,omitempty"`
+	DestinationZone    string  `json:"destination_zone,omitempty"`
+	Weight             float64 `json:"weight,omitempty"`
+	OrderAmount        float64 `json:"order_amount,omitempty"`
+	PreferredCarrierID string  `json:"preferred_carrier_id,omitempty"`
+	ServiceCode        string  `json:"service_code,omitempty"`
+}
+
 type batchPrintLabelsRequest struct {
 	WaybillIDs     []string `json:"waybill_ids"`
 	IdempotencyKey string   `json:"idempotency_key,omitempty"`

@@ -69,8 +69,17 @@
             <span class="text-xs text-gray-500">{{ getValue() }}%</span>
           </div>
         </template>
+        <template #eta-cell="{ row }">
+          <div class="space-y-0.5 text-xs">
+            <p class="text-gray-900 dark:text-white">承诺达：{{ formatEta(row.original.promisedAt) }}</p>
+            <p class="text-gray-500 dark:text-gray-400">预计达：{{ formatEta(row.original.estimatedAt) }}</p>
+          </div>
+        </template>
         <template #actions-cell="{ row }">
           <div class="flex gap-2">
+            <UButton size="xs" variant="ghost" color="neutral" @click="openRoutingPreview(row.original)">
+              路由预览
+            </UButton>
             <UButton size="xs" variant="ghost" @click="selectWaybill(row.original)">
               查看轨迹
             </UButton>
@@ -117,11 +126,38 @@
         </li>
       </ol>
     </UCard>
+
+    <UModal v-model:open="routingPreviewOpen" title="仓配路由预览">
+      <template #body>
+        <div class="space-y-3">
+          <div class="grid gap-2 sm:grid-cols-2">
+            <UInput v-model="routingForm.warehouseId" placeholder="仓库ID（可选）" />
+            <UInput v-model="routingForm.destinationZone" placeholder="目的区域（如 CN-EAST）" />
+            <UInput v-model="routingForm.serviceCode" placeholder="服务编码（默认 std）" />
+            <UInput v-model.number="routingForm.weight" type="number" step="0.1" placeholder="重量(kg)" />
+          </div>
+          <div class="text-xs text-gray-500">
+            运单：{{ routingForm.waybillNo || "-" }}，偏好承运商：{{ routingForm.preferredCarrierName || "未指定" }}
+          </div>
+          <UButton color="primary" :loading="routingPreviewLoading" @click="previewRouting">
+            预览路由
+          </UButton>
+          <UCard v-if="routingPreviewResult">
+            <p class="text-sm">命中策略：{{ routingPreviewResult.strategy }}（{{ routingPreviewResult.reason }}）</p>
+            <p class="text-sm">结果承运商：{{ routingPreviewResult.carrierName }} / {{ routingPreviewResult.serviceCode }}</p>
+            <p class="text-xs text-gray-500">
+              命中规则：{{ routingPreviewResult.matchedRuleName || routingPreviewResult.matchedRuleId || "无（兜底）" }}
+            </p>
+          </UCard>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
+import type { LogisticsWaybillETA } from "~/composables/api/useLogistics";
 import { useLogisticsApi } from "~/composables/api";
 
 definePageMeta({
@@ -141,6 +177,7 @@ type TimelineNode = {
 type Waybill = {
   id: string;
   orderNo: string;
+  carrierId: string;
   waybillNo: string;
   packageNo: number;
   packageKey: string;
@@ -151,12 +188,27 @@ type Waybill = {
   status: WaybillStatus;
   progress: number;
   eta: string;
+  promisedAt: string;
+  estimatedAt: string;
+  timezone: string;
   timeline: TimelineNode[];
 };
 
 const logisticsApi = useLogisticsApi();
 const waybills = ref<Waybill[]>([]);
 const carrierMap = ref<Record<string, string>>({});
+const routingPreviewOpen = ref(false);
+const routingPreviewLoading = ref(false);
+const routingPreviewResult = ref<any>(null);
+const routingForm = reactive({
+  waybillNo: "",
+  warehouseId: "",
+  destinationZone: "GLOBAL",
+  serviceCode: "std",
+  weight: 1,
+  preferredCarrierId: "",
+  preferredCarrierName: "",
+});
 
 const normalizeStatus = (status: string): WaybillStatus => {
   const v = String(status || "").toLowerCase();
@@ -190,6 +242,7 @@ const loadWaybills = async () => {
     return {
       id: row.id,
       orderNo: row.orderId,
+      carrierId: row.carrierId,
       waybillNo: row.waybillNo,
       packageNo: row.packageNo || 1,
       packageKey: row.packageKey || "",
@@ -201,8 +254,51 @@ const loadWaybills = async () => {
       status,
       progress: progressByStatus(status),
       eta: status === "delivered" ? "已签收" : "待更新",
+      promisedAt: "",
+      estimatedAt: "",
+      timezone: "UTC",
       timeline: [],
     };
+  });
+};
+
+const formatEta = (value?: string) => {
+  const raw = String(value || "").trim();
+  if (!raw) return "-";
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return raw;
+  return d.toLocaleString("zh-CN", {
+    hour12: false,
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const loadWaybillETA = async () => {
+  if (!waybills.value.length) return;
+  const rows = await logisticsApi.listWaybillETA({
+    waybill_ids: waybills.value.map((item) => item.id),
+  });
+  const etaMap: Record<string, LogisticsWaybillETA> = Object.fromEntries(
+    rows.map((item) => [item.waybillId, item]),
+  );
+  waybills.value = waybills.value.map((item) => {
+    const eta = etaMap[item.id];
+    if (!eta) return item;
+    const next: Waybill = {
+      ...item,
+      promisedAt: eta.promisedAt || "",
+      estimatedAt: eta.estimatedAt || "",
+      timezone: eta.timezone || "UTC",
+      eta: eta.estimatedAt ? formatEta(eta.estimatedAt) : item.eta,
+    };
+    if (eta.delayed && next.status !== "delivered") {
+      next.status = "delay";
+      next.progress = progressByStatus("delay");
+    }
+    return next;
   });
 };
 
@@ -249,7 +345,7 @@ const columns = computed<TableColumn<Waybill>[]>(() => [
   { accessorKey: "orderFulfillmentStatus", header: "订单履约" },
   { accessorKey: "status", header: "状态" },
   { accessorKey: "progress", header: "进度" },
-  { accessorKey: "eta", header: "预计到达" },
+  { accessorKey: "eta", header: "承诺达 / 预计达" },
   { id: "actions", header: "操作" },
 ]);
 
@@ -300,7 +396,32 @@ const selectWaybill = async (waybill: Waybill) => {
 
 onMounted(async () => {
   await loadWaybills();
+  await loadWaybillETA();
 });
+
+const openRoutingPreview = (waybill: Waybill) => {
+  routingForm.waybillNo = waybill.waybillNo;
+  routingForm.serviceCode = waybill.channel || "std";
+  routingForm.preferredCarrierId = waybill.carrierId;
+  routingForm.preferredCarrierName = waybill.carrier;
+  routingPreviewResult.value = null;
+  routingPreviewOpen.value = true;
+};
+
+const previewRouting = async () => {
+  routingPreviewLoading.value = true;
+  try {
+    routingPreviewResult.value = await logisticsApi.previewRouting({
+      warehouse_id: routingForm.warehouseId || undefined,
+      destination_zone: routingForm.destinationZone || undefined,
+      service_code: routingForm.serviceCode || undefined,
+      weight: Number(routingForm.weight || 0),
+      preferred_carrier_id: routingForm.preferredCarrierId || undefined,
+    });
+  } finally {
+    routingPreviewLoading.value = false;
+  }
+};
 
 const statusMeta = (status: WaybillStatus | "") => {
   switch (status) {
