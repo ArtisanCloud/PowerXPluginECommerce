@@ -223,11 +223,11 @@
 
 ### User Story 14 - 物流通知中心（P3）
 
-- [ ] T092 [P] [US14] 增加物流通知模板与发送记录模型（`backend/internal/entity/models/logistics/notification*.go`）
-- [ ] T093 [US14] 实现通知编排服务（发货/派送/签收/异常）（`backend/internal/services/admin/logistics/notification_service.go`）
-- [ ] T094 [US14] 实现通知管理接口（模板管理、发送历史）（`backend/internal/transport/http/admin/logistics/{notification_handler.go,routes.go,dto.go}`）
-- [ ] T095 [US14] 新增通知中心页面（`web-admin/app/pages/shipping/notifications.vue`）
-- [ ] T096 [US14] 增加 US14 回归测试（模板渲染、重试与幂等）（`backend/internal/services/admin/logistics/*_test.go`）
+- [X] T092 [P] [US14] 增加物流通知模板与发送记录模型（`backend/internal/entity/models/logistics/notification*.go`）
+- [X] T093 [US14] 实现通知编排服务（发货/派送/签收/异常）（`backend/internal/services/admin/logistics/notification_service.go`）
+- [X] T094 [US14] 实现通知管理接口（模板管理、发送历史）（`backend/internal/transport/http/admin/logistics/{notification_handler.go,routes.go,dto.go}`）
+- [X] T095 [US14] 新增通知中心页面（`web-admin/app/pages/shipping/notifications.vue`）
+- [X] T096 [US14] 增加 US14 回归测试（模板渲染、重试与幂等）（`backend/internal/services/admin/logistics/*_test.go`）
 
 ### Iteration-3 Polish
 

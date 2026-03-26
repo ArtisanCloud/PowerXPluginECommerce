@@ -19,6 +19,7 @@ type Handler struct {
 	waybillSvc *logisticssvc.WaybillService
 	billingSvc *logisticssvc.BillingService
 	caseSvc    *logisticssvc.BillingCaseService
+	notifySvc  *logisticssvc.NotificationService
 	slaSvc     *logisticssvc.SLAService
 	labelSvc   *logisticssvc.LabelPrintService
 	webhookSvc *logisticssvc.WebhookService
@@ -31,6 +32,7 @@ func NewHandler(
 	waybillSvc *logisticssvc.WaybillService,
 	billingSvc *logisticssvc.BillingService,
 	caseSvc *logisticssvc.BillingCaseService,
+	notifySvc *logisticssvc.NotificationService,
 	slaSvc *logisticssvc.SLAService,
 	labelSvc *logisticssvc.LabelPrintService,
 	webhookSvc *logisticssvc.WebhookService,
@@ -42,6 +44,7 @@ func NewHandler(
 		waybillSvc: waybillSvc,
 		billingSvc: billingSvc,
 		caseSvc:    caseSvc,
+		notifySvc:  notifySvc,
 		slaSvc:     slaSvc,
 		labelSvc:   labelSvc,
 		webhookSvc: webhookSvc,

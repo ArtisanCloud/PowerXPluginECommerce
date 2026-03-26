@@ -84,3 +84,25 @@ type transitionBillingCaseRequest struct {
 	Note       string         `json:"note,omitempty"`
 	Metadata   map[string]any `json:"metadata,omitempty"`
 }
+
+type upsertNotificationTemplateRequest struct {
+	ID       string         `json:"id,omitempty"`
+	Name     string         `json:"name"`
+	Event    string         `json:"event"`
+	Channel  string         `json:"channel,omitempty"`
+	Title    string         `json:"title,omitempty"`
+	Body     string         `json:"body"`
+	Enabled  *bool          `json:"enabled,omitempty"`
+	Metadata map[string]any `json:"metadata,omitempty"`
+}
+
+type sendNotificationRequest struct {
+	WaybillID      string         `json:"waybill_id"`
+	Event          string         `json:"event"`
+	IdempotencyKey string         `json:"idempotency_key,omitempty"`
+	Payload        map[string]any `json:"payload,omitempty"`
+}
+
+type retryNotificationRequest struct {
+	RecordID string `json:"record_id,omitempty"`
+}

@@ -71,4 +71,13 @@ func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 	if casePerm.Resource != "com.powerx.plugins.ecommerce:logistics.billing.case" {
 		t.Fatalf("unexpected resource %s", casePerm.Resource)
 	}
+
+	notifyKey := "POST:/api/v1/admin/logistics/notifications/send"
+	notifyPerm, ok := entries[notifyKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", notifyKey)
+	}
+	if notifyPerm.Resource != "com.powerx.plugins.ecommerce:logistics.notification" {
+		t.Fatalf("unexpected resource %s", notifyPerm.Resource)
+	}
 }

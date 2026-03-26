@@ -183,6 +183,38 @@ export type LogisticsRateQuoteResult = {
   breakdown: Record<string, any>;
 };
 
+export type LogisticsNotificationTemplate = {
+  id: string;
+  name: string;
+  event: string;
+  channel: string;
+  title: string;
+  body: string;
+  enabled: boolean;
+  metadata: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsNotificationRecord = {
+  id: string;
+  templateId: string;
+  waybillId: string;
+  event: string;
+  channel: string;
+  status: string;
+  attemptCount: number;
+  maxAttempts: number;
+  idempotencyKey: string;
+  lastError: string;
+  renderedTitle: string;
+  renderedBody: string;
+  payload: Record<string, any>;
+  sentAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 const normalizeCarrier = (raw: RawRecord): LogisticsCarrier => ({
   id: String(pick(raw, "id", "id") || ""),
   name: String(pick(raw, "name", "name") || ""),
@@ -292,6 +324,38 @@ const normalizeSLASummary = (raw: RawRecord): LogisticsSLASummaryItem => ({
   exceptionRate: Number(pick(raw, "exceptionRate", "exception_rate") || 0),
   pickupSLAHours: Number(pick(raw, "pickupSLAHours", "pickup_sla_hours") || 24),
   deliverySLAHours: Number(pick(raw, "deliverySLAHours", "delivery_sla_hours") || 72),
+});
+
+const normalizeNotificationTemplate = (raw: RawRecord): LogisticsNotificationTemplate => ({
+  id: String(pick(raw, "id", "id") || ""),
+  name: String(pick(raw, "name", "name") || ""),
+  event: String(pick(raw, "event", "event") || ""),
+  channel: String(pick(raw, "channel", "channel") || "sms"),
+  title: String(pick(raw, "title", "title") || ""),
+  body: String(pick(raw, "body", "body") || ""),
+  enabled: Boolean(pick(raw, "enabled", "enabled")),
+  metadata: (pick(raw, "metadata", "metadata") || {}) as Record<string, any>,
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeNotificationRecord = (raw: RawRecord): LogisticsNotificationRecord => ({
+  id: String(pick(raw, "id", "id") || ""),
+  templateId: String(pick(raw, "templateId", "template_id") || ""),
+  waybillId: String(pick(raw, "waybillId", "waybill_id") || ""),
+  event: String(pick(raw, "event", "event") || ""),
+  channel: String(pick(raw, "channel", "channel") || ""),
+  status: String(pick(raw, "status", "status") || "pending"),
+  attemptCount: Number(pick(raw, "attemptCount", "attempt_count") || 0),
+  maxAttempts: Number(pick(raw, "maxAttempts", "max_attempts") || 3),
+  idempotencyKey: String(pick(raw, "idempotencyKey", "idempotency_key") || ""),
+  lastError: String(pick(raw, "lastError", "last_error") || ""),
+  renderedTitle: String(pick(raw, "renderedTitle", "rendered_title") || ""),
+  renderedBody: String(pick(raw, "renderedBody", "rendered_body") || ""),
+  payload: (pick(raw, "payload", "payload") || {}) as Record<string, any>,
+  sentAt: String(pick(raw, "sentAt", "sent_at") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
 });
 
 const normalizeBillingCase = (raw: RawRecord): LogisticsBillingCase => ({
@@ -457,6 +521,54 @@ export function useLogisticsApi() {
         apiPatch<ApiEnvelope<RawRecord>>(`${basePath}/billing/cases/${id}/transition`, payload, init),
       );
       return normalizeBillingCase(raw || {});
+    },
+
+    listNotificationTemplates: async (init?: any): Promise<LogisticsNotificationTemplate[]> => {
+      const raw = await unwrap(
+        apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/notifications/templates`, undefined, init),
+      );
+      return asArray<RawRecord>(raw?.items).map(normalizeNotificationTemplate);
+    },
+
+    upsertNotificationTemplate: async (payload: Record<string, any>, init?: any) => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<RawRecord>>(`${basePath}/notifications/templates`, payload, init),
+      );
+      return normalizeNotificationTemplate(raw || {});
+    },
+
+    listNotificationRecords: async (
+      query?: { status?: string },
+      init?: any,
+    ): Promise<LogisticsNotificationRecord[]> => {
+      const raw = await unwrap(
+        apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/notifications/records`, query, init),
+      );
+      return asArray<RawRecord>(raw?.items).map(normalizeNotificationRecord);
+    },
+
+    sendNotification: async (
+      payload: Record<string, any>,
+      init?: any,
+    ): Promise<{ record: LogisticsNotificationRecord; idempotencyStatus: string }> => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<{ record: RawRecord; idempotency_status: string }>>(
+          `${basePath}/notifications/send`,
+          payload,
+          init,
+        ),
+      );
+      return {
+        record: normalizeNotificationRecord((raw?.record || {}) as RawRecord),
+        idempotencyStatus: String(raw?.idempotency_status || "created"),
+      };
+    },
+
+    retryNotification: async (id: string, init?: any): Promise<LogisticsNotificationRecord> => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<RawRecord>>(`${basePath}/notifications/records/${id}/retry`, {}, init),
+      );
+      return normalizeNotificationRecord(raw || {});
     },
 
     listLabelPrintTasks: async (query?: { status?: string }, init?: any) => {

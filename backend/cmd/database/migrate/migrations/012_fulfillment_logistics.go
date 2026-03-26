@@ -16,6 +16,8 @@ var FulfillmentLogisticsTables = []interface{}{
 	&LogisticsModel.TrackingEvent{},
 	&LogisticsModel.LabelPrintTask{},
 	&LogisticsModel.BillingCase{},
+	&LogisticsModel.NotificationTemplate{},
+	&LogisticsModel.NotificationRecord{},
 	&FulfillmentModel.Task{},
 	&FulfillmentModel.TaskLog{},
 	&FulfillmentModel.Wave{},

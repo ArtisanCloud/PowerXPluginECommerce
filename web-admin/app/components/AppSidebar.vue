@@ -985,6 +985,20 @@
             <UIcon name="i-heroicons-chart-pie" class="w-4 h-4 mr-3"/>
             SLA 看板
           </UButton>
+
+          <UButton
+            to="/shipping/notifications"
+            variant="ghost"
+            color="neutral"
+            class="w-full justify-start"
+            :class="{
+              'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
+                $route.path === '/shipping/notifications',
+            }"
+          >
+            <UIcon name="i-heroicons-bell-alert" class="w-4 h-4 mr-3"/>
+            通知中心
+          </UButton>
         </div>
       </div>
 

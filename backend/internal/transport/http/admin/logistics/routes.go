@@ -23,6 +23,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 		logisticssvc.NewWaybillService(deps),
 		logisticssvc.NewBillingService(deps),
 		logisticssvc.NewBillingCaseService(deps),
+		logisticssvc.NewNotificationService(deps),
 		logisticssvc.NewSLAService(deps),
 		logisticssvc.NewLabelPrintService(deps),
 		logisticssvc.NewWebhookService(deps),
@@ -50,6 +51,11 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.GET("/billing/cases", handler.ListBillingCases)
 	rg.POST("/billing/cases", handler.CreateBillingCase)
 	rg.PATCH("/billing/cases/:id/transition", handler.TransitionBillingCase)
+	rg.GET("/notifications/templates", handler.ListNotificationTemplates)
+	rg.POST("/notifications/templates", handler.UpsertNotificationTemplate)
+	rg.GET("/notifications/records", handler.ListNotificationRecords)
+	rg.POST("/notifications/send", handler.SendNotification)
+	rg.POST("/notifications/records/:id/retry", handler.RetryNotification)
 	rg.GET("/sla/dashboard", handler.SLADashboard)
 	rg.GET("/labels/prints", handler.ListLabelPrintTasks)
 	rg.POST("/labels/prints", handler.BatchPrintLabels)
