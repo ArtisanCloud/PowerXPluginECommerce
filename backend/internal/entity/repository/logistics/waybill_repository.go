@@ -14,6 +14,12 @@ type WaybillRepository struct {
 	*Repository[LogisticsModel.Waybill]
 }
 
+type WaybillSyncFilter struct {
+	CarrierID string
+	Status    string
+	Limit     int
+}
+
 func NewWaybillRepository(db *gorm.DB) *WaybillRepository {
 	return &WaybillRepository{Repository: NewRepository[LogisticsModel.Waybill](db)}
 }
@@ -28,6 +34,28 @@ func (r *WaybillRepository) List(ctx context.Context) ([]LogisticsModel.Waybill,
 		Where("tenant_uuid = ?", tenantUUID).
 		Order("created_at DESC").
 		Find(&rows).Error
+	return rows, err
+}
+
+func (r *WaybillRepository) ListForSync(ctx context.Context, filter WaybillSyncFilter) ([]LogisticsModel.Waybill, error) {
+	tenantUUID, err := RequireTenantUUID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	limit := filter.Limit
+	if limit <= 0 || limit > 500 {
+		limit = 50
+	}
+	db := r.DB.WithContext(ctx).
+		Where("tenant_uuid = ?", tenantUUID)
+	if strings.TrimSpace(filter.CarrierID) != "" {
+		db = db.Where("carrier_id = ?", strings.TrimSpace(filter.CarrierID))
+	}
+	if strings.TrimSpace(filter.Status) != "" {
+		db = db.Where("status = ?", strings.TrimSpace(filter.Status))
+	}
+	var rows []LogisticsModel.Waybill
+	err = db.Order("created_at DESC").Limit(limit).Find(&rows).Error
 	return rows, err
 }
 

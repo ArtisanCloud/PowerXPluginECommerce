@@ -165,6 +165,17 @@ type retryLabelPrintRequest struct {
 	TaskIDs []string `json:"task_ids,omitempty"`
 }
 
+type createTrackingSyncJobRequest struct {
+	CarrierID     string `json:"carrier_id,omitempty"`
+	WaybillStatus string `json:"waybill_status,omitempty"`
+	BatchLimit    int    `json:"batch_limit,omitempty"`
+	EventLimit    int    `json:"event_limit,omitempty"`
+}
+
+type cancelTrackingSyncJobRequest struct {
+	Reason string `json:"reason,omitempty"`
+}
+
 type rateQuoteRequest struct {
 	Region      string  `json:"region"`
 	Weight      float64 `json:"weight,omitempty"`
