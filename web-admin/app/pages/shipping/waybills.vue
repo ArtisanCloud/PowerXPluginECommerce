@@ -8,7 +8,16 @@
         </p>
       </div>
       <div class="flex gap-2">
-        <UButton color="neutral" variant="ghost" icon="i-heroicons-arrow-path">
+        <UButton color="info" variant="soft" icon="i-heroicons-bolt" :loading="syncJobCreating" @click="openSyncJobModal">
+          批量同步任务
+        </UButton>
+        <UButton
+          color="neutral"
+          variant="ghost"
+          icon="i-heroicons-arrow-path"
+          :loading="syncingAll"
+          @click="refreshTracking"
+        >
           刷新轨迹
         </UButton>
         <UButton color="primary" icon="i-heroicons-plus">录入运单</UButton>
@@ -83,6 +92,15 @@
             <UButton size="xs" variant="ghost" color="warning" @click="openRedelivery(row.original)">
               失败重派
             </UButton>
+            <UButton
+              size="xs"
+              variant="ghost"
+              color="info"
+              :loading="Boolean(syncingWaybillIDs[row.original.id])"
+              @click="syncTracking(row.original)"
+            >
+              同步轨迹
+            </UButton>
             <UButton size="xs" variant="ghost" @click="selectWaybill(row.original)">
               查看轨迹
             </UButton>
@@ -152,6 +170,22 @@
               命中规则：{{ routingPreviewResult.matchedRuleName || routingPreviewResult.matchedRuleId || "无（兜底）" }}
             </p>
           </UCard>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="syncJobOpen" title="创建批量轨迹同步任务">
+      <template #body>
+        <div class="space-y-3">
+          <div class="grid gap-2 sm:grid-cols-2">
+            <UInput v-model="syncJobForm.carrierId" placeholder="承运商ID（可选）" />
+            <USelect v-model="syncJobForm.waybillStatus" :options="syncJobStatusOptions" />
+            <UInput v-model.number="syncJobForm.batchLimit" type="number" placeholder="运单批次大小（默认20）" />
+            <UInput v-model.number="syncJobForm.eventLimit" type="number" placeholder="单运单拉取条数（默认20）" />
+          </div>
+          <UButton color="primary" :loading="syncJobCreating" @click="createSyncJob">
+            创建并执行
+          </UButton>
         </div>
       </template>
     </UModal>
@@ -236,8 +270,13 @@ type Waybill = {
 };
 
 const logisticsApi = useLogisticsApi();
+const toast = useToast();
 const waybills = ref<Waybill[]>([]);
 const carrierMap = ref<Record<string, string>>({});
+const syncingAll = ref(false);
+const syncingWaybillIDs = ref<Record<string, boolean>>({});
+const syncJobOpen = ref(false);
+const syncJobCreating = ref(false);
 const routingPreviewOpen = ref(false);
 const routingPreviewLoading = ref(false);
 const routingPreviewResult = ref<any>(null);
@@ -261,6 +300,12 @@ const redeliveryForm = reactive({
   operatorId: "admin",
   requestKey: "",
   addressLine: "",
+});
+const syncJobForm = reactive({
+  carrierId: "",
+  waybillStatus: "",
+  batchLimit: 20,
+  eventLimit: 20,
 });
 
 const normalizeStatus = (status: string): WaybillStatus => {
@@ -367,6 +412,14 @@ const loadWaybillDetail = async (waybill: Waybill) => {
   waybill.timeline = timeline;
 };
 
+const resolveErrorMessage = (error: any): string => {
+  const dataMessage =
+    error?.data?.error?.message || error?.data?.message || error?.response?._data?.error?.message;
+  if (typeof dataMessage === "string" && dataMessage.trim()) return dataMessage;
+  if (typeof error?.message === "string" && error.message.trim()) return error.message;
+  return "请求失败，请稍后重试";
+};
+
 const keyword = ref("");
 const carrierFilter = ref("");
 const statusFilter = ref<WaybillStatus | "">("");
@@ -387,6 +440,13 @@ const statusOptions = [
   { label: "运输中", value: "in-transit" },
   { label: "延误预警", value: "delay" },
   { label: "已签收", value: "delivered" },
+];
+
+const syncJobStatusOptions = [
+  { label: "全部状态", value: "" },
+  { label: "待揽收", value: "created" },
+  { label: "运输中", value: "in_transit" },
+  { label: "延误", value: "delay" },
 ];
 
 const columns = computed<TableColumn<Waybill>[]>(() => [
@@ -445,6 +505,98 @@ watch(
 const selectWaybill = async (waybill: Waybill) => {
   selectedWaybill.value = waybill;
   await loadWaybillDetail(waybill);
+};
+
+const updateWaybillStatus = (waybillID: string, nextStatus: string) => {
+  const normalized = normalizeStatus(nextStatus);
+  waybills.value = waybills.value.map((item) =>
+    item.id === waybillID
+      ? {
+          ...item,
+          status: normalized,
+          progress: progressByStatus(normalized),
+        }
+      : item,
+  );
+  if (selectedWaybill.value?.id === waybillID) {
+    selectedWaybill.value = {
+      ...selectedWaybill.value,
+      status: normalized,
+      progress: progressByStatus(normalized),
+    };
+  }
+};
+
+const syncTracking = async (waybill: Waybill) => {
+  syncingWaybillIDs.value = {
+    ...syncingWaybillIDs.value,
+    [waybill.id]: true,
+  };
+  try {
+    const result = await logisticsApi.syncWaybillTracking(waybill.id, { limit: 20 });
+    updateWaybillStatus(waybill.id, result.currentStatus || waybill.status);
+    if (selectedWaybill.value?.id === waybill.id) {
+      await loadWaybillDetail(selectedWaybill.value);
+    }
+    toast.add({
+      title: `轨迹同步完成 · ${waybill.waybillNo}`,
+      description: `新增 ${result.appended} 条，重放 ${result.replayed} 条，当前状态 ${result.currentStatus || "-"}`,
+      color: "success",
+    });
+  } catch (error: any) {
+    toast.add({
+      title: `轨迹同步失败 · ${waybill.waybillNo}`,
+      description: resolveErrorMessage(error),
+      color: "error",
+    });
+  } finally {
+    syncingWaybillIDs.value = {
+      ...syncingWaybillIDs.value,
+      [waybill.id]: false,
+    };
+  }
+};
+
+const refreshTracking = async () => {
+  const target = selectedWaybill.value || filteredWaybills.value[0];
+  if (!target) return;
+  syncingAll.value = true;
+  try {
+    await syncTracking(target);
+  } finally {
+    syncingAll.value = false;
+  }
+};
+
+const openSyncJobModal = () => {
+  syncJobOpen.value = true;
+};
+
+const createSyncJob = async () => {
+  syncJobCreating.value = true;
+  try {
+    const job = await logisticsApi.createTrackingSyncJob({
+      carrier_id: syncJobForm.carrierId || undefined,
+      waybill_status: syncJobForm.waybillStatus || undefined,
+      batch_limit: Number(syncJobForm.batchLimit || 20),
+      event_limit: Number(syncJobForm.eventLimit || 20),
+    });
+    syncJobOpen.value = false;
+    await loadWaybills();
+    toast.add({
+      title: "批量同步任务已执行",
+      description: `状态 ${job.status}，成功 ${job.successCount}，失败 ${job.failedCount}`,
+      color: job.failedCount > 0 ? "warning" : "success",
+    });
+  } catch (error: any) {
+    toast.add({
+      title: "批量同步任务失败",
+      description: resolveErrorMessage(error),
+      color: "error",
+    });
+  } finally {
+    syncJobCreating.value = false;
+  }
 };
 
 onMounted(async () => {

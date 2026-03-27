@@ -99,6 +99,15 @@ func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 		t.Fatalf("unexpected resource %s", redeliveryPerm.Resource)
 	}
 
+	syncTrackKey := "POST:/api/v1/admin/logistics/waybills/:id/sync-track"
+	syncTrackPerm, ok := entries[syncTrackKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", syncTrackKey)
+	}
+	if syncTrackPerm.Resource != "com.powerx.plugins.ecommerce:logistics.waybill" {
+		t.Fatalf("unexpected resource %s", syncTrackPerm.Resource)
+	}
+
 	riskKey := "POST:/api/v1/admin/logistics/risk/hits/:id/release"
 	riskPerm, ok := entries[riskKey]
 	if !ok {
@@ -106,5 +115,23 @@ func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 	}
 	if riskPerm.Resource != "com.powerx.plugins.ecommerce:logistics.risk" {
 		t.Fatalf("unexpected resource %s", riskPerm.Resource)
+	}
+
+	trackingSyncKey := "POST:/api/v1/admin/logistics/tracking-sync/jobs"
+	trackingSyncPerm, ok := entries[trackingSyncKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", trackingSyncKey)
+	}
+	if trackingSyncPerm.Resource != "com.powerx.plugins.ecommerce:logistics.tracking_sync" {
+		t.Fatalf("unexpected resource %s", trackingSyncPerm.Resource)
+	}
+
+	gatewayKey := "GET:/api/v1/admin/logistics/gateway/health"
+	gatewayPerm, ok := entries[gatewayKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", gatewayKey)
+	}
+	if gatewayPerm.Action != "read" {
+		t.Fatalf("expected read action, got %s", gatewayPerm.Action)
 	}
 }

@@ -275,9 +275,50 @@
 
 ### Iteration-4 Polish
 
-- [ ] T120 [P] 更新 M6 quickstart 与执行记录模板（`specs/011-fulfillment-logistics/quickstart.md`）
-- [ ] T121 执行 M6 后端回归（`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/services/admin/reverse ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment ./internal/transport/http/admin/reverse`）
-- [ ] T122 执行 M6 前端构建与页面回归（`cd web-admin && npm run build`）
+- [X] T120 [P] 更新 M6 quickstart 与执行记录模板（`specs/011-fulfillment-logistics/quickstart.md`）
+- [X] T121 执行 M6 后端回归（`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/services/admin/reverse ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment ./internal/transport/http/admin/reverse`）
+- [X] T122 执行 M6 前端构建与页面回归（`cd web-admin && npm run build`）
+
+---
+
+## Phase 11: Iteration-5 - 承运商真实网关适配层（Backlog）
+
+**Purpose**: 在既有履约主链路上补齐 provider pull 轨迹回流与网关鉴权对齐，形成“后台代理网关 + 页面手动同步”的可调试闭环。
+
+### User Story 19 - 网关轨迹拉取与手动同步（P2）
+
+- [X] T123 [US19] 扩展物流适配器抽象，增加 provider pull 轨迹拉取能力（`backend/internal/services/admin/logistics/integrations/{adapter.go,self_adapter.go}`）
+- [X] T124 [US19] 实现 GatewayAdapter（鉴权 scheme 对齐、重试与回退）并默认接管第三方承运商（`backend/internal/services/admin/logistics/integrations/gateway_adapter.go`）
+- [X] T125 [US19] 新增运单手动同步轨迹服务与管理端接口（`backend/internal/services/admin/logistics/waybill_service.go`、`backend/internal/transport/http/admin/logistics/{handler.go,routes.go,rbac.go}`）
+- [X] T126 [US19] 运单页面接入“同步轨迹”动作与结果提示（`web-admin/app/pages/shipping/waybills.vue`、`web-admin/app/composables/api/useLogistics.ts`）
+- [X] T127 [US19] 增加网关适配与轨迹同步回归测试（`backend/internal/services/admin/logistics/integrations/gateway_adapter_test.go`、`backend/internal/services/admin/logistics/waybill_provider_sync_test.go`、`backend/internal/transport/http/admin/logistics/rbac_test.go`）
+
+---
+
+## Phase 12: Iteration-6 - 网关稳定性与运营可观测（Backlog）
+
+**Purpose**: 在已打通的网关适配链路上补齐可观测、失败重试与运营面板，避免“能用但不可运维”。
+
+### User Story 20 - 轨迹同步作业化（P2）
+
+- [X] T128 [US20] 增加轨迹同步作业模型与仓储（`backend/internal/entity/models/logistics/tracking_sync_job*.go`、`backend/internal/entity/repository/logistics/tracking_sync_job*_repository.go`）
+- [X] T129 [US20] 实现批量同步作业服务（按承运商/状态筛选运单，分批触发 provider pull）（`backend/internal/services/admin/logistics/tracking_sync_job_service.go`）
+- [X] T130 [US20] 新增作业管理接口（创建、查询、取消、重试）（`backend/internal/transport/http/admin/logistics/{handler.go,routes.go,dto.go}`）
+- [X] T131 [US20] 运单页与运营页接入“批量同步任务”入口（`web-admin/app/pages/shipping/{waybills.vue,sla.vue}`）
+- [X] T132 [US20] 增加 US20 回归测试（分批幂等、失败重试、租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### User Story 21 - 网关健康与告警看板（P2）
+
+- [X] T133 [P] [US21] 增加网关请求指标聚合（成功率、P95、4xx/5xx 分布）（`backend/internal/services/admin/logistics/gateway_metrics_service.go`）
+- [X] T134 [US21] 实现网关健康接口与 SLA 卡片数据接口（`backend/internal/transport/http/admin/logistics/{handler.go,routes.go,dto.go}`）
+- [X] T135 [US21] 在 SLA 页面新增“网关健康”卡片与告警列表（`web-admin/app/pages/shipping/sla.vue`）
+- [X] T136 [US21] 增加 US21 回归测试（窗口聚合正确性、告警阈值触发）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### Iteration-6 Polish
+
+- [X] T137 [P] 更新 M7 quickstart 与执行记录模板（`specs/011-fulfillment-logistics/quickstart.md`）
+- [X] T138 执行 M7 后端回归（`go test ./internal/services/admin/logistics ./internal/transport/http/admin/logistics ./internal/entity/repository/logistics -count=1`）
+- [X] T139 执行 M7 前端构建与页面回归（`make build-admin`）
 
 ---
 

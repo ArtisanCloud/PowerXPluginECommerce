@@ -48,6 +48,7 @@ func RBACEntries(prefix string) map[string]AuthX.Permission {
 		"POST:" + base + "/waybills":                   {Resource: res("logistics.waybill"), Action: "manage"},
 		"GET:" + base + "/waybills/:id":                {Resource: res("logistics.waybill"), Action: "read"},
 		"POST:" + base + "/waybills/:id/track":         {Resource: res("logistics.waybill"), Action: "manage"},
+		"POST:" + base + "/waybills/:id/sync-track":    {Resource: res("logistics.waybill"), Action: "manage"},
 		"POST:" + base + "/waybills/:id/cancel":        {Resource: res("logistics.waybill"), Action: "manage"},
 		"PATCH:" + base + "/waybills/:id/cost":         {Resource: res("logistics.billing"), Action: "manage"},
 		"GET:" + base + "/billing/summary":             {Resource: res("logistics.billing"), Action: "read"},
@@ -68,6 +69,15 @@ func RBACEntries(prefix string) map[string]AuthX.Permission {
 		"GET:" + base + "/labels/prints":        {Resource: res("logistics.label_print"), Action: "read"},
 		"POST:" + base + "/labels/prints":       {Resource: res("logistics.label_print"), Action: "manage"},
 		"POST:" + base + "/labels/prints/retry": {Resource: res("logistics.label_print"), Action: "manage"},
-		"POST:" + base + "/webhook":             {Resource: res("logistics.webhook"), Action: "manage"},
+		"GET:" + base + "/tracking-sync/jobs":   {Resource: res("logistics.tracking_sync"), Action: "read"},
+		"POST:" + base + "/tracking-sync/jobs":  {Resource: res("logistics.tracking_sync"), Action: "manage"},
+		"POST:" + base + "/tracking-sync/jobs/:id/cancel": {
+			Resource: res("logistics.tracking_sync"), Action: "manage",
+		},
+		"POST:" + base + "/tracking-sync/jobs/:id/retry": {
+			Resource: res("logistics.tracking_sync"), Action: "manage",
+		},
+		"GET:" + base + "/gateway/health": {Resource: res("logistics.gateway"), Action: "read"},
+		"POST:" + base + "/webhook":       {Resource: res("logistics.webhook"), Action: "manage"},
 	}
 }

@@ -26,6 +26,8 @@ type Handler struct {
 	notifySvc  *logisticssvc.NotificationService
 	slaSvc     *logisticssvc.SLAService
 	labelSvc   *logisticssvc.LabelPrintService
+	syncJobSvc *logisticssvc.TrackingSyncJobService
+	gatewaySvc *logisticssvc.GatewayMetricsService
 	webhookSvc *logisticssvc.WebhookService
 }
 
@@ -43,6 +45,8 @@ func NewHandler(
 	notifySvc *logisticssvc.NotificationService,
 	slaSvc *logisticssvc.SLAService,
 	labelSvc *logisticssvc.LabelPrintService,
+	syncJobSvc *logisticssvc.TrackingSyncJobService,
+	gatewaySvc *logisticssvc.GatewayMetricsService,
 	webhookSvc *logisticssvc.WebhookService,
 ) *Handler {
 	return &Handler{
@@ -59,6 +63,8 @@ func NewHandler(
 		notifySvc:  notifySvc,
 		slaSvc:     slaSvc,
 		labelSvc:   labelSvc,
+		syncJobSvc: syncJobSvc,
+		gatewaySvc: gatewaySvc,
 		webhookSvc: webhookSvc,
 	}
 }
@@ -347,6 +353,34 @@ func (h *Handler) AppendTracking(c *gin.Context) {
 	})
 }
 
+func (h *Handler) SyncWaybillTracking(c *gin.Context) {
+	if h == nil || h.waybillSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "logistics waybill service unavailable", nil)
+		return
+	}
+	waybillID := strings.TrimSpace(c.Param("id"))
+	if waybillID == "" {
+		contracts.ResponseBadRequest(c, "waybill id is required")
+		return
+	}
+	limit := 0
+	if raw := strings.TrimSpace(c.Query("limit")); raw != "" {
+		v, err := strconv.Atoi(raw)
+		if err != nil || v < 0 {
+			contracts.ResponseBadRequest(c, "limit must be non-negative integer")
+			return
+		}
+		limit = v
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	result, err := h.waybillSvc.SyncTrackingFromProvider(c.Request.Context(), tenantUUID, waybillID, limit)
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, result)
+}
+
 func (h *Handler) CancelWaybill(c *gin.Context) {
 	if h == nil || h.waybillSvc == nil {
 		contracts.ResponseServiceUnavailable(c, "logistics waybill service unavailable", nil)
@@ -516,6 +550,114 @@ func (h *Handler) RetryLabelPrint(c *gin.Context) {
 		return
 	}
 	contracts.ResponseSuccess(c, result)
+}
+
+func (h *Handler) ListTrackingSyncJobs(c *gin.Context) {
+	if h == nil || h.syncJobSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "tracking sync job service unavailable", nil)
+		return
+	}
+	limit := 50
+	if raw := strings.TrimSpace(c.Query("limit")); raw != "" {
+		if v, err := strconv.Atoi(raw); err == nil {
+			limit = v
+		}
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	rows, err := h.syncJobSvc.List(c.Request.Context(), tenantUUID, logisticssvc.TrackingSyncJobQuery{
+		CarrierID: strings.TrimSpace(c.Query("carrier_id")),
+		Status:    strings.TrimSpace(c.Query("status")),
+		Limit:     limit,
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, gin.H{"items": rows})
+}
+
+func (h *Handler) CreateTrackingSyncJob(c *gin.Context) {
+	if h == nil || h.syncJobSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "tracking sync job service unavailable", nil)
+		return
+	}
+	var payload createTrackingSyncJobRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		contracts.ResponseBadRequest(c, "invalid request body: "+err.Error())
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.syncJobSvc.CreateAndRun(c.Request.Context(), tenantUUID, logisticssvc.CreateTrackingSyncJobRequest{
+		CarrierID:     strings.TrimSpace(payload.CarrierID),
+		WaybillStatus: strings.TrimSpace(payload.WaybillStatus),
+		BatchLimit:    payload.BatchLimit,
+		EventLimit:    payload.EventLimit,
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) CancelTrackingSyncJob(c *gin.Context) {
+	if h == nil || h.syncJobSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "tracking sync job service unavailable", nil)
+		return
+	}
+	jobID := strings.TrimSpace(c.Param("id"))
+	if jobID == "" {
+		contracts.ResponseBadRequest(c, "job id is required")
+		return
+	}
+	var payload cancelTrackingSyncJobRequest
+	_ = c.ShouldBindJSON(&payload)
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.syncJobSvc.Cancel(c.Request.Context(), tenantUUID, jobID, payload.Reason)
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) RetryTrackingSyncJob(c *gin.Context) {
+	if h == nil || h.syncJobSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "tracking sync job service unavailable", nil)
+		return
+	}
+	jobID := strings.TrimSpace(c.Param("id"))
+	if jobID == "" {
+		contracts.ResponseBadRequest(c, "job id is required")
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.syncJobSvc.Retry(c.Request.Context(), tenantUUID, jobID)
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) GatewayHealth(c *gin.Context) {
+	if h == nil || h.gatewaySvc == nil {
+		contracts.ResponseServiceUnavailable(c, "gateway health service unavailable", nil)
+		return
+	}
+	windowHours := 24
+	if raw := strings.TrimSpace(c.Query("window_hours")); raw != "" {
+		if v, err := strconv.Atoi(raw); err == nil {
+			windowHours = v
+		}
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	snapshot, err := h.gatewaySvc.Snapshot(c.Request.Context(), tenantUUID, windowHours)
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, snapshot)
 }
 
 func (h *Handler) HandleWebhook(c *gin.Context) {

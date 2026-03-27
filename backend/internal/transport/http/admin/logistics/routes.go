@@ -30,6 +30,8 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 		logisticssvc.NewNotificationService(deps),
 		logisticssvc.NewSLAService(deps),
 		logisticssvc.NewLabelPrintService(deps),
+		logisticssvc.NewTrackingSyncJobService(deps),
+		logisticssvc.NewGatewayMetricsService(deps),
 		logisticssvc.NewWebhookService(deps),
 	)
 
@@ -69,6 +71,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.POST("/waybills", handler.CreateWaybill)
 	rg.GET("/waybills/:id", handler.GetWaybill)
 	rg.POST("/waybills/:id/track", handler.AppendTracking)
+	rg.POST("/waybills/:id/sync-track", handler.SyncWaybillTracking)
 	rg.POST("/waybills/:id/cancel", handler.CancelWaybill)
 	rg.PATCH("/waybills/:id/cost", handler.UpdateWaybillCost)
 	rg.GET("/billing/summary", handler.BillingSummary)
@@ -85,6 +88,11 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.GET("/labels/prints", handler.ListLabelPrintTasks)
 	rg.POST("/labels/prints", handler.BatchPrintLabels)
 	rg.POST("/labels/prints/retry", handler.RetryLabelPrint)
+	rg.GET("/tracking-sync/jobs", handler.ListTrackingSyncJobs)
+	rg.POST("/tracking-sync/jobs", handler.CreateTrackingSyncJob)
+	rg.POST("/tracking-sync/jobs/:id/cancel", handler.CancelTrackingSyncJob)
+	rg.POST("/tracking-sync/jobs/:id/retry", handler.RetryTrackingSyncJob)
+	rg.GET("/gateway/health", handler.GatewayHealth)
 
 	rg.POST("/webhook", handler.HandleWebhook)
 	return rg

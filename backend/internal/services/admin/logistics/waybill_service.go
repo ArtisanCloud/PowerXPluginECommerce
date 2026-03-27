@@ -2,6 +2,8 @@ package logistics
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -66,6 +68,16 @@ type AppendTrackingRequest struct {
 type WaybillDetail struct {
 	Waybill  *LogisticsModel.Waybill        `json:"waybill"`
 	Tracking []LogisticsModel.TrackingEvent `json:"tracking"`
+}
+
+type SyncTrackingResult struct {
+	WaybillID     string `json:"waybill_id"`
+	WaybillNo     string `json:"waybill_no"`
+	Provider      string `json:"provider"`
+	TotalFetched  int    `json:"total_fetched"`
+	Appended      int    `json:"appended"`
+	Replayed      int    `json:"replayed"`
+	CurrentStatus string `json:"current_status"`
 }
 
 func (s *WaybillService) List(ctx context.Context, tenantUUID string) ([]LogisticsModel.Waybill, error) {
@@ -276,6 +288,69 @@ func (s *WaybillService) AppendTracking(ctx context.Context, tenantUUID, waybill
 	return event, "created", nil
 }
 
+func (s *WaybillService) SyncTrackingFromProvider(ctx context.Context, tenantUUID, waybillID string, limit int) (*SyncTrackingResult, error) {
+	if s == nil || s.waybillRepo == nil || s.trackRepo == nil || s.carrierRepo == nil {
+		return nil, errors.New("waybill service unavailable")
+	}
+	ctx = withTenantContext(ctx, tenantUUID)
+	wb, err := s.waybillRepo.GetByID(ctx, waybillID)
+	if err != nil {
+		return nil, err
+	}
+	carrier, err := s.carrierRepo.GetByID(ctx, wb.CarrierID)
+	if err != nil {
+		return nil, err
+	}
+	adapter, provider := s.resolveAdapter(carrier)
+	events, err := adapter.FetchTracking(ctx, carrier, integrations.TrackingFetchInput{
+		WaybillNo: wb.WaybillNo,
+		Limit:     limit,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	appended := 0
+	replayed := 0
+	for idx, row := range events {
+		eventID := strings.TrimSpace(row.EventID)
+		if eventID == "" {
+			eventID = synthesizeProviderEventID(provider, wb.WaybillNo, row, idx)
+		}
+		_, idem, appendErr := s.AppendTracking(ctx, tenantUUID, wb.ID, AppendTrackingRequest{
+			EventID:     eventID,
+			Status:      row.Status,
+			Source:      "provider",
+			Description: row.Description,
+			OccurredAt:  row.OccurredAt,
+			Payload:     row.Payload,
+		})
+		if appendErr != nil {
+			return nil, appendErr
+		}
+		if idem == "replayed" {
+			replayed++
+			continue
+		}
+		appended++
+	}
+
+	fresh, err := s.waybillRepo.GetByID(ctx, wb.ID)
+	if err != nil {
+		return nil, err
+	}
+	s.emitEvent(tenantUUID, fresh.WaybillNo, fresh.Status, "waybill.track.sync", "created")
+	return &SyncTrackingResult{
+		WaybillID:     fresh.ID,
+		WaybillNo:     fresh.WaybillNo,
+		Provider:      provider,
+		TotalFetched:  len(events),
+		Appended:      appended,
+		Replayed:      replayed,
+		CurrentStatus: fresh.Status,
+	}, nil
+}
+
 func normalizeTrackingStatus(status string) string {
 	val := strings.TrimSpace(strings.ToLower(status))
 	if val == "" {
@@ -389,4 +464,19 @@ func extractShipmentItems(raw datatypes.JSON) []string {
 		return nil
 	}
 	return normalizeShipmentItems(items)
+}
+
+func synthesizeProviderEventID(provider, waybillNo string, row integrations.TrackingFetchEvent, index int) string {
+	parts := []string{
+		strings.ToLower(strings.TrimSpace(provider)),
+		strings.TrimSpace(waybillNo),
+		strings.ToLower(strings.TrimSpace(row.Status)),
+		strings.TrimSpace(row.Description),
+		fmt.Sprintf("%d", index),
+	}
+	if row.OccurredAt != nil {
+		parts = append(parts, row.OccurredAt.UTC().Format(time.RFC3339Nano))
+	}
+	sum := sha1.Sum([]byte(strings.Join(parts, "|")))
+	return "pull-" + hex.EncodeToString(sum[:])
 }

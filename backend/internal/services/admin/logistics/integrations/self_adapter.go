@@ -62,6 +62,10 @@ func (a *SelfAdapter) CreateWaybill(_ context.Context, _ *LogisticsModel.Carrier
 	}, nil
 }
 
+func (a *SelfAdapter) FetchTracking(_ context.Context, _ *LogisticsModel.Carrier, _ TrackingFetchInput) ([]TrackingFetchEvent, error) {
+	return nil, nil
+}
+
 func (a *SelfAdapter) NormalizeTrackingStatus(status string) string {
 	val := strings.TrimSpace(strings.ToLower(status))
 	if val == "" {

@@ -181,3 +181,93 @@
   - `shipping/waves`
   - `shipping/billing`
   - `shipping/notifications`
+
+## 12. M6 验证（风控与黑名单）
+1. 在风控中心创建规则（地址/收件人/手机号）并设置 `review` 或 `block`。
+2. 维护黑名单条目（收件人/手机号/地址），校验生效状态与过期时间。
+3. 输入运单收件信息执行即时评估，确认命中记录写入并返回风险分。
+4. 对误拦截命中执行“人工放行”，再次评估同指纹样本应返回 `allow`。
+5. 校验跨租户隔离：A 租户命中记录不可被 B 租户读取或放行。
+
+预期结果：
+- 风控规则、黑名单、命中记录形成闭环。
+- 误拦截可人工豁免，且豁免后同指纹不会重复阻断。
+- 租户隔离在规则、命中、放行三个动作上均生效。
+
+## 13. Iteration-4 执行记录模板（可直接复制）
+```md
+### 13.1 T120 M6 quickstart 与模板更新
+- 变更文件：`specs/011-fulfillment-logistics/quickstart.md`
+- 覆盖范围：US18 风控与黑名单验证路径、M6 发布前检查项
+- 结果：通过/待补充
+
+### 13.2 T121 M6 后端回归
+- 执行命令：`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/services/admin/reverse ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment ./internal/transport/http/admin/reverse`
+- 结果：通过/失败（附失败包与错误）
+
+### 13.3 T122 M6 前端构建与页面回归
+- 执行命令：`cd web-admin && npm run build`
+- 结果：通过/失败
+- 页面回归：`shipping/risk-control`、`shipping/waybills`、`shipping/reverse-waybills`、`shipping/notifications`
+```
+
+## 14. Iteration-4 执行记录（2026-03-27）
+### 14.1 T120 M6 quickstart 与模板更新
+- 已新增 M6 验证章节（第 12 节）与 Iteration-4 执行记录模板（第 13 节）。
+- 覆盖范围：US18 风控规则、黑名单、命中处置、误拦截放行、租户隔离。
+
+### 14.2 T121 M6 后端回归
+- 执行命令：  
+  `cd backend && GOCACHE=$PWD/.gocache GOMODCACHE=$PWD/.gomodcache go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/services/admin/reverse ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment ./internal/transport/http/admin/reverse`
+- 结果：**通过**（6 个目标包全部通过）。
+
+### 14.3 T122 M6 前端构建与页面回归
+- 执行命令：`cd web-admin && npm run build`
+- 结果：**通过**（存在既有 Rollup circular/chunk warnings，不阻塞产物输出）。
+- 页面范围：
+  - `shipping/risk-control`
+  - `shipping/waybills`
+  - `shipping/reverse-waybills`
+  - `shipping/notifications`
+
+## 15. Iteration-5 执行记录（2026-03-27）
+### 15.1 T123-T126 网关适配与手动同步轨迹
+- 新增 GatewayAdapter，支持 `api_key`（默认）/`bearer`/`basic` 鉴权与重试策略。
+- 未配置 `gateway_base_url` 时自动回退 `SelfAdapter`，保障本地开发链路可用。
+- 新增 `POST /admin/logistics/waybills/:id/sync-track`，支持按运单手动触发 provider pull。
+- 运单页新增“同步轨迹”按钮（单条 + 顶部刷新入口），展示 `appended/replayed/currentStatus` 结果。
+
+### 15.2 T127 后端回归
+- 执行命令：`cd backend && GOCACHE=$PWD/.gocache GOMODCACHE=$PWD/.gomodcache go test ./internal/services/admin/logistics/integrations ./internal/services/admin/logistics ./internal/transport/http/admin/logistics -count=1`
+- 结果：**通过**。
+
+### 15.3 T127 前端构建回归
+- 执行命令：`make build-admin`
+- 结果：**通过**（存在既有 Rollup circular/chunk warnings，不阻塞）。
+
+## 16. M7 验证（网关稳定性与运营可观测）
+1. 在运单页创建“批量同步任务”，按承运商/运单状态触发 provider pull。
+2. 在运单页查看任务执行反馈（成功数、失败数、状态）并抽样校验轨迹更新。
+3. 在 SLA 页面查看“网关健康”卡片（成功率、P95、失败量）与告警列表。
+4. 在 SLA 页面触发批量同步任务后刷新，确认健康数据窗口内可见。
+5. 对失败任务执行 retry 接口，确认会生成新任务并可追踪。
+
+预期结果：
+- 批量同步任务支持创建、查询、取消、重试，且租户隔离生效。
+- 网关健康指标可反映窗口内成功率与延迟异常。
+- 失败任务可形成运营闭环（告警 + 重试）。
+
+## 17. Iteration-6 执行记录（2026-03-27）
+### 17.1 T137 M7 quickstart 与模板更新
+- 新增 M7 验证章节（第 16 节），覆盖批量同步作业与网关健康看板验收路径。
+
+### 17.2 T138 M7 后端回归
+- 执行命令：`cd backend && GOCACHE=$PWD/.gocache GOMODCACHE=$PWD/.gomodcache go test ./internal/services/admin/logistics ./internal/transport/http/admin/logistics ./internal/entity/repository/logistics -count=1`
+- 结果：**通过**。
+
+### 17.3 T139 M7 前端构建与页面回归
+- 执行命令：`make build-admin`
+- 结果：**通过**（存在既有 Rollup circular/chunk warnings，不阻塞）。
+- 页面范围：
+  - `shipping/waybills`
+  - `shipping/sla`
