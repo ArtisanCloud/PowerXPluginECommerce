@@ -134,4 +134,22 @@ func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 	if gatewayPerm.Action != "read" {
 		t.Fatalf("expected read action, got %s", gatewayPerm.Action)
 	}
+
+	scheduleKey := "POST:/api/v1/admin/logistics/tracking-sync/schedules"
+	schedulePerm, ok := entries[scheduleKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", scheduleKey)
+	}
+	if schedulePerm.Resource != "com.powerx.plugins.ecommerce:logistics.tracking_sync" {
+		t.Fatalf("unexpected resource %s", schedulePerm.Resource)
+	}
+
+	failureCompensateKey := "POST:/api/v1/admin/logistics/gateway/failures/:id/compensate"
+	failureCompensatePerm, ok := entries[failureCompensateKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", failureCompensateKey)
+	}
+	if failureCompensatePerm.Action != "manage" {
+		t.Fatalf("expected manage action, got %s", failureCompensatePerm.Action)
+	}
 }

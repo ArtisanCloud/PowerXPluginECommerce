@@ -31,7 +31,9 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 		logisticssvc.NewSLAService(deps),
 		logisticssvc.NewLabelPrintService(deps),
 		logisticssvc.NewTrackingSyncJobService(deps),
+		logisticssvc.NewTrackingSyncSchedulerService(deps),
 		logisticssvc.NewGatewayMetricsService(deps),
+		logisticssvc.NewGatewayRecoveryService(deps),
 		logisticssvc.NewWebhookService(deps),
 	)
 
@@ -92,7 +94,16 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.POST("/tracking-sync/jobs", handler.CreateTrackingSyncJob)
 	rg.POST("/tracking-sync/jobs/:id/cancel", handler.CancelTrackingSyncJob)
 	rg.POST("/tracking-sync/jobs/:id/retry", handler.RetryTrackingSyncJob)
+	rg.GET("/tracking-sync/schedules", handler.ListTrackingSyncSchedules)
+	rg.POST("/tracking-sync/schedules", handler.UpsertTrackingSyncSchedule)
+	rg.PATCH("/tracking-sync/schedules/:id", handler.UpsertTrackingSyncSchedule)
+	rg.POST("/tracking-sync/schedules/:id/toggle", handler.ToggleTrackingSyncSchedule)
+	rg.POST("/tracking-sync/schedules/:id/trigger", handler.TriggerTrackingSyncSchedule)
+	rg.POST("/tracking-sync/schedules/run-due", handler.RunDueTrackingSyncSchedules)
 	rg.GET("/gateway/health", handler.GatewayHealth)
+	rg.GET("/gateway/failures", handler.ListGatewayFailures)
+	rg.POST("/gateway/failures/ingest", handler.IngestGatewayFailures)
+	rg.POST("/gateway/failures/:id/compensate", handler.CompensateGatewayFailure)
 
 	rg.POST("/webhook", handler.HandleWebhook)
 	return rg

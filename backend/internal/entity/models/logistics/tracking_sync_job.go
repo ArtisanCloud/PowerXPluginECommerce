@@ -13,6 +13,7 @@ type TrackingSyncJob struct {
 	ID              string         `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	TenantUUID      string         `gorm:"column:tenant_uuid;type:uuid;not null;index" json:"tenant_uuid"`
 	CarrierID       string         `gorm:"column:carrier_id;type:uuid;index" json:"carrier_id,omitempty"`
+	Provider        string         `gorm:"column:provider;type:varchar(64);index" json:"provider,omitempty"`
 	WaybillStatus   string         `gorm:"column:waybill_status;type:varchar(32);index" json:"waybill_status,omitempty"`
 	Status          string         `gorm:"column:status;type:varchar(32);not null;default:'pending';index" json:"status"`
 	BatchLimit      int            `gorm:"column:batch_limit;not null;default:20" json:"batch_limit"`

@@ -322,6 +322,43 @@
 
 ---
 
+## Phase 13: Iteration-7 - 调度化与成本治理（Backlog）
+
+**Purpose**: 从“可手动运营”升级到“可持续运行”，补齐调度、补偿、成本与配额治理能力。
+
+### User Story 22 - 轨迹同步调度化（P2）
+
+- [X] T140 [US22] 增加同步调度策略模型与仓储（cron、启停、并发上限、租户配额）（`backend/internal/entity/models/logistics/tracking_sync_schedule*.go`、`backend/internal/entity/repository/logistics/tracking_sync_schedule*_repository.go`）
+- [X] T141 [US22] 实现调度执行器（按策略触发同步作业、去重窗口、防并发重入）（`backend/internal/services/admin/logistics/tracking_sync_scheduler_service.go`）
+- [X] T142 [US22] 实现调度管理接口（创建/更新/启停/立即执行）（`backend/internal/transport/http/admin/logistics/{handler.go,routes.go,dto.go}`）
+- [X] T143 [US22] 在运营页增加“同步计划”管理区（`web-admin/app/pages/shipping/sla.vue`）
+- [X] T144 [US22] 增加 US22 回归测试（调度去重、并发上限、租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### User Story 23 - 网关失败分类与补偿策略（P2）
+
+- [X] T145 [P] [US23] 扩展失败分类模型（4xx/5xx/timeout/auth/contract）与补偿记录（`backend/internal/entity/models/logistics/gateway_failure*.go`）
+- [X] T146 [US23] 实现补偿策略服务（指数退避、熔断、降级到手工队列）（`backend/internal/services/admin/logistics/gateway_recovery_service.go`）
+- [X] T147 [US23] 实现失败事件查询与补偿触发接口（`backend/internal/transport/http/admin/logistics/{handler.go,routes.go,dto.go}`）
+- [X] T148 [US23] 在运单页增加“失败补偿”操作入口与状态提示（`web-admin/app/pages/shipping/waybills.vue`）
+- [X] T149 [US23] 增加 US23 回归测试（错误分类准确性、补偿幂等、熔断恢复）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### User Story 24 - 网关成本与调用配额（P3）
+
+- [ ] T150 [P] [US24] 增加网关调用账本模型（调用次数、计费单价、成本、配额消耗）（`backend/internal/entity/models/logistics/gateway_usage*.go`）
+- [ ] T151 [US24] 实现成本与配额聚合服务（按租户/承运商/窗口统计）（`backend/internal/services/admin/logistics/gateway_cost_service.go`）
+- [ ] T152 [US24] 实现成本/配额看板接口与超额告警接口（`backend/internal/transport/http/admin/logistics/{handler.go,routes.go,dto.go}`）
+- [ ] T153 [US24] 在 SLA 页新增“成本与配额”卡片（`web-admin/app/pages/shipping/sla.vue`）
+- [ ] T154 [US24] 增加 US24 回归测试（聚合准确性、阈值告警、跨租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### Iteration-7 Polish
+
+- [ ] T155 [P] 更新 M8 quickstart 与执行记录模板（`specs/011-fulfillment-logistics/quickstart.md`）
+- [ ] T156 执行 M8 后端回归（`go test ./internal/services/admin/logistics ./internal/transport/http/admin/logistics ./internal/entity/repository/logistics -count=1`）
+- [ ] T157 执行 M8 前端构建与页面回归（`make build-admin`）
+- [ ] T158 执行批量同步压测与记录（100/500 运单批次，统计成功率与 P95）（`specs/011-fulfillment-logistics/quickstart.md`）
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

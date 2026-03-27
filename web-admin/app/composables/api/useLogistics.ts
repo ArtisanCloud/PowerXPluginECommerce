@@ -360,6 +360,42 @@ export type LogisticsGatewayHealthSnapshot = {
   alerts: LogisticsGatewayAlert[];
 };
 
+export type LogisticsTrackingSyncSchedule = {
+  id: string;
+  name: string;
+  cronExpr: string;
+  carrierId: string;
+  waybillStatus: string;
+  enabled: boolean;
+  maxConcurrency: number;
+  dedupeWindowSec: number;
+  batchLimit: number;
+  eventLimit: number;
+  lastTriggeredAt: string;
+  nextTriggerAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsGatewayFailureEvent = {
+  id: string;
+  carrierId: string;
+  waybillId: string;
+  waybillNo: string;
+  provider: string;
+  sourceJobId: string;
+  errorClass: string;
+  errorCode: string;
+  errorMessage: string;
+  status: string;
+  retryCount: number;
+  nextRetryAt: string;
+  circuitOpenTill: string;
+  recoveredAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type LogisticsRateQuoteResult = {
   templateId: string;
   template: string;
@@ -550,6 +586,42 @@ const normalizeGatewayHealthSummary = (raw: RawRecord): LogisticsGatewayHealthSu
   failedRequests: Number(pick(raw, "failedRequests", "failed_requests") || 0),
   successRate: Number(pick(raw, "successRate", "success_rate") || 0),
   p95LatencyMS: Number(pick(raw, "p95LatencyMS", "p95_latency_ms") || 0),
+});
+
+const normalizeTrackingSyncSchedule = (raw: RawRecord): LogisticsTrackingSyncSchedule => ({
+  id: String(pick(raw, "id", "id") || ""),
+  name: String(pick(raw, "name", "name") || ""),
+  cronExpr: String(pick(raw, "cronExpr", "cron_expr") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  waybillStatus: String(pick(raw, "waybillStatus", "waybill_status") || ""),
+  enabled: Boolean(pick(raw, "enabled", "enabled")),
+  maxConcurrency: Number(pick(raw, "maxConcurrency", "max_concurrency") || 1),
+  dedupeWindowSec: Number(pick(raw, "dedupeWindowSec", "dedupe_window_sec") || 0),
+  batchLimit: Number(pick(raw, "batchLimit", "batch_limit") || 0),
+  eventLimit: Number(pick(raw, "eventLimit", "event_limit") || 0),
+  lastTriggeredAt: String(pick(raw, "lastTriggeredAt", "last_triggered_at") || ""),
+  nextTriggerAt: String(pick(raw, "nextTriggerAt", "next_trigger_at") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeGatewayFailureEvent = (raw: RawRecord): LogisticsGatewayFailureEvent => ({
+  id: String(pick(raw, "id", "id") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  waybillId: String(pick(raw, "waybillId", "waybill_id") || ""),
+  waybillNo: String(pick(raw, "waybillNo", "waybill_no") || ""),
+  provider: String(pick(raw, "provider", "provider") || ""),
+  sourceJobId: String(pick(raw, "sourceJobId", "source_job_id") || ""),
+  errorClass: String(pick(raw, "errorClass", "error_class") || ""),
+  errorCode: String(pick(raw, "errorCode", "error_code") || ""),
+  errorMessage: String(pick(raw, "errorMessage", "error_message") || ""),
+  status: String(pick(raw, "status", "status") || ""),
+  retryCount: Number(pick(raw, "retryCount", "retry_count") || 0),
+  nextRetryAt: String(pick(raw, "nextRetryAt", "next_retry_at") || ""),
+  circuitOpenTill: String(pick(raw, "circuitOpenTill", "circuit_open_till") || ""),
+  recoveredAt: String(pick(raw, "recoveredAt", "recovered_at") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
 });
 
 const normalizeRoutingRule = (raw: RawRecord): LogisticsRoutingRule => ({
@@ -1201,6 +1273,77 @@ export function useLogisticsApi() {
         carriers: asArray<RawRecord>(raw?.carriers).map(normalizeGatewayCarrierHealth),
         alerts: asArray<RawRecord>(raw?.alerts).map(normalizeGatewayAlert),
       };
+    },
+
+    listTrackingSyncSchedules: async (
+      query?: { enabled?: boolean; limit?: number },
+      init?: any,
+    ): Promise<LogisticsTrackingSyncSchedule[]> => {
+      const raw = await unwrap(
+        apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/tracking-sync/schedules`, query, init),
+      );
+      return asArray<RawRecord>(raw?.items).map(normalizeTrackingSyncSchedule);
+    },
+
+    upsertTrackingSyncSchedule: async (
+      payload: {
+        id?: string;
+        name: string;
+        cron_expr: string;
+        carrier_id?: string;
+        waybill_status?: string;
+        enabled?: boolean;
+        max_concurrency?: number;
+        dedupe_window_sec?: number;
+        batch_limit?: number;
+        event_limit?: number;
+      },
+      init?: any,
+    ): Promise<LogisticsTrackingSyncSchedule> => {
+      const id = String(payload.id || "").trim();
+      const path = id ? `${basePath}/tracking-sync/schedules/${id}` : `${basePath}/tracking-sync/schedules`;
+      const req = id ? apiPatch<ApiEnvelope<RawRecord>>(path, payload, init) : apiPost<ApiEnvelope<RawRecord>>(path, payload, init);
+      const raw = await unwrap(req);
+      return normalizeTrackingSyncSchedule((raw || {}) as RawRecord);
+    },
+
+    toggleTrackingSyncSchedule: async (id: string, enabled: boolean, init?: any): Promise<LogisticsTrackingSyncSchedule> => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<RawRecord>>(`${basePath}/tracking-sync/schedules/${id}/toggle`, { enabled }, init),
+      );
+      return normalizeTrackingSyncSchedule((raw || {}) as RawRecord);
+    },
+
+    triggerTrackingSyncSchedule: async (id: string, init?: any): Promise<LogisticsTrackingSyncJob> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/tracking-sync/schedules/${id}/trigger`, {}, init));
+      return normalizeTrackingSyncJob((raw || {}) as RawRecord);
+    },
+
+    runDueTrackingSyncSchedules: async (query?: { limit?: number }, init?: any): Promise<{ triggered: number }> => {
+      const suffix = query?.limit && query.limit > 0 ? `?limit=${query.limit}` : "";
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<RawRecord>>(`${basePath}/tracking-sync/schedules/run-due${suffix}`, {}, init),
+      );
+      return { triggered: Number(pick((raw || {}) as RawRecord, "triggered", "triggered") || 0) };
+    },
+
+    listGatewayFailures: async (
+      query?: { carrier_id?: string; waybill_no?: string; status?: string; limit?: number },
+      init?: any,
+    ): Promise<LogisticsGatewayFailureEvent[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/gateway/failures`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeGatewayFailureEvent);
+    },
+
+    ingestGatewayFailures: async (query?: { hours?: number }, init?: any): Promise<{ created: number }> => {
+      const suffix = query?.hours && query.hours > 0 ? `?hours=${query.hours}` : "";
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/gateway/failures/ingest${suffix}`, {}, init));
+      return { created: Number(pick((raw || {}) as RawRecord, "created", "created") || 0) };
+    },
+
+    compensateGatewayFailure: async (id: string, init?: any): Promise<LogisticsGatewayFailureEvent> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/gateway/failures/${id}/compensate`, {}, init));
+      return normalizeGatewayFailureEvent((raw || {}) as RawRecord);
     },
   };
 }

@@ -49,6 +49,43 @@
 
     <UCard>
       <template #header>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">同步计划管理</h3>
+      </template>
+      <div class="grid gap-2 md:grid-cols-6">
+        <UInput v-model="scheduleForm.name" placeholder="计划名称" />
+        <UInput v-model="scheduleForm.cronExpr" placeholder="cron（如 */15 * * * *）" />
+        <UInput v-model="scheduleForm.carrierId" placeholder="承运商ID（可选）" />
+        <USelect v-model="scheduleForm.waybillStatus" :options="scheduleStatusOptions" />
+        <UInput v-model.number="scheduleForm.batchLimit" type="number" placeholder="批次" />
+        <UInput v-model.number="scheduleForm.eventLimit" type="number" placeholder="单运单条数" />
+      </div>
+      <div class="mt-2">
+        <UButton color="primary" size="sm" :loading="scheduleLoading" @click="createSchedule">
+          创建计划
+        </UButton>
+      </div>
+      <ul class="mt-3 space-y-2 text-xs">
+        <li
+          v-for="row in schedules"
+          :key="row.id"
+          class="rounded border border-gray-200 p-2 dark:border-gray-800"
+        >
+          <div class="flex items-center justify-between gap-2">
+            <span>{{ row.name }} · {{ row.cronExpr }} · {{ row.enabled ? "启用" : "停用" }}</span>
+            <div class="flex gap-2">
+              <UButton size="xs" variant="ghost" :loading="scheduleLoading" @click="triggerSchedule(row.id)">立即执行</UButton>
+              <UButton size="xs" color="warning" variant="ghost" :loading="scheduleLoading" @click="toggleSchedule(row.id, !row.enabled)">
+                {{ row.enabled ? "停用" : "启用" }}
+              </UButton>
+            </div>
+          </div>
+        </li>
+        <li v-if="!schedules.length" class="text-gray-500">暂无计划</li>
+      </ul>
+    </UCard>
+
+    <UCard>
+      <template #header>
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">总体指标</h3>
       </template>
       <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
@@ -92,7 +129,7 @@
 
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
-import { useLogisticsApi, type LogisticsGatewayHealthSnapshot, type LogisticsSLASummaryItem } from "~/composables/api";
+import { useLogisticsApi, type LogisticsGatewayHealthSnapshot, type LogisticsSLASummaryItem, type LogisticsTrackingSyncSchedule } from "~/composables/api";
 
 definePageMeta({
   name: "shipping-sla",
@@ -104,6 +141,8 @@ const pickupSlaHours = ref(24);
 const deliverySlaHours = ref(72);
 const rows = ref<LogisticsSLASummaryItem[]>([]);
 const syncJobLoading = ref(false);
+const scheduleLoading = ref(false);
+const schedules = ref<LogisticsTrackingSyncSchedule[]>([]);
 const gateway = ref<LogisticsGatewayHealthSnapshot>({
   summary: {
     windowHours: 24,
@@ -116,6 +155,20 @@ const gateway = ref<LogisticsGatewayHealthSnapshot>({
   carriers: [],
   alerts: [],
 });
+const scheduleForm = reactive({
+  name: "",
+  cronExpr: "*/15 * * * *",
+  carrierId: "",
+  waybillStatus: "in_transit",
+  batchLimit: 20,
+  eventLimit: 20,
+});
+const scheduleStatusOptions = [
+  { label: "运输中", value: "in_transit" },
+  { label: "待揽收", value: "created" },
+  { label: "延误", value: "delay" },
+  { label: "全部状态", value: "" },
+];
 const total = ref<LogisticsSLASummaryItem>({
   carrierId: "all",
   carrierName: "全部承运商",
@@ -150,6 +203,7 @@ const loadSnapshot = async () => {
   rows.value = snapshot.summary || [];
   total.value = snapshot.total || total.value;
   gateway.value = await logisticsApi.getGatewayHealth({ window_hours: 24 });
+  schedules.value = await logisticsApi.listTrackingSyncSchedules({ limit: 20 });
 };
 
 const createSyncJob = async () => {
@@ -164,6 +218,44 @@ const createSyncJob = async () => {
     await loadSnapshot();
   } finally {
     syncJobLoading.value = false;
+  }
+};
+
+const createSchedule = async () => {
+  scheduleLoading.value = true;
+  try {
+    await logisticsApi.upsertTrackingSyncSchedule({
+      name: scheduleForm.name || "默认同步计划",
+      cron_expr: scheduleForm.cronExpr || "*/15 * * * *",
+      carrier_id: scheduleForm.carrierId || undefined,
+      waybill_status: scheduleForm.waybillStatus || undefined,
+      enabled: true,
+      batch_limit: Number(scheduleForm.batchLimit || 20),
+      event_limit: Number(scheduleForm.eventLimit || 20),
+    });
+    await loadSnapshot();
+  } finally {
+    scheduleLoading.value = false;
+  }
+};
+
+const toggleSchedule = async (id: string, enabled: boolean) => {
+  scheduleLoading.value = true;
+  try {
+    await logisticsApi.toggleTrackingSyncSchedule(id, enabled);
+    await loadSnapshot();
+  } finally {
+    scheduleLoading.value = false;
+  }
+};
+
+const triggerSchedule = async (id: string) => {
+  scheduleLoading.value = true;
+  try {
+    await logisticsApi.triggerTrackingSyncSchedule(id);
+    await loadSnapshot();
+  } finally {
+    scheduleLoading.value = false;
   }
 };
 

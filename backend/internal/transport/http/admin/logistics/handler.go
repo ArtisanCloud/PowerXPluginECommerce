@@ -27,7 +27,9 @@ type Handler struct {
 	slaSvc     *logisticssvc.SLAService
 	labelSvc   *logisticssvc.LabelPrintService
 	syncJobSvc *logisticssvc.TrackingSyncJobService
+	schedSvc   *logisticssvc.TrackingSyncSchedulerService
 	gatewaySvc *logisticssvc.GatewayMetricsService
+	recoverSvc *logisticssvc.GatewayRecoveryService
 	webhookSvc *logisticssvc.WebhookService
 }
 
@@ -46,7 +48,9 @@ func NewHandler(
 	slaSvc *logisticssvc.SLAService,
 	labelSvc *logisticssvc.LabelPrintService,
 	syncJobSvc *logisticssvc.TrackingSyncJobService,
+	schedSvc *logisticssvc.TrackingSyncSchedulerService,
 	gatewaySvc *logisticssvc.GatewayMetricsService,
+	recoverSvc *logisticssvc.GatewayRecoveryService,
 	webhookSvc *logisticssvc.WebhookService,
 ) *Handler {
 	return &Handler{
@@ -64,7 +68,9 @@ func NewHandler(
 		slaSvc:     slaSvc,
 		labelSvc:   labelSvc,
 		syncJobSvc: syncJobSvc,
+		schedSvc:   schedSvc,
 		gatewaySvc: gatewaySvc,
+		recoverSvc: recoverSvc,
 		webhookSvc: webhookSvc,
 	}
 }
@@ -658,6 +664,196 @@ func (h *Handler) GatewayHealth(c *gin.Context) {
 		return
 	}
 	contracts.ResponseSuccess(c, snapshot)
+}
+
+func (h *Handler) ListTrackingSyncSchedules(c *gin.Context) {
+	if h == nil || h.schedSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "tracking sync scheduler service unavailable", nil)
+		return
+	}
+	limit := 100
+	if raw := strings.TrimSpace(c.Query("limit")); raw != "" {
+		if v, err := strconv.Atoi(raw); err == nil {
+			limit = v
+		}
+	}
+	var enabled *bool
+	if raw := strings.TrimSpace(c.Query("enabled")); raw != "" {
+		if raw == "true" {
+			v := true
+			enabled = &v
+		} else if raw == "false" {
+			v := false
+			enabled = &v
+		}
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	rows, err := h.schedSvc.List(c.Request.Context(), tenantUUID, enabled, limit)
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, gin.H{"items": rows})
+}
+
+func (h *Handler) UpsertTrackingSyncSchedule(c *gin.Context) {
+	if h == nil || h.schedSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "tracking sync scheduler service unavailable", nil)
+		return
+	}
+	var payload upsertTrackingSyncScheduleRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		contracts.ResponseBadRequest(c, "invalid request body: "+err.Error())
+		return
+	}
+	if strings.TrimSpace(payload.ID) == "" {
+		payload.ID = strings.TrimSpace(c.Param("id"))
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.schedSvc.Upsert(c.Request.Context(), tenantUUID, logisticssvc.UpsertTrackingSyncScheduleRequest{
+		ID:              strings.TrimSpace(payload.ID),
+		Name:            strings.TrimSpace(payload.Name),
+		CronExpr:        strings.TrimSpace(payload.CronExpr),
+		CarrierID:       strings.TrimSpace(payload.CarrierID),
+		WaybillStatus:   strings.TrimSpace(payload.WaybillStatus),
+		Enabled:         payload.Enabled,
+		MaxConcurrency:  payload.MaxConcurrency,
+		DedupeWindowSec: payload.DedupeWindowSec,
+		BatchLimit:      payload.BatchLimit,
+		EventLimit:      payload.EventLimit,
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) ToggleTrackingSyncSchedule(c *gin.Context) {
+	if h == nil || h.schedSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "tracking sync scheduler service unavailable", nil)
+		return
+	}
+	id := strings.TrimSpace(c.Param("id"))
+	if id == "" {
+		contracts.ResponseBadRequest(c, "schedule id is required")
+		return
+	}
+	var payload toggleTrackingSyncScheduleRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		contracts.ResponseBadRequest(c, "invalid request body: "+err.Error())
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.schedSvc.Toggle(c.Request.Context(), tenantUUID, id, payload.Enabled)
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) TriggerTrackingSyncSchedule(c *gin.Context) {
+	if h == nil || h.schedSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "tracking sync scheduler service unavailable", nil)
+		return
+	}
+	id := strings.TrimSpace(c.Param("id"))
+	if id == "" {
+		contracts.ResponseBadRequest(c, "schedule id is required")
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	job, err := h.schedSvc.TriggerNow(c.Request.Context(), tenantUUID, id)
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, job)
+}
+
+func (h *Handler) RunDueTrackingSyncSchedules(c *gin.Context) {
+	if h == nil || h.schedSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "tracking sync scheduler service unavailable", nil)
+		return
+	}
+	limit := 20
+	if raw := strings.TrimSpace(c.Query("limit")); raw != "" {
+		if v, err := strconv.Atoi(raw); err == nil {
+			limit = v
+		}
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	count, err := h.schedSvc.RunDue(c.Request.Context(), tenantUUID, limit)
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, gin.H{"triggered": count})
+}
+
+func (h *Handler) ListGatewayFailures(c *gin.Context) {
+	if h == nil || h.recoverSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "gateway recovery service unavailable", nil)
+		return
+	}
+	limit := 100
+	if raw := strings.TrimSpace(c.Query("limit")); raw != "" {
+		if v, err := strconv.Atoi(raw); err == nil {
+			limit = v
+		}
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	rows, err := h.recoverSvc.List(c.Request.Context(), tenantUUID, logisticssvc.GatewayFailureQuery{
+		CarrierID: strings.TrimSpace(c.Query("carrier_id")),
+		WaybillNo: strings.TrimSpace(c.Query("waybill_no")),
+		Status:    strings.TrimSpace(c.Query("status")),
+		Limit:     limit,
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, gin.H{"items": rows})
+}
+
+func (h *Handler) IngestGatewayFailures(c *gin.Context) {
+	if h == nil || h.recoverSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "gateway recovery service unavailable", nil)
+		return
+	}
+	hours := 24
+	if raw := strings.TrimSpace(c.Query("hours")); raw != "" {
+		if v, err := strconv.Atoi(raw); err == nil {
+			hours = v
+		}
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	created, err := h.recoverSvc.IngestFromFailedJobs(c.Request.Context(), tenantUUID, hours)
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, gin.H{"created": created})
+}
+
+func (h *Handler) CompensateGatewayFailure(c *gin.Context) {
+	if h == nil || h.recoverSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "gateway recovery service unavailable", nil)
+		return
+	}
+	id := strings.TrimSpace(c.Param("id"))
+	if id == "" {
+		contracts.ResponseBadRequest(c, "failure id is required")
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.recoverSvc.Compensate(c.Request.Context(), tenantUUID, id)
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
 }
 
 func (h *Handler) HandleWebhook(c *gin.Context) {

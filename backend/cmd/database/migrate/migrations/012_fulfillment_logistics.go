@@ -22,6 +22,8 @@ var FulfillmentLogisticsTables = []interface{}{
 	&LogisticsModel.Waybill{},
 	&LogisticsModel.TrackingEvent{},
 	&LogisticsModel.TrackingSyncJob{},
+	&LogisticsModel.TrackingSyncSchedule{},
+	&LogisticsModel.GatewayFailureEvent{},
 	&LogisticsModel.LabelPrintTask{},
 	&LogisticsModel.BillingCase{},
 	&LogisticsModel.NotificationTemplate{},

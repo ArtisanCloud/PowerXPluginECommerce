@@ -176,6 +176,23 @@ type cancelTrackingSyncJobRequest struct {
 	Reason string `json:"reason,omitempty"`
 }
 
+type upsertTrackingSyncScheduleRequest struct {
+	ID              string `json:"id,omitempty"`
+	Name            string `json:"name"`
+	CronExpr        string `json:"cron_expr"`
+	CarrierID       string `json:"carrier_id,omitempty"`
+	WaybillStatus   string `json:"waybill_status,omitempty"`
+	Enabled         *bool  `json:"enabled,omitempty"`
+	MaxConcurrency  int    `json:"max_concurrency,omitempty"`
+	DedupeWindowSec int    `json:"dedupe_window_sec,omitempty"`
+	BatchLimit      int    `json:"batch_limit,omitempty"`
+	EventLimit      int    `json:"event_limit,omitempty"`
+}
+
+type toggleTrackingSyncScheduleRequest struct {
+	Enabled bool `json:"enabled"`
+}
+
 type rateQuoteRequest struct {
 	Region      string  `json:"region"`
 	Weight      float64 `json:"weight,omitempty"`

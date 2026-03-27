@@ -92,6 +92,9 @@
             <UButton size="xs" variant="ghost" color="warning" @click="openRedelivery(row.original)">
               失败重派
             </UButton>
+            <UButton size="xs" variant="ghost" color="error" @click="openFailureCompensation(row.original)">
+              失败补偿
+            </UButton>
             <UButton
               size="xs"
               variant="ghost"
@@ -190,6 +193,36 @@
       </template>
     </UModal>
 
+    <UModal v-model:open="failureCompensationOpen" title="网关失败补偿">
+      <template #body>
+        <div class="space-y-3">
+          <p class="text-xs text-gray-500">
+            运单：{{ failureWaybillNo || "-" }}
+          </p>
+          <div class="flex gap-2">
+            <UButton size="xs" color="neutral" :loading="failureLoading" @click="loadGatewayFailures">刷新失败列表</UButton>
+            <UButton size="xs" color="warning" :loading="failureLoading" @click="ingestGatewayFailures">拉取失败样本</UButton>
+          </div>
+          <ul class="space-y-2 text-xs">
+            <li
+              v-for="item in gatewayFailures"
+              :key="item.id"
+              class="rounded border border-gray-200 p-2 dark:border-gray-800"
+            >
+              <div class="flex items-center justify-between gap-2">
+                <span>{{ item.errorClass }} · {{ item.errorCode }} · retry={{ item.retryCount }}</span>
+                <UButton size="xs" color="primary" :loading="failureLoading" @click="compensateFailure(item.id)">
+                  补偿重试
+                </UButton>
+              </div>
+              <p class="mt-1 text-gray-500">{{ item.errorMessage || "-" }}</p>
+            </li>
+            <li v-if="!gatewayFailures.length" class="text-gray-500">暂无失败记录</li>
+          </ul>
+        </div>
+      </template>
+    </UModal>
+
     <UModal v-model:open="redeliveryOpen" title="妥投失败二次派送">
       <template #body>
         <div class="space-y-3">
@@ -232,7 +265,7 @@
 
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
-import type { LogisticsRedeliveryTask, LogisticsWaybillETA } from "~/composables/api/useLogistics";
+import type { LogisticsGatewayFailureEvent, LogisticsRedeliveryTask, LogisticsWaybillETA } from "~/composables/api/useLogistics";
 import { useLogisticsApi } from "~/composables/api";
 
 definePageMeta({
@@ -277,6 +310,10 @@ const syncingAll = ref(false);
 const syncingWaybillIDs = ref<Record<string, boolean>>({});
 const syncJobOpen = ref(false);
 const syncJobCreating = ref(false);
+const failureCompensationOpen = ref(false);
+const failureLoading = ref(false);
+const failureWaybillNo = ref("");
+const gatewayFailures = ref<LogisticsGatewayFailureEvent[]>([]);
 const routingPreviewOpen = ref(false);
 const routingPreviewLoading = ref(false);
 const routingPreviewResult = ref<any>(null);
@@ -596,6 +633,48 @@ const createSyncJob = async () => {
     });
   } finally {
     syncJobCreating.value = false;
+  }
+};
+
+const openFailureCompensation = async (waybill: Waybill) => {
+  failureWaybillNo.value = waybill.waybillNo;
+  failureCompensationOpen.value = true;
+  await loadGatewayFailures();
+};
+
+const loadGatewayFailures = async () => {
+  failureLoading.value = true;
+  try {
+    gatewayFailures.value = await logisticsApi.listGatewayFailures({
+      waybill_no: failureWaybillNo.value || undefined,
+      limit: 20,
+    });
+  } finally {
+    failureLoading.value = false;
+  }
+};
+
+const ingestGatewayFailures = async () => {
+  failureLoading.value = true;
+  try {
+    await logisticsApi.ingestGatewayFailures({ hours: 24 });
+    await loadGatewayFailures();
+  } finally {
+    failureLoading.value = false;
+  }
+};
+
+const compensateFailure = async (id: string) => {
+  failureLoading.value = true;
+  try {
+    await logisticsApi.compensateGatewayFailure(id);
+    await loadGatewayFailures();
+    await loadWaybills();
+    if (selectedWaybill.value) {
+      await loadWaybillDetail(selectedWaybill.value);
+    }
+  } finally {
+    failureLoading.value = false;
   }
 };
 

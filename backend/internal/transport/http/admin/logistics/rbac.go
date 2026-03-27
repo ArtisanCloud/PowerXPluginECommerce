@@ -77,7 +77,32 @@ func RBACEntries(prefix string) map[string]AuthX.Permission {
 		"POST:" + base + "/tracking-sync/jobs/:id/retry": {
 			Resource: res("logistics.tracking_sync"), Action: "manage",
 		},
+		"GET:" + base + "/tracking-sync/schedules": {Resource: res("logistics.tracking_sync"), Action: "read"},
+		"POST:" + base + "/tracking-sync/schedules": {
+			Resource: res("logistics.tracking_sync"), Action: "manage",
+		},
+		"PATCH:" + base + "/tracking-sync/schedules/:id": {
+			Resource: res("logistics.tracking_sync"), Action: "manage",
+		},
+		"POST:" + base + "/tracking-sync/schedules/:id/toggle": {
+			Resource: res("logistics.tracking_sync"), Action: "manage",
+		},
+		"POST:" + base + "/tracking-sync/schedules/:id/trigger": {
+			Resource: res("logistics.tracking_sync"), Action: "manage",
+		},
+		"POST:" + base + "/tracking-sync/schedules/run-due": {
+			Resource: res("logistics.tracking_sync"), Action: "manage",
+		},
 		"GET:" + base + "/gateway/health": {Resource: res("logistics.gateway"), Action: "read"},
-		"POST:" + base + "/webhook":       {Resource: res("logistics.webhook"), Action: "manage"},
+		"GET:" + base + "/gateway/failures": {
+			Resource: res("logistics.gateway"), Action: "read",
+		},
+		"POST:" + base + "/gateway/failures/ingest": {
+			Resource: res("logistics.gateway"), Action: "manage",
+		},
+		"POST:" + base + "/gateway/failures/:id/compensate": {
+			Resource: res("logistics.gateway"), Action: "manage",
+		},
+		"POST:" + base + "/webhook": {Resource: res("logistics.webhook"), Action: "manage"},
 	}
 }
