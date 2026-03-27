@@ -170,6 +170,7 @@ const (
 	TableLogisticsTrackingSyncJobs      = "logistics_tracking_sync_jobs"
 	TableLogisticsTrackingSyncSchedules = "logistics_tracking_sync_schedules"
 	TableLogisticsGatewayFailureEvents  = "logistics_gateway_failure_events"
+	TableLogisticsGatewayUsages         = "logistics_gateway_usages"
 	TableLogisticsRedeliveryTasks       = "logistics_redelivery_tasks"
 	TableLogisticsETAPolicies           = "logistics_eta_policies"
 	TableLogisticsETARecords            = "logistics_eta_records"

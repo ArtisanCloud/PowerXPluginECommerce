@@ -33,6 +33,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 		logisticssvc.NewTrackingSyncJobService(deps),
 		logisticssvc.NewTrackingSyncSchedulerService(deps),
 		logisticssvc.NewGatewayMetricsService(deps),
+		logisticssvc.NewGatewayCostService(deps),
 		logisticssvc.NewGatewayRecoveryService(deps),
 		logisticssvc.NewWebhookService(deps),
 	)
@@ -101,6 +102,8 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.POST("/tracking-sync/schedules/:id/trigger", handler.TriggerTrackingSyncSchedule)
 	rg.POST("/tracking-sync/schedules/run-due", handler.RunDueTrackingSyncSchedules)
 	rg.GET("/gateway/health", handler.GatewayHealth)
+	rg.GET("/gateway/costs", handler.GatewayCosts)
+	rg.GET("/gateway/cost-alerts", handler.GatewayCostAlerts)
 	rg.GET("/gateway/failures", handler.ListGatewayFailures)
 	rg.POST("/gateway/failures/ingest", handler.IngestGatewayFailures)
 	rg.POST("/gateway/failures/:id/compensate", handler.CompensateGatewayFailure)

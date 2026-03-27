@@ -202,6 +202,26 @@ func setupTrackingSyncJobDB(t *testing.T, name string) *gorm.DB {
 		updated_at DATETIME,
 		deleted_at DATETIME
 	)`).Error)
+	require.NoError(t, db.Exec(`CREATE TABLE IF NOT EXISTS logistics_gateway_usages (
+		id TEXT PRIMARY KEY,
+		tenant_uuid TEXT NOT NULL,
+		carrier_id TEXT,
+		provider TEXT,
+		source_job_id TEXT,
+		request_count INTEGER NOT NULL DEFAULT 0,
+		success_count INTEGER NOT NULL DEFAULT 0,
+		failed_count INTEGER NOT NULL DEFAULT 0,
+		unit_price NUMERIC NOT NULL DEFAULT 0,
+		cost_amount NUMERIC NOT NULL DEFAULT 0,
+		quota_consumed INTEGER NOT NULL DEFAULT 0,
+		window_start_at DATETIME,
+		window_end_at DATETIME,
+		metadata JSON,
+		created_at DATETIME,
+		updated_at DATETIME,
+		deleted_at DATETIME
+	)`).Error)
+	require.NoError(t, db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uk_logistics_gateway_usage_job ON logistics_gateway_usages(tenant_uuid, source_job_id)`).Error)
 	return db
 }
 

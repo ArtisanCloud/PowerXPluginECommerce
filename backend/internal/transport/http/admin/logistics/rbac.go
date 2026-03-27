@@ -94,6 +94,10 @@ func RBACEntries(prefix string) map[string]AuthX.Permission {
 			Resource: res("logistics.tracking_sync"), Action: "manage",
 		},
 		"GET:" + base + "/gateway/health": {Resource: res("logistics.gateway"), Action: "read"},
+		"GET:" + base + "/gateway/costs":  {Resource: res("logistics.gateway"), Action: "read"},
+		"GET:" + base + "/gateway/cost-alerts": {
+			Resource: res("logistics.gateway"), Action: "read",
+		},
 		"GET:" + base + "/gateway/failures": {
 			Resource: res("logistics.gateway"), Action: "read",
 		},

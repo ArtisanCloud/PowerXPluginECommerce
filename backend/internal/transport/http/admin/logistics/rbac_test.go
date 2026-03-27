@@ -134,6 +134,22 @@ func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 	if gatewayPerm.Action != "read" {
 		t.Fatalf("expected read action, got %s", gatewayPerm.Action)
 	}
+	costKey := "GET:/api/v1/admin/logistics/gateway/costs"
+	costPerm, ok := entries[costKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", costKey)
+	}
+	if costPerm.Action != "read" {
+		t.Fatalf("expected read action, got %s", costPerm.Action)
+	}
+	alertKey := "GET:/api/v1/admin/logistics/gateway/cost-alerts"
+	alertPerm, ok := entries[alertKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", alertKey)
+	}
+	if alertPerm.Resource != "com.powerx.plugins.ecommerce:logistics.gateway" {
+		t.Fatalf("unexpected resource %s", alertPerm.Resource)
+	}
 
 	scheduleKey := "POST:/api/v1/admin/logistics/tracking-sync/schedules"
 	schedulePerm, ok := entries[scheduleKey]

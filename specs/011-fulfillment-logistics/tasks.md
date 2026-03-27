@@ -344,11 +344,11 @@
 
 ### User Story 24 - 网关成本与调用配额（P3）
 
-- [ ] T150 [P] [US24] 增加网关调用账本模型（调用次数、计费单价、成本、配额消耗）（`backend/internal/entity/models/logistics/gateway_usage*.go`）
-- [ ] T151 [US24] 实现成本与配额聚合服务（按租户/承运商/窗口统计）（`backend/internal/services/admin/logistics/gateway_cost_service.go`）
-- [ ] T152 [US24] 实现成本/配额看板接口与超额告警接口（`backend/internal/transport/http/admin/logistics/{handler.go,routes.go,dto.go}`）
-- [ ] T153 [US24] 在 SLA 页新增“成本与配额”卡片（`web-admin/app/pages/shipping/sla.vue`）
-- [ ] T154 [US24] 增加 US24 回归测试（聚合准确性、阈值告警、跨租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+- [X] T150 [P] [US24] 增加网关调用账本模型（调用次数、计费单价、成本、配额消耗）（`backend/internal/entity/models/logistics/gateway_usage*.go`）
+- [X] T151 [US24] 实现成本与配额聚合服务（按租户/承运商/窗口统计）（`backend/internal/services/admin/logistics/gateway_cost_service.go`）
+- [X] T152 [US24] 实现成本/配额看板接口与超额告警接口（`backend/internal/transport/http/admin/logistics/{handler.go,routes.go,dto.go}`）
+- [X] T153 [US24] 在 SLA 页新增“成本与配额”卡片（`web-admin/app/pages/shipping/sla.vue`）
+- [X] T154 [US24] 增加 US24 回归测试（聚合准确性、阈值告警、跨租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
 
 ### Iteration-7 Polish
 

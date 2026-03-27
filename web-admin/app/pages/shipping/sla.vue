@@ -49,6 +49,43 @@
 
     <UCard>
       <template #header>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">成本与配额</h3>
+      </template>
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+          <p class="text-xs text-gray-500">调用量</p>
+          <p class="mt-1 text-xl font-semibold">{{ gatewayCost.summary.totalRequests }}</p>
+        </div>
+        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+          <p class="text-xs text-gray-500">累计成本</p>
+          <p class="mt-1 text-xl font-semibold">¥{{ gatewayCost.summary.totalCost.toFixed(2) }}</p>
+        </div>
+        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+          <p class="text-xs text-gray-500">配额使用</p>
+          <p class="mt-1 text-xl font-semibold">{{ gatewayCost.summary.quotaUsed }} / {{ gatewayCost.summary.quotaLimit }}</p>
+        </div>
+        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+          <p class="text-xs text-gray-500">配额使用率</p>
+          <p class="mt-1 text-xl font-semibold" :class="gatewayCost.summary.quotaUsageRate >= 100 ? 'text-error-600' : ''">
+            {{ gatewayCost.summary.quotaUsageRate.toFixed(2) }}%
+          </p>
+        </div>
+      </div>
+      <div class="mt-3 space-y-2">
+        <p class="text-sm font-medium text-gray-900 dark:text-white">配额告警</p>
+        <div v-if="!gatewayCost.alerts.length" class="text-xs text-gray-500">暂无告警</div>
+        <div
+          v-for="item in gatewayCost.alerts"
+          :key="`${item.code}-${item.carrierId}-${item.provider}`"
+          class="rounded border border-gray-200 p-2 text-xs dark:border-gray-800"
+        >
+          <span class="font-semibold">{{ item.code }}</span> · {{ item.message }}
+        </div>
+      </div>
+    </UCard>
+
+    <UCard>
+      <template #header>
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">同步计划管理</h3>
       </template>
       <div class="grid gap-2 md:grid-cols-6">
@@ -129,7 +166,13 @@
 
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
-import { useLogisticsApi, type LogisticsGatewayHealthSnapshot, type LogisticsSLASummaryItem, type LogisticsTrackingSyncSchedule } from "~/composables/api";
+import {
+  useLogisticsApi,
+  type LogisticsGatewayCostSnapshot,
+  type LogisticsGatewayHealthSnapshot,
+  type LogisticsSLASummaryItem,
+  type LogisticsTrackingSyncSchedule,
+} from "~/composables/api";
 
 definePageMeta({
   name: "shipping-sla",
@@ -151,6 +194,20 @@ const gateway = ref<LogisticsGatewayHealthSnapshot>({
     failedRequests: 0,
     successRate: 0,
     p95LatencyMS: 0,
+  },
+  carriers: [],
+  alerts: [],
+});
+const gatewayCost = ref<LogisticsGatewayCostSnapshot>({
+  summary: {
+    windowHours: 24,
+    totalRequests: 0,
+    successCount: 0,
+    failedCount: 0,
+    totalCost: 0,
+    quotaLimit: 5000,
+    quotaUsed: 0,
+    quotaUsageRate: 0,
   },
   carriers: [],
   alerts: [],
@@ -203,6 +260,7 @@ const loadSnapshot = async () => {
   rows.value = snapshot.summary || [];
   total.value = snapshot.total || total.value;
   gateway.value = await logisticsApi.getGatewayHealth({ window_hours: 24 });
+  gatewayCost.value = await logisticsApi.getGatewayCosts({ window_hours: 24, quota_limit: 5000 });
   schedules.value = await logisticsApi.listTrackingSyncSchedules({ limit: 20 });
 };
 

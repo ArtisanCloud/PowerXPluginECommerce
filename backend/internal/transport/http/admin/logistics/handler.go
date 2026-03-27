@@ -29,6 +29,7 @@ type Handler struct {
 	syncJobSvc *logisticssvc.TrackingSyncJobService
 	schedSvc   *logisticssvc.TrackingSyncSchedulerService
 	gatewaySvc *logisticssvc.GatewayMetricsService
+	costSvc    *logisticssvc.GatewayCostService
 	recoverSvc *logisticssvc.GatewayRecoveryService
 	webhookSvc *logisticssvc.WebhookService
 }
@@ -50,6 +51,7 @@ func NewHandler(
 	syncJobSvc *logisticssvc.TrackingSyncJobService,
 	schedSvc *logisticssvc.TrackingSyncSchedulerService,
 	gatewaySvc *logisticssvc.GatewayMetricsService,
+	costSvc *logisticssvc.GatewayCostService,
 	recoverSvc *logisticssvc.GatewayRecoveryService,
 	webhookSvc *logisticssvc.WebhookService,
 ) *Handler {
@@ -70,6 +72,7 @@ func NewHandler(
 		syncJobSvc: syncJobSvc,
 		schedSvc:   schedSvc,
 		gatewaySvc: gatewaySvc,
+		costSvc:    costSvc,
 		recoverSvc: recoverSvc,
 		webhookSvc: webhookSvc,
 	}
@@ -664,6 +667,82 @@ func (h *Handler) GatewayHealth(c *gin.Context) {
 		return
 	}
 	contracts.ResponseSuccess(c, snapshot)
+}
+
+func (h *Handler) GatewayCosts(c *gin.Context) {
+	if h == nil || h.costSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "gateway cost service unavailable", nil)
+		return
+	}
+	windowHours := 24
+	if raw := strings.TrimSpace(c.Query("window_hours")); raw != "" {
+		if v, err := strconv.Atoi(raw); err == nil {
+			windowHours = v
+		}
+	}
+	quotaLimit := 5000
+	if raw := strings.TrimSpace(c.Query("quota_limit")); raw != "" {
+		if v, err := strconv.Atoi(raw); err == nil {
+			quotaLimit = v
+		}
+	}
+	unitPrice := 0.0
+	if raw := strings.TrimSpace(c.Query("unit_price")); raw != "" {
+		if v, err := strconv.ParseFloat(raw, 64); err == nil {
+			unitPrice = v
+		}
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	snapshot, err := h.costSvc.Snapshot(c.Request.Context(), tenantUUID, logisticssvc.GatewayCostQuery{
+		WindowHours: windowHours,
+		CarrierID:   strings.TrimSpace(c.Query("carrier_id")),
+		Provider:    strings.TrimSpace(c.Query("provider")),
+		UnitPrice:   unitPrice,
+		QuotaLimit:  quotaLimit,
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, snapshot)
+}
+
+func (h *Handler) GatewayCostAlerts(c *gin.Context) {
+	if h == nil || h.costSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "gateway cost service unavailable", nil)
+		return
+	}
+	windowHours := 24
+	if raw := strings.TrimSpace(c.Query("window_hours")); raw != "" {
+		if v, err := strconv.Atoi(raw); err == nil {
+			windowHours = v
+		}
+	}
+	quotaLimit := 5000
+	if raw := strings.TrimSpace(c.Query("quota_limit")); raw != "" {
+		if v, err := strconv.Atoi(raw); err == nil {
+			quotaLimit = v
+		}
+	}
+	unitPrice := 0.0
+	if raw := strings.TrimSpace(c.Query("unit_price")); raw != "" {
+		if v, err := strconv.ParseFloat(raw, 64); err == nil {
+			unitPrice = v
+		}
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	alerts, err := h.costSvc.Alerts(c.Request.Context(), tenantUUID, logisticssvc.GatewayCostQuery{
+		WindowHours: windowHours,
+		CarrierID:   strings.TrimSpace(c.Query("carrier_id")),
+		Provider:    strings.TrimSpace(c.Query("provider")),
+		UnitPrice:   unitPrice,
+		QuotaLimit:  quotaLimit,
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, gin.H{"items": alerts})
 }
 
 func (h *Handler) ListTrackingSyncSchedules(c *gin.Context) {

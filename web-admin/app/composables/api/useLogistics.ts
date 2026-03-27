@@ -360,6 +360,43 @@ export type LogisticsGatewayHealthSnapshot = {
   alerts: LogisticsGatewayAlert[];
 };
 
+export type LogisticsGatewayCostSummary = {
+  windowHours: number;
+  totalRequests: number;
+  successCount: number;
+  failedCount: number;
+  totalCost: number;
+  quotaLimit: number;
+  quotaUsed: number;
+  quotaUsageRate: number;
+};
+
+export type LogisticsGatewayCostCarrier = {
+  carrierId: string;
+  provider: string;
+  requestCount: number;
+  successCount: number;
+  failedCount: number;
+  costAmount: number;
+  quotaConsumed: number;
+};
+
+export type LogisticsGatewayCostAlert = {
+  level: string;
+  code: string;
+  message: string;
+  carrierId: string;
+  provider: string;
+  usageRate: number;
+  requestRate: number;
+};
+
+export type LogisticsGatewayCostSnapshot = {
+  summary: LogisticsGatewayCostSummary;
+  carriers: LogisticsGatewayCostCarrier[];
+  alerts: LogisticsGatewayCostAlert[];
+};
+
 export type LogisticsTrackingSyncSchedule = {
   id: string;
   name: string;
@@ -586,6 +623,37 @@ const normalizeGatewayHealthSummary = (raw: RawRecord): LogisticsGatewayHealthSu
   failedRequests: Number(pick(raw, "failedRequests", "failed_requests") || 0),
   successRate: Number(pick(raw, "successRate", "success_rate") || 0),
   p95LatencyMS: Number(pick(raw, "p95LatencyMS", "p95_latency_ms") || 0),
+});
+
+const normalizeGatewayCostSummary = (raw: RawRecord): LogisticsGatewayCostSummary => ({
+  windowHours: Number(pick(raw, "windowHours", "window_hours") || 24),
+  totalRequests: Number(pick(raw, "totalRequests", "total_requests") || 0),
+  successCount: Number(pick(raw, "successCount", "success_count") || 0),
+  failedCount: Number(pick(raw, "failedCount", "failed_count") || 0),
+  totalCost: Number(pick(raw, "totalCost", "total_cost") || 0),
+  quotaLimit: Number(pick(raw, "quotaLimit", "quota_limit") || 0),
+  quotaUsed: Number(pick(raw, "quotaUsed", "quota_used") || 0),
+  quotaUsageRate: Number(pick(raw, "quotaUsageRate", "quota_usage_rate") || 0),
+});
+
+const normalizeGatewayCostCarrier = (raw: RawRecord): LogisticsGatewayCostCarrier => ({
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  provider: String(pick(raw, "provider", "provider") || ""),
+  requestCount: Number(pick(raw, "requestCount", "request_count") || 0),
+  successCount: Number(pick(raw, "successCount", "success_count") || 0),
+  failedCount: Number(pick(raw, "failedCount", "failed_count") || 0),
+  costAmount: Number(pick(raw, "costAmount", "cost_amount") || 0),
+  quotaConsumed: Number(pick(raw, "quotaConsumed", "quota_consumed") || 0),
+});
+
+const normalizeGatewayCostAlert = (raw: RawRecord): LogisticsGatewayCostAlert => ({
+  level: String(pick(raw, "level", "level") || ""),
+  code: String(pick(raw, "code", "code") || ""),
+  message: String(pick(raw, "message", "message") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  provider: String(pick(raw, "provider", "provider") || ""),
+  usageRate: Number(pick(raw, "usageRate", "usage_rate") || 0),
+  requestRate: Number(pick(raw, "requestRate", "request_rate") || 0),
 });
 
 const normalizeTrackingSyncSchedule = (raw: RawRecord): LogisticsTrackingSyncSchedule => ({
@@ -1273,6 +1341,30 @@ export function useLogisticsApi() {
         carriers: asArray<RawRecord>(raw?.carriers).map(normalizeGatewayCarrierHealth),
         alerts: asArray<RawRecord>(raw?.alerts).map(normalizeGatewayAlert),
       };
+    },
+
+    getGatewayCosts: async (
+      query?: { window_hours?: number; carrier_id?: string; provider?: string; unit_price?: number; quota_limit?: number },
+      init?: any,
+    ): Promise<LogisticsGatewayCostSnapshot> => {
+      const raw = await unwrap(
+        apiGet<ApiEnvelope<{ summary: RawRecord; carriers: RawRecord[]; alerts: RawRecord[] }>>(`${basePath}/gateway/costs`, query, init),
+      );
+      return {
+        summary: normalizeGatewayCostSummary((raw?.summary || {}) as RawRecord),
+        carriers: asArray<RawRecord>(raw?.carriers).map(normalizeGatewayCostCarrier),
+        alerts: asArray<RawRecord>(raw?.alerts).map(normalizeGatewayCostAlert),
+      };
+    },
+
+    getGatewayCostAlerts: async (
+      query?: { window_hours?: number; carrier_id?: string; provider?: string; unit_price?: number; quota_limit?: number },
+      init?: any,
+    ): Promise<LogisticsGatewayCostAlert[]> => {
+      const raw = await unwrap(
+        apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/gateway/cost-alerts`, query, init),
+      );
+      return asArray<RawRecord>(raw?.items).map(normalizeGatewayCostAlert);
     },
 
     listTrackingSyncSchedules: async (
