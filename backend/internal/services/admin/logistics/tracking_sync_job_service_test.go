@@ -2,6 +2,7 @@ package logistics
 
 import (
 	"context"
+	"strconv"
 	"testing"
 	"time"
 
@@ -74,6 +75,60 @@ func TestTrackingSyncJobService_PartialFailedAndRetry(t *testing.T) {
 	retry, err := svc.Retry(ctx, "tenant-a", job.ID)
 	require.NoError(t, err)
 	require.NotEqual(t, job.ID, retry.ID)
+}
+
+func TestTrackingSyncJobService_BulkSyncPressureSmoke(t *testing.T) {
+	cases := []struct {
+		name  string
+		count int
+	}{
+		{name: "batch_100", count: 100},
+		{name: "batch_500", count: 500},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			db := setupTrackingSyncJobDB(t, "tracking_sync_job_pressure_"+tc.name)
+			ctx := authx.ContextWithTenantUUID(context.Background(), "tenant-a")
+			seedTrackingSyncJobFixtures(t, db, ctx)
+			now := time.Now().UTC()
+			for i := 0; i < tc.count; i++ {
+				require.NoError(t, db.WithContext(ctx).Create(&LogisticsModel.Waybill{
+					ID:                     "wb-pressure-" + tc.name + "-" + strconv.Itoa(i),
+					TenantUUID:             "tenant-a",
+					OrderID:                "order-pressure-" + strconv.Itoa(i),
+					CarrierID:              "carrier-a",
+					ServiceCode:            "std",
+					WaybillNo:              "WB-PRESSURE-" + tc.name + "-" + strconv.Itoa(i),
+					Status:                 "in_transit",
+					PackageNo:              1,
+					PackageKey:             "order-pressure-" + strconv.Itoa(i) + "#1",
+					OrderFulfillmentStatus: "partial_shipped",
+					CreatedAt:              now,
+					UpdatedAt:              now,
+				}).Error)
+			}
+			svc := NewTrackingSyncJobService(&app.Deps{DB: db})
+			started := time.Now()
+			job, err := svc.CreateAndRun(ctx, "tenant-a", CreateTrackingSyncJobRequest{
+				CarrierID:     "carrier-a",
+				WaybillStatus: "in_transit",
+				BatchLimit:    tc.count + 10,
+				EventLimit:    10,
+			})
+			elapsed := time.Since(started)
+			require.NoError(t, err)
+			require.NotNil(t, job)
+			require.Equal(t, "success", job.Status)
+			expectedTotal := tc.count + 1 // seeded wb-ok + pressure dataset
+			if expectedTotal > 500 {
+				expectedTotal = 500 // repository默认单次列表上限
+			}
+			require.Equal(t, expectedTotal, job.TotalWaybills)
+			require.Equal(t, expectedTotal, job.SuccessCount)
+			require.Equal(t, 0, job.FailedCount)
+			t.Logf("pressure case=%s waybills=%d elapsed_ms=%d", tc.name, job.TotalWaybills, elapsed.Milliseconds())
+		})
+	}
 }
 
 func setupTrackingSyncJobDB(t *testing.T, name string) *gorm.DB {

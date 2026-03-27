@@ -306,3 +306,33 @@
 - 统计项：成功率、失败率、P95 延迟、平均耗时
 - 结果：通过/失败（附数据与结论）
 ```
+
+## 20. Iteration-7 执行记录（2026-03-27）
+### 20.1 T155 M8 quickstart 与模板更新
+- 已补齐 M8 验证口径，覆盖 US22-US24（调度、补偿、成本配额）与压测统计项。
+- 验证记录入口：本节 `20.2`~`20.4`。
+
+### 20.2 T156 M8 后端回归
+- 执行命令：  
+  `cd backend && GOCACHE=$PWD/.gocache GOMODCACHE=$PWD/.gomodcache go test ./internal/services/admin/logistics ./internal/transport/http/admin/logistics ./internal/entity/repository/logistics -count=1`
+- 结果：**通过**（3 个目标包全部通过）。
+
+### 20.3 T157 M8 前端构建与页面回归
+- 执行命令：`make build-admin`
+- 结果：**通过**（存在既有 Rollup circular/chunk warnings，不阻塞产物输出）。
+- 页面范围：
+  - `shipping/waybills`
+  - `shipping/sla`
+
+### 20.4 T158 批量同步压测记录
+- 执行命令：  
+  `cd backend && GOCACHE=$PWD/.gocache GOMODCACHE=$PWD/.gomodcache go test ./internal/services/admin/logistics -run TestTrackingSyncJobService_BulkSyncPressureSmoke -count=1 -v`
+- 测试样本：`100`、`500` 运单批次（sqlite 内存环境，service 级压测烟测）。
+- 结果：
+  - `batch_100`：`waybills=101`，`elapsed_ms=9`
+  - `batch_500`：`waybills=500`，`elapsed_ms=46`
+- 统计结论：
+  - 成功率：`100%`
+  - 失败率：`0%`
+  - P95（样本近似）：`46ms`
+  - 平均耗时：`27.5ms`

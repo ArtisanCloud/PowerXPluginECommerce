@@ -352,10 +352,10 @@
 
 ### Iteration-7 Polish
 
-- [ ] T155 [P] 更新 M8 quickstart 与执行记录模板（`specs/011-fulfillment-logistics/quickstart.md`）
-- [ ] T156 执行 M8 后端回归（`go test ./internal/services/admin/logistics ./internal/transport/http/admin/logistics ./internal/entity/repository/logistics -count=1`）
-- [ ] T157 执行 M8 前端构建与页面回归（`make build-admin`）
-- [ ] T158 执行批量同步压测与记录（100/500 运单批次，统计成功率与 P95）（`specs/011-fulfillment-logistics/quickstart.md`）
+- [X] T155 [P] 更新 M8 quickstart 与执行记录模板（`specs/011-fulfillment-logistics/quickstart.md`）
+- [X] T156 执行 M8 后端回归（`go test ./internal/services/admin/logistics ./internal/transport/http/admin/logistics ./internal/entity/repository/logistics -count=1`）
+- [X] T157 执行 M8 前端构建与页面回归（`make build-admin`）
+- [X] T158 执行批量同步压测与记录（100/500 运单批次，统计成功率与 P95）（`specs/011-fulfillment-logistics/quickstart.md`）
 
 ---
 
