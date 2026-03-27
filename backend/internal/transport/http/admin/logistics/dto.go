@@ -113,6 +113,47 @@ type closeRedeliveryRequest struct {
 	Reason     string `json:"reason,omitempty"`
 }
 
+type upsertRiskRuleRequest struct {
+	ID          string         `json:"id,omitempty"`
+	Name        string         `json:"name"`
+	MatchField  string         `json:"match_field,omitempty"`
+	MatchMode   string         `json:"match_mode,omitempty"`
+	Pattern     string         `json:"pattern"`
+	Decision    string         `json:"decision,omitempty"`
+	RiskLevel   string         `json:"risk_level,omitempty"`
+	Priority    int            `json:"priority,omitempty"`
+	Enabled     *bool          `json:"enabled,omitempty"`
+	Description string         `json:"description,omitempty"`
+	RuleConfig  map[string]any `json:"rule_config,omitempty"`
+}
+
+type upsertBlacklistEntryRequest struct {
+	ID             string         `json:"id,omitempty"`
+	EntryType      string         `json:"entry_type,omitempty"`
+	RecipientName  string         `json:"recipient_name,omitempty"`
+	RecipientPhone string         `json:"recipient_phone,omitempty"`
+	AddressLine    string         `json:"address_line,omitempty"`
+	Reason         string         `json:"reason,omitempty"`
+	Status         string         `json:"status,omitempty"`
+	ExpiresAt      *string        `json:"expires_at,omitempty"`
+	Metadata       map[string]any `json:"metadata,omitempty"`
+}
+
+type evaluateRiskRequest struct {
+	WaybillID       string         `json:"waybill_id,omitempty"`
+	WaybillNo       string         `json:"waybill_no,omitempty"`
+	RecipientName   string         `json:"recipient_name,omitempty"`
+	RecipientPhone  string         `json:"recipient_phone,omitempty"`
+	DestinationLine string         `json:"destination_line,omitempty"`
+	OperatorID      string         `json:"operator_id,omitempty"`
+	Context         map[string]any `json:"context,omitempty"`
+}
+
+type releaseRiskHitRequest struct {
+	OperatorID string `json:"operator_id,omitempty"`
+	Reason     string `json:"reason,omitempty"`
+}
+
 type batchPrintLabelsRequest struct {
 	WaybillIDs     []string `json:"waybill_ids"`
 	IdempotencyKey string   `json:"idempotency_key,omitempty"`

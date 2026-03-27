@@ -267,11 +267,11 @@
 
 ### User Story 18 - 物流风控与黑名单（P3）
 
-- [ ] T115 [P] [US18] 增加物流风控规则与黑名单模型（`backend/internal/entity/models/logistics/risk_rule*.go`、`backend/internal/entity/models/logistics/blacklist*.go`）
-- [ ] T116 [US18] 实现风控评估服务（高风险地址/收件人识别、拦截建议）（`backend/internal/services/admin/logistics/risk_service.go`）
-- [ ] T117 [US18] 实现风控管理接口（规则、命中记录、人工放行）（`backend/internal/transport/http/admin/logistics/{risk_handler.go,routes.go,dto.go}`）
-- [ ] T118 [US18] 新增风控页面（规则管理与命中处置）（`web-admin/app/pages/shipping/risk-control.vue`）
-- [ ] T119 [US18] 增加 US18 回归测试（误拦截豁免、跨租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+- [X] T115 [P] [US18] 增加物流风控规则与黑名单模型（`backend/internal/entity/models/logistics/risk_rule*.go`、`backend/internal/entity/models/logistics/blacklist*.go`）
+- [X] T116 [US18] 实现风控评估服务（高风险地址/收件人识别、拦截建议）（`backend/internal/services/admin/logistics/risk_service.go`）
+- [X] T117 [US18] 实现风控管理接口（规则、命中记录、人工放行）（`backend/internal/transport/http/admin/logistics/{risk_handler.go,routes.go,dto.go}`）
+- [X] T118 [US18] 新增风控页面（规则管理与命中处置）（`web-admin/app/pages/shipping/risk-control.vue`）
+- [X] T119 [US18] 增加 US18 回归测试（误拦截豁免、跨租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
 
 ### Iteration-4 Polish
 

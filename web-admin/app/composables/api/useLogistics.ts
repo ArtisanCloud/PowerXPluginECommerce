@@ -161,6 +161,67 @@ export type LogisticsRedeliveryTask = {
   updatedAt: string;
 };
 
+export type LogisticsRiskRule = {
+  id: string;
+  name: string;
+  matchField: string;
+  matchMode: string;
+  pattern: string;
+  decision: string;
+  riskLevel: string;
+  priority: number;
+  enabled: boolean;
+  description: string;
+  ruleConfig: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsBlacklistEntry = {
+  id: string;
+  entryType: string;
+  recipientName: string;
+  recipientPhone: string;
+  addressLine: string;
+  reason: string;
+  status: string;
+  expiresAt: string;
+  metadata: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsRiskHit = {
+  id: string;
+  waybillId: string;
+  waybillNo: string;
+  ruleId: string;
+  blacklistId: string;
+  source: string;
+  decision: string;
+  riskLevel: string;
+  fingerprint: string;
+  description: string;
+  status: string;
+  releasedBy: string;
+  releaseReason: string;
+  releasedAt: string;
+  payload: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsRiskEvaluateResult = {
+  blocked: boolean;
+  decision: string;
+  score: number;
+  releasedBy: string;
+  fingerprint: string;
+  matchedRules: LogisticsRiskRule[];
+  matchedBlacklist: LogisticsBlacklistEntry[];
+  hits: LogisticsRiskHit[];
+};
+
 export type LogisticsBillingCarrierSummary = {
   carrierId: string;
   carrierName: string;
@@ -435,6 +496,67 @@ const normalizeRedeliveryTask = (raw: RawRecord): LogisticsRedeliveryTask => ({
   updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
 });
 
+const normalizeRiskRule = (raw: RawRecord): LogisticsRiskRule => ({
+  id: String(pick(raw, "id", "id") || ""),
+  name: String(pick(raw, "name", "name") || ""),
+  matchField: String(pick(raw, "matchField", "match_field") || "address"),
+  matchMode: String(pick(raw, "matchMode", "match_mode") || "contains"),
+  pattern: String(pick(raw, "pattern", "pattern") || ""),
+  decision: String(pick(raw, "decision", "decision") || "review"),
+  riskLevel: String(pick(raw, "riskLevel", "risk_level") || "medium"),
+  priority: Number(pick(raw, "priority", "priority") || 100),
+  enabled: Boolean(pick(raw, "enabled", "enabled")),
+  description: String(pick(raw, "description", "description") || ""),
+  ruleConfig: (pick(raw, "ruleConfig", "rule_config") || {}) as Record<string, any>,
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeBlacklistEntry = (raw: RawRecord): LogisticsBlacklistEntry => ({
+  id: String(pick(raw, "id", "id") || ""),
+  entryType: String(pick(raw, "entryType", "entry_type") || "recipient"),
+  recipientName: String(pick(raw, "recipientName", "recipient_name") || ""),
+  recipientPhone: String(pick(raw, "recipientPhone", "recipient_phone") || ""),
+  addressLine: String(pick(raw, "addressLine", "address_line") || ""),
+  reason: String(pick(raw, "reason", "reason") || ""),
+  status: String(pick(raw, "status", "status") || "active"),
+  expiresAt: String(pick(raw, "expiresAt", "expires_at") || ""),
+  metadata: (pick(raw, "metadata", "metadata") || {}) as Record<string, any>,
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeRiskHit = (raw: RawRecord): LogisticsRiskHit => ({
+  id: String(pick(raw, "id", "id") || ""),
+  waybillId: String(pick(raw, "waybillId", "waybill_id") || ""),
+  waybillNo: String(pick(raw, "waybillNo", "waybill_no") || ""),
+  ruleId: String(pick(raw, "ruleId", "rule_id") || ""),
+  blacklistId: String(pick(raw, "blacklistId", "blacklist_id") || ""),
+  source: String(pick(raw, "source", "source") || "rule"),
+  decision: String(pick(raw, "decision", "decision") || "review"),
+  riskLevel: String(pick(raw, "riskLevel", "risk_level") || "medium"),
+  fingerprint: String(pick(raw, "fingerprint", "fingerprint") || ""),
+  description: String(pick(raw, "description", "description") || ""),
+  status: String(pick(raw, "status", "status") || "open"),
+  releasedBy: String(pick(raw, "releasedBy", "released_by") || ""),
+  releaseReason: String(pick(raw, "releaseReason", "release_reason") || ""),
+  releasedAt: String(pick(raw, "releasedAt", "released_at") || ""),
+  payload: (pick(raw, "payload", "payload") || {}) as Record<string, any>,
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeRiskEvaluateResult = (raw: RawRecord): LogisticsRiskEvaluateResult => ({
+  blocked: Boolean(pick(raw, "blocked", "blocked")),
+  decision: String(pick(raw, "decision", "decision") || "allow"),
+  score: Number(pick(raw, "score", "score") || 0),
+  releasedBy: String(pick(raw, "releasedBy", "released_by") || ""),
+  fingerprint: String(pick(raw, "fingerprint", "fingerprint") || ""),
+  matchedRules: asArray<RawRecord>(pick(raw, "matchedRules", "matched_rules")).map(normalizeRiskRule),
+  matchedBlacklist: asArray<RawRecord>(pick(raw, "matchedBlacklist", "matched_blacklist")).map(normalizeBlacklistEntry),
+  hits: asArray<RawRecord>(pick(raw, "hits", "hits")).map(normalizeRiskHit),
+});
+
 const normalizeLabelPrintTask = (raw: RawRecord): LogisticsLabelPrintTask => ({
   id: String(pick(raw, "id", "id") || ""),
   requestKey: String(pick(raw, "requestKey", "request_key") || ""),
@@ -678,6 +800,46 @@ export function useLogisticsApi() {
         apiPost<ApiEnvelope<RawRecord>>(`${basePath}/redelivery/tasks/${id}/close`, payload, init),
       );
       return normalizeRedeliveryTask((raw || {}) as RawRecord);
+    },
+
+    listRiskRules: async (init?: any): Promise<LogisticsRiskRule[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/risk/rules`, undefined, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeRiskRule);
+    },
+
+    upsertRiskRule: async (payload: Record<string, any>, init?: any): Promise<LogisticsRiskRule> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/risk/rules`, payload, init));
+      return normalizeRiskRule((raw || {}) as RawRecord);
+    },
+
+    listRiskBlacklist: async (query?: { status?: string }, init?: any): Promise<LogisticsBlacklistEntry[]> => {
+      const raw = await unwrap(
+        apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/risk/blacklist`, query, init),
+      );
+      return asArray<RawRecord>(raw?.items).map(normalizeBlacklistEntry);
+    },
+
+    upsertRiskBlacklist: async (payload: Record<string, any>, init?: any): Promise<LogisticsBlacklistEntry> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/risk/blacklist`, payload, init));
+      return normalizeBlacklistEntry((raw || {}) as RawRecord);
+    },
+
+    listRiskHits: async (
+      query?: { waybill_id?: string; status?: string },
+      init?: any,
+    ): Promise<LogisticsRiskHit[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/risk/hits`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeRiskHit);
+    },
+
+    evaluateRisk: async (payload: Record<string, any>, init?: any): Promise<LogisticsRiskEvaluateResult> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/risk/evaluate`, payload, init));
+      return normalizeRiskEvaluateResult((raw || {}) as RawRecord);
+    },
+
+    releaseRiskHit: async (id: string, payload: Record<string, any>, init?: any): Promise<LogisticsRiskHit> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/risk/hits/${id}/release`, payload, init));
+      return normalizeRiskHit((raw || {}) as RawRecord);
     },
 
     listWaybillETA: async (

@@ -24,6 +24,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 		logisticssvc.NewETAService(deps),
 		logisticssvc.NewRoutingService(deps),
 		logisticssvc.NewRedeliveryService(deps),
+		logisticssvc.NewRiskService(deps),
 		logisticssvc.NewBillingService(deps),
 		logisticssvc.NewBillingCaseService(deps),
 		logisticssvc.NewNotificationService(deps),
@@ -54,6 +55,15 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.POST("/redelivery/tasks/:id/address", handler.UpdateRedeliveryAddress)
 	rg.POST("/redelivery/tasks/:id/redispatch", handler.RedispatchRedeliveryTask)
 	rg.POST("/redelivery/tasks/:id/close", handler.CloseRedeliveryTask)
+	rg.GET("/risk/rules", handler.ListRiskRules)
+	rg.POST("/risk/rules", handler.UpsertRiskRule)
+	rg.PATCH("/risk/rules/:id", handler.UpsertRiskRule)
+	rg.GET("/risk/blacklist", handler.ListRiskBlacklist)
+	rg.POST("/risk/blacklist", handler.UpsertRiskBlacklist)
+	rg.PATCH("/risk/blacklist/:id", handler.UpsertRiskBlacklist)
+	rg.GET("/risk/hits", handler.ListRiskHits)
+	rg.POST("/risk/evaluate", handler.EvaluateRisk)
+	rg.POST("/risk/hits/:id/release", handler.ReleaseRiskHit)
 	rg.GET("/eta", handler.ListWaybillETA)
 	rg.GET("/eta/:waybill_id", handler.GetWaybillETA)
 	rg.POST("/waybills", handler.CreateWaybill)

@@ -999,6 +999,20 @@
             <UIcon name="i-heroicons-bell-alert" class="w-4 h-4 mr-3"/>
             通知中心
           </UButton>
+
+          <UButton
+            to="/shipping/risk-control"
+            variant="ghost"
+            color="neutral"
+            class="w-full justify-start"
+            :class="{
+              'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
+                $route.path === '/shipping/risk-control',
+            }"
+          >
+            <UIcon name="i-heroicons-shield-exclamation" class="w-4 h-4 mr-3"/>
+            风控中心
+          </UButton>
         </div>
       </div>
 
