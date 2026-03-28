@@ -360,6 +360,15 @@ type normalizeCrossborderTrackingRequest struct {
 	ProviderStatus string `json:"provider_status"`
 }
 
+type kpiDashboardQueryRequest struct {
+	WindowHours     int    `json:"window_hours,omitempty"`
+	Dimension       string `json:"dimension,omitempty"`
+	CarrierID       string `json:"carrier_id,omitempty"`
+	WarehouseID     string `json:"warehouse_id,omitempty"`
+	DestinationZone string `json:"destination_zone,omitempty"`
+	Limit           int    `json:"limit,omitempty"`
+}
+
 type allocationRequest struct {
 	RequestKey       string `json:"request_key,omitempty"`
 	WaybillID        string `json:"waybill_id,omitempty"`

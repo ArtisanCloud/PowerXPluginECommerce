@@ -484,6 +484,42 @@
 
 ---
 
+## Phase 16: Iteration-10 - 运营分析与清关治理（Backlog）
+
+**Purpose**: 在 M10 基础上补齐“经营分析 + 财务自动核对 + 跨境清关规则”，将履约从执行闭环升级到治理闭环。
+
+### User Story 34 - 物流履约 KPI 大屏（P2）
+
+- [X] T211 [P] [US34] 增加 KPI 聚合快照与趋势模型（`backend/internal/entity/models/logistics/kpi_snapshot*.go`）
+- [X] T212 [US34] 实现 KPI 聚合服务（租户/仓库/承运商维度、同比环比、异常钻取）（`backend/internal/services/admin/logistics/kpi_dashboard_service.go`）
+- [X] T213 [US34] 实现 KPI 大屏接口（总览、趋势、钻取、导出）（`backend/internal/transport/http/admin/logistics/{kpi_dashboard_handler.go,routes.go,dto.go}`）
+- [X] T214 [US34] 新增 KPI 大屏页面（筛选面板、趋势图、异常明细抽屉）（`web-admin/app/pages/shipping/kpi-dashboard.vue`）
+- [X] T215 [US34] 增加 US34 回归测试（聚合准确性、筛选一致性、导出口径正确性）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### User Story 35 - 承运商结算自动对账（P2）
+
+- [ ] T216 [P] [US35] 增加自动对账批次与三方匹配模型（账单/流水/发票）（`backend/internal/entity/models/logistics/reconciliation*.go`）
+- [ ] T217 [US35] 实现自动对账服务（匹配规则、差异归因、建议动作）（`backend/internal/services/admin/logistics/reconciliation_service.go`）
+- [ ] T218 [US35] 实现自动对账接口（批次执行、差异列表、工单流转）（`backend/internal/transport/http/admin/logistics/{reconciliation_handler.go,routes.go,dto.go}`）
+- [ ] T219 [US35] 在对账页新增“自动对账”区块（批次执行、异常工单、处理动作）（`web-admin/app/pages/shipping/billing.vue`）
+- [ ] T220 [US35] 增加 US35 回归测试（匹配准确性、状态约束、跨租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### User Story 36 - 跨境清关规则中心（P3）
+
+- [ ] T221 [P] [US36] 增加清关规则包与版本模型（国家规则、命中策略、启停状态）（`backend/internal/entity/models/logistics/customs_rule*.go`）
+- [ ] T222 [US36] 实现清关规则服务（规则编排、风险预判、建议动作生成）（`backend/internal/services/admin/logistics/customs_rule_service.go`）
+- [ ] T223 [US36] 实现清关规则接口（规则管理、预检执行、命中解释）（`backend/internal/transport/http/admin/logistics/{customs_rule_handler.go,routes.go,dto.go}`）
+- [ ] T224 [US36] 在运单页新增“清关预检”面板（国家规则选择、风险预判结果、人工确认）（`web-admin/app/pages/shipping/waybills.vue`）
+- [ ] T225 [US36] 增加 US36 回归测试（规则版本切换、命中解释完整性、误拦截放行）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### Iteration-10 Polish
+
+- [ ] T226 [P] 更新 M11 quickstart 与执行记录模板（`specs/011-fulfillment-logistics/quickstart.md`）
+- [ ] T227 执行 M11 后端回归（`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment -count=1`）
+- [ ] T228 执行 M11 前端构建与页面回归（`make build-admin`）
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -504,6 +540,9 @@
 - **US5 (P1)**: 依赖 US1 的运单主流程，扩展为多包裹与部分发货
 - **US6 (P2)**: 依赖 US2 的任务模型，扩展波次批量执行
 - **US7 (P3)**: 依赖 US1/US4 的运单与承运商配置，补齐成本对账
+- **US34 (P2)**: 依赖 US30 的控制塔聚合能力，扩展为多维 KPI 分析与导出
+- **US35 (P2)**: 依赖 US29 的结算闭环能力，扩展账单/流水/发票三方自动核对
+- **US36 (P3)**: 依赖 US33 的跨境履约能力，扩展为清关规则中心与预检风控
 
 ### Within Each User Story
 

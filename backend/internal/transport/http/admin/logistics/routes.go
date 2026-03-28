@@ -43,6 +43,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 		logisticssvc.NewAllocationService(deps),
 		logisticssvc.NewLastmileRecoveryService(deps),
 		logisticssvc.NewCrossborderService(deps),
+		logisticssvc.NewKPIDashboardService(deps),
 		logisticssvc.NewWebhookService(deps),
 	)
 
@@ -154,6 +155,10 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.POST("/crossborder/tracking-maps", handler.UpsertCrossborderTrackingMap)
 	rg.PATCH("/crossborder/tracking-maps/:id", handler.UpsertCrossborderTrackingMap)
 	rg.POST("/crossborder/tracking-maps/normalize", handler.NormalizeCrossborderTracking)
+	rg.GET("/kpi-dashboard/overview", handler.GetKPIDashboardOverview)
+	rg.GET("/kpi-dashboard/trends", handler.GetKPIDashboardTrends)
+	rg.GET("/kpi-dashboard/drilldown", handler.GetKPIDashboardDrilldown)
+	rg.GET("/kpi-dashboard/export", handler.ExportKPIDashboard)
 
 	rg.POST("/webhook", handler.HandleWebhook)
 	return rg

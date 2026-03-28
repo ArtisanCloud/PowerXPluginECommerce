@@ -220,6 +220,18 @@ func RBACEntries(prefix string) map[string]AuthX.Permission {
 		"POST:" + base + "/crossborder/tracking-maps/normalize": {
 			Resource: res("logistics.crossborder"), Action: "read",
 		},
+		"GET:" + base + "/kpi-dashboard/overview": {
+			Resource: res("logistics.kpi_dashboard"), Action: "read",
+		},
+		"GET:" + base + "/kpi-dashboard/trends": {
+			Resource: res("logistics.kpi_dashboard"), Action: "read",
+		},
+		"GET:" + base + "/kpi-dashboard/drilldown": {
+			Resource: res("logistics.kpi_dashboard"), Action: "read",
+		},
+		"GET:" + base + "/kpi-dashboard/export": {
+			Resource: res("logistics.kpi_dashboard"), Action: "export",
+		},
 		"POST:" + base + "/webhook": {Resource: res("logistics.webhook"), Action: "manage"},
 	}
 }

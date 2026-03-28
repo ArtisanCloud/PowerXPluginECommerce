@@ -931,6 +931,20 @@
           </UButton>
 
           <UButton
+            to="/shipping/kpi-dashboard"
+            variant="ghost"
+            color="neutral"
+            class="w-full justify-start"
+            :class="{
+              'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
+                $route.path === '/shipping/kpi-dashboard',
+            }"
+          >
+            <UIcon name="i-heroicons-chart-bar-square" class="w-4 h-4 mr-3"/>
+            KPI 大屏
+          </UButton>
+
+          <UButton
             to="/shipping/carriers"
             variant="ghost"
             color="neutral"

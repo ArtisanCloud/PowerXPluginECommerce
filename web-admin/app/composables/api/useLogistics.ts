@@ -599,6 +599,44 @@ export type LogisticsControlTowerSubscription = {
   updatedAt: string;
 };
 
+export type LogisticsKPIDashboardOverview = {
+  windowHours: number;
+  dimension: string;
+  totalWaybills: number;
+  deliveredCount: number;
+  exceptionCount: number;
+  timeoutCount: number;
+  onTimeRate: number;
+  deliverySuccessRate: number;
+  avgTransitHours: number;
+  totalCost: number;
+  avgCost: number;
+};
+
+export type LogisticsKPIDashboardTrend = {
+  dimensionKey: string;
+  totalWaybills: number;
+  deliveredCount: number;
+  exceptionCount: number;
+  onTimeRate: number;
+  deliverySuccessRate: number;
+  avgTransitHours: number;
+  totalCost: number;
+  avgCost: number;
+};
+
+export type LogisticsKPIDashboardDrilldown = {
+  waybillId: string;
+  waybillNo: string;
+  carrierId: string;
+  status: string;
+  warehouseId: string;
+  destinationZone: string;
+  elapsedHours: number;
+  costAmount: number;
+  timeoutRiskLevel: string;
+};
+
 export type LogisticsCapacityPlan = {
   id: string;
   name: string;
@@ -1138,6 +1176,44 @@ const normalizeControlTowerSubscription = (raw: RawRecord): LogisticsControlTowe
   lastNotifiedAt: String(pick(raw, "lastNotifiedAt", "last_notified_at") || ""),
   createdAt: String(pick(raw, "createdAt", "created_at") || ""),
   updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeKPIDashboardOverview = (raw: RawRecord): LogisticsKPIDashboardOverview => ({
+  windowHours: Number(pick(raw, "windowHours", "window_hours") || 24),
+  dimension: String(pick(raw, "dimension", "dimension") || "carrier"),
+  totalWaybills: Number(pick(raw, "totalWaybills", "total_waybills") || 0),
+  deliveredCount: Number(pick(raw, "deliveredCount", "delivered_count") || 0),
+  exceptionCount: Number(pick(raw, "exceptionCount", "exception_count") || 0),
+  timeoutCount: Number(pick(raw, "timeoutCount", "timeout_count") || 0),
+  onTimeRate: Number(pick(raw, "onTimeRate", "on_time_rate") || 0),
+  deliverySuccessRate: Number(pick(raw, "deliverySuccessRate", "delivery_success_rate") || 0),
+  avgTransitHours: Number(pick(raw, "avgTransitHours", "avg_transit_hours") || 0),
+  totalCost: Number(pick(raw, "totalCost", "total_cost") || 0),
+  avgCost: Number(pick(raw, "avgCost", "avg_cost") || 0),
+});
+
+const normalizeKPIDashboardTrend = (raw: RawRecord): LogisticsKPIDashboardTrend => ({
+  dimensionKey: String(pick(raw, "dimensionKey", "dimension_key") || ""),
+  totalWaybills: Number(pick(raw, "totalWaybills", "total_waybills") || 0),
+  deliveredCount: Number(pick(raw, "deliveredCount", "delivered_count") || 0),
+  exceptionCount: Number(pick(raw, "exceptionCount", "exception_count") || 0),
+  onTimeRate: Number(pick(raw, "onTimeRate", "on_time_rate") || 0),
+  deliverySuccessRate: Number(pick(raw, "deliverySuccessRate", "delivery_success_rate") || 0),
+  avgTransitHours: Number(pick(raw, "avgTransitHours", "avg_transit_hours") || 0),
+  totalCost: Number(pick(raw, "totalCost", "total_cost") || 0),
+  avgCost: Number(pick(raw, "avgCost", "avg_cost") || 0),
+});
+
+const normalizeKPIDashboardDrilldown = (raw: RawRecord): LogisticsKPIDashboardDrilldown => ({
+  waybillId: String(pick(raw, "waybillId", "waybill_id") || ""),
+  waybillNo: String(pick(raw, "waybillNo", "waybill_no") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  status: String(pick(raw, "status", "status") || ""),
+  warehouseId: String(pick(raw, "warehouseId", "warehouse_id") || ""),
+  destinationZone: String(pick(raw, "destinationZone", "destination_zone") || ""),
+  elapsedHours: Number(pick(raw, "elapsedHours", "elapsed_hours") || 0),
+  costAmount: Number(pick(raw, "costAmount", "cost_amount") || 0),
+  timeoutRiskLevel: String(pick(raw, "timeoutRiskLevel", "timeout_risk_level") || ""),
 });
 
 const normalizeCapacityPlan = (raw: RawRecord): LogisticsCapacityPlan => ({
@@ -2145,6 +2221,66 @@ export function useLogisticsApi() {
       const req = id ? apiPatch<ApiEnvelope<RawRecord>>(path, payload, init) : apiPost<ApiEnvelope<RawRecord>>(path, payload, init);
       const raw = await unwrap(req);
       return normalizeControlTowerSubscription((raw || {}) as RawRecord);
+    },
+
+    getKPIDashboardOverview: async (
+      query?: {
+        dimension?: "tenant" | "carrier" | "warehouse" | "destination_zone";
+        window_hours?: number;
+        carrier_id?: string;
+        warehouse_id?: string;
+        destination_zone?: string;
+      },
+      init?: any,
+    ): Promise<LogisticsKPIDashboardOverview> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<RawRecord>>(`${basePath}/kpi-dashboard/overview`, query, init));
+      return normalizeKPIDashboardOverview((raw || {}) as RawRecord);
+    },
+
+    getKPIDashboardTrends: async (
+      query?: {
+        dimension?: "tenant" | "carrier" | "warehouse" | "destination_zone";
+        window_hours?: number;
+        carrier_id?: string;
+        warehouse_id?: string;
+        destination_zone?: string;
+      },
+      init?: any,
+    ): Promise<LogisticsKPIDashboardTrend[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/kpi-dashboard/trends`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeKPIDashboardTrend);
+    },
+
+    getKPIDashboardDrilldown: async (
+      query?: {
+        dimension?: "tenant" | "carrier" | "warehouse" | "destination_zone";
+        window_hours?: number;
+        carrier_id?: string;
+        warehouse_id?: string;
+        destination_zone?: string;
+        limit?: number;
+      },
+      init?: any,
+    ): Promise<LogisticsKPIDashboardDrilldown[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/kpi-dashboard/drilldown`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeKPIDashboardDrilldown);
+    },
+
+    exportKPIDashboard: async (
+      query?: {
+        dimension?: "tenant" | "carrier" | "warehouse" | "destination_zone";
+        window_hours?: number;
+        carrier_id?: string;
+        warehouse_id?: string;
+        destination_zone?: string;
+      },
+      init?: any,
+    ): Promise<{ content: string; format: string }> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<RawRecord>>(`${basePath}/kpi-dashboard/export`, query, init));
+      return {
+        content: String(pick((raw || {}) as RawRecord, "content", "content") || ""),
+        format: String(pick((raw || {}) as RawRecord, "format", "format") || "csv"),
+      };
     },
 
     listAllocationPlans: async (

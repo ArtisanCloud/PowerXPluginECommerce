@@ -448,3 +448,32 @@
 - 页面范围：
   - `shipping/control-tower`
   - `shipping/waybills`（智能分单、末端自愈、跨境履约面板）
+
+## 27. M11 验证（运营分析与清关治理）
+1. 打开 KPI 大屏，按租户/仓库/承运商切换维度，验证时效、异常、成本、妥投指标联动。
+2. 在 KPI 大屏执行异常钻取，核对明细单据与指标统计口径一致。
+3. 导入承运商账单、银行流水与发票数据，触发自动对账并生成异常工单。
+4. 在对账页对异常工单执行确认/申诉/关闭，验证状态约束与审计留痕。
+5. 在运单页执行跨境清关预检，验证国家规则命中、风险等级与建议动作输出。
+
+预期结果：
+- KPI 大屏支持多维筛选与钻取，指标可解释且可导出。
+- 自动对账可形成“匹配→异常工单→处置”闭环。
+- 清关预检可在发货前识别高风险单据并给出处置建议。
+
+## 28. Iteration-10 执行记录模板（可直接复制）
+```md
+### 28.1 T226 M11 quickstart 与模板更新
+- 变更文件：`specs/011-fulfillment-logistics/quickstart.md`
+- 覆盖范围：US34-US36 验证步骤、M11 发布前检查项
+- 结果：通过/待补充
+
+### 28.2 T227 M11 后端回归
+- 执行命令：`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment -count=1`
+- 结果：通过/失败（附失败包与错误）
+
+### 28.3 T228 M11 前端构建与页面回归
+- 执行命令：`make build-admin`
+- 结果：通过/失败
+- 页面回归：`shipping/kpi-dashboard`、`shipping/billing`、`shipping/waybills`
+```
