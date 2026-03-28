@@ -498,11 +498,11 @@
 
 ### User Story 35 - 承运商结算自动对账（P2）
 
-- [ ] T216 [P] [US35] 增加自动对账批次与三方匹配模型（账单/流水/发票）（`backend/internal/entity/models/logistics/reconciliation*.go`）
-- [ ] T217 [US35] 实现自动对账服务（匹配规则、差异归因、建议动作）（`backend/internal/services/admin/logistics/reconciliation_service.go`）
-- [ ] T218 [US35] 实现自动对账接口（批次执行、差异列表、工单流转）（`backend/internal/transport/http/admin/logistics/{reconciliation_handler.go,routes.go,dto.go}`）
-- [ ] T219 [US35] 在对账页新增“自动对账”区块（批次执行、异常工单、处理动作）（`web-admin/app/pages/shipping/billing.vue`）
-- [ ] T220 [US35] 增加 US35 回归测试（匹配准确性、状态约束、跨租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+- [X] T216 [P] [US35] 增加自动对账批次与三方匹配模型（账单/流水/发票）（`backend/internal/entity/models/logistics/reconciliation*.go`）
+- [X] T217 [US35] 实现自动对账服务（匹配规则、差异归因、建议动作）（`backend/internal/services/admin/logistics/reconciliation_service.go`）
+- [X] T218 [US35] 实现自动对账接口（批次执行、差异列表、工单流转）（`backend/internal/transport/http/admin/logistics/{reconciliation_handler.go,routes.go,dto.go}`）
+- [X] T219 [US35] 在对账页新增“自动对账”区块（批次执行、异常工单、处理动作）（`web-admin/app/pages/shipping/billing.vue`）
+- [X] T220 [US35] 增加 US35 回归测试（匹配准确性、状态约束、跨租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
 
 ### User Story 36 - 跨境清关规则中心（P3）
 

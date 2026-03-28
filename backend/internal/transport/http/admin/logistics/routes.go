@@ -39,6 +39,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 		logisticssvc.NewAddressValidationService(deps),
 		logisticssvc.NewRoutingOptimizerService(deps),
 		logisticssvc.NewSettlementService(deps),
+		logisticssvc.NewReconciliationService(deps),
 		logisticssvc.NewControlTowerService(deps),
 		logisticssvc.NewAllocationService(deps),
 		logisticssvc.NewLastmileRecoveryService(deps),
@@ -131,6 +132,11 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.GET("/settlement/diffs", handler.ListSettlementDiffs)
 	rg.POST("/settlement/diffs/:id/handle", handler.HandleSettlementDiff)
 	rg.POST("/settlement/batches/:id/confirm", handler.ConfirmSettlementBatch)
+	rg.GET("/reconciliation/batches", handler.ListReconciliationBatches)
+	rg.POST("/reconciliation/batches", handler.CreateReconciliationBatch)
+	rg.GET("/reconciliation/records", handler.ListReconciliationRecords)
+	rg.GET("/reconciliation/cases", handler.ListReconciliationCases)
+	rg.POST("/reconciliation/cases/:id/handle", handler.HandleReconciliationCase)
 	rg.GET("/control-tower/overview", handler.GetControlTowerOverview)
 	rg.GET("/control-tower/drilldown", handler.GetControlTowerDrilldown)
 	rg.GET("/control-tower/subscriptions", handler.ListControlTowerSubscriptions)

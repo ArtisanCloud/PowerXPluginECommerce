@@ -205,6 +205,15 @@ func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 		t.Fatalf("unexpected resource %s", settlementPerm.Resource)
 	}
 
+	reconciliationKey := "POST:/api/v1/admin/logistics/reconciliation/cases/:id/handle"
+	reconciliationPerm, ok := entries[reconciliationKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", reconciliationKey)
+	}
+	if reconciliationPerm.Resource != "com.powerx.plugins.ecommerce:logistics.reconciliation" {
+		t.Fatalf("unexpected resource %s", reconciliationPerm.Resource)
+	}
+
 	controlTowerKey := "GET:/api/v1/admin/logistics/control-tower/overview"
 	controlTowerPerm, ok := entries[controlTowerKey]
 	if !ok {

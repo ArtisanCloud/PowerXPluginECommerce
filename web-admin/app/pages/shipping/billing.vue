@@ -101,6 +101,48 @@
         </UTable>
       </UCard>
     </UCard>
+
+    <UCard>
+      <template #header>
+        <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">自动对账（账单/流水/发票）</h3>
+          <div class="flex gap-2">
+            <UButton color="warning" variant="soft" @click="createReconciliationBatch">执行自动对账</UButton>
+            <UButton color="neutral" variant="ghost" @click="loadReconciliationData">刷新对账</UButton>
+          </div>
+        </div>
+      </template>
+      <UTable :columns="reconciliationBatchColumns" :data="reconciliationBatches">
+        <template #actions-cell="{ row }">
+          <div class="flex gap-2">
+            <UButton size="xs" variant="ghost" color="info" @click="selectReconciliationBatch(row.original.id)">明细</UButton>
+          </div>
+        </template>
+      </UTable>
+      <UCard class="mt-3" v-if="reconciliationRecords.length || reconciliationCases.length">
+        <template #header>
+          <h4 class="text-sm font-semibold">自动对账结果</h4>
+        </template>
+        <div class="space-y-3">
+          <UTable :columns="reconciliationRecordColumns" :data="reconciliationRecords" />
+          <UTable :columns="reconciliationCaseColumns" :data="reconciliationCases">
+            <template #actions-cell="{ row }">
+              <div class="flex gap-2">
+                <UButton size="xs" variant="ghost" color="success" @click="handleReconciliationCase(row.original.id, 'confirm')">
+                  确认
+                </UButton>
+                <UButton size="xs" variant="ghost" color="warning" @click="handleReconciliationCase(row.original.id, 'appeal')">
+                  申诉
+                </UButton>
+                <UButton size="xs" variant="ghost" color="neutral" @click="handleReconciliationCase(row.original.id, 'close')">
+                  关闭
+                </UButton>
+              </div>
+            </template>
+          </UTable>
+        </div>
+      </UCard>
+    </UCard>
   </div>
 </template>
 
@@ -120,6 +162,10 @@ const caseRows = ref<any[]>([]);
 const settlementBatches = ref<any[]>([]);
 const settlementDiffs = ref<any[]>([]);
 const selectedSettlementBatchId = ref("");
+const reconciliationBatches = ref<any[]>([]);
+const reconciliationRecords = ref<any[]>([]);
+const reconciliationCases = ref<any[]>([]);
+const selectedReconciliationBatchId = ref("");
 const newCase = reactive({
   waybillId: "",
   reason: "",
@@ -174,6 +220,35 @@ const settlementDiffColumns = computed<TableColumn<any>[]>(() => [
   { id: "actions", header: "处理" },
 ]);
 
+const reconciliationBatchColumns = computed<TableColumn<any>[]>(() => [
+  { accessorKey: "batchNo", header: "批次号" },
+  { accessorKey: "carrierId", header: "承运商ID" },
+  { accessorKey: "recordCount", header: "总条目" },
+  { accessorKey: "matchedCount", header: "自动匹配" },
+  { accessorKey: "exceptionCount", header: "异常条目" },
+  { accessorKey: "status", header: "状态" },
+  { id: "actions", header: "操作" },
+]);
+
+const reconciliationRecordColumns = computed<TableColumn<any>[]>(() => [
+  { accessorKey: "waybillNo", header: "运单号" },
+  { accessorKey: "matchType", header: "匹配结果" },
+  { accessorKey: "suggestion", header: "建议动作" },
+  { accessorKey: "billAmount", header: "账单金额" },
+  { accessorKey: "bankAmount", header: "流水金额" },
+  { accessorKey: "invoiceAmount", header: "发票金额" },
+  { accessorKey: "status", header: "状态" },
+]);
+
+const reconciliationCaseColumns = computed<TableColumn<any>[]>(() => [
+  { accessorKey: "caseNo", header: "工单号" },
+  { accessorKey: "waybillNo", header: "运单号" },
+  { accessorKey: "reason", header: "异常原因" },
+  { accessorKey: "suggestion", header: "建议动作" },
+  { accessorKey: "status", header: "状态" },
+  { id: "actions", header: "处理" },
+]);
+
 const caseStatusMeta = (status: string) => {
   switch (status) {
     case "confirmed":
@@ -197,6 +272,7 @@ const loadSnapshot = async () => {
     carrier_id: carrierId.value || undefined,
   });
   await loadSettlementData();
+  await loadReconciliationData();
 };
 
 const loadSettlementData = async () => {
@@ -240,6 +316,49 @@ const handleSettlementDiff = async (id: string, action: "accept" | "dispute") =>
 const confirmSettlementBatch = async (id: string) => {
   await logisticsApi.confirmSettlementBatch(id);
   await loadSettlementData();
+};
+
+const loadReconciliationData = async () => {
+  reconciliationBatches.value = await logisticsApi.listReconciliationBatches({
+    carrier_id: carrierId.value || undefined,
+    limit: 20,
+  });
+  if (selectedReconciliationBatchId.value) {
+    reconciliationRecords.value = await logisticsApi.listReconciliationRecords({
+      batch_id: selectedReconciliationBatchId.value,
+      limit: 100,
+    });
+    reconciliationCases.value = await logisticsApi.listReconciliationCases({
+      batch_id: selectedReconciliationBatchId.value,
+      limit: 100,
+    });
+  }
+};
+
+const createReconciliationBatch = async () => {
+  const row = await logisticsApi.createReconciliationBatch({
+    carrier_id: carrierId.value || undefined,
+  });
+  selectedReconciliationBatchId.value = row.id;
+  await loadReconciliationData();
+};
+
+const selectReconciliationBatch = async (id: string) => {
+  selectedReconciliationBatchId.value = id;
+  reconciliationRecords.value = await logisticsApi.listReconciliationRecords({ batch_id: id, limit: 100 });
+  reconciliationCases.value = await logisticsApi.listReconciliationCases({ batch_id: id, limit: 100 });
+};
+
+const handleReconciliationCase = async (id: string, action: "confirm" | "appeal" | "close") => {
+  await logisticsApi.handleReconciliationCase(id, {
+    action,
+    operator_id: "admin",
+    note: `manual-${action}`,
+  });
+  if (selectedReconciliationBatchId.value) {
+    await selectReconciliationBatch(selectedReconciliationBatchId.value);
+  }
+  await loadReconciliationData();
 };
 
 const exportCsv = async () => {

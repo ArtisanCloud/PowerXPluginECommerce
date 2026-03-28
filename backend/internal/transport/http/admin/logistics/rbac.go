@@ -148,6 +148,21 @@ func RBACEntries(prefix string) map[string]AuthX.Permission {
 		"POST:" + base + "/settlement/batches/:id/confirm": {
 			Resource: res("logistics.settlement"), Action: "manage",
 		},
+		"GET:" + base + "/reconciliation/batches": {
+			Resource: res("logistics.reconciliation"), Action: "read",
+		},
+		"POST:" + base + "/reconciliation/batches": {
+			Resource: res("logistics.reconciliation"), Action: "manage",
+		},
+		"GET:" + base + "/reconciliation/records": {
+			Resource: res("logistics.reconciliation"), Action: "read",
+		},
+		"GET:" + base + "/reconciliation/cases": {
+			Resource: res("logistics.reconciliation"), Action: "read",
+		},
+		"POST:" + base + "/reconciliation/cases/:id/handle": {
+			Resource: res("logistics.reconciliation"), Action: "manage",
+		},
 		"GET:" + base + "/control-tower/overview": {
 			Resource: res("logistics.control_tower"), Action: "read",
 		},

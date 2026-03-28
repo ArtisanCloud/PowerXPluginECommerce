@@ -295,6 +295,28 @@ type handleSettlementDiffRequest struct {
 	Note       string `json:"note,omitempty"`
 }
 
+type reconciliationInputRecordRequest struct {
+	WaybillID     string  `json:"waybill_id,omitempty"`
+	WaybillNo     string  `json:"waybill_no"`
+	CarrierID     string  `json:"carrier_id,omitempty"`
+	BillAmount    float64 `json:"bill_amount"`
+	BankAmount    float64 `json:"bank_amount"`
+	InvoiceAmount float64 `json:"invoice_amount"`
+}
+
+type createReconciliationBatchRequest struct {
+	CarrierID string                             `json:"carrier_id,omitempty"`
+	From      string                             `json:"from,omitempty"`
+	To        string                             `json:"to,omitempty"`
+	Records   []reconciliationInputRecordRequest `json:"records,omitempty"`
+}
+
+type handleReconciliationCaseRequest struct {
+	Action     string `json:"action"`
+	OperatorID string `json:"operator_id,omitempty"`
+	Note       string `json:"note,omitempty"`
+}
+
 type upsertControlTowerSubscriptionRequest struct {
 	ID              string         `json:"id,omitempty"`
 	Name            string         `json:"name"`

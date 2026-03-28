@@ -35,6 +35,7 @@ type Handler struct {
 	addressSvc     *logisticssvc.AddressValidationService
 	optimizerSvc   *logisticssvc.RoutingOptimizerService
 	settlementSvc  *logisticssvc.SettlementService
+	reconcileSvc   *logisticssvc.ReconciliationService
 	controlSvc     *logisticssvc.ControlTowerService
 	allocationSvc  *logisticssvc.AllocationService
 	lastmileSvc    *logisticssvc.LastmileRecoveryService
@@ -66,6 +67,7 @@ func NewHandler(
 	addressSvc *logisticssvc.AddressValidationService,
 	optimizerSvc *logisticssvc.RoutingOptimizerService,
 	settlementSvc *logisticssvc.SettlementService,
+	reconcileSvc *logisticssvc.ReconciliationService,
 	controlSvc *logisticssvc.ControlTowerService,
 	allocationSvc *logisticssvc.AllocationService,
 	lastmileSvc *logisticssvc.LastmileRecoveryService,
@@ -96,6 +98,7 @@ func NewHandler(
 		addressSvc:     addressSvc,
 		optimizerSvc:   optimizerSvc,
 		settlementSvc:  settlementSvc,
+		reconcileSvc:   reconcileSvc,
 		controlSvc:     controlSvc,
 		allocationSvc:  allocationSvc,
 		lastmileSvc:    lastmileSvc,

@@ -548,6 +548,63 @@ export type LogisticsSettlementDiff = {
   updatedAt: string;
 };
 
+export type LogisticsReconciliationBatch = {
+  id: string;
+  batchNo: string;
+  carrierId: string;
+  status: string;
+  recordCount: number;
+  matchedCount: number;
+  exceptionCount: number;
+  totalBillAmount: number;
+  totalBankAmount: number;
+  totalInvoiceAmount: number;
+  summary: Record<string, any>;
+  executedAt: string;
+  confirmedAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsReconciliationRecord = {
+  id: string;
+  batchId: string;
+  waybillId: string;
+  waybillNo: string;
+  carrierId: string;
+  billAmount: number;
+  bankAmount: number;
+  invoiceAmount: number;
+  diffAmount: number;
+  matchType: string;
+  suggestion: string;
+  status: string;
+  caseId: string;
+  handledAction: string;
+  handledNote: string;
+  handledBy: string;
+  handledAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsReconciliationCase = {
+  id: string;
+  caseNo: string;
+  batchId: string;
+  recordId: string;
+  carrierId: string;
+  waybillNo: string;
+  status: string;
+  reason: string;
+  suggestion: string;
+  actionNote: string;
+  handledBy: string;
+  handledAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type LogisticsControlTowerSummary = {
   windowHours: number;
   totalWaybills: number;
@@ -1126,6 +1183,63 @@ const normalizeSettlementDiff = (raw: RawRecord): LogisticsSettlementDiff => ({
   status: String(pick(raw, "status", "status") || ""),
   handledAction: String(pick(raw, "handledAction", "handled_action") || ""),
   handledNote: String(pick(raw, "handledNote", "handled_note") || ""),
+  handledBy: String(pick(raw, "handledBy", "handled_by") || ""),
+  handledAt: String(pick(raw, "handledAt", "handled_at") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeReconciliationBatch = (raw: RawRecord): LogisticsReconciliationBatch => ({
+  id: String(pick(raw, "id", "id") || ""),
+  batchNo: String(pick(raw, "batchNo", "batch_no") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  status: String(pick(raw, "status", "status") || ""),
+  recordCount: Number(pick(raw, "recordCount", "record_count") || 0),
+  matchedCount: Number(pick(raw, "matchedCount", "matched_count") || 0),
+  exceptionCount: Number(pick(raw, "exceptionCount", "exception_count") || 0),
+  totalBillAmount: Number(pick(raw, "totalBillAmount", "total_bill_amount") || 0),
+  totalBankAmount: Number(pick(raw, "totalBankAmount", "total_bank_amount") || 0),
+  totalInvoiceAmount: Number(pick(raw, "totalInvoiceAmount", "total_invoice_amount") || 0),
+  summary: (pick(raw, "summary", "summary") || {}) as Record<string, any>,
+  executedAt: String(pick(raw, "executedAt", "executed_at") || ""),
+  confirmedAt: String(pick(raw, "confirmedAt", "confirmed_at") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeReconciliationRecord = (raw: RawRecord): LogisticsReconciliationRecord => ({
+  id: String(pick(raw, "id", "id") || ""),
+  batchId: String(pick(raw, "batchId", "batch_id") || ""),
+  waybillId: String(pick(raw, "waybillId", "waybill_id") || ""),
+  waybillNo: String(pick(raw, "waybillNo", "waybill_no") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  billAmount: Number(pick(raw, "billAmount", "bill_amount") || 0),
+  bankAmount: Number(pick(raw, "bankAmount", "bank_amount") || 0),
+  invoiceAmount: Number(pick(raw, "invoiceAmount", "invoice_amount") || 0),
+  diffAmount: Number(pick(raw, "diffAmount", "diff_amount") || 0),
+  matchType: String(pick(raw, "matchType", "match_type") || ""),
+  suggestion: String(pick(raw, "suggestion", "suggestion") || ""),
+  status: String(pick(raw, "status", "status") || ""),
+  caseId: String(pick(raw, "caseId", "case_id") || ""),
+  handledAction: String(pick(raw, "handledAction", "handled_action") || ""),
+  handledNote: String(pick(raw, "handledNote", "handled_note") || ""),
+  handledBy: String(pick(raw, "handledBy", "handled_by") || ""),
+  handledAt: String(pick(raw, "handledAt", "handled_at") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeReconciliationCase = (raw: RawRecord): LogisticsReconciliationCase => ({
+  id: String(pick(raw, "id", "id") || ""),
+  caseNo: String(pick(raw, "caseNo", "case_no") || ""),
+  batchId: String(pick(raw, "batchId", "batch_id") || ""),
+  recordId: String(pick(raw, "recordId", "record_id") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  waybillNo: String(pick(raw, "waybillNo", "waybill_no") || ""),
+  status: String(pick(raw, "status", "status") || ""),
+  reason: String(pick(raw, "reason", "reason") || ""),
+  suggestion: String(pick(raw, "suggestion", "suggestion") || ""),
+  actionNote: String(pick(raw, "actionNote", "action_note") || ""),
   handledBy: String(pick(raw, "handledBy", "handled_by") || ""),
   handledAt: String(pick(raw, "handledAt", "handled_at") || ""),
   createdAt: String(pick(raw, "createdAt", "created_at") || ""),
@@ -2173,6 +2287,47 @@ export function useLogisticsApi() {
     confirmSettlementBatch: async (id: string, init?: any): Promise<LogisticsSettlementBatch> => {
       const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/settlement/batches/${id}/confirm`, {}, init));
       return normalizeSettlementBatch((raw || {}) as RawRecord);
+    },
+
+    listReconciliationBatches: async (
+      query?: { carrier_id?: string; status?: string; limit?: number },
+      init?: any,
+    ): Promise<LogisticsReconciliationBatch[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/reconciliation/batches`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeReconciliationBatch);
+    },
+
+    createReconciliationBatch: async (
+      payload: { carrier_id?: string; from?: string; to?: string; records?: Record<string, any>[] },
+      init?: any,
+    ): Promise<LogisticsReconciliationBatch> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/reconciliation/batches`, payload, init));
+      return normalizeReconciliationBatch((raw || {}) as RawRecord);
+    },
+
+    listReconciliationRecords: async (
+      query?: { batch_id?: string; status?: string; limit?: number },
+      init?: any,
+    ): Promise<LogisticsReconciliationRecord[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/reconciliation/records`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeReconciliationRecord);
+    },
+
+    listReconciliationCases: async (
+      query?: { batch_id?: string; status?: string; limit?: number },
+      init?: any,
+    ): Promise<LogisticsReconciliationCase[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/reconciliation/cases`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeReconciliationCase);
+    },
+
+    handleReconciliationCase: async (
+      id: string,
+      payload: { action: "confirm" | "appeal" | "close" | "manual_review"; operator_id?: string; note?: string },
+      init?: any,
+    ): Promise<LogisticsReconciliationCase> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/reconciliation/cases/${id}/handle`, payload, init));
+      return normalizeReconciliationCase((raw || {}) as RawRecord);
     },
 
     getControlTowerOverview: async (
