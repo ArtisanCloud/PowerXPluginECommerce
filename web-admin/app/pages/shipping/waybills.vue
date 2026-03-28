@@ -86,6 +86,9 @@
         </template>
         <template #actions-cell="{ row }">
           <div class="flex gap-2">
+            <UButton size="xs" variant="ghost" color="primary" @click="openAllocation(row.original)">
+              智能分单
+            </UButton>
             <UButton size="xs" variant="ghost" color="neutral" @click="openRoutingPreview(row.original)">
               联合路由仿真
             </UButton>
@@ -179,6 +182,38 @@
             <ul class="mt-2 space-y-1 text-xs">
               <li v-for="item in routingPreviewResult.candidates || []" :key="item.carrierId">
                 {{ item.carrierName }} · score={{ Number(item.finalScore || 0).toFixed(2) }}
+              </li>
+            </ul>
+          </UCard>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="allocationOpen" title="智能分单与手工改派">
+      <template #body>
+        <div class="space-y-3">
+          <p class="text-xs text-gray-500">
+            运单：{{ allocationForm.waybillNo || "-" }} / 订单：{{ allocationForm.orderId || "-" }}
+          </p>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <UInput v-model="allocationForm.warehouseId" placeholder="仓库ID（可选）" />
+            <UInput v-model="allocationForm.destinationZone" placeholder="目的区域（可选）" />
+            <UInput v-model="allocationForm.preferredCarrier" placeholder="偏好承运商（可选）" />
+            <UInput v-model="allocationForm.overrideCarrierId" placeholder="手工改派承运商ID" />
+          </div>
+          <div class="flex gap-2">
+            <UButton color="primary" :loading="allocationLoading" @click="runAllocation">自动分单</UButton>
+            <UButton color="warning" :loading="allocationLoading" :disabled="!allocationResult" @click="runOverrideAllocation">
+              手工改派
+            </UButton>
+          </div>
+          <UCard v-if="allocationResult">
+            <p class="text-sm">策略：{{ allocationResult.strategy }}</p>
+            <p class="text-sm">结果：{{ allocationResult.carrierName || allocationResult.carrierId }}</p>
+            <p class="text-xs text-gray-500">{{ allocationResult.reason }}</p>
+            <ul class="mt-2 space-y-1 text-xs">
+              <li v-for="item in allocationResult.candidates || []" :key="item.carrierId">
+                {{ item.carrierName }} · available={{ item.available }} · score={{ item.finalScore.toFixed(2) }}
               </li>
             </ul>
           </UCard>
@@ -314,6 +349,7 @@
 import type { TableColumn } from "@nuxt/ui";
 import type {
   LogisticsAddressValidation,
+  LogisticsAllocationResult,
   LogisticsExceptionOrchestrationRun,
   LogisticsExceptionOrchestrationRule,
   LogisticsGatewayFailureEvent,
@@ -371,6 +407,9 @@ const gatewayFailures = ref<LogisticsGatewayFailureEvent[]>([]);
 const routingPreviewOpen = ref(false);
 const routingPreviewLoading = ref(false);
 const routingPreviewResult = ref<any>(null);
+const allocationOpen = ref(false);
+const allocationLoading = ref(false);
+const allocationResult = ref<LogisticsAllocationResult | null>(null);
 const redeliveryOpen = ref(false);
 const redeliveryLoading = ref(false);
 const redeliveryTasks = ref<LogisticsRedeliveryTask[]>([]);
@@ -389,6 +428,15 @@ const routingForm = reactive({
   weight: 1,
   preferredCarrierId: "",
   preferredCarrierName: "",
+});
+const allocationForm = reactive({
+  waybillId: "",
+  waybillNo: "",
+  orderId: "",
+  warehouseId: "",
+  destinationZone: "",
+  preferredCarrier: "",
+  overrideCarrierId: "",
 });
 const redeliveryForm = reactive({
   taskId: "",
@@ -849,6 +897,49 @@ const openRoutingPreview = (waybill: Waybill) => {
   routingForm.preferredCarrierName = waybill.carrier;
   routingPreviewResult.value = null;
   routingPreviewOpen.value = true;
+};
+
+const openAllocation = (waybill: Waybill) => {
+  allocationForm.waybillId = waybill.id;
+  allocationForm.waybillNo = waybill.waybillNo;
+  allocationForm.orderId = waybill.orderNo;
+  allocationForm.preferredCarrier = waybill.carrierId || "";
+  allocationForm.overrideCarrierId = "";
+  allocationResult.value = null;
+  allocationOpen.value = true;
+};
+
+const runAllocation = async () => {
+  allocationLoading.value = true;
+  try {
+    allocationResult.value = await logisticsApi.allocateCarrier({
+      request_key: `waybill-alloc#${allocationForm.waybillId}#${Date.now()}`,
+      waybill_id: allocationForm.waybillId || undefined,
+      order_id: allocationForm.orderId || undefined,
+      warehouse_id: allocationForm.warehouseId || undefined,
+      destination_zone: allocationForm.destinationZone || undefined,
+      preferred_carrier: allocationForm.preferredCarrier || undefined,
+      strategy: "capacity_first",
+      operator_id: "admin",
+    });
+  } finally {
+    allocationLoading.value = false;
+  }
+};
+
+const runOverrideAllocation = async () => {
+  if (!allocationResult.value) return;
+  allocationLoading.value = true;
+  try {
+    allocationResult.value = await logisticsApi.overrideAllocation({
+      decision_id: allocationResult.value.decisionID,
+      carrier_id: allocationForm.overrideCarrierId || allocationForm.preferredCarrier,
+      reason: "manual reassignment",
+      operator_id: "admin",
+    });
+  } finally {
+    allocationLoading.value = false;
+  }
 };
 
 const previewRouting = async () => {

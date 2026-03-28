@@ -917,6 +917,20 @@
         </div>
         <div class="space-y-1">
           <UButton
+            to="/shipping/control-tower"
+            variant="ghost"
+            color="neutral"
+            class="w-full justify-start"
+            :class="{
+              'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
+                $route.path === '/shipping/control-tower',
+            }"
+          >
+            <UIcon name="i-heroicons-building-office-2" class="w-4 h-4 mr-3"/>
+            履约控制塔
+          </UButton>
+
+          <UButton
             to="/shipping/carriers"
             variant="ghost"
             color="neutral"

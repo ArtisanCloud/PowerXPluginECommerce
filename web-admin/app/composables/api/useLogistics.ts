@@ -548,6 +548,95 @@ export type LogisticsSettlementDiff = {
   updatedAt: string;
 };
 
+export type LogisticsControlTowerSummary = {
+  windowHours: number;
+  totalWaybills: number;
+  inTransitCount: number;
+  exceptionCount: number;
+  timeoutCount: number;
+  deliveredCount: number;
+  onTimeRate: number;
+  totalCost: number;
+  alertCount: number;
+};
+
+export type LogisticsControlTowerAlert = {
+  level: string;
+  code: string;
+  message: string;
+};
+
+export type LogisticsControlTowerOverview = {
+  summary: LogisticsControlTowerSummary;
+  alerts: LogisticsControlTowerAlert[];
+};
+
+export type LogisticsControlTowerDrilldownItem = {
+  waybillId: string;
+  waybillNo: string;
+  carrierId: string;
+  status: string;
+  warehouseId: string;
+  destinationZone: string;
+  costAmount: number;
+  elapsedHours: number;
+  timeoutRiskLevel: string;
+};
+
+export type LogisticsControlTowerSubscription = {
+  id: string;
+  name: string;
+  carrierId: string;
+  warehouseId: string;
+  destinationZone: string;
+  minOnTimeRate: number;
+  maxTimeoutCount: number;
+  maxCostAmount: number;
+  enabled: boolean;
+  config: Record<string, any>;
+  lastNotifiedAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsCapacityPlan = {
+  id: string;
+  name: string;
+  carrierId: string;
+  warehouseId: string;
+  destinationZone: string;
+  dailyCapacity: number;
+  reservedCapacity: number;
+  usedCapacity: number;
+  status: string;
+  config: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsAllocationCandidate = {
+  carrierId: string;
+  carrierName: string;
+  available: number;
+  usageRate: number;
+  timelinessScore: number;
+  costScore: number;
+  finalScore: number;
+  reason: string;
+};
+
+export type LogisticsAllocationResult = {
+  decisionID: string;
+  requestKey: string;
+  strategy: string;
+  carrierId: string;
+  carrierName: string;
+  manualOverride: boolean;
+  reason: string;
+  candidates: LogisticsAllocationCandidate[];
+  createdAt: string;
+};
+
 export type LogisticsRateQuoteResult = {
   templateId: string;
   template: string;
@@ -920,6 +1009,90 @@ const normalizeSettlementDiff = (raw: RawRecord): LogisticsSettlementDiff => ({
   handledAt: String(pick(raw, "handledAt", "handled_at") || ""),
   createdAt: String(pick(raw, "createdAt", "created_at") || ""),
   updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeControlTowerSummary = (raw: RawRecord): LogisticsControlTowerSummary => ({
+  windowHours: Number(pick(raw, "windowHours", "window_hours") || 24),
+  totalWaybills: Number(pick(raw, "totalWaybills", "total_waybills") || 0),
+  inTransitCount: Number(pick(raw, "inTransitCount", "in_transit_count") || 0),
+  exceptionCount: Number(pick(raw, "exceptionCount", "exception_count") || 0),
+  timeoutCount: Number(pick(raw, "timeoutCount", "timeout_count") || 0),
+  deliveredCount: Number(pick(raw, "deliveredCount", "delivered_count") || 0),
+  onTimeRate: Number(pick(raw, "onTimeRate", "on_time_rate") || 0),
+  totalCost: Number(pick(raw, "totalCost", "total_cost") || 0),
+  alertCount: Number(pick(raw, "alertCount", "alert_count") || 0),
+});
+
+const normalizeControlTowerAlert = (raw: RawRecord): LogisticsControlTowerAlert => ({
+  level: String(pick(raw, "level", "level") || ""),
+  code: String(pick(raw, "code", "code") || ""),
+  message: String(pick(raw, "message", "message") || ""),
+});
+
+const normalizeControlTowerDrilldownItem = (raw: RawRecord): LogisticsControlTowerDrilldownItem => ({
+  waybillId: String(pick(raw, "waybillId", "waybill_id") || ""),
+  waybillNo: String(pick(raw, "waybillNo", "waybill_no") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  status: String(pick(raw, "status", "status") || ""),
+  warehouseId: String(pick(raw, "warehouseId", "warehouse_id") || ""),
+  destinationZone: String(pick(raw, "destinationZone", "destination_zone") || ""),
+  costAmount: Number(pick(raw, "costAmount", "cost_amount") || 0),
+  elapsedHours: Number(pick(raw, "elapsedHours", "elapsed_hours") || 0),
+  timeoutRiskLevel: String(pick(raw, "timeoutRiskLevel", "timeout_risk_level") || ""),
+});
+
+const normalizeControlTowerSubscription = (raw: RawRecord): LogisticsControlTowerSubscription => ({
+  id: String(pick(raw, "id", "id") || ""),
+  name: String(pick(raw, "name", "name") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  warehouseId: String(pick(raw, "warehouseId", "warehouse_id") || ""),
+  destinationZone: String(pick(raw, "destinationZone", "destination_zone") || ""),
+  minOnTimeRate: Number(pick(raw, "minOnTimeRate", "min_on_time_rate") || 95),
+  maxTimeoutCount: Number(pick(raw, "maxTimeoutCount", "max_timeout_count") || 0),
+  maxCostAmount: Number(pick(raw, "maxCostAmount", "max_cost_amount") || 0),
+  enabled: Boolean(pick(raw, "enabled", "enabled")),
+  config: (pick(raw, "config", "config") || {}) as Record<string, any>,
+  lastNotifiedAt: String(pick(raw, "lastNotifiedAt", "last_notified_at") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeCapacityPlan = (raw: RawRecord): LogisticsCapacityPlan => ({
+  id: String(pick(raw, "id", "id") || ""),
+  name: String(pick(raw, "name", "name") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  warehouseId: String(pick(raw, "warehouseId", "warehouse_id") || ""),
+  destinationZone: String(pick(raw, "destinationZone", "destination_zone") || ""),
+  dailyCapacity: Number(pick(raw, "dailyCapacity", "daily_capacity") || 0),
+  reservedCapacity: Number(pick(raw, "reservedCapacity", "reserved_capacity") || 0),
+  usedCapacity: Number(pick(raw, "usedCapacity", "used_capacity") || 0),
+  status: String(pick(raw, "status", "status") || "active"),
+  config: (pick(raw, "config", "config") || {}) as Record<string, any>,
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeAllocationCandidate = (raw: RawRecord): LogisticsAllocationCandidate => ({
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  carrierName: String(pick(raw, "carrierName", "carrier_name") || ""),
+  available: Number(pick(raw, "available", "available") || 0),
+  usageRate: Number(pick(raw, "usageRate", "usage_rate") || 0),
+  timelinessScore: Number(pick(raw, "timelinessScore", "timeliness_score") || 0),
+  costScore: Number(pick(raw, "costScore", "cost_score") || 0),
+  finalScore: Number(pick(raw, "finalScore", "final_score") || 0),
+  reason: String(pick(raw, "reason", "reason") || ""),
+});
+
+const normalizeAllocationResult = (raw: RawRecord): LogisticsAllocationResult => ({
+  decisionID: String(pick(raw, "decisionID", "decision_id") || ""),
+  requestKey: String(pick(raw, "requestKey", "request_key") || ""),
+  strategy: String(pick(raw, "strategy", "strategy") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  carrierName: String(pick(raw, "carrierName", "carrier_name") || ""),
+  manualOverride: Boolean(pick(raw, "manualOverride", "manual_override")),
+  reason: String(pick(raw, "reason", "reason") || ""),
+  candidates: asArray<RawRecord>(pick(raw, "candidates", "candidates")).map(normalizeAllocationCandidate),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
 });
 
 const normalizeRoutingRule = (raw: RawRecord): LogisticsRoutingRule => ({
@@ -1758,6 +1931,82 @@ export function useLogisticsApi() {
     confirmSettlementBatch: async (id: string, init?: any): Promise<LogisticsSettlementBatch> => {
       const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/settlement/batches/${id}/confirm`, {}, init));
       return normalizeSettlementBatch((raw || {}) as RawRecord);
+    },
+
+    getControlTowerOverview: async (
+      query?: { carrier_id?: string; warehouse_id?: string; destination_zone?: string; window_hours?: number },
+      init?: any,
+    ): Promise<LogisticsControlTowerOverview> => {
+      const raw = await unwrap(
+        apiGet<ApiEnvelope<{ summary: RawRecord; alerts: RawRecord[] }>>(`${basePath}/control-tower/overview`, query, init),
+      );
+      return {
+        summary: normalizeControlTowerSummary((raw?.summary || {}) as RawRecord),
+        alerts: asArray<RawRecord>(raw?.alerts).map(normalizeControlTowerAlert),
+      };
+    },
+
+    getControlTowerDrilldown: async (
+      query?: {
+        carrier_id?: string;
+        warehouse_id?: string;
+        destination_zone?: string;
+        status?: string;
+        window_hours?: number;
+        limit?: number;
+      },
+      init?: any,
+    ): Promise<LogisticsControlTowerDrilldownItem[]> => {
+      const raw = await unwrap(
+        apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/control-tower/drilldown`, query, init),
+      );
+      return asArray<RawRecord>(raw?.items).map(normalizeControlTowerDrilldownItem);
+    },
+
+    listControlTowerSubscriptions: async (
+      query?: { enabled?: boolean },
+      init?: any,
+    ): Promise<LogisticsControlTowerSubscription[]> => {
+      const raw = await unwrap(
+        apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/control-tower/subscriptions`, query, init),
+      );
+      return asArray<RawRecord>(raw?.items).map(normalizeControlTowerSubscription);
+    },
+
+    upsertControlTowerSubscription: async (payload: Record<string, any>, init?: any): Promise<LogisticsControlTowerSubscription> => {
+      const id = String(payload.id || "").trim();
+      const path = id ? `${basePath}/control-tower/subscriptions/${id}` : `${basePath}/control-tower/subscriptions`;
+      const req = id ? apiPatch<ApiEnvelope<RawRecord>>(path, payload, init) : apiPost<ApiEnvelope<RawRecord>>(path, payload, init);
+      const raw = await unwrap(req);
+      return normalizeControlTowerSubscription((raw || {}) as RawRecord);
+    },
+
+    listAllocationPlans: async (
+      query?: { carrier_id?: string; warehouse_id?: string; destination_zone?: string; status?: string; limit?: number },
+      init?: any,
+    ): Promise<LogisticsCapacityPlan[]> => {
+      const raw = await unwrap(
+        apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/allocation/plans`, query, init),
+      );
+      return asArray<RawRecord>(raw?.items).map(normalizeCapacityPlan);
+    },
+
+    upsertAllocationPlan: async (payload: Record<string, any>, init?: any): Promise<LogisticsCapacityPlan> => {
+      const id = String(payload.id || "").trim();
+      const path = id ? `${basePath}/allocation/plans/${id}` : `${basePath}/allocation/plans`;
+      const req = id ? apiPatch<ApiEnvelope<RawRecord>>(path, payload, init) : apiPost<ApiEnvelope<RawRecord>>(path, payload, init);
+      const raw = await unwrap(req);
+      return normalizeCapacityPlan((raw || {}) as RawRecord);
+    },
+
+    allocateCarrier: async (payload: Record<string, any>, init?: any): Promise<LogisticsAllocationResult> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/allocation/allocate`, payload, init));
+      return normalizeAllocationResult((raw || {}) as RawRecord);
+    },
+
+    overrideAllocation: async (payload: Record<string, any>, init?: any): Promise<LogisticsAllocationResult> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/allocation/override`, payload, init));
+      return normalizeAllocationResult((raw || {}) as RawRecord);
     },
   };
 }

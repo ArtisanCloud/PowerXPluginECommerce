@@ -35,6 +35,8 @@ type Handler struct {
 	addressSvc    *logisticssvc.AddressValidationService
 	optimizerSvc  *logisticssvc.RoutingOptimizerService
 	settlementSvc *logisticssvc.SettlementService
+	controlSvc    *logisticssvc.ControlTowerService
+	allocationSvc *logisticssvc.AllocationService
 	webhookSvc    *logisticssvc.WebhookService
 }
 
@@ -61,6 +63,8 @@ func NewHandler(
 	addressSvc *logisticssvc.AddressValidationService,
 	optimizerSvc *logisticssvc.RoutingOptimizerService,
 	settlementSvc *logisticssvc.SettlementService,
+	controlSvc *logisticssvc.ControlTowerService,
+	allocationSvc *logisticssvc.AllocationService,
 	webhookSvc *logisticssvc.WebhookService,
 ) *Handler {
 	return &Handler{
@@ -86,6 +90,8 @@ func NewHandler(
 		addressSvc:    addressSvc,
 		optimizerSvc:  optimizerSvc,
 		settlementSvc: settlementSvc,
+		controlSvc:    controlSvc,
+		allocationSvc: allocationSvc,
 		webhookSvc:    webhookSvc,
 	}
 }
@@ -1274,6 +1280,233 @@ func (h *Handler) ConfirmSettlementBatch(c *gin.Context) {
 	}
 	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
 	row, err := h.settlementSvc.ConfirmBatch(c.Request.Context(), tenantUUID, batchID)
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) GetControlTowerOverview(c *gin.Context) {
+	if h == nil || h.controlSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "control tower service unavailable", nil)
+		return
+	}
+	windowHours := 24
+	if raw := strings.TrimSpace(c.Query("window_hours")); raw != "" {
+		if v, err := strconv.Atoi(raw); err == nil {
+			windowHours = v
+		}
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.controlSvc.Overview(c.Request.Context(), tenantUUID, logisticssvc.ControlTowerOverviewQuery{
+		CarrierID:       strings.TrimSpace(c.Query("carrier_id")),
+		WarehouseID:     strings.TrimSpace(c.Query("warehouse_id")),
+		DestinationZone: strings.TrimSpace(c.Query("destination_zone")),
+		WindowHours:     windowHours,
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) GetControlTowerDrilldown(c *gin.Context) {
+	if h == nil || h.controlSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "control tower service unavailable", nil)
+		return
+	}
+	windowHours := 24
+	if raw := strings.TrimSpace(c.Query("window_hours")); raw != "" {
+		if v, err := strconv.Atoi(raw); err == nil {
+			windowHours = v
+		}
+	}
+	limit := 50
+	if raw := strings.TrimSpace(c.Query("limit")); raw != "" {
+		if v, err := strconv.Atoi(raw); err == nil {
+			limit = v
+		}
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	rows, err := h.controlSvc.Drilldown(c.Request.Context(), tenantUUID, logisticssvc.ControlTowerDrilldownQuery{
+		CarrierID:       strings.TrimSpace(c.Query("carrier_id")),
+		WarehouseID:     strings.TrimSpace(c.Query("warehouse_id")),
+		DestinationZone: strings.TrimSpace(c.Query("destination_zone")),
+		Status:          strings.TrimSpace(c.Query("status")),
+		WindowHours:     windowHours,
+		Limit:           limit,
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, gin.H{"items": rows})
+}
+
+func (h *Handler) ListControlTowerSubscriptions(c *gin.Context) {
+	if h == nil || h.controlSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "control tower service unavailable", nil)
+		return
+	}
+	var enabled *bool
+	switch strings.ToLower(strings.TrimSpace(c.Query("enabled"))) {
+	case "true":
+		v := true
+		enabled = &v
+	case "false":
+		v := false
+		enabled = &v
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	rows, err := h.controlSvc.ListSubscriptions(c.Request.Context(), tenantUUID, enabled)
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, gin.H{"items": rows})
+}
+
+func (h *Handler) UpsertControlTowerSubscription(c *gin.Context) {
+	if h == nil || h.controlSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "control tower service unavailable", nil)
+		return
+	}
+	var payload upsertControlTowerSubscriptionRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		contracts.ResponseBadRequest(c, "invalid request body: "+err.Error())
+		return
+	}
+	if strings.TrimSpace(payload.ID) == "" {
+		payload.ID = strings.TrimSpace(c.Param("id"))
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.controlSvc.UpsertSubscription(c.Request.Context(), tenantUUID, logisticssvc.UpsertControlTowerSubscriptionRequest{
+		ID:              strings.TrimSpace(payload.ID),
+		Name:            strings.TrimSpace(payload.Name),
+		CarrierID:       strings.TrimSpace(payload.CarrierID),
+		WarehouseID:     strings.TrimSpace(payload.WarehouseID),
+		DestinationZone: strings.TrimSpace(payload.DestinationZone),
+		MinOnTimeRate:   payload.MinOnTimeRate,
+		MaxTimeoutCount: payload.MaxTimeoutCount,
+		MaxCostAmount:   payload.MaxCostAmount,
+		Enabled:         payload.Enabled,
+		Config:          payload.Config,
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) ListCapacityPlans(c *gin.Context) {
+	if h == nil || h.allocationSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "allocation service unavailable", nil)
+		return
+	}
+	limit := 100
+	if raw := strings.TrimSpace(c.Query("limit")); raw != "" {
+		if v, err := strconv.Atoi(raw); err == nil {
+			limit = v
+		}
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	rows, err := h.allocationSvc.ListPlans(c.Request.Context(), tenantUUID, logisticssvc.AllocationQuery{
+		CarrierID:       strings.TrimSpace(c.Query("carrier_id")),
+		WarehouseID:     strings.TrimSpace(c.Query("warehouse_id")),
+		DestinationZone: strings.TrimSpace(c.Query("destination_zone")),
+		Status:          strings.TrimSpace(c.Query("status")),
+		Limit:           limit,
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, gin.H{"items": rows})
+}
+
+func (h *Handler) UpsertCapacityPlan(c *gin.Context) {
+	if h == nil || h.allocationSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "allocation service unavailable", nil)
+		return
+	}
+	var payload upsertCapacityPlanRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		contracts.ResponseBadRequest(c, "invalid request body: "+err.Error())
+		return
+	}
+	if strings.TrimSpace(payload.ID) == "" {
+		payload.ID = strings.TrimSpace(c.Param("id"))
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.allocationSvc.UpsertPlan(c.Request.Context(), tenantUUID, logisticssvc.UpsertCapacityPlanRequest{
+		ID:               strings.TrimSpace(payload.ID),
+		Name:             strings.TrimSpace(payload.Name),
+		CarrierID:        strings.TrimSpace(payload.CarrierID),
+		WarehouseID:      strings.TrimSpace(payload.WarehouseID),
+		DestinationZone:  strings.TrimSpace(payload.DestinationZone),
+		DailyCapacity:    payload.DailyCapacity,
+		ReservedCapacity: payload.ReservedCapacity,
+		UsedCapacity:     payload.UsedCapacity,
+		Status:           strings.TrimSpace(payload.Status),
+		Config:           payload.Config,
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) AllocateCarrier(c *gin.Context) {
+	if h == nil || h.allocationSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "allocation service unavailable", nil)
+		return
+	}
+	var payload allocationRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		contracts.ResponseBadRequest(c, "invalid request body: "+err.Error())
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.allocationSvc.Allocate(c.Request.Context(), tenantUUID, logisticssvc.AllocationRequest{
+		RequestKey:       strings.TrimSpace(payload.RequestKey),
+		WaybillID:        strings.TrimSpace(payload.WaybillID),
+		OrderID:          strings.TrimSpace(payload.OrderID),
+		CarrierID:        strings.TrimSpace(payload.CarrierID),
+		WarehouseID:      strings.TrimSpace(payload.WarehouseID),
+		DestinationZone:  strings.TrimSpace(payload.DestinationZone),
+		Strategy:         strings.TrimSpace(payload.Strategy),
+		OperatorID:       strings.TrimSpace(payload.OperatorID),
+		PreferredCarrier: strings.TrimSpace(payload.PreferredCarrier),
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) OverrideAllocation(c *gin.Context) {
+	if h == nil || h.allocationSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "allocation service unavailable", nil)
+		return
+	}
+	var payload overrideAllocationRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		contracts.ResponseBadRequest(c, "invalid request body: "+err.Error())
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.allocationSvc.Override(c.Request.Context(), tenantUUID, logisticssvc.OverrideAllocationRequest{
+		RequestKey: strings.TrimSpace(payload.RequestKey),
+		DecisionID: strings.TrimSpace(payload.DecisionID),
+		CarrierID:  strings.TrimSpace(payload.CarrierID),
+		Reason:     strings.TrimSpace(payload.Reason),
+		OperatorID: strings.TrimSpace(payload.OperatorID),
+	})
 	if err != nil {
 		contracts.ResponseBadRequest(c, err.Error())
 		return

@@ -412,6 +412,78 @@
 
 ---
 
+## Phase 12: User Story 30 - 履约控制塔（Priority: P1）
+
+**Goal**: 建立履约运营总览，统一呈现在途、异常、SLA、成本与告警状态。
+
+**Independent Test**: 可独立完成“筛选仓/承运商/区域→查看核心指标→钻取异常单据→触发处置动作”流程。
+
+### Implementation for User Story 30
+
+- [X] T188 [P] [US30] 增加控制塔聚合快照模型与仓储（`backend/internal/entity/models/logistics/control_tower*.go`、`backend/internal/entity/repository/logistics/control_tower*_repository.go`）
+- [X] T189 [US30] 实现控制塔聚合服务（在途/异常/SLA/成本统一聚合与维度钻取）（`backend/internal/services/admin/logistics/control_tower_service.go`）
+- [X] T190 [US30] 实现控制塔接口（总览、钻取、告警订阅）（`backend/internal/transport/http/admin/logistics/{control_tower_handler.go,routes.go,dto.go}`）
+- [X] T191 [US30] 新增控制塔页面（大盘卡片、趋势图、异常钻取抽屉）（`web-admin/app/pages/shipping/control-tower.vue`）
+- [X] T192 [US30] 增加 US30 回归测试（聚合准确性、筛选一致性、跨租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+
+---
+
+## Phase 13: User Story 31 - 承运商智能分单与容量预留（Priority: P1）
+
+**Goal**: 在发货前按 SLA/成本/容量自动分单，并支持大促前容量预留与超配保护。
+
+**Independent Test**: 可独立完成“配置容量计划→自动分单→容量扣减→超限降级”流程。
+
+### Implementation for User Story 31
+
+- [X] T193 [P] [US31] 增加容量计划与分单决策模型（`backend/internal/entity/models/logistics/capacity_plan*.go`、`backend/internal/entity/models/logistics/allocation_decision*.go`）
+- [X] T194 [US31] 实现容量预留与智能分单服务（配额扣减、超限兜底、人工覆盖）（`backend/internal/services/admin/logistics/allocation_service.go`）
+- [X] T195 [US31] 实现分单与容量管理接口（计划管理、自动分配、手工改派）（`backend/internal/transport/http/admin/logistics/{allocation_handler.go,routes.go,dto.go}`）
+- [X] T196 [US31] 在运单/承运商页新增“智能分单与容量”视图（`web-admin/app/pages/shipping/{waybills.vue,carriers.vue}`）
+- [X] T197 [US31] 增加 US31 回归测试（容量扣减幂等、超限保护、规则优先级）（`backend/internal/services/admin/logistics/*_test.go`）
+
+---
+
+## Phase 14: User Story 32 - 末端异常自愈中心（Priority: P2）
+
+**Goal**: 针对延误/拒收/丢件等末端异常，自动触发改派、补发、退款等补偿动作并闭环。
+
+**Independent Test**: 可独立完成“异常触发→自动动作执行→人工接管→闭环归档”流程。
+
+### Implementation for User Story 32
+
+- [ ] T198 [P] [US32] 增加末端异常动作编排模型（`backend/internal/entity/models/logistics/lastmile_recovery*.go`）
+- [ ] T199 [US32] 实现自愈编排服务（策略命中、动作编排、重试与人工接管）（`backend/internal/services/admin/logistics/lastmile_recovery_service.go`）
+- [ ] T200 [US32] 实现自愈中心接口（规则、执行记录、手工介入）（`backend/internal/transport/http/admin/logistics/{lastmile_recovery_handler.go,routes.go,dto.go}`）
+- [ ] T201 [US32] 在运单页新增“末端异常自愈”面板（`web-admin/app/pages/shipping/waybills.vue`）
+- [ ] T202 [US32] 增加 US32 回归测试（动作幂等、重试策略、接管优先级）（`backend/internal/services/admin/logistics/*_test.go`）
+
+---
+
+## Phase 15: User Story 33 - 跨境履约扩展（Priority: P2）
+
+**Goal**: 打通跨境履约关键链路，覆盖清关资料校验、税费预估与国际轨迹标准化。
+
+**Independent Test**: 可独立完成“跨境单创建→资料校验→税费预估→轨迹同步”流程。
+
+### Implementation for User Story 33
+
+- [ ] T203 [P] [US33] 增加跨境资料与税费模型（`backend/internal/entity/models/logistics/crossborder*.go`）
+- [ ] T204 [US33] 实现跨境履约服务（资料校验、税费估算、标准化状态映射）（`backend/internal/services/admin/logistics/crossborder_service.go`）
+- [ ] T205 [US33] 实现跨境接口（资料管理、预估查询、轨迹映射）（`backend/internal/transport/http/admin/logistics/{crossborder_handler.go,routes.go,dto.go}`）
+- [ ] T206 [US33] 在运单页新增“跨境履约”区块（`web-admin/app/pages/shipping/waybills.vue`）
+- [ ] T207 [US33] 增加 US33 回归测试（校验规则、税费边界、状态映射准确性）（`backend/internal/services/admin/logistics/*_test.go`）
+
+---
+
+## Iteration-9 Polish
+
+- [ ] T208 [P] 更新 M10 quickstart 与执行记录模板（`specs/011-fulfillment-logistics/quickstart.md`）
+- [ ] T209 执行 M10 后端回归（`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment -count=1`）
+- [ ] T210 执行 M10 前端构建与页面回归（`make build-admin`）
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

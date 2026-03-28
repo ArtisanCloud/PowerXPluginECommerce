@@ -204,4 +204,22 @@ func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 	if settlementPerm.Resource != "com.powerx.plugins.ecommerce:logistics.settlement" {
 		t.Fatalf("unexpected resource %s", settlementPerm.Resource)
 	}
+
+	controlTowerKey := "GET:/api/v1/admin/logistics/control-tower/overview"
+	controlTowerPerm, ok := entries[controlTowerKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", controlTowerKey)
+	}
+	if controlTowerPerm.Resource != "com.powerx.plugins.ecommerce:logistics.control_tower" {
+		t.Fatalf("unexpected resource %s", controlTowerPerm.Resource)
+	}
+
+	allocationKey := "POST:/api/v1/admin/logistics/allocation/allocate"
+	allocationPerm, ok := entries[allocationKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", allocationKey)
+	}
+	if allocationPerm.Resource != "com.powerx.plugins.ecommerce:logistics.allocation" {
+		t.Fatalf("unexpected resource %s", allocationPerm.Resource)
+	}
 }

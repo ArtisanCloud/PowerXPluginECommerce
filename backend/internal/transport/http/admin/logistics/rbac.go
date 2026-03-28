@@ -148,6 +148,36 @@ func RBACEntries(prefix string) map[string]AuthX.Permission {
 		"POST:" + base + "/settlement/batches/:id/confirm": {
 			Resource: res("logistics.settlement"), Action: "manage",
 		},
+		"GET:" + base + "/control-tower/overview": {
+			Resource: res("logistics.control_tower"), Action: "read",
+		},
+		"GET:" + base + "/control-tower/drilldown": {
+			Resource: res("logistics.control_tower"), Action: "read",
+		},
+		"GET:" + base + "/control-tower/subscriptions": {
+			Resource: res("logistics.control_tower"), Action: "read",
+		},
+		"POST:" + base + "/control-tower/subscriptions": {
+			Resource: res("logistics.control_tower"), Action: "manage",
+		},
+		"PATCH:" + base + "/control-tower/subscriptions/:id": {
+			Resource: res("logistics.control_tower"), Action: "manage",
+		},
+		"GET:" + base + "/allocation/plans": {
+			Resource: res("logistics.allocation"), Action: "read",
+		},
+		"POST:" + base + "/allocation/plans": {
+			Resource: res("logistics.allocation"), Action: "manage",
+		},
+		"PATCH:" + base + "/allocation/plans/:id": {
+			Resource: res("logistics.allocation"), Action: "manage",
+		},
+		"POST:" + base + "/allocation/allocate": {
+			Resource: res("logistics.allocation"), Action: "manage",
+		},
+		"POST:" + base + "/allocation/override": {
+			Resource: res("logistics.allocation"), Action: "manage",
+		},
 		"POST:" + base + "/webhook": {Resource: res("logistics.webhook"), Action: "manage"},
 	}
 }

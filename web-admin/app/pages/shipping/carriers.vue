@@ -31,6 +31,33 @@
 
     <UCard>
       <template #header>
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">智能分单容量计划</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400">维护承运商配额，供自动分单使用。</p>
+          </div>
+          <UButton size="sm" color="primary" :loading="planSubmitting" @click="createCapacityPlan">
+            新增容量计划
+          </UButton>
+        </div>
+      </template>
+      <div class="grid gap-2 md:grid-cols-5">
+        <UInput v-model="planForm.name" placeholder="计划名称" />
+        <UInput v-model="planForm.carrierId" placeholder="承运商ID" />
+        <UInput v-model="planForm.warehouseId" placeholder="仓库ID（可选）" />
+        <UInput v-model="planForm.destinationZone" placeholder="目的区域（可选）" />
+        <UInput v-model.number="planForm.dailyCapacity" type="number" placeholder="日容量" />
+      </div>
+      <ul class="mt-3 space-y-2 text-xs">
+        <li v-for="item in capacityPlans" :key="item.id" class="rounded border border-gray-200 p-2 dark:border-gray-800">
+          {{ item.name }} · {{ item.carrierId }} · 容量 {{ item.usedCapacity }}/{{ item.dailyCapacity }}
+        </li>
+        <li v-if="!capacityPlans.length" class="text-gray-500">暂无计划</li>
+      </ul>
+    </UCard>
+
+    <UCard>
+      <template #header>
         <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">承运商列表</h3>
@@ -152,6 +179,8 @@ type Carrier = {
 
 const logisticsApi = useLogisticsApi();
 const carriers = ref<Carrier[]>([]);
+const capacityPlans = ref<any[]>([]);
+const planSubmitting = ref(false);
 const routingPreviewOpen = ref(false);
 const routingPreviewLoading = ref(false);
 const routingPreviewResult = ref<any>(null);
@@ -162,6 +191,13 @@ const routingForm = reactive({
   weight: 1,
   preferredCarrierId: "",
   preferredCarrierName: "",
+});
+const planForm = reactive({
+  name: "",
+  carrierId: "",
+  warehouseId: "",
+  destinationZone: "",
+  dailyCapacity: 50,
 });
 
 const keyword = ref("");
@@ -200,11 +236,29 @@ const loadCarriers = async () => {
       rawCapabilities: cap,
     };
   });
+  capacityPlans.value = await logisticsApi.listAllocationPlans({ limit: 50 });
 };
 
 onMounted(() => {
   loadCarriers();
 });
+
+const createCapacityPlan = async () => {
+  planSubmitting.value = true;
+  try {
+    await logisticsApi.upsertAllocationPlan({
+      name: planForm.name || `计划-${Date.now()}`,
+      carrier_id: planForm.carrierId,
+      warehouse_id: planForm.warehouseId || undefined,
+      destination_zone: planForm.destinationZone || undefined,
+      daily_capacity: Number(planForm.dailyCapacity || 0),
+      status: "active",
+    });
+    await loadCarriers();
+  } finally {
+    planSubmitting.value = false;
+  }
+};
 
 const statusOptions = [
   { label: "全部状态", value: "" },

@@ -294,3 +294,49 @@ type handleSettlementDiffRequest struct {
 	OperatorID string `json:"operator_id,omitempty"`
 	Note       string `json:"note,omitempty"`
 }
+
+type upsertControlTowerSubscriptionRequest struct {
+	ID              string         `json:"id,omitempty"`
+	Name            string         `json:"name"`
+	CarrierID       string         `json:"carrier_id,omitempty"`
+	WarehouseID     string         `json:"warehouse_id,omitempty"`
+	DestinationZone string         `json:"destination_zone,omitempty"`
+	MinOnTimeRate   float64        `json:"min_on_time_rate,omitempty"`
+	MaxTimeoutCount int            `json:"max_timeout_count,omitempty"`
+	MaxCostAmount   float64        `json:"max_cost_amount,omitempty"`
+	Enabled         *bool          `json:"enabled,omitempty"`
+	Config          map[string]any `json:"config,omitempty"`
+}
+
+type upsertCapacityPlanRequest struct {
+	ID               string         `json:"id,omitempty"`
+	Name             string         `json:"name"`
+	CarrierID        string         `json:"carrier_id"`
+	WarehouseID      string         `json:"warehouse_id,omitempty"`
+	DestinationZone  string         `json:"destination_zone,omitempty"`
+	DailyCapacity    int            `json:"daily_capacity"`
+	ReservedCapacity int            `json:"reserved_capacity,omitempty"`
+	UsedCapacity     int            `json:"used_capacity,omitempty"`
+	Status           string         `json:"status,omitempty"`
+	Config           map[string]any `json:"config,omitempty"`
+}
+
+type allocationRequest struct {
+	RequestKey       string `json:"request_key,omitempty"`
+	WaybillID        string `json:"waybill_id,omitempty"`
+	OrderID          string `json:"order_id,omitempty"`
+	CarrierID        string `json:"carrier_id,omitempty"`
+	WarehouseID      string `json:"warehouse_id,omitempty"`
+	DestinationZone  string `json:"destination_zone,omitempty"`
+	Strategy         string `json:"strategy,omitempty"`
+	OperatorID       string `json:"operator_id,omitempty"`
+	PreferredCarrier string `json:"preferred_carrier,omitempty"`
+}
+
+type overrideAllocationRequest struct {
+	RequestKey string `json:"request_key,omitempty"`
+	DecisionID string `json:"decision_id,omitempty"`
+	CarrierID  string `json:"carrier_id"`
+	Reason     string `json:"reason,omitempty"`
+	OperatorID string `json:"operator_id,omitempty"`
+}

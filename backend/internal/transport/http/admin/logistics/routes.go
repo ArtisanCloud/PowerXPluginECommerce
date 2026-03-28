@@ -39,6 +39,8 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 		logisticssvc.NewAddressValidationService(deps),
 		logisticssvc.NewRoutingOptimizerService(deps),
 		logisticssvc.NewSettlementService(deps),
+		logisticssvc.NewControlTowerService(deps),
+		logisticssvc.NewAllocationService(deps),
 		logisticssvc.NewWebhookService(deps),
 	)
 
@@ -126,6 +128,16 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.GET("/settlement/diffs", handler.ListSettlementDiffs)
 	rg.POST("/settlement/diffs/:id/handle", handler.HandleSettlementDiff)
 	rg.POST("/settlement/batches/:id/confirm", handler.ConfirmSettlementBatch)
+	rg.GET("/control-tower/overview", handler.GetControlTowerOverview)
+	rg.GET("/control-tower/drilldown", handler.GetControlTowerDrilldown)
+	rg.GET("/control-tower/subscriptions", handler.ListControlTowerSubscriptions)
+	rg.POST("/control-tower/subscriptions", handler.UpsertControlTowerSubscription)
+	rg.PATCH("/control-tower/subscriptions/:id", handler.UpsertControlTowerSubscription)
+	rg.GET("/allocation/plans", handler.ListCapacityPlans)
+	rg.POST("/allocation/plans", handler.UpsertCapacityPlan)
+	rg.PATCH("/allocation/plans/:id", handler.UpsertCapacityPlan)
+	rg.POST("/allocation/allocate", handler.AllocateCarrier)
+	rg.POST("/allocation/override", handler.OverrideAllocation)
 
 	rg.POST("/webhook", handler.HandleWebhook)
 	return rg
