@@ -186,4 +186,22 @@ func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 	if addressCheckPerm.Resource != "com.powerx.plugins.ecommerce:logistics.address_validation" {
 		t.Fatalf("unexpected resource %s", addressCheckPerm.Resource)
 	}
+
+	optimizerKey := "POST:/api/v1/admin/logistics/routing/optimizer/simulate"
+	optimizerPerm, ok := entries[optimizerKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", optimizerKey)
+	}
+	if optimizerPerm.Resource != "com.powerx.plugins.ecommerce:logistics.routing_optimizer" {
+		t.Fatalf("unexpected resource %s", optimizerPerm.Resource)
+	}
+
+	settlementKey := "POST:/api/v1/admin/logistics/settlement/batches/:id/confirm"
+	settlementPerm, ok := entries[settlementKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", settlementKey)
+	}
+	if settlementPerm.Resource != "com.powerx.plugins.ecommerce:logistics.settlement" {
+		t.Fatalf("unexpected resource %s", settlementPerm.Resource)
+	}
 }

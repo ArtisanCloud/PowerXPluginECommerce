@@ -260,3 +260,37 @@ type checkAddressValidationRequest struct {
 	Address    string         `json:"address"`
 	Context    map[string]any `json:"context,omitempty"`
 }
+
+type upsertRoutingOptimizerStrategyRequest struct {
+	Name             string         `json:"name,omitempty"`
+	TimelinessWeight float64        `json:"timeliness_weight"`
+	CostWeight       float64        `json:"cost_weight"`
+	QuotaWeight      float64        `json:"quota_weight"`
+	RiskWeight       float64        `json:"risk_weight"`
+	FallbackStrategy string         `json:"fallback_strategy,omitempty"`
+	Enabled          *bool          `json:"enabled,omitempty"`
+	Config           map[string]any `json:"config,omitempty"`
+}
+
+type simulateRoutingOptimizerRequest struct {
+	RequestKey          string   `json:"request_key,omitempty"`
+	WarehouseID         string   `json:"warehouse_id,omitempty"`
+	DestinationZone     string   `json:"destination_zone,omitempty"`
+	Weight              float64  `json:"weight,omitempty"`
+	OrderAmount         float64  `json:"order_amount,omitempty"`
+	PreferredCarrierID  string   `json:"preferred_carrier_id,omitempty"`
+	AvailableCarrierIDs []string `json:"available_carrier_ids,omitempty"`
+	RealtimeDegraded    bool     `json:"realtime_degraded,omitempty"`
+}
+
+type createSettlementBatchRequest struct {
+	CarrierID string `json:"carrier_id,omitempty"`
+	From      string `json:"from,omitempty"`
+	To        string `json:"to,omitempty"`
+}
+
+type handleSettlementDiffRequest struct {
+	Action     string `json:"action"`
+	OperatorID string `json:"operator_id,omitempty"`
+	Note       string `json:"note,omitempty"`
+}

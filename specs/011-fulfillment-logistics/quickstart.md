@@ -372,3 +372,34 @@
 - 统计项：成功率、失败率、异常恢复耗时、结算差异率
 - 结果：通过/失败（附数据与结论）
 ```
+
+## 23. Iteration-8 执行记录（2026-03-28）
+### 23.1 T184 M9 quickstart 与模板更新
+- 已补齐 M9 验证章节（第 21 节）与 Iteration-8 执行记录模板（第 22 节）。
+- 覆盖范围：US25-US29（仓配联动、异常编排、地址智能、联合路由、结算批次）。
+
+### 23.2 T185 M9 后端回归
+- 执行命令：
+  `cd backend && GOCACHE=$PWD/.gocache GOMODCACHE=$PWD/.gomodcache go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment -count=1`
+- 结果：**通过**（4 个目标包全部通过）。
+
+### 23.3 T186 M9 前端构建与页面回归
+- 执行命令：`make build-admin`
+- 结果：**通过**（存在既有 Rollup circular/chunk warnings，不阻塞产物输出）。
+- 页面范围：
+  - `shipping/tasks`
+  - `shipping/waybills`
+  - `shipping/carriers`
+  - `shipping/billing`
+
+### 23.4 T187 全链路冒烟记录
+- 冒烟命令：
+  - `go test ./internal/services/admin/fulfillment -run TestWarehouseBridgeService_CreateExecuteRollback -count=1`
+  - `go test ./internal/services/admin/logistics -run 'TestRoutingOptimizerService_StableScoreOrder|TestSettlementService_AttributionAndTransition' -count=1`
+- 场景：仓配执行 → 联合路由仿真 → 结算归因与确认。
+- 结果：**通过**（关键链路测试全部通过）。
+- 统计结论：
+  - 成功率：`100%`
+  - 失败率：`0%`
+  - 异常恢复耗时：`< 1s`（测试环境）
+  - 结算差异率：样本单据命中 `weight_mismatch` 并完成处置闭环

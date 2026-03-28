@@ -474,6 +474,80 @@ export type LogisticsAddressValidation = {
   updatedAt: string;
 };
 
+export type LogisticsRoutingOptimizerStrategy = {
+  id: string;
+  name: string;
+  timelinessWeight: number;
+  costWeight: number;
+  quotaWeight: number;
+  riskWeight: number;
+  fallbackStrategy: string;
+  enabled: boolean;
+  config: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsRoutingOptimizerCandidate = {
+  carrierId: string;
+  carrierName: string;
+  finalScore: number;
+  timeliness: number;
+  cost: number;
+  quota: number;
+  risk: number;
+  explain: string;
+};
+
+export type LogisticsRoutingOptimizerSimulation = {
+  requestKey: string;
+  profileID: string;
+  strategy: string;
+  degraded: boolean;
+  reason: string;
+  carrierId: string;
+  carrierName: string;
+  explain: string;
+  candidates: LogisticsRoutingOptimizerCandidate[];
+  createdAt: string;
+};
+
+export type LogisticsSettlementBatch = {
+  id: string;
+  batchNo: string;
+  carrierId: string;
+  status: string;
+  waybillCount: number;
+  diffCount: number;
+  totalExpectedFee: number;
+  totalActualFee: number;
+  totalDiffAmount: number;
+  suggestionSummary: Record<string, any>;
+  confirmedAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsSettlementDiff = {
+  id: string;
+  batchId: string;
+  waybillId: string;
+  waybillNo: string;
+  carrierId: string;
+  expectedFee: number;
+  actualFee: number;
+  diffAmount: number;
+  attribution: string;
+  suggestion: string;
+  status: string;
+  handledAction: string;
+  handledNote: string;
+  handledBy: string;
+  handledAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type LogisticsRateQuoteResult = {
   templateId: string;
   template: string;
@@ -770,6 +844,80 @@ const normalizeAddressValidation = (raw: RawRecord): LogisticsAddressValidation 
   suggestion: String(pick(raw, "suggestion", "suggestion") || ""),
   needManualReview: Boolean(pick(raw, "needManualReview", "need_manual_review")),
   metadata: (pick(raw, "metadata", "metadata") || {}) as Record<string, any>,
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeRoutingOptimizerStrategy = (raw: RawRecord): LogisticsRoutingOptimizerStrategy => ({
+  id: String(pick(raw, "id", "id") || ""),
+  name: String(pick(raw, "name", "name") || ""),
+  timelinessWeight: Number(pick(raw, "timelinessWeight", "timeliness_weight") || 0.4),
+  costWeight: Number(pick(raw, "costWeight", "cost_weight") || 0.3),
+  quotaWeight: Number(pick(raw, "quotaWeight", "quota_weight") || 0.2),
+  riskWeight: Number(pick(raw, "riskWeight", "risk_weight") || 0.1),
+  fallbackStrategy: String(pick(raw, "fallbackStrategy", "fallback_strategy") || "highest_timeliness"),
+  enabled: Boolean(pick(raw, "enabled", "enabled")),
+  config: (pick(raw, "config", "config") || {}) as Record<string, any>,
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeRoutingOptimizerCandidate = (raw: RawRecord): LogisticsRoutingOptimizerCandidate => ({
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  carrierName: String(pick(raw, "carrierName", "carrier_name") || ""),
+  finalScore: Number(pick(raw, "finalScore", "final_score") || 0),
+  timeliness: Number(pick(raw, "timeliness", "timeliness") || 0),
+  cost: Number(pick(raw, "cost", "cost") || 0),
+  quota: Number(pick(raw, "quota", "quota") || 0),
+  risk: Number(pick(raw, "risk", "risk") || 0),
+  explain: String(pick(raw, "explain", "explain") || ""),
+});
+
+const normalizeRoutingOptimizerSimulation = (raw: RawRecord): LogisticsRoutingOptimizerSimulation => ({
+  requestKey: String(pick(raw, "requestKey", "request_key") || ""),
+  profileID: String(pick(raw, "profileID", "profile_id") || ""),
+  strategy: String(pick(raw, "strategy", "strategy") || ""),
+  degraded: Boolean(pick(raw, "degraded", "degraded")),
+  reason: String(pick(raw, "reason", "reason") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  carrierName: String(pick(raw, "carrierName", "carrier_name") || ""),
+  explain: String(pick(raw, "explain", "explain") || ""),
+  candidates: asArray<RawRecord>(pick(raw, "candidates", "candidates")).map(normalizeRoutingOptimizerCandidate),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+});
+
+const normalizeSettlementBatch = (raw: RawRecord): LogisticsSettlementBatch => ({
+  id: String(pick(raw, "id", "id") || ""),
+  batchNo: String(pick(raw, "batchNo", "batch_no") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  status: String(pick(raw, "status", "status") || ""),
+  waybillCount: Number(pick(raw, "waybillCount", "waybill_count") || 0),
+  diffCount: Number(pick(raw, "diffCount", "diff_count") || 0),
+  totalExpectedFee: Number(pick(raw, "totalExpectedFee", "total_expected_fee") || 0),
+  totalActualFee: Number(pick(raw, "totalActualFee", "total_actual_fee") || 0),
+  totalDiffAmount: Number(pick(raw, "totalDiffAmount", "total_diff_amount") || 0),
+  suggestionSummary: (pick(raw, "suggestionSummary", "suggestion_summary") || {}) as Record<string, any>,
+  confirmedAt: String(pick(raw, "confirmedAt", "confirmed_at") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeSettlementDiff = (raw: RawRecord): LogisticsSettlementDiff => ({
+  id: String(pick(raw, "id", "id") || ""),
+  batchId: String(pick(raw, "batchId", "batch_id") || ""),
+  waybillId: String(pick(raw, "waybillId", "waybill_id") || ""),
+  waybillNo: String(pick(raw, "waybillNo", "waybill_no") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  expectedFee: Number(pick(raw, "expectedFee", "expected_fee") || 0),
+  actualFee: Number(pick(raw, "actualFee", "actual_fee") || 0),
+  diffAmount: Number(pick(raw, "diffAmount", "diff_amount") || 0),
+  attribution: String(pick(raw, "attribution", "attribution") || ""),
+  suggestion: String(pick(raw, "suggestion", "suggestion") || ""),
+  status: String(pick(raw, "status", "status") || ""),
+  handledAction: String(pick(raw, "handledAction", "handled_action") || ""),
+  handledNote: String(pick(raw, "handledNote", "handled_note") || ""),
+  handledBy: String(pick(raw, "handledBy", "handled_by") || ""),
+  handledAt: String(pick(raw, "handledAt", "handled_at") || ""),
   createdAt: String(pick(raw, "createdAt", "created_at") || ""),
   updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
 });
@@ -1557,6 +1705,59 @@ export function useLogisticsApi() {
     ): Promise<LogisticsAddressValidation[]> => {
       const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/address-validation/records`, query, init));
       return asArray<RawRecord>(raw?.items).map(normalizeAddressValidation);
+    },
+
+    getRoutingOptimizerStrategy: async (init?: any): Promise<LogisticsRoutingOptimizerStrategy> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<RawRecord>>(`${basePath}/routing/optimizer/strategy`, undefined, init));
+      return normalizeRoutingOptimizerStrategy((raw || {}) as RawRecord);
+    },
+
+    upsertRoutingOptimizerStrategy: async (payload: Record<string, any>, init?: any): Promise<LogisticsRoutingOptimizerStrategy> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/routing/optimizer/strategy`, payload, init));
+      return normalizeRoutingOptimizerStrategy((raw || {}) as RawRecord);
+    },
+
+    simulateRoutingOptimizer: async (payload: Record<string, any>, init?: any): Promise<LogisticsRoutingOptimizerSimulation> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/routing/optimizer/simulate`, payload, init));
+      return normalizeRoutingOptimizerSimulation((raw || {}) as RawRecord);
+    },
+
+    listSettlementBatches: async (
+      query?: { carrier_id?: string; status?: string; limit?: number },
+      init?: any,
+    ): Promise<LogisticsSettlementBatch[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/settlement/batches`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeSettlementBatch);
+    },
+
+    createSettlementBatch: async (
+      payload: { carrier_id?: string; from?: string; to?: string },
+      init?: any,
+    ): Promise<LogisticsSettlementBatch> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/settlement/batches`, payload, init));
+      return normalizeSettlementBatch((raw || {}) as RawRecord);
+    },
+
+    listSettlementDiffs: async (
+      query?: { batch_id?: string; status?: string; limit?: number },
+      init?: any,
+    ): Promise<LogisticsSettlementDiff[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/settlement/diffs`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeSettlementDiff);
+    },
+
+    handleSettlementDiff: async (
+      id: string,
+      payload: { action: "accept" | "dispute"; operator_id?: string; note?: string },
+      init?: any,
+    ): Promise<LogisticsSettlementDiff> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/settlement/diffs/${id}/handle`, payload, init));
+      return normalizeSettlementDiff((raw || {}) as RawRecord);
+    },
+
+    confirmSettlementBatch: async (id: string, init?: any): Promise<LogisticsSettlementBatch> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/settlement/batches/${id}/confirm`, {}, init));
+      return normalizeSettlementBatch((raw || {}) as RawRecord);
     },
   };
 }

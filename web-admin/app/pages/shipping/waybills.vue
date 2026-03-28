@@ -87,7 +87,7 @@
         <template #actions-cell="{ row }">
           <div class="flex gap-2">
             <UButton size="xs" variant="ghost" color="neutral" @click="openRoutingPreview(row.original)">
-              路由预览
+              联合路由仿真
             </UButton>
             <UButton size="xs" variant="ghost" color="warning" @click="openRedelivery(row.original)">
               失败重派
@@ -157,7 +157,7 @@
       </ol>
     </UCard>
 
-    <UModal v-model:open="routingPreviewOpen" title="仓配路由预览">
+    <UModal v-model:open="routingPreviewOpen" title="联合路由仿真">
       <template #body>
         <div class="space-y-3">
           <div class="grid gap-2 sm:grid-cols-2">
@@ -170,14 +170,17 @@
             运单：{{ routingForm.waybillNo || "-" }}，偏好承运商：{{ routingForm.preferredCarrierName || "未指定" }}
           </div>
           <UButton color="primary" :loading="routingPreviewLoading" @click="previewRouting">
-            预览路由
+            执行仿真
           </UButton>
           <UCard v-if="routingPreviewResult">
-            <p class="text-sm">命中策略：{{ routingPreviewResult.strategy }}（{{ routingPreviewResult.reason }}）</p>
-            <p class="text-sm">结果承运商：{{ routingPreviewResult.carrierName }} / {{ routingPreviewResult.serviceCode }}</p>
-            <p class="text-xs text-gray-500">
-              命中规则：{{ routingPreviewResult.matchedRuleName || routingPreviewResult.matchedRuleId || "无（兜底）" }}
-            </p>
+            <p class="text-sm">策略：{{ routingPreviewResult.strategy }}（{{ routingPreviewResult.reason }}）</p>
+            <p class="text-sm">结果承运商：{{ routingPreviewResult.carrierName }}</p>
+            <p class="text-xs text-gray-500">{{ routingPreviewResult.explain || "-" }}</p>
+            <ul class="mt-2 space-y-1 text-xs">
+              <li v-for="item in routingPreviewResult.candidates || []" :key="item.carrierId">
+                {{ item.carrierName }} · score={{ Number(item.finalScore || 0).toFixed(2) }}
+              </li>
+            </ul>
           </UCard>
         </div>
       </template>
@@ -851,10 +854,10 @@ const openRoutingPreview = (waybill: Waybill) => {
 const previewRouting = async () => {
   routingPreviewLoading.value = true;
   try {
-    routingPreviewResult.value = await logisticsApi.previewRouting({
+    routingPreviewResult.value = await logisticsApi.simulateRoutingOptimizer({
+      request_key: `waybill-sim#${Date.now()}`,
       warehouse_id: routingForm.warehouseId || undefined,
       destination_zone: routingForm.destinationZone || undefined,
-      service_code: routingForm.serviceCode || undefined,
       weight: Number(routingForm.weight || 0),
       preferred_carrier_id: routingForm.preferredCarrierId || undefined,
     });

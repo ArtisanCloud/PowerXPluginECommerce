@@ -68,6 +68,39 @@
         </template>
       </UTable>
     </UCard>
+
+    <UCard>
+      <template #header>
+        <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">结算批次与归因建议</h3>
+          <div class="flex gap-2">
+            <UButton color="warning" variant="soft" @click="createSettlementBatch">创建结算批次</UButton>
+            <UButton color="neutral" variant="ghost" @click="loadSettlementData">刷新批次</UButton>
+          </div>
+        </div>
+      </template>
+      <UTable :columns="settlementBatchColumns" :data="settlementBatches">
+        <template #actions-cell="{ row }">
+          <div class="flex gap-2">
+            <UButton size="xs" variant="ghost" color="info" @click="selectSettlementBatch(row.original.id)">查看差异</UButton>
+            <UButton size="xs" variant="ghost" color="success" @click="confirmSettlementBatch(row.original.id)">确认批次</UButton>
+          </div>
+        </template>
+      </UTable>
+      <UCard class="mt-3" v-if="settlementDiffs.length">
+        <template #header>
+          <h4 class="text-sm font-semibold">归因建议（批次差异）</h4>
+        </template>
+        <UTable :columns="settlementDiffColumns" :data="settlementDiffs">
+          <template #actions-cell="{ row }">
+            <div class="flex gap-2">
+              <UButton size="xs" variant="ghost" color="success" @click="handleSettlementDiff(row.original.id, 'accept')">接受</UButton>
+              <UButton size="xs" variant="ghost" color="warning" @click="handleSettlementDiff(row.original.id, 'dispute')">发起争议</UButton>
+            </div>
+          </template>
+        </UTable>
+      </UCard>
+    </UCard>
   </div>
 </template>
 
@@ -84,6 +117,9 @@ const carrierId = ref("");
 const summaryRows = ref<any[]>([]);
 const itemRows = ref<any[]>([]);
 const caseRows = ref<any[]>([]);
+const settlementBatches = ref<any[]>([]);
+const settlementDiffs = ref<any[]>([]);
+const selectedSettlementBatchId = ref("");
 const newCase = reactive({
   waybillId: "",
   reason: "",
@@ -119,6 +155,25 @@ const caseColumns = computed<TableColumn<any>[]>(() => [
   { id: "actions", header: "操作" },
 ]);
 
+const settlementBatchColumns = computed<TableColumn<any>[]>(() => [
+  { accessorKey: "batchNo", header: "批次号" },
+  { accessorKey: "carrierId", header: "承运商ID" },
+  { accessorKey: "status", header: "状态" },
+  { accessorKey: "waybillCount", header: "运单数" },
+  { accessorKey: "diffCount", header: "待处理差异" },
+  { accessorKey: "totalDiffAmount", header: "总差异金额" },
+  { id: "actions", header: "操作" },
+]);
+
+const settlementDiffColumns = computed<TableColumn<any>[]>(() => [
+  { accessorKey: "waybillNo", header: "运单号" },
+  { accessorKey: "attribution", header: "归因" },
+  { accessorKey: "suggestion", header: "建议动作" },
+  { accessorKey: "diffAmount", header: "差异金额" },
+  { accessorKey: "status", header: "状态" },
+  { id: "actions", header: "处理" },
+]);
+
 const caseStatusMeta = (status: string) => {
   switch (status) {
     case "confirmed":
@@ -141,6 +196,50 @@ const loadSnapshot = async () => {
   caseRows.value = await logisticsApi.listBillingCases({
     carrier_id: carrierId.value || undefined,
   });
+  await loadSettlementData();
+};
+
+const loadSettlementData = async () => {
+  settlementBatches.value = await logisticsApi.listSettlementBatches({
+    carrier_id: carrierId.value || undefined,
+    limit: 20,
+  });
+  if (selectedSettlementBatchId.value) {
+    settlementDiffs.value = await logisticsApi.listSettlementDiffs({
+      batch_id: selectedSettlementBatchId.value,
+      limit: 50,
+    });
+  }
+};
+
+const createSettlementBatch = async () => {
+  const row = await logisticsApi.createSettlementBatch({
+    carrier_id: carrierId.value || undefined,
+  });
+  selectedSettlementBatchId.value = row.id;
+  await loadSettlementData();
+};
+
+const selectSettlementBatch = async (id: string) => {
+  selectedSettlementBatchId.value = id;
+  settlementDiffs.value = await logisticsApi.listSettlementDiffs({ batch_id: id, limit: 50 });
+};
+
+const handleSettlementDiff = async (id: string, action: "accept" | "dispute") => {
+  await logisticsApi.handleSettlementDiff(id, {
+    action,
+    operator_id: "admin",
+    note: `manual-${action}`,
+  });
+  if (selectedSettlementBatchId.value) {
+    await selectSettlementBatch(selectedSettlementBatchId.value);
+  }
+  await loadSettlementData();
+};
+
+const confirmSettlementBatch = async (id: string) => {
+  await logisticsApi.confirmSettlementBatch(id);
+  await loadSettlementData();
 };
 
 const exportCsv = async () => {

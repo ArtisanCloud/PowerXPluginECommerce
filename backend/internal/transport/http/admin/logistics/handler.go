@@ -13,27 +13,29 @@ import (
 )
 
 type Handler struct {
-	carrierSvc *logisticssvc.CarrierService
-	rateSvc    *logisticssvc.RateTemplateService
-	quoteSvc   *logisticssvc.RateQuoteService
-	waybillSvc *logisticssvc.WaybillService
-	etaSvc     *logisticssvc.ETAService
-	routingSvc *logisticssvc.RoutingService
-	redelivSvc *logisticssvc.RedeliveryService
-	riskSvc    *logisticssvc.RiskService
-	billingSvc *logisticssvc.BillingService
-	caseSvc    *logisticssvc.BillingCaseService
-	notifySvc  *logisticssvc.NotificationService
-	slaSvc     *logisticssvc.SLAService
-	labelSvc   *logisticssvc.LabelPrintService
-	syncJobSvc *logisticssvc.TrackingSyncJobService
-	schedSvc   *logisticssvc.TrackingSyncSchedulerService
-	gatewaySvc *logisticssvc.GatewayMetricsService
-	costSvc    *logisticssvc.GatewayCostService
-	recoverSvc *logisticssvc.GatewayRecoveryService
-	orchesSvc  *logisticssvc.ExceptionOrchestrationService
-	addressSvc *logisticssvc.AddressValidationService
-	webhookSvc *logisticssvc.WebhookService
+	carrierSvc    *logisticssvc.CarrierService
+	rateSvc       *logisticssvc.RateTemplateService
+	quoteSvc      *logisticssvc.RateQuoteService
+	waybillSvc    *logisticssvc.WaybillService
+	etaSvc        *logisticssvc.ETAService
+	routingSvc    *logisticssvc.RoutingService
+	redelivSvc    *logisticssvc.RedeliveryService
+	riskSvc       *logisticssvc.RiskService
+	billingSvc    *logisticssvc.BillingService
+	caseSvc       *logisticssvc.BillingCaseService
+	notifySvc     *logisticssvc.NotificationService
+	slaSvc        *logisticssvc.SLAService
+	labelSvc      *logisticssvc.LabelPrintService
+	syncJobSvc    *logisticssvc.TrackingSyncJobService
+	schedSvc      *logisticssvc.TrackingSyncSchedulerService
+	gatewaySvc    *logisticssvc.GatewayMetricsService
+	costSvc       *logisticssvc.GatewayCostService
+	recoverSvc    *logisticssvc.GatewayRecoveryService
+	orchesSvc     *logisticssvc.ExceptionOrchestrationService
+	addressSvc    *logisticssvc.AddressValidationService
+	optimizerSvc  *logisticssvc.RoutingOptimizerService
+	settlementSvc *logisticssvc.SettlementService
+	webhookSvc    *logisticssvc.WebhookService
 }
 
 func NewHandler(
@@ -57,30 +59,34 @@ func NewHandler(
 	recoverSvc *logisticssvc.GatewayRecoveryService,
 	orchesSvc *logisticssvc.ExceptionOrchestrationService,
 	addressSvc *logisticssvc.AddressValidationService,
+	optimizerSvc *logisticssvc.RoutingOptimizerService,
+	settlementSvc *logisticssvc.SettlementService,
 	webhookSvc *logisticssvc.WebhookService,
 ) *Handler {
 	return &Handler{
-		carrierSvc: carrierSvc,
-		rateSvc:    rateSvc,
-		quoteSvc:   quoteSvc,
-		waybillSvc: waybillSvc,
-		etaSvc:     etaSvc,
-		routingSvc: routingSvc,
-		redelivSvc: redelivSvc,
-		riskSvc:    riskSvc,
-		billingSvc: billingSvc,
-		caseSvc:    caseSvc,
-		notifySvc:  notifySvc,
-		slaSvc:     slaSvc,
-		labelSvc:   labelSvc,
-		syncJobSvc: syncJobSvc,
-		schedSvc:   schedSvc,
-		gatewaySvc: gatewaySvc,
-		costSvc:    costSvc,
-		recoverSvc: recoverSvc,
-		orchesSvc:  orchesSvc,
-		addressSvc: addressSvc,
-		webhookSvc: webhookSvc,
+		carrierSvc:    carrierSvc,
+		rateSvc:       rateSvc,
+		quoteSvc:      quoteSvc,
+		waybillSvc:    waybillSvc,
+		etaSvc:        etaSvc,
+		routingSvc:    routingSvc,
+		redelivSvc:    redelivSvc,
+		riskSvc:       riskSvc,
+		billingSvc:    billingSvc,
+		caseSvc:       caseSvc,
+		notifySvc:     notifySvc,
+		slaSvc:        slaSvc,
+		labelSvc:      labelSvc,
+		syncJobSvc:    syncJobSvc,
+		schedSvc:      schedSvc,
+		gatewaySvc:    gatewaySvc,
+		costSvc:       costSvc,
+		recoverSvc:    recoverSvc,
+		orchesSvc:     orchesSvc,
+		addressSvc:    addressSvc,
+		optimizerSvc:  optimizerSvc,
+		settlementSvc: settlementSvc,
+		webhookSvc:    webhookSvc,
 	}
 }
 
@@ -1081,6 +1087,198 @@ func (h *Handler) ListAddressValidationRecords(c *gin.Context) {
 		return
 	}
 	contracts.ResponseSuccess(c, gin.H{"items": rows})
+}
+
+func (h *Handler) GetRoutingOptimizerStrategy(c *gin.Context) {
+	if h == nil || h.optimizerSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "routing optimizer service unavailable", nil)
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.optimizerSvc.GetStrategy(c.Request.Context(), tenantUUID)
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) UpsertRoutingOptimizerStrategy(c *gin.Context) {
+	if h == nil || h.optimizerSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "routing optimizer service unavailable", nil)
+		return
+	}
+	var payload upsertRoutingOptimizerStrategyRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		contracts.ResponseBadRequest(c, "invalid request body: "+err.Error())
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.optimizerSvc.UpsertStrategy(c.Request.Context(), tenantUUID, logisticssvc.UpsertRoutingOptimizerStrategyRequest{
+		Name:             strings.TrimSpace(payload.Name),
+		TimelinessWeight: payload.TimelinessWeight,
+		CostWeight:       payload.CostWeight,
+		QuotaWeight:      payload.QuotaWeight,
+		RiskWeight:       payload.RiskWeight,
+		FallbackStrategy: strings.TrimSpace(payload.FallbackStrategy),
+		Enabled:          payload.Enabled,
+		Config:           payload.Config,
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) SimulateRoutingOptimizer(c *gin.Context) {
+	if h == nil || h.optimizerSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "routing optimizer service unavailable", nil)
+		return
+	}
+	var payload simulateRoutingOptimizerRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		contracts.ResponseBadRequest(c, "invalid request body: "+err.Error())
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.optimizerSvc.Simulate(c.Request.Context(), tenantUUID, logisticssvc.RoutingOptimizerSimulationRequest{
+		RequestKey:          strings.TrimSpace(payload.RequestKey),
+		WarehouseID:         strings.TrimSpace(payload.WarehouseID),
+		DestinationZone:     strings.TrimSpace(payload.DestinationZone),
+		Weight:              payload.Weight,
+		OrderAmount:         payload.OrderAmount,
+		PreferredCarrierID:  strings.TrimSpace(payload.PreferredCarrierID),
+		AvailableCarrierIDs: payload.AvailableCarrierIDs,
+		RealtimeDegraded:    payload.RealtimeDegraded,
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) ListSettlementBatches(c *gin.Context) {
+	if h == nil || h.settlementSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "settlement service unavailable", nil)
+		return
+	}
+	limit := 50
+	if raw := strings.TrimSpace(c.Query("limit")); raw != "" {
+		if v, err := strconv.Atoi(raw); err == nil {
+			limit = v
+		}
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	rows, err := h.settlementSvc.ListBatches(
+		c.Request.Context(),
+		tenantUUID,
+		strings.TrimSpace(c.Query("carrier_id")),
+		strings.TrimSpace(c.Query("status")),
+		limit,
+	)
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, gin.H{"items": rows})
+}
+
+func (h *Handler) CreateSettlementBatch(c *gin.Context) {
+	if h == nil || h.settlementSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "settlement service unavailable", nil)
+		return
+	}
+	var payload createSettlementBatchRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		contracts.ResponseBadRequest(c, "invalid request body: "+err.Error())
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.settlementSvc.CreateBatch(c.Request.Context(), tenantUUID, logisticssvc.CreateSettlementBatchRequest{
+		CarrierID: strings.TrimSpace(payload.CarrierID),
+		From:      strings.TrimSpace(payload.From),
+		To:        strings.TrimSpace(payload.To),
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) ListSettlementDiffs(c *gin.Context) {
+	if h == nil || h.settlementSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "settlement service unavailable", nil)
+		return
+	}
+	limit := 100
+	if raw := strings.TrimSpace(c.Query("limit")); raw != "" {
+		if v, err := strconv.Atoi(raw); err == nil {
+			limit = v
+		}
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	rows, err := h.settlementSvc.ListDiffs(
+		c.Request.Context(),
+		tenantUUID,
+		strings.TrimSpace(c.Query("batch_id")),
+		strings.TrimSpace(c.Query("status")),
+		limit,
+	)
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, gin.H{"items": rows})
+}
+
+func (h *Handler) HandleSettlementDiff(c *gin.Context) {
+	if h == nil || h.settlementSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "settlement service unavailable", nil)
+		return
+	}
+	diffID := strings.TrimSpace(c.Param("id"))
+	if diffID == "" {
+		contracts.ResponseBadRequest(c, "diff id is required")
+		return
+	}
+	var payload handleSettlementDiffRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		contracts.ResponseBadRequest(c, "invalid request body: "+err.Error())
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.settlementSvc.HandleDiff(c.Request.Context(), tenantUUID, diffID, logisticssvc.HandleSettlementDiffRequest{
+		Action:     strings.TrimSpace(payload.Action),
+		OperatorID: strings.TrimSpace(payload.OperatorID),
+		Note:       strings.TrimSpace(payload.Note),
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) ConfirmSettlementBatch(c *gin.Context) {
+	if h == nil || h.settlementSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "settlement service unavailable", nil)
+		return
+	}
+	batchID := strings.TrimSpace(c.Param("id"))
+	if batchID == "" {
+		contracts.ResponseBadRequest(c, "batch id is required")
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.settlementSvc.ConfirmBatch(c.Request.Context(), tenantUUID, batchID)
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
 }
 
 func (h *Handler) HandleWebhook(c *gin.Context) {
