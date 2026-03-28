@@ -168,4 +168,22 @@ func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 	if failureCompensatePerm.Action != "manage" {
 		t.Fatalf("expected manage action, got %s", failureCompensatePerm.Action)
 	}
+
+	orchestrationKey := "POST:/api/v1/admin/logistics/exceptions/orchestration/execute"
+	orchestrationPerm, ok := entries[orchestrationKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", orchestrationKey)
+	}
+	if orchestrationPerm.Resource != "com.powerx.plugins.ecommerce:logistics.orchestration" {
+		t.Fatalf("unexpected resource %s", orchestrationPerm.Resource)
+	}
+
+	addressCheckKey := "POST:/api/v1/admin/logistics/address-validation/check"
+	addressCheckPerm, ok := entries[addressCheckKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", addressCheckKey)
+	}
+	if addressCheckPerm.Resource != "com.powerx.plugins.ecommerce:logistics.address_validation" {
+		t.Fatalf("unexpected resource %s", addressCheckPerm.Resource)
+	}
 }

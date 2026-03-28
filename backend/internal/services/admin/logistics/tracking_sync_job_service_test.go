@@ -277,6 +277,52 @@ func setupTrackingSyncJobDB(t *testing.T, name string) *gorm.DB {
 		deleted_at DATETIME
 	)`).Error)
 	require.NoError(t, db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uk_logistics_gateway_usage_job ON logistics_gateway_usages(tenant_uuid, source_job_id)`).Error)
+	require.NoError(t, db.Exec(`CREATE TABLE IF NOT EXISTS logistics_exception_orchestration_rules (
+		id TEXT PRIMARY KEY,
+		tenant_uuid TEXT NOT NULL,
+		name TEXT NOT NULL,
+		trigger_event TEXT NOT NULL,
+		action TEXT NOT NULL,
+		priority INTEGER NOT NULL DEFAULT 100,
+		enabled BOOLEAN NOT NULL DEFAULT 1,
+		config JSON,
+		created_at DATETIME,
+		updated_at DATETIME,
+		deleted_at DATETIME
+	)`).Error)
+	require.NoError(t, db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uk_logistics_orchestration_rule ON logistics_exception_orchestration_rules(tenant_uuid, name)`).Error)
+	require.NoError(t, db.Exec(`CREATE TABLE IF NOT EXISTS logistics_exception_orchestration_runs (
+		id TEXT PRIMARY KEY,
+		tenant_uuid TEXT NOT NULL,
+		rule_id TEXT NOT NULL,
+		waybill_id TEXT,
+		waybill_no TEXT,
+		trigger TEXT NOT NULL,
+		result TEXT NOT NULL,
+		message TEXT,
+		metadata JSON,
+		created_at DATETIME,
+		updated_at DATETIME,
+		deleted_at DATETIME
+	)`).Error)
+	require.NoError(t, db.Exec(`CREATE TABLE IF NOT EXISTS logistics_address_validations (
+		id TEXT PRIMARY KEY,
+		tenant_uuid TEXT NOT NULL,
+		request_key TEXT NOT NULL,
+		waybill_id TEXT,
+		waybill_no TEXT,
+		raw_address TEXT NOT NULL,
+		normalized TEXT,
+		reachable BOOLEAN NOT NULL DEFAULT 1,
+		risk_level TEXT NOT NULL DEFAULT 'low',
+		suggestion TEXT,
+		need_manual_review BOOLEAN NOT NULL DEFAULT 0,
+		metadata JSON,
+		created_at DATETIME,
+		updated_at DATETIME,
+		deleted_at DATETIME
+	)`).Error)
+	require.NoError(t, db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uk_logistics_address_validation ON logistics_address_validations(tenant_uuid, request_key)`).Error)
 	return db
 }
 

@@ -53,3 +53,25 @@ type createWaveStrategyRequest struct {
 type previewWaveStrategyRequest struct {
 	StrategyID string `json:"strategy_id"`
 }
+
+type createOutboundRequest struct {
+	TaskID    string         `json:"task_id"`
+	WaybillID string         `json:"waybill_id,omitempty"`
+	Items     []pickLineItem `json:"items,omitempty"`
+	Metadata  map[string]any `json:"metadata,omitempty"`
+}
+
+type pickLineItem struct {
+	SKU string `json:"sku"`
+	Qty int    `json:"qty"`
+}
+
+type executeOutboundRequest struct {
+	OperatorID string         `json:"operator_id,omitempty"`
+	PackageNo  int            `json:"package_no,omitempty"`
+	Metadata   map[string]any `json:"metadata,omitempty"`
+}
+
+type rollbackOutboundRequest struct {
+	Reason string `json:"reason,omitempty"`
+}

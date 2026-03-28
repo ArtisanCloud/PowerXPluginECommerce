@@ -136,6 +136,45 @@ func setupFulfillmentServiceDB(t *testing.T, name string) *gorm.DB {
 		updated_at DATETIME,
 		deleted_at DATETIME
 	)`).Error)
+	require.NoError(t, db.Exec(`CREATE TABLE IF NOT EXISTS fulfillment_outbounds (
+		id TEXT PRIMARY KEY,
+		tenant_uuid TEXT NOT NULL,
+		task_id TEXT NOT NULL,
+		order_id TEXT NOT NULL,
+		warehouse_id TEXT NOT NULL,
+		waybill_id TEXT,
+		status TEXT NOT NULL,
+		metadata JSON,
+		created_at DATETIME,
+		updated_at DATETIME,
+		deleted_at DATETIME
+	)`).Error)
+	require.NoError(t, db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uk_fulfillment_outbound_task ON fulfillment_outbounds(tenant_uuid, task_id)`).Error)
+	require.NoError(t, db.Exec(`CREATE TABLE IF NOT EXISTS fulfillment_pick_items (
+		id TEXT PRIMARY KEY,
+		tenant_uuid TEXT NOT NULL,
+		outbound_id TEXT NOT NULL,
+		sku TEXT NOT NULL,
+		qty INTEGER NOT NULL DEFAULT 1,
+		status TEXT NOT NULL,
+		metadata JSON,
+		created_at DATETIME,
+		updated_at DATETIME,
+		deleted_at DATETIME
+	)`).Error)
+	require.NoError(t, db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uk_fulfillment_pick_line ON fulfillment_pick_items(tenant_uuid, outbound_id, sku)`).Error)
+	require.NoError(t, db.Exec(`CREATE TABLE IF NOT EXISTS fulfillment_pack_orders (
+		id TEXT PRIMARY KEY,
+		tenant_uuid TEXT NOT NULL,
+		outbound_id TEXT NOT NULL,
+		package_no INTEGER NOT NULL DEFAULT 1,
+		status TEXT NOT NULL,
+		metadata JSON,
+		created_at DATETIME,
+		updated_at DATETIME,
+		deleted_at DATETIME
+	)`).Error)
+	require.NoError(t, db.Exec(`CREATE UNIQUE INDEX IF NOT EXISTS uk_fulfillment_pack_outbound ON fulfillment_pack_orders(tenant_uuid, outbound_id)`).Error)
 
 	return db
 }

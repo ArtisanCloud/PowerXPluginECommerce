@@ -103,6 +103,18 @@ export type FulfillmentWaveStrategyPreview = {
   skippedTaskIds: string[];
 };
 
+export type FulfillmentOutbound = {
+  id: string;
+  taskId: string;
+  orderId: string;
+  warehouseId: string;
+  waybillId: string;
+  status: string;
+  metadata: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+};
+
 const normalizeTask = (raw: RawRecord): FulfillmentTask => ({
   id: String(pick(raw, "id", "id") || ""),
   orderId: String(pick(raw, "orderId", "order_id") || ""),
@@ -172,6 +184,18 @@ const normalizeWaveStrategyPreviewGroup = (
   timeSlot: String(pick(raw, "timeSlot", "time_slot") || ""),
   priorityBand: String(pick(raw, "priorityBand", "priority_band") || ""),
   taskIds: asArray<string>(pick(raw, "taskIds", "task_ids") || []),
+});
+
+const normalizeOutbound = (raw: RawRecord): FulfillmentOutbound => ({
+  id: String(pick(raw, "id", "id") || ""),
+  taskId: String(pick(raw, "taskId", "task_id") || ""),
+  orderId: String(pick(raw, "orderId", "order_id") || ""),
+  warehouseId: String(pick(raw, "warehouseId", "warehouse_id") || ""),
+  waybillId: String(pick(raw, "waybillId", "waybill_id") || ""),
+  status: String(pick(raw, "status", "status") || "reserved"),
+  metadata: (pick(raw, "metadata", "metadata") || {}) as Record<string, any>,
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
 });
 
 export function useFulfillmentApi() {
@@ -294,6 +318,40 @@ export function useFulfillmentApi() {
         ),
         skippedTaskIds: asArray<string>(pick(raw || {}, "skippedTaskIds", "skipped_task_ids") || []),
       };
+    },
+
+    listOutbounds: async (query?: { status?: string }, init?: any): Promise<FulfillmentOutbound[]> => {
+      const raw = await unwrap(
+        apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/warehouse/outbounds`, query, init),
+      );
+      return asArray<RawRecord>(raw?.items).map(normalizeOutbound);
+    },
+
+    createOutbound: async (payload: Record<string, any>, init?: any): Promise<FulfillmentOutbound> => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<RawRecord>>(`${basePath}/warehouse/outbounds`, payload, init),
+      );
+      return normalizeOutbound((raw || {}) as RawRecord);
+    },
+
+    executeOutbound: async (id: string, payload?: Record<string, any>, init?: any) => {
+      return unwrap(
+        apiPost<ApiEnvelope<{ outbound: RawRecord; task: RawRecord }>>(
+          `${basePath}/warehouse/outbounds/${id}/execute`,
+          payload || {},
+          init,
+        ),
+      );
+    },
+
+    rollbackOutbound: async (id: string, payload?: Record<string, any>, init?: any) => {
+      return unwrap(
+        apiPost<ApiEnvelope<{ outbound: RawRecord; task: RawRecord }>>(
+          `${basePath}/warehouse/outbounds/${id}/rollback`,
+          payload || {},
+          init,
+        ),
+      );
     },
   };
 }

@@ -107,6 +107,23 @@ func RBACEntries(prefix string) map[string]AuthX.Permission {
 		"POST:" + base + "/gateway/failures/:id/compensate": {
 			Resource: res("logistics.gateway"), Action: "manage",
 		},
+		"GET:" + base + "/exceptions/orchestration/rules": {Resource: res("logistics.orchestration"), Action: "read"},
+		"POST:" + base + "/exceptions/orchestration/rules": {
+			Resource: res("logistics.orchestration"), Action: "manage",
+		},
+		"PATCH:" + base + "/exceptions/orchestration/rules/:id": {
+			Resource: res("logistics.orchestration"), Action: "manage",
+		},
+		"GET:" + base + "/exceptions/orchestration/runs": {Resource: res("logistics.orchestration"), Action: "read"},
+		"POST:" + base + "/exceptions/orchestration/execute": {
+			Resource: res("logistics.orchestration"), Action: "manage",
+		},
+		"POST:" + base + "/address-validation/check": {
+			Resource: res("logistics.address_validation"), Action: "manage",
+		},
+		"GET:" + base + "/address-validation/records": {
+			Resource: res("logistics.address_validation"), Action: "read",
+		},
 		"POST:" + base + "/webhook": {Resource: res("logistics.webhook"), Action: "manage"},
 	}
 }

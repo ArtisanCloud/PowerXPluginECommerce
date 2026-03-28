@@ -433,6 +433,47 @@ export type LogisticsGatewayFailureEvent = {
   updatedAt: string;
 };
 
+export type LogisticsExceptionOrchestrationRule = {
+  id: string;
+  name: string;
+  triggerEvent: string;
+  action: string;
+  priority: number;
+  enabled: boolean;
+  config: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsExceptionOrchestrationRun = {
+  id: string;
+  ruleId: string;
+  waybillId: string;
+  waybillNo: string;
+  trigger: string;
+  result: string;
+  message: string;
+  metadata: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsAddressValidation = {
+  id: string;
+  requestKey: string;
+  waybillId: string;
+  waybillNo: string;
+  rawAddress: string;
+  normalized: string;
+  reachable: boolean;
+  riskLevel: string;
+  suggestion: string;
+  needManualReview: boolean;
+  metadata: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type LogisticsRateQuoteResult = {
   templateId: string;
   template: string;
@@ -688,6 +729,47 @@ const normalizeGatewayFailureEvent = (raw: RawRecord): LogisticsGatewayFailureEv
   nextRetryAt: String(pick(raw, "nextRetryAt", "next_retry_at") || ""),
   circuitOpenTill: String(pick(raw, "circuitOpenTill", "circuit_open_till") || ""),
   recoveredAt: String(pick(raw, "recoveredAt", "recovered_at") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeExceptionOrchestrationRule = (raw: RawRecord): LogisticsExceptionOrchestrationRule => ({
+  id: String(pick(raw, "id", "id") || ""),
+  name: String(pick(raw, "name", "name") || ""),
+  triggerEvent: String(pick(raw, "triggerEvent", "trigger_event") || ""),
+  action: String(pick(raw, "action", "action") || ""),
+  priority: Number(pick(raw, "priority", "priority") || 100),
+  enabled: Boolean(pick(raw, "enabled", "enabled")),
+  config: (pick(raw, "config", "config") || {}) as Record<string, any>,
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeExceptionOrchestrationRun = (raw: RawRecord): LogisticsExceptionOrchestrationRun => ({
+  id: String(pick(raw, "id", "id") || ""),
+  ruleId: String(pick(raw, "ruleId", "rule_id") || ""),
+  waybillId: String(pick(raw, "waybillId", "waybill_id") || ""),
+  waybillNo: String(pick(raw, "waybillNo", "waybill_no") || ""),
+  trigger: String(pick(raw, "trigger", "trigger") || ""),
+  result: String(pick(raw, "result", "result") || ""),
+  message: String(pick(raw, "message", "message") || ""),
+  metadata: (pick(raw, "metadata", "metadata") || {}) as Record<string, any>,
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeAddressValidation = (raw: RawRecord): LogisticsAddressValidation => ({
+  id: String(pick(raw, "id", "id") || ""),
+  requestKey: String(pick(raw, "requestKey", "request_key") || ""),
+  waybillId: String(pick(raw, "waybillId", "waybill_id") || ""),
+  waybillNo: String(pick(raw, "waybillNo", "waybill_no") || ""),
+  rawAddress: String(pick(raw, "rawAddress", "raw_address") || ""),
+  normalized: String(pick(raw, "normalized", "normalized") || ""),
+  reachable: Boolean(pick(raw, "reachable", "reachable")),
+  riskLevel: String(pick(raw, "riskLevel", "risk_level") || "low"),
+  suggestion: String(pick(raw, "suggestion", "suggestion") || ""),
+  needManualReview: Boolean(pick(raw, "needManualReview", "need_manual_review")),
+  metadata: (pick(raw, "metadata", "metadata") || {}) as Record<string, any>,
   createdAt: String(pick(raw, "createdAt", "created_at") || ""),
   updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
 });
@@ -1436,6 +1518,45 @@ export function useLogisticsApi() {
     compensateGatewayFailure: async (id: string, init?: any): Promise<LogisticsGatewayFailureEvent> => {
       const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/gateway/failures/${id}/compensate`, {}, init));
       return normalizeGatewayFailureEvent((raw || {}) as RawRecord);
+    },
+
+    listExceptionOrchestrationRules: async (query?: { enabled?: boolean }, init?: any): Promise<LogisticsExceptionOrchestrationRule[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/exceptions/orchestration/rules`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeExceptionOrchestrationRule);
+    },
+
+    upsertExceptionOrchestrationRule: async (payload: Record<string, any>, init?: any): Promise<LogisticsExceptionOrchestrationRule> => {
+      const id = String(payload.id || "").trim();
+      const path = id ? `${basePath}/exceptions/orchestration/rules/${id}` : `${basePath}/exceptions/orchestration/rules`;
+      const req = id ? apiPatch<ApiEnvelope<RawRecord>>(path, payload, init) : apiPost<ApiEnvelope<RawRecord>>(path, payload, init);
+      const raw = await unwrap(req);
+      return normalizeExceptionOrchestrationRule((raw || {}) as RawRecord);
+    },
+
+    listExceptionOrchestrationRuns: async (
+      query?: { waybill_no?: string; limit?: number },
+      init?: any,
+    ): Promise<LogisticsExceptionOrchestrationRun[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/exceptions/orchestration/runs`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeExceptionOrchestrationRun);
+    },
+
+    executeExceptionOrchestration: async (payload: Record<string, any>, init?: any): Promise<LogisticsExceptionOrchestrationRun> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/exceptions/orchestration/execute`, payload, init));
+      return normalizeExceptionOrchestrationRun((raw || {}) as RawRecord);
+    },
+
+    checkAddressValidation: async (payload: Record<string, any>, init?: any): Promise<LogisticsAddressValidation> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/address-validation/check`, payload, init));
+      return normalizeAddressValidation((raw || {}) as RawRecord);
+    },
+
+    listAddressValidationRecords: async (
+      query?: { waybill_no?: string; limit?: number },
+      init?: any,
+    ): Promise<LogisticsAddressValidation[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/address-validation/records`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeAddressValidation);
     },
   };
 }

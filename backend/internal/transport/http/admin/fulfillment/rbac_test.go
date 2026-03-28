@@ -5,8 +5,8 @@ import "testing"
 func TestRBACEntries_FulfillmentRoutes(t *testing.T) {
 	entries := RBACEntries("/api/v1")
 
-	if len(entries) != 13 {
-		t.Fatalf("expected 13 fulfillment RBAC entries, got %d", len(entries))
+	if len(entries) != 17 {
+		t.Fatalf("expected 17 fulfillment RBAC entries, got %d", len(entries))
 	}
 
 	key := "PATCH:/api/v1/admin/fulfillment/tasks/:id/complete"
@@ -40,5 +40,14 @@ func TestRBACEntries_FulfillmentRoutes(t *testing.T) {
 	}
 	if strategyPerm.Resource != "com.powerx.plugins.ecommerce:fulfillment.wave.strategy" {
 		t.Fatalf("unexpected resource %s", strategyPerm.Resource)
+	}
+
+	warehouseKey := "POST:/api/v1/admin/fulfillment/warehouse/outbounds/:id/execute"
+	warehousePerm, ok := entries[warehouseKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", warehouseKey)
+	}
+	if warehousePerm.Resource != "com.powerx.plugins.ecommerce:fulfillment.warehouse" {
+		t.Fatalf("unexpected resource %s", warehousePerm.Resource)
 	}
 }

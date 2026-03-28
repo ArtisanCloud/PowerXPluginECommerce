@@ -15,6 +15,7 @@ type Handler struct {
 	waveSvc      *fulfillmentsvc.WaveService
 	strategySvc  *fulfillmentsvc.WaveStrategyService
 	exceptionSvc *fulfillmentsvc.ExceptionService
+	warehouseSvc *fulfillmentsvc.WarehouseBridgeService
 }
 
 func NewHandler(
@@ -22,12 +23,14 @@ func NewHandler(
 	waveSvc *fulfillmentsvc.WaveService,
 	strategySvc *fulfillmentsvc.WaveStrategyService,
 	exceptionSvc *fulfillmentsvc.ExceptionService,
+	warehouseSvc *fulfillmentsvc.WarehouseBridgeService,
 ) *Handler {
 	return &Handler{
 		taskSvc:      taskSvc,
 		waveSvc:      waveSvc,
 		strategySvc:  strategySvc,
 		exceptionSvc: exceptionSvc,
+		warehouseSvc: warehouseSvc,
 	}
 }
 
@@ -308,6 +311,100 @@ func (h *Handler) PreviewWaveStrategy(c *gin.Context) {
 	row, err := h.strategySvc.Preview(c.Request.Context(), tenantUUID, fulfillmentsvc.PreviewWaveStrategyRequest{
 		StrategyID: strings.TrimSpace(payload.StrategyID),
 	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) ListOutbounds(c *gin.Context) {
+	if h == nil || h.warehouseSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "fulfillment warehouse service unavailable", nil)
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	rows, err := h.warehouseSvc.ListOutbounds(c.Request.Context(), tenantUUID, strings.TrimSpace(c.Query("status")))
+	if err != nil {
+		contracts.ResponseInternalError(c, err)
+		return
+	}
+	contracts.ResponseSuccess(c, gin.H{"items": rows})
+}
+
+func (h *Handler) CreateOutbound(c *gin.Context) {
+	if h == nil || h.warehouseSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "fulfillment warehouse service unavailable", nil)
+		return
+	}
+	var payload createOutboundRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		contracts.ResponseBadRequest(c, "invalid request body: "+err.Error())
+		return
+	}
+	items := make([]fulfillmentsvc.PickLineItem, 0, len(payload.Items))
+	for _, item := range payload.Items {
+		items = append(items, fulfillmentsvc.PickLineItem{
+			SKU: strings.TrimSpace(item.SKU),
+			Qty: item.Qty,
+		})
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.warehouseSvc.CreateOutbound(c.Request.Context(), tenantUUID, fulfillmentsvc.CreateOutboundRequest{
+		TaskID:    strings.TrimSpace(payload.TaskID),
+		WaybillID: strings.TrimSpace(payload.WaybillID),
+		Items:     items,
+		Metadata:  payload.Metadata,
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) ExecuteOutbound(c *gin.Context) {
+	if h == nil || h.warehouseSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "fulfillment warehouse service unavailable", nil)
+		return
+	}
+	outboundID := strings.TrimSpace(c.Param("id"))
+	if outboundID == "" {
+		contracts.ResponseBadRequest(c, "outbound id is required")
+		return
+	}
+	var payload executeOutboundRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		contracts.ResponseBadRequest(c, "invalid request body: "+err.Error())
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.warehouseSvc.ExecuteOutbound(c.Request.Context(), tenantUUID, outboundID, fulfillmentsvc.ExecuteOutboundRequest{
+		OperatorID: strings.TrimSpace(payload.OperatorID),
+		PackageNo:  payload.PackageNo,
+		Metadata:   payload.Metadata,
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) RollbackOutbound(c *gin.Context) {
+	if h == nil || h.warehouseSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "fulfillment warehouse service unavailable", nil)
+		return
+	}
+	outboundID := strings.TrimSpace(c.Param("id"))
+	if outboundID == "" {
+		contracts.ResponseBadRequest(c, "outbound id is required")
+		return
+	}
+	var payload rollbackOutboundRequest
+	_ = c.ShouldBindJSON(&payload)
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.warehouseSvc.RollbackOutbound(c.Request.Context(), tenantUUID, outboundID, strings.TrimSpace(payload.Reason))
 	if err != nil {
 		contracts.ResponseBadRequest(c, err.Error())
 		return

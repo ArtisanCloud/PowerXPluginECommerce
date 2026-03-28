@@ -21,6 +21,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 		fulfillmentsvc.NewWaveService(deps),
 		fulfillmentsvc.NewWaveStrategyService(deps),
 		fulfillmentsvc.NewExceptionService(deps),
+		fulfillmentsvc.NewWarehouseBridgeService(deps),
 	)
 	rg.GET("/tasks", handler.ListTasks)
 	rg.POST("/tasks", handler.CreateTask)
@@ -35,5 +36,9 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.POST("/wave-strategies/preview", handler.PreviewWaveStrategy)
 	rg.GET("/exceptions", handler.ListExceptions)
 	rg.POST("/exceptions", handler.ReportException)
+	rg.GET("/warehouse/outbounds", handler.ListOutbounds)
+	rg.POST("/warehouse/outbounds", handler.CreateOutbound)
+	rg.POST("/warehouse/outbounds/:id/execute", handler.ExecuteOutbound)
+	rg.POST("/warehouse/outbounds/:id/rollback", handler.RollbackOutbound)
 	return rg
 }

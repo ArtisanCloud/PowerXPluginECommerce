@@ -359,6 +359,59 @@
 
 ---
 
+## Phase 14: Iteration-8 - 履约自动化与财务闭环（Backlog）
+
+**Purpose**: 在 M8 基础上补齐“仓配执行 + 异常编排 + 智能校验 + 联合路由 + 财务核对”，把履约从“可运营”升级为“可规模化自治”。
+
+### User Story 25 - 仓配一体联动（P1）
+
+- [X] T159 [P] [US25] 增加仓配执行实体（出库单、拣货明细、装箱单、履约波次关联）（`backend/internal/entity/models/fulfillment/{outbound*.go,pick*.go,pack*.go}`）
+- [X] T160 [US25] 实现仓配联动服务（库存预占→拣货→装箱→出库→运单回写）（`backend/internal/services/admin/fulfillment/warehouse_bridge_service.go`）
+- [X] T161 [US25] 实现仓配联动接口（出库任务创建、执行回执、异常回滚）（`backend/internal/transport/http/admin/fulfillment/{warehouse_handler.go,routes.go,dto.go}`）
+- [X] T162 [US25] 在发货执行页新增仓配联动面板（`web-admin/app/pages/shipping/tasks.vue`）
+- [X] T163 [US25] 增加 US25 回归测试（预占幂等、出库状态一致性、跨租户隔离）（`backend/internal/services/admin/fulfillment/*_test.go`）
+
+### User Story 26 - 物流异常自动编排中心（P2）
+
+- [X] T164 [P] [US26] 增加异常编排规则与执行记录模型（`backend/internal/entity/models/logistics/exception_orchestration*.go`）
+- [X] T165 [US26] 实现异常编排服务（延误/拒收/丢件自动建单、自动补偿、SLA 升级）（`backend/internal/services/admin/logistics/exception_orchestration_service.go`）
+- [X] T166 [US26] 实现异常编排接口（规则管理、执行重放、手工接管）（`backend/internal/transport/http/admin/logistics/{exception_orchestration_handler.go,routes.go,dto.go}`）
+- [X] T167 [US26] 在运单页新增“异常自动化”入口与状态流（`web-admin/app/pages/shipping/waybills.vue`）
+- [X] T168 [US26] 增加 US26 回归测试（规则命中准确性、补偿幂等、人工接管优先级）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### User Story 27 - 地址智能与可达性校验（P2）
+
+- [X] T169 [P] [US27] 增加地址规范化与可达性缓存模型（`backend/internal/entity/models/logistics/address_validation*.go`）
+- [X] T170 [US27] 实现地址智能服务（标准化、风险地址拦截、改址建议）（`backend/internal/services/admin/logistics/address_validation_service.go`）
+- [X] T171 [US27] 实现地址校验接口（下单前校验、改址推荐、人工确认）（`backend/internal/transport/http/admin/logistics/{address_validation_handler.go,routes.go,dto.go}`）
+- [X] T172 [US27] 在运单创建流程接入地址智能提示（`web-admin/app/pages/shipping/waybills.vue`）
+- [X] T173 [US27] 增加 US27 回归测试（命中准确性、误拦截放行、跨租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### User Story 28 - 多目标路由引擎 2.0（P2）
+
+- [ ] T174 [P] [US28] 扩展路由打分模型（时效/成本/配额/风险权重）（`backend/internal/entity/models/logistics/routing_score*.go`）
+- [ ] T175 [US28] 实现联合路由服务（多目标打分、兜底策略、实时降级）（`backend/internal/services/admin/logistics/routing_optimizer_service.go`）
+- [ ] T176 [US28] 实现路由优化接口（策略配置、仿真、命中解释）（`backend/internal/transport/http/admin/logistics/{routing_optimizer_handler.go,routes.go,dto.go}`）
+- [ ] T177 [US28] 在承运商/运单页新增“联合路由仿真”卡片（`web-admin/app/pages/shipping/{carriers.vue,waybills.vue}`）
+- [ ] T178 [US28] 增加 US28 回归测试（权重稳定性、降级正确性、异常输入隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### User Story 29 - 结算财务闭环（P3）
+
+- [ ] T179 [P] [US29] 增加承运商结算批次与差异归因模型（`backend/internal/entity/models/logistics/settlement*.go`）
+- [ ] T180 [US29] 实现自动核对服务（账单拉取、差异归因、自动建议动作）（`backend/internal/services/admin/logistics/settlement_service.go`）
+- [ ] T181 [US29] 实现结算闭环接口（批次创建、差异处理、结算确认）（`backend/internal/transport/http/admin/logistics/{settlement_handler.go,routes.go,dto.go}`）
+- [ ] T182 [US29] 在对账页新增“结算批次”与“归因建议”区块（`web-admin/app/pages/shipping/billing.vue`）
+- [ ] T183 [US29] 增加 US29 回归测试（归因准确性、状态流转约束、跨租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### Iteration-8 Polish
+
+- [ ] T184 [P] 更新 M9 quickstart 与执行记录模板（`specs/011-fulfillment-logistics/quickstart.md`）
+- [ ] T185 执行 M9 后端回归（`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment -count=1`）
+- [ ] T186 执行 M9 前端构建与页面回归（`make build-admin`）
+- [ ] T187 执行仓配-路由-结算全链路冒烟并记录（`specs/011-fulfillment-logistics/quickstart.md`）
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies

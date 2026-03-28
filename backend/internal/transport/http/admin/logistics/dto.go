@@ -235,3 +235,28 @@ type sendNotificationRequest struct {
 type retryNotificationRequest struct {
 	RecordID string `json:"record_id,omitempty"`
 }
+
+type upsertExceptionOrchestrationRuleRequest struct {
+	ID           string         `json:"id,omitempty"`
+	Name         string         `json:"name"`
+	TriggerEvent string         `json:"trigger_event"`
+	Action       string         `json:"action"`
+	Priority     int            `json:"priority,omitempty"`
+	Enabled      *bool          `json:"enabled,omitempty"`
+	Config       map[string]any `json:"config,omitempty"`
+}
+
+type executeExceptionOrchestrationRequest struct {
+	RuleID    string `json:"rule_id"`
+	WaybillID string `json:"waybill_id,omitempty"`
+	WaybillNo string `json:"waybill_no,omitempty"`
+	Trigger   string `json:"trigger,omitempty"`
+}
+
+type checkAddressValidationRequest struct {
+	RequestKey string         `json:"request_key,omitempty"`
+	WaybillID  string         `json:"waybill_id,omitempty"`
+	WaybillNo  string         `json:"waybill_no,omitempty"`
+	Address    string         `json:"address"`
+	Context    map[string]any `json:"context,omitempty"`
+}

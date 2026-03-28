@@ -21,6 +21,36 @@
 
     <UCard>
       <template #header>
+        <div class="flex items-center justify-between">
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">仓配联动</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400">库存预占→出库执行→异常回滚</p>
+          </div>
+        </div>
+      </template>
+      <div class="grid gap-2 md:grid-cols-5">
+        <UInput v-model="warehouseForm.taskId" placeholder="任务ID" />
+        <UInput v-model="warehouseForm.waybillId" placeholder="运单ID（可选）" />
+        <UInput v-model="warehouseForm.sku" placeholder="SKU（可选）" />
+        <UInput v-model.number="warehouseForm.qty" type="number" placeholder="数量" />
+        <UButton color="primary" :loading="warehouseLoading" @click="createOutbound">创建出库单</UButton>
+      </div>
+      <ul class="mt-3 space-y-2 text-xs">
+        <li v-for="item in outbounds" :key="item.id" class="rounded border border-gray-200 p-2 dark:border-gray-800">
+          <div class="flex items-center justify-between gap-2">
+            <span>{{ item.id }} · task={{ item.taskId }} · {{ item.status }}</span>
+            <div class="flex gap-2">
+              <UButton size="xs" variant="ghost" color="success" :loading="warehouseLoading" @click="executeOutbound(item.id)">执行出库</UButton>
+              <UButton size="xs" variant="ghost" color="error" :loading="warehouseLoading" @click="rollbackOutbound(item.id)">回滚</UButton>
+            </div>
+          </div>
+        </li>
+        <li v-if="!outbounds.length" class="text-gray-500">暂无出库单</li>
+      </ul>
+    </UCard>
+
+    <UCard>
+      <template #header>
         <div class="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div>
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">任务看板</h3>
@@ -100,11 +130,19 @@ const fulfillmentApi = useFulfillmentApi();
 
 const tasks = ref<TaskRow[]>([]);
 const exceptions = ref<any[]>([]);
+const outbounds = ref<any[]>([]);
 const statusFilter = ref("");
+const warehouseLoading = ref(false);
 
 const newTask = reactive({
   orderId: "",
   warehouseId: "",
+});
+const warehouseForm = reactive({
+  taskId: "",
+  waybillId: "",
+  sku: "",
+  qty: 1,
 });
 
 const statusOptions = [
@@ -153,9 +191,10 @@ const statusMeta = (status: string) => {
 };
 
 const loadAll = async () => {
-  const [taskRows, exRows] = await Promise.all([
+  const [taskRows, exRows, outboundRows] = await Promise.all([
     fulfillmentApi.listTasks(),
     fulfillmentApi.listExceptions(),
+    fulfillmentApi.listOutbounds(),
   ]);
   tasks.value = taskRows.map((item) => ({
     id: item.id,
@@ -169,6 +208,7 @@ const loadAll = async () => {
     ...item,
     createdAt: item.createdAt ? item.createdAt.replace("T", " ").slice(0, 16) : "-",
   }));
+  outbounds.value = taskRows.length ? outboundRows : [];
 };
 
 const createTask = async () => {
@@ -194,6 +234,45 @@ const prepareException = async (task: TaskRow) => {
     reason: "库存不足，待补货",
   });
   await loadAll();
+};
+
+const createOutbound = async () => {
+  if (!warehouseForm.taskId) return;
+  warehouseLoading.value = true;
+  try {
+    await fulfillmentApi.createOutbound({
+      task_id: warehouseForm.taskId,
+      waybill_id: warehouseForm.waybillId || undefined,
+      items: warehouseForm.sku ? [{ sku: warehouseForm.sku, qty: Number(warehouseForm.qty || 1) }] : [],
+    });
+    warehouseForm.taskId = "";
+    warehouseForm.waybillId = "";
+    warehouseForm.sku = "";
+    warehouseForm.qty = 1;
+    await loadAll();
+  } finally {
+    warehouseLoading.value = false;
+  }
+};
+
+const executeOutbound = async (id: string) => {
+  warehouseLoading.value = true;
+  try {
+    await fulfillmentApi.executeOutbound(id, { operator_id: "admin" });
+    await loadAll();
+  } finally {
+    warehouseLoading.value = false;
+  }
+};
+
+const rollbackOutbound = async (id: string) => {
+  warehouseLoading.value = true;
+  try {
+    await fulfillmentApi.rollbackOutbound(id, { reason: "manual rollback" });
+    await loadAll();
+  } finally {
+    warehouseLoading.value = false;
+  }
 };
 
 onMounted(() => {

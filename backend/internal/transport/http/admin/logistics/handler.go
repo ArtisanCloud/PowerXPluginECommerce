@@ -31,6 +31,8 @@ type Handler struct {
 	gatewaySvc *logisticssvc.GatewayMetricsService
 	costSvc    *logisticssvc.GatewayCostService
 	recoverSvc *logisticssvc.GatewayRecoveryService
+	orchesSvc  *logisticssvc.ExceptionOrchestrationService
+	addressSvc *logisticssvc.AddressValidationService
 	webhookSvc *logisticssvc.WebhookService
 }
 
@@ -53,6 +55,8 @@ func NewHandler(
 	gatewaySvc *logisticssvc.GatewayMetricsService,
 	costSvc *logisticssvc.GatewayCostService,
 	recoverSvc *logisticssvc.GatewayRecoveryService,
+	orchesSvc *logisticssvc.ExceptionOrchestrationService,
+	addressSvc *logisticssvc.AddressValidationService,
 	webhookSvc *logisticssvc.WebhookService,
 ) *Handler {
 	return &Handler{
@@ -74,6 +78,8 @@ func NewHandler(
 		gatewaySvc: gatewaySvc,
 		costSvc:    costSvc,
 		recoverSvc: recoverSvc,
+		orchesSvc:  orchesSvc,
+		addressSvc: addressSvc,
 		webhookSvc: webhookSvc,
 	}
 }
@@ -933,6 +939,148 @@ func (h *Handler) CompensateGatewayFailure(c *gin.Context) {
 		return
 	}
 	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) ListExceptionOrchestrationRules(c *gin.Context) {
+	if h == nil || h.orchesSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "exception orchestration service unavailable", nil)
+		return
+	}
+	var enabled *bool
+	switch strings.ToLower(strings.TrimSpace(c.Query("enabled"))) {
+	case "true":
+		v := true
+		enabled = &v
+	case "false":
+		v := false
+		enabled = &v
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	rows, err := h.orchesSvc.ListRules(c.Request.Context(), tenantUUID, enabled)
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, gin.H{"items": rows})
+}
+
+func (h *Handler) UpsertExceptionOrchestrationRule(c *gin.Context) {
+	if h == nil || h.orchesSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "exception orchestration service unavailable", nil)
+		return
+	}
+	var payload upsertExceptionOrchestrationRuleRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		contracts.ResponseBadRequest(c, "invalid request body: "+err.Error())
+		return
+	}
+	if strings.TrimSpace(payload.ID) == "" {
+		payload.ID = strings.TrimSpace(c.Param("id"))
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.orchesSvc.UpsertRule(c.Request.Context(), tenantUUID, logisticssvc.UpsertExceptionRuleRequest{
+		ID:           strings.TrimSpace(payload.ID),
+		Name:         strings.TrimSpace(payload.Name),
+		TriggerEvent: strings.TrimSpace(payload.TriggerEvent),
+		Action:       strings.TrimSpace(payload.Action),
+		Priority:     payload.Priority,
+		Enabled:      payload.Enabled,
+		Config:       payload.Config,
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) ListExceptionOrchestrationRuns(c *gin.Context) {
+	if h == nil || h.orchesSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "exception orchestration service unavailable", nil)
+		return
+	}
+	limit := 50
+	if raw := strings.TrimSpace(c.Query("limit")); raw != "" {
+		if v, err := strconv.Atoi(raw); err == nil {
+			limit = v
+		}
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	rows, err := h.orchesSvc.ListRuns(c.Request.Context(), tenantUUID, strings.TrimSpace(c.Query("waybill_no")), limit)
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, gin.H{"items": rows})
+}
+
+func (h *Handler) ExecuteExceptionOrchestration(c *gin.Context) {
+	if h == nil || h.orchesSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "exception orchestration service unavailable", nil)
+		return
+	}
+	var payload executeExceptionOrchestrationRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		contracts.ResponseBadRequest(c, "invalid request body: "+err.Error())
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.orchesSvc.Execute(c.Request.Context(), tenantUUID, logisticssvc.ExecuteExceptionRuleRequest{
+		RuleID:    strings.TrimSpace(payload.RuleID),
+		WaybillID: strings.TrimSpace(payload.WaybillID),
+		WaybillNo: strings.TrimSpace(payload.WaybillNo),
+		Trigger:   strings.TrimSpace(payload.Trigger),
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) CheckAddressValidation(c *gin.Context) {
+	if h == nil || h.addressSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "address validation service unavailable", nil)
+		return
+	}
+	var payload checkAddressValidationRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		contracts.ResponseBadRequest(c, "invalid request body: "+err.Error())
+		return
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.addressSvc.Check(c.Request.Context(), tenantUUID, logisticssvc.CheckAddressRequest{
+		RequestKey: strings.TrimSpace(payload.RequestKey),
+		WaybillID:  strings.TrimSpace(payload.WaybillID),
+		WaybillNo:  strings.TrimSpace(payload.WaybillNo),
+		Address:    strings.TrimSpace(payload.Address),
+		Context:    payload.Context,
+	})
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, row)
+}
+
+func (h *Handler) ListAddressValidationRecords(c *gin.Context) {
+	if h == nil || h.addressSvc == nil {
+		contracts.ResponseServiceUnavailable(c, "address validation service unavailable", nil)
+		return
+	}
+	limit := 50
+	if raw := strings.TrimSpace(c.Query("limit")); raw != "" {
+		if v, err := strconv.Atoi(raw); err == nil {
+			limit = v
+		}
+	}
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	rows, err := h.addressSvc.List(c.Request.Context(), tenantUUID, strings.TrimSpace(c.Query("waybill_no")), limit)
+	if err != nil {
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, gin.H{"items": rows})
 }
 
 func (h *Handler) HandleWebhook(c *gin.Context) {

@@ -95,6 +95,12 @@
             <UButton size="xs" variant="ghost" color="error" @click="openFailureCompensation(row.original)">
               失败补偿
             </UButton>
+            <UButton size="xs" variant="ghost" color="warning" @click="openOrchestration(row.original)">
+              异常编排
+            </UButton>
+            <UButton size="xs" variant="ghost" color="info" @click="openAddressValidation(row.original)">
+              地址校验
+            </UButton>
             <UButton
               size="xs"
               variant="ghost"
@@ -260,12 +266,57 @@
         </div>
       </template>
     </UModal>
+
+    <UModal v-model:open="orchestrationOpen" title="异常自动编排">
+      <template #body>
+        <div class="space-y-3">
+          <div class="grid gap-2 sm:grid-cols-2">
+            <UInput v-model="orchestrationForm.ruleName" placeholder="规则名称" />
+            <USelect v-model="orchestrationForm.triggerEvent" :options="orchestrationTriggerOptions" />
+            <USelect v-model="orchestrationForm.action" :options="orchestrationActionOptions" />
+            <UInput v-model.number="orchestrationForm.priority" type="number" placeholder="优先级" />
+          </div>
+          <div class="flex gap-2">
+            <UButton size="xs" color="primary" :loading="orchestrationLoading" @click="createOrchestrationRule">创建规则</UButton>
+            <UButton size="xs" color="warning" :loading="orchestrationLoading" @click="executeOrchestration">执行编排</UButton>
+          </div>
+          <ul class="space-y-2 text-xs">
+            <li v-for="item in orchestrationRuns" :key="item.id" class="rounded border border-gray-200 p-2 dark:border-gray-800">
+              {{ item.trigger }} · {{ item.result }} · {{ item.message }}
+            </li>
+            <li v-if="!orchestrationRuns.length" class="text-gray-500">暂无执行记录</li>
+          </ul>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="addressValidationOpen" title="地址智能校验">
+      <template #body>
+        <div class="space-y-3">
+          <UInput v-model="addressForm.address" placeholder="输入收货地址" />
+          <UButton size="xs" color="primary" :loading="addressLoading" @click="checkAddressValidation">立即校验</UButton>
+          <UCard v-if="latestAddressValidation">
+            <p class="text-xs">标准化：{{ latestAddressValidation.normalized || "-" }}</p>
+            <p class="text-xs">可达性：{{ latestAddressValidation.reachable ? "可达" : "不可达" }}</p>
+            <p class="text-xs">风险：{{ latestAddressValidation.riskLevel }}</p>
+            <p class="text-xs">建议：{{ latestAddressValidation.suggestion || "-" }}</p>
+          </UCard>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
-import type { LogisticsGatewayFailureEvent, LogisticsRedeliveryTask, LogisticsWaybillETA } from "~/composables/api/useLogistics";
+import type {
+  LogisticsAddressValidation,
+  LogisticsExceptionOrchestrationRun,
+  LogisticsExceptionOrchestrationRule,
+  LogisticsGatewayFailureEvent,
+  LogisticsRedeliveryTask,
+  LogisticsWaybillETA,
+} from "~/composables/api/useLogistics";
 import { useLogisticsApi } from "~/composables/api";
 
 definePageMeta({
@@ -320,6 +371,13 @@ const routingPreviewResult = ref<any>(null);
 const redeliveryOpen = ref(false);
 const redeliveryLoading = ref(false);
 const redeliveryTasks = ref<LogisticsRedeliveryTask[]>([]);
+const orchestrationOpen = ref(false);
+const orchestrationLoading = ref(false);
+const orchestrationRules = ref<LogisticsExceptionOrchestrationRule[]>([]);
+const orchestrationRuns = ref<LogisticsExceptionOrchestrationRun[]>([]);
+const addressValidationOpen = ref(false);
+const addressLoading = ref(false);
+const latestAddressValidation = ref<LogisticsAddressValidation | null>(null);
 const routingForm = reactive({
   waybillNo: "",
   warehouseId: "",
@@ -338,6 +396,29 @@ const redeliveryForm = reactive({
   requestKey: "",
   addressLine: "",
 });
+const orchestrationForm = reactive({
+  waybillId: "",
+  waybillNo: "",
+  ruleName: "延误自动补偿",
+  triggerEvent: "delay",
+  action: "auto_compensate",
+  priority: 100,
+});
+const addressForm = reactive({
+  waybillId: "",
+  waybillNo: "",
+  address: "",
+});
+const orchestrationTriggerOptions = [
+  { label: "延误", value: "delay" },
+  { label: "拒收", value: "rejected" },
+  { label: "丢件", value: "lost" },
+];
+const orchestrationActionOptions = [
+  { label: "自动补偿", value: "auto_compensate" },
+  { label: "创建工单", value: "create_ticket" },
+  { label: "SLA升级", value: "escalate" },
+];
 const syncJobForm = reactive({
   carrierId: "",
   waybillStatus: "",
@@ -675,6 +756,81 @@ const compensateFailure = async (id: string) => {
     }
   } finally {
     failureLoading.value = false;
+  }
+};
+
+const openOrchestration = async (waybill: Waybill) => {
+  orchestrationForm.waybillId = waybill.id;
+  orchestrationForm.waybillNo = waybill.waybillNo;
+  orchestrationOpen.value = true;
+  orchestrationLoading.value = true;
+  try {
+    orchestrationRules.value = await logisticsApi.listExceptionOrchestrationRules({ enabled: true });
+    orchestrationRuns.value = await logisticsApi.listExceptionOrchestrationRuns({
+      waybill_no: waybill.waybillNo,
+      limit: 20,
+    });
+  } finally {
+    orchestrationLoading.value = false;
+  }
+};
+
+const createOrchestrationRule = async () => {
+  orchestrationLoading.value = true;
+  try {
+    const row = await logisticsApi.upsertExceptionOrchestrationRule({
+      name: orchestrationForm.ruleName || "自动编排规则",
+      trigger_event: orchestrationForm.triggerEvent || "delay",
+      action: orchestrationForm.action || "auto_compensate",
+      priority: Number(orchestrationForm.priority || 100),
+      enabled: true,
+    });
+    orchestrationRules.value = [row, ...orchestrationRules.value.filter((item) => item.id !== row.id)];
+  } finally {
+    orchestrationLoading.value = false;
+  }
+};
+
+const executeOrchestration = async () => {
+  const rule = orchestrationRules.value[0];
+  if (!rule) return;
+  orchestrationLoading.value = true;
+  try {
+    await logisticsApi.executeExceptionOrchestration({
+      rule_id: rule.id,
+      waybill_id: orchestrationForm.waybillId || undefined,
+      waybill_no: orchestrationForm.waybillNo || undefined,
+      trigger: orchestrationForm.triggerEvent || undefined,
+    });
+    orchestrationRuns.value = await logisticsApi.listExceptionOrchestrationRuns({
+      waybill_no: orchestrationForm.waybillNo,
+      limit: 20,
+    });
+  } finally {
+    orchestrationLoading.value = false;
+  }
+};
+
+const openAddressValidation = (waybill: Waybill) => {
+  addressForm.waybillId = waybill.id;
+  addressForm.waybillNo = waybill.waybillNo;
+  addressForm.address = "";
+  latestAddressValidation.value = null;
+  addressValidationOpen.value = true;
+};
+
+const checkAddressValidation = async () => {
+  if (!addressForm.address) return;
+  addressLoading.value = true;
+  try {
+    latestAddressValidation.value = await logisticsApi.checkAddressValidation({
+      request_key: `${addressForm.waybillNo || "manual"}#${Date.now()}`,
+      waybill_id: addressForm.waybillId || undefined,
+      waybill_no: addressForm.waybillNo || undefined,
+      address: addressForm.address,
+    });
+  } finally {
+    addressLoading.value = false;
   }
 };
 

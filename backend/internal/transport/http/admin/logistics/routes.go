@@ -35,6 +35,8 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 		logisticssvc.NewGatewayMetricsService(deps),
 		logisticssvc.NewGatewayCostService(deps),
 		logisticssvc.NewGatewayRecoveryService(deps),
+		logisticssvc.NewExceptionOrchestrationService(deps),
+		logisticssvc.NewAddressValidationService(deps),
 		logisticssvc.NewWebhookService(deps),
 	)
 
@@ -107,6 +109,13 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.GET("/gateway/failures", handler.ListGatewayFailures)
 	rg.POST("/gateway/failures/ingest", handler.IngestGatewayFailures)
 	rg.POST("/gateway/failures/:id/compensate", handler.CompensateGatewayFailure)
+	rg.GET("/exceptions/orchestration/rules", handler.ListExceptionOrchestrationRules)
+	rg.POST("/exceptions/orchestration/rules", handler.UpsertExceptionOrchestrationRule)
+	rg.PATCH("/exceptions/orchestration/rules/:id", handler.UpsertExceptionOrchestrationRule)
+	rg.GET("/exceptions/orchestration/runs", handler.ListExceptionOrchestrationRuns)
+	rg.POST("/exceptions/orchestration/execute", handler.ExecuteExceptionOrchestration)
+	rg.POST("/address-validation/check", handler.CheckAddressValidation)
+	rg.GET("/address-validation/records", handler.ListAddressValidationRecords)
 
 	rg.POST("/webhook", handler.HandleWebhook)
 	return rg
