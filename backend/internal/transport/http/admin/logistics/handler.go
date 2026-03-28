@@ -37,6 +37,7 @@ type Handler struct {
 	settlementSvc *logisticssvc.SettlementService
 	controlSvc    *logisticssvc.ControlTowerService
 	allocationSvc *logisticssvc.AllocationService
+	lastmileSvc   *logisticssvc.LastmileRecoveryService
 	webhookSvc    *logisticssvc.WebhookService
 }
 
@@ -65,6 +66,7 @@ func NewHandler(
 	settlementSvc *logisticssvc.SettlementService,
 	controlSvc *logisticssvc.ControlTowerService,
 	allocationSvc *logisticssvc.AllocationService,
+	lastmileSvc *logisticssvc.LastmileRecoveryService,
 	webhookSvc *logisticssvc.WebhookService,
 ) *Handler {
 	return &Handler{
@@ -92,6 +94,7 @@ func NewHandler(
 		settlementSvc: settlementSvc,
 		controlSvc:    controlSvc,
 		allocationSvc: allocationSvc,
+		lastmileSvc:   lastmileSvc,
 		webhookSvc:    webhookSvc,
 	}
 }

@@ -101,6 +101,9 @@
             <UButton size="xs" variant="ghost" color="warning" @click="openOrchestration(row.original)">
               异常编排
             </UButton>
+            <UButton size="xs" variant="ghost" color="warning" @click="openLastmileRecovery(row.original)">
+              末端自愈
+            </UButton>
             <UButton size="xs" variant="ghost" color="info" @click="openAddressValidation(row.original)">
               地址校验
             </UButton>
@@ -342,6 +345,36 @@
         </div>
       </template>
     </UModal>
+
+    <UModal v-model:open="lastmileRecoveryOpen" title="末端异常自愈中心">
+      <template #body>
+        <div class="space-y-3">
+          <p class="text-xs text-gray-500">运单：{{ lastmileForm.waybillNo || "-" }}</p>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <UInput v-model="lastmileForm.ruleName" placeholder="规则名称" />
+            <USelect v-model="lastmileForm.triggerEvent" :options="lastmileTriggerOptions" />
+            <USelect v-model="lastmileForm.action" :options="lastmileActionOptions" />
+            <UInput v-model.number="lastmileForm.maxRetries" type="number" placeholder="最大重试次数" />
+          </div>
+          <div class="flex gap-2">
+            <UButton size="xs" color="primary" :loading="lastmileLoading" @click="createLastmileRule">创建规则</UButton>
+            <UButton size="xs" color="warning" :loading="lastmileLoading" @click="executeLastmile">执行自愈</UButton>
+          </div>
+          <ul class="space-y-2 text-xs">
+            <li v-for="item in lastmileRuns" :key="item.id" class="rounded border border-gray-200 p-2 dark:border-gray-800">
+              <div class="flex items-center justify-between gap-2">
+                <span>{{ item.triggerEvent }} · {{ item.action }} · {{ item.status }} · retry {{ item.retryCount }}/{{ item.maxRetries }}</span>
+                <UButton size="xs" variant="ghost" :loading="lastmileLoading" @click="takeoverLastmile(item.id)">
+                  人工接管
+                </UButton>
+              </div>
+              <p class="mt-1 text-gray-500">{{ item.message || "-" }}</p>
+            </li>
+            <li v-if="!lastmileRuns.length" class="text-gray-500">暂无自愈记录</li>
+          </ul>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
 
@@ -353,6 +386,8 @@ import type {
   LogisticsExceptionOrchestrationRun,
   LogisticsExceptionOrchestrationRule,
   LogisticsGatewayFailureEvent,
+  LogisticsLastmileRecoveryRule,
+  LogisticsLastmileRecoveryRun,
   LogisticsRedeliveryTask,
   LogisticsWaybillETA,
 } from "~/composables/api/useLogistics";
@@ -420,6 +455,10 @@ const orchestrationRuns = ref<LogisticsExceptionOrchestrationRun[]>([]);
 const addressValidationOpen = ref(false);
 const addressLoading = ref(false);
 const latestAddressValidation = ref<LogisticsAddressValidation | null>(null);
+const lastmileRecoveryOpen = ref(false);
+const lastmileLoading = ref(false);
+const lastmileRules = ref<LogisticsLastmileRecoveryRule[]>([]);
+const lastmileRuns = ref<LogisticsLastmileRecoveryRun[]>([]);
 const routingForm = reactive({
   waybillNo: "",
   warehouseId: "",
@@ -460,6 +499,14 @@ const addressForm = reactive({
   waybillNo: "",
   address: "",
 });
+const lastmileForm = reactive({
+  waybillId: "",
+  waybillNo: "",
+  ruleName: "末端异常自愈规则",
+  triggerEvent: "delay",
+  action: "redispatch",
+  maxRetries: 3,
+});
 const orchestrationTriggerOptions = [
   { label: "延误", value: "delay" },
   { label: "拒收", value: "rejected" },
@@ -469,6 +516,18 @@ const orchestrationActionOptions = [
   { label: "自动补偿", value: "auto_compensate" },
   { label: "创建工单", value: "create_ticket" },
   { label: "SLA升级", value: "escalate" },
+];
+const lastmileTriggerOptions = [
+  { label: "延误", value: "delay" },
+  { label: "拒收", value: "rejected" },
+  { label: "丢件", value: "lost" },
+  { label: "超时", value: "timeout" },
+];
+const lastmileActionOptions = [
+  { label: "改派", value: "redispatch" },
+  { label: "补发", value: "reship" },
+  { label: "退款", value: "refund" },
+  { label: "人工复核", value: "manual_review" },
 ];
 const syncJobForm = reactive({
   carrierId: "",
@@ -859,6 +918,76 @@ const executeOrchestration = async () => {
     });
   } finally {
     orchestrationLoading.value = false;
+  }
+};
+
+const openLastmileRecovery = async (waybill: Waybill) => {
+  lastmileForm.waybillId = waybill.id;
+  lastmileForm.waybillNo = waybill.waybillNo;
+  lastmileRecoveryOpen.value = true;
+  lastmileLoading.value = true;
+  try {
+    lastmileRules.value = await logisticsApi.listLastmileRecoveryRules({ enabled: true });
+    lastmileRuns.value = await logisticsApi.listLastmileRecoveryRuns({
+      waybill_no: waybill.waybillNo,
+      limit: 20,
+    });
+  } finally {
+    lastmileLoading.value = false;
+  }
+};
+
+const createLastmileRule = async () => {
+  lastmileLoading.value = true;
+  try {
+    const row = await logisticsApi.upsertLastmileRecoveryRule({
+      name: lastmileForm.ruleName || "末端异常自愈规则",
+      trigger_event: lastmileForm.triggerEvent || "delay",
+      action: lastmileForm.action || "redispatch",
+      priority: 100,
+      max_retries: Number(lastmileForm.maxRetries || 3),
+      enabled: true,
+    });
+    lastmileRules.value = [row, ...lastmileRules.value.filter((item) => item.id !== row.id)];
+  } finally {
+    lastmileLoading.value = false;
+  }
+};
+
+const executeLastmile = async () => {
+  const rule = lastmileRules.value[0];
+  lastmileLoading.value = true;
+  try {
+    await logisticsApi.executeLastmileRecovery({
+      request_key: `lastmile#${lastmileForm.waybillId}#${Date.now()}`,
+      rule_id: rule?.id,
+      waybill_id: lastmileForm.waybillId || undefined,
+      waybill_no: lastmileForm.waybillNo || undefined,
+      trigger_event: lastmileForm.triggerEvent || undefined,
+    });
+    lastmileRuns.value = await logisticsApi.listLastmileRecoveryRuns({
+      waybill_no: lastmileForm.waybillNo,
+      limit: 20,
+    });
+  } finally {
+    lastmileLoading.value = false;
+  }
+};
+
+const takeoverLastmile = async (id: string) => {
+  lastmileLoading.value = true;
+  try {
+    await logisticsApi.takeoverLastmileRecovery(id, {
+      action: "takeover",
+      operator_id: "admin",
+      reason: "manual intervention",
+    });
+    lastmileRuns.value = await logisticsApi.listLastmileRecoveryRuns({
+      waybill_no: lastmileForm.waybillNo,
+      limit: 20,
+    });
+  } finally {
+    lastmileLoading.value = false;
   }
 };
 

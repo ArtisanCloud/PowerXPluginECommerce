@@ -340,3 +340,28 @@ type overrideAllocationRequest struct {
 	Reason     string `json:"reason,omitempty"`
 	OperatorID string `json:"operator_id,omitempty"`
 }
+
+type upsertLastmileRecoveryRuleRequest struct {
+	ID           string         `json:"id,omitempty"`
+	Name         string         `json:"name"`
+	TriggerEvent string         `json:"trigger_event"`
+	Action       string         `json:"action"`
+	Priority     int            `json:"priority,omitempty"`
+	MaxRetries   int            `json:"max_retries,omitempty"`
+	Enabled      *bool          `json:"enabled,omitempty"`
+	Config       map[string]any `json:"config,omitempty"`
+}
+
+type executeLastmileRecoveryRequest struct {
+	RequestKey   string `json:"request_key,omitempty"`
+	RuleID       string `json:"rule_id,omitempty"`
+	WaybillID    string `json:"waybill_id,omitempty"`
+	WaybillNo    string `json:"waybill_no,omitempty"`
+	TriggerEvent string `json:"trigger_event,omitempty"`
+}
+
+type takeoverLastmileRecoveryRequest struct {
+	Action     string `json:"action"`
+	OperatorID string `json:"operator_id,omitempty"`
+	Reason     string `json:"reason,omitempty"`
+}

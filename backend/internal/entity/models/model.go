@@ -187,6 +187,8 @@ const (
 	TableLogisticsSettlementDiffs                = "logistics_settlement_diffs"
 	TableLogisticsControlTowerSnapshots          = "logistics_control_tower_snapshots"
 	TableLogisticsControlTowerAlertSubscriptions = "logistics_control_tower_alert_subscriptions"
+	TableLogisticsLastmileRecoveryRules          = "logistics_lastmile_recovery_rules"
+	TableLogisticsLastmileRecoveryRuns           = "logistics_lastmile_recovery_runs"
 	TableLogisticsNotificationTemplates          = "logistics_notification_templates"
 	TableLogisticsNotificationRecords            = "logistics_notification_records"
 	TableFulfillmentTasks                        = "fulfillment_tasks"

@@ -178,6 +178,24 @@ func RBACEntries(prefix string) map[string]AuthX.Permission {
 		"POST:" + base + "/allocation/override": {
 			Resource: res("logistics.allocation"), Action: "manage",
 		},
+		"GET:" + base + "/lastmile-recovery/rules": {
+			Resource: res("logistics.lastmile_recovery"), Action: "read",
+		},
+		"POST:" + base + "/lastmile-recovery/rules": {
+			Resource: res("logistics.lastmile_recovery"), Action: "manage",
+		},
+		"PATCH:" + base + "/lastmile-recovery/rules/:id": {
+			Resource: res("logistics.lastmile_recovery"), Action: "manage",
+		},
+		"POST:" + base + "/lastmile-recovery/execute": {
+			Resource: res("logistics.lastmile_recovery"), Action: "manage",
+		},
+		"GET:" + base + "/lastmile-recovery/runs": {
+			Resource: res("logistics.lastmile_recovery"), Action: "read",
+		},
+		"POST:" + base + "/lastmile-recovery/runs/:id/takeover": {
+			Resource: res("logistics.lastmile_recovery"), Action: "manage",
+		},
 		"POST:" + base + "/webhook": {Resource: res("logistics.webhook"), Action: "manage"},
 	}
 }

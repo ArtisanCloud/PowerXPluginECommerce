@@ -41,6 +41,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 		logisticssvc.NewSettlementService(deps),
 		logisticssvc.NewControlTowerService(deps),
 		logisticssvc.NewAllocationService(deps),
+		logisticssvc.NewLastmileRecoveryService(deps),
 		logisticssvc.NewWebhookService(deps),
 	)
 
@@ -138,6 +139,12 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.PATCH("/allocation/plans/:id", handler.UpsertCapacityPlan)
 	rg.POST("/allocation/allocate", handler.AllocateCarrier)
 	rg.POST("/allocation/override", handler.OverrideAllocation)
+	rg.GET("/lastmile-recovery/rules", handler.ListLastmileRecoveryRules)
+	rg.POST("/lastmile-recovery/rules", handler.UpsertLastmileRecoveryRule)
+	rg.PATCH("/lastmile-recovery/rules/:id", handler.UpsertLastmileRecoveryRule)
+	rg.POST("/lastmile-recovery/execute", handler.ExecuteLastmileRecovery)
+	rg.GET("/lastmile-recovery/runs", handler.ListLastmileRecoveryRuns)
+	rg.POST("/lastmile-recovery/runs/:id/takeover", handler.TakeoverLastmileRecovery)
 
 	rg.POST("/webhook", handler.HandleWebhook)
 	return rg

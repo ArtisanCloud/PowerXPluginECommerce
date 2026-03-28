@@ -452,11 +452,11 @@
 
 ### Implementation for User Story 32
 
-- [ ] T198 [P] [US32] 增加末端异常动作编排模型（`backend/internal/entity/models/logistics/lastmile_recovery*.go`）
-- [ ] T199 [US32] 实现自愈编排服务（策略命中、动作编排、重试与人工接管）（`backend/internal/services/admin/logistics/lastmile_recovery_service.go`）
-- [ ] T200 [US32] 实现自愈中心接口（规则、执行记录、手工介入）（`backend/internal/transport/http/admin/logistics/{lastmile_recovery_handler.go,routes.go,dto.go}`）
-- [ ] T201 [US32] 在运单页新增“末端异常自愈”面板（`web-admin/app/pages/shipping/waybills.vue`）
-- [ ] T202 [US32] 增加 US32 回归测试（动作幂等、重试策略、接管优先级）（`backend/internal/services/admin/logistics/*_test.go`）
+- [X] T198 [P] [US32] 增加末端异常动作编排模型（`backend/internal/entity/models/logistics/lastmile_recovery*.go`）
+- [X] T199 [US32] 实现自愈编排服务（策略命中、动作编排、重试与人工接管）（`backend/internal/services/admin/logistics/lastmile_recovery_service.go`）
+- [X] T200 [US32] 实现自愈中心接口（规则、执行记录、手工介入）（`backend/internal/transport/http/admin/logistics/{lastmile_recovery_handler.go,routes.go,dto.go}`）
+- [X] T201 [US32] 在运单页新增“末端异常自愈”面板（`web-admin/app/pages/shipping/waybills.vue`）
+- [X] T202 [US32] 增加 US32 回归测试（动作幂等、重试策略、接管优先级）（`backend/internal/services/admin/logistics/*_test.go`）
 
 ---
 

@@ -637,6 +637,40 @@ export type LogisticsAllocationResult = {
   createdAt: string;
 };
 
+export type LogisticsLastmileRecoveryRule = {
+  id: string;
+  name: string;
+  triggerEvent: string;
+  action: string;
+  priority: number;
+  maxRetries: number;
+  enabled: boolean;
+  config: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsLastmileRecoveryRun = {
+  id: string;
+  requestKey: string;
+  ruleId: string;
+  waybillId: string;
+  waybillNo: string;
+  triggerEvent: string;
+  action: string;
+  status: string;
+  retryCount: number;
+  maxRetries: number;
+  message: string;
+  manualTaken: boolean;
+  takenBy: string;
+  takenReason: string;
+  takenAt: string;
+  metadata: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type LogisticsRateQuoteResult = {
   templateId: string;
   template: string;
@@ -1093,6 +1127,40 @@ const normalizeAllocationResult = (raw: RawRecord): LogisticsAllocationResult =>
   reason: String(pick(raw, "reason", "reason") || ""),
   candidates: asArray<RawRecord>(pick(raw, "candidates", "candidates")).map(normalizeAllocationCandidate),
   createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+});
+
+const normalizeLastmileRecoveryRule = (raw: RawRecord): LogisticsLastmileRecoveryRule => ({
+  id: String(pick(raw, "id", "id") || ""),
+  name: String(pick(raw, "name", "name") || ""),
+  triggerEvent: String(pick(raw, "triggerEvent", "trigger_event") || ""),
+  action: String(pick(raw, "action", "action") || ""),
+  priority: Number(pick(raw, "priority", "priority") || 100),
+  maxRetries: Number(pick(raw, "maxRetries", "max_retries") || 3),
+  enabled: Boolean(pick(raw, "enabled", "enabled")),
+  config: (pick(raw, "config", "config") || {}) as Record<string, any>,
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeLastmileRecoveryRun = (raw: RawRecord): LogisticsLastmileRecoveryRun => ({
+  id: String(pick(raw, "id", "id") || ""),
+  requestKey: String(pick(raw, "requestKey", "request_key") || ""),
+  ruleId: String(pick(raw, "ruleId", "rule_id") || ""),
+  waybillId: String(pick(raw, "waybillId", "waybill_id") || ""),
+  waybillNo: String(pick(raw, "waybillNo", "waybill_no") || ""),
+  triggerEvent: String(pick(raw, "triggerEvent", "trigger_event") || ""),
+  action: String(pick(raw, "action", "action") || ""),
+  status: String(pick(raw, "status", "status") || ""),
+  retryCount: Number(pick(raw, "retryCount", "retry_count") || 0),
+  maxRetries: Number(pick(raw, "maxRetries", "max_retries") || 0),
+  message: String(pick(raw, "message", "message") || ""),
+  manualTaken: Boolean(pick(raw, "manualTaken", "manual_taken")),
+  takenBy: String(pick(raw, "takenBy", "taken_by") || ""),
+  takenReason: String(pick(raw, "takenReason", "taken_reason") || ""),
+  takenAt: String(pick(raw, "takenAt", "taken_at") || ""),
+  metadata: (pick(raw, "metadata", "metadata") || {}) as Record<string, any>,
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
 });
 
 const normalizeRoutingRule = (raw: RawRecord): LogisticsRoutingRule => ({
@@ -2007,6 +2075,47 @@ export function useLogisticsApi() {
     overrideAllocation: async (payload: Record<string, any>, init?: any): Promise<LogisticsAllocationResult> => {
       const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/allocation/override`, payload, init));
       return normalizeAllocationResult((raw || {}) as RawRecord);
+    },
+
+    listLastmileRecoveryRules: async (query?: { enabled?: boolean }, init?: any): Promise<LogisticsLastmileRecoveryRule[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/lastmile-recovery/rules`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeLastmileRecoveryRule);
+    },
+
+    upsertLastmileRecoveryRule: async (payload: Record<string, any>, init?: any): Promise<LogisticsLastmileRecoveryRule> => {
+      const id = String(payload.id || "").trim();
+      const path = id ? `${basePath}/lastmile-recovery/rules/${id}` : `${basePath}/lastmile-recovery/rules`;
+      const req = id ? apiPatch<ApiEnvelope<RawRecord>>(path, payload, init) : apiPost<ApiEnvelope<RawRecord>>(path, payload, init);
+      const raw = await unwrap(req);
+      return normalizeLastmileRecoveryRule((raw || {}) as RawRecord);
+    },
+
+    executeLastmileRecovery: async (
+      payload: Record<string, any>,
+      init?: any,
+    ): Promise<{ run: LogisticsLastmileRecoveryRun; idempotencyStatus: string }> => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<{ run: RawRecord; idempotency_status: string }>>(`${basePath}/lastmile-recovery/execute`, payload, init),
+      );
+      return {
+        run: normalizeLastmileRecoveryRun((raw?.run || {}) as RawRecord),
+        idempotencyStatus: String(raw?.idempotency_status || "created"),
+      };
+    },
+
+    listLastmileRecoveryRuns: async (
+      query?: { waybill_no?: string; status?: string; limit?: number },
+      init?: any,
+    ): Promise<LogisticsLastmileRecoveryRun[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/lastmile-recovery/runs`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeLastmileRecoveryRun);
+    },
+
+    takeoverLastmileRecovery: async (id: string, payload: Record<string, any>, init?: any): Promise<LogisticsLastmileRecoveryRun> => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<RawRecord>>(`${basePath}/lastmile-recovery/runs/${id}/takeover`, payload, init),
+      );
+      return normalizeLastmileRecoveryRun((raw || {}) as RawRecord);
     },
   };
 }

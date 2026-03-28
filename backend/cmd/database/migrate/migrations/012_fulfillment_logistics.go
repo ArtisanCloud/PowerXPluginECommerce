@@ -38,6 +38,8 @@ var FulfillmentLogisticsTables = []interface{}{
 	&LogisticsModel.SettlementDiff{},
 	&LogisticsModel.ControlTowerSnapshot{},
 	&LogisticsModel.ControlTowerAlertSubscription{},
+	&LogisticsModel.LastmileRecoveryRule{},
+	&LogisticsModel.LastmileRecoveryRun{},
 	&LogisticsModel.NotificationTemplate{},
 	&LogisticsModel.NotificationRecord{},
 	&FulfillmentModel.Task{},

@@ -222,4 +222,13 @@ func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 	if allocationPerm.Resource != "com.powerx.plugins.ecommerce:logistics.allocation" {
 		t.Fatalf("unexpected resource %s", allocationPerm.Resource)
 	}
+
+	lastmileKey := "POST:/api/v1/admin/logistics/lastmile-recovery/execute"
+	lastmilePerm, ok := entries[lastmileKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", lastmileKey)
+	}
+	if lastmilePerm.Resource != "com.powerx.plugins.ecommerce:logistics.lastmile_recovery" {
+		t.Fatalf("unexpected resource %s", lastmilePerm.Resource)
+	}
 }
