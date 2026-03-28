@@ -42,6 +42,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 		logisticssvc.NewControlTowerService(deps),
 		logisticssvc.NewAllocationService(deps),
 		logisticssvc.NewLastmileRecoveryService(deps),
+		logisticssvc.NewCrossborderService(deps),
 		logisticssvc.NewWebhookService(deps),
 	)
 
@@ -145,6 +146,14 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.POST("/lastmile-recovery/execute", handler.ExecuteLastmileRecovery)
 	rg.GET("/lastmile-recovery/runs", handler.ListLastmileRecoveryRuns)
 	rg.POST("/lastmile-recovery/runs/:id/takeover", handler.TakeoverLastmileRecovery)
+	rg.GET("/crossborder/documents", handler.ListCrossborderDocuments)
+	rg.POST("/crossborder/documents", handler.UpsertCrossborderDocument)
+	rg.PATCH("/crossborder/documents/:id", handler.UpsertCrossborderDocument)
+	rg.POST("/crossborder/tax-quote", handler.QuoteCrossborderTax)
+	rg.GET("/crossborder/tracking-maps", handler.ListCrossborderTrackingMaps)
+	rg.POST("/crossborder/tracking-maps", handler.UpsertCrossborderTrackingMap)
+	rg.PATCH("/crossborder/tracking-maps/:id", handler.UpsertCrossborderTrackingMap)
+	rg.POST("/crossborder/tracking-maps/normalize", handler.NormalizeCrossborderTracking)
 
 	rg.POST("/webhook", handler.HandleWebhook)
 	return rg

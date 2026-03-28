@@ -196,6 +196,30 @@ func RBACEntries(prefix string) map[string]AuthX.Permission {
 		"POST:" + base + "/lastmile-recovery/runs/:id/takeover": {
 			Resource: res("logistics.lastmile_recovery"), Action: "manage",
 		},
+		"GET:" + base + "/crossborder/documents": {
+			Resource: res("logistics.crossborder"), Action: "read",
+		},
+		"POST:" + base + "/crossborder/documents": {
+			Resource: res("logistics.crossborder"), Action: "manage",
+		},
+		"PATCH:" + base + "/crossborder/documents/:id": {
+			Resource: res("logistics.crossborder"), Action: "manage",
+		},
+		"POST:" + base + "/crossborder/tax-quote": {
+			Resource: res("logistics.crossborder"), Action: "read",
+		},
+		"GET:" + base + "/crossborder/tracking-maps": {
+			Resource: res("logistics.crossborder"), Action: "read",
+		},
+		"POST:" + base + "/crossborder/tracking-maps": {
+			Resource: res("logistics.crossborder"), Action: "manage",
+		},
+		"PATCH:" + base + "/crossborder/tracking-maps/:id": {
+			Resource: res("logistics.crossborder"), Action: "manage",
+		},
+		"POST:" + base + "/crossborder/tracking-maps/normalize": {
+			Resource: res("logistics.crossborder"), Action: "read",
+		},
 		"POST:" + base + "/webhook": {Resource: res("logistics.webhook"), Action: "manage"},
 	}
 }

@@ -403,3 +403,48 @@
   - 失败率：`0%`
   - 异常恢复耗时：`< 1s`（测试环境）
   - 结算差异率：样本单据命中 `weight_mismatch` 并完成处置闭环
+
+## 24. M10 验证（控制塔 + 智能分单 + 末端自愈 + 跨境履约）
+1. 在运单页打开“智能分单”，执行自动分单并人工改派，确认候选解释与最终承运商变更可追溯。
+2. 在运单页打开“末端自愈”，创建规则并执行自愈，验证重试次数、状态流转与人工接管生效。
+3. 在运单页打开“跨境履约”，录入跨境资料、执行税费预估、配置轨迹映射并校验标准化状态输出。
+4. 在控制塔页查看全局概览与 drilldown，确认异常/时效/成本指标在窗口内可查询。
+
+预期结果：
+- 分单、改派、自愈、跨境映射均可在同一运单视角闭环。
+- 控制塔指标与运单执行状态一致，可用于运营决策。
+- 跨境税费估算、轨迹状态映射具备幂等与可追溯记录。
+
+## 25. Iteration-9 执行记录模板（可直接复制）
+```md
+### 25.1 T208 M10 quickstart 与模板更新
+- 变更文件：`specs/011-fulfillment-logistics/quickstart.md`
+- 覆盖范围：US30-US33 验证步骤、M10 发布前检查项
+- 结果：通过/待补充
+
+### 25.2 T209 M10 后端回归
+- 执行命令：`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment -count=1`
+- 结果：通过/失败（附失败包与错误）
+
+### 25.3 T210 M10 前端构建与页面回归
+- 执行命令：`make build-admin`
+- 结果：通过/失败
+- 页面回归：`shipping/control-tower`、`shipping/waybills`
+```
+
+## 26. Iteration-9 执行记录（2026-03-28）
+### 26.1 T208 M10 quickstart 与模板更新
+- 已补齐 M10 验证章节（第 24 节）与 Iteration-9 执行记录模板（第 25 节）。
+- 覆盖范围：US30-US33（履约控制塔、承运商智能分单、末端异常自愈、跨境履约扩展）。
+
+### 26.2 T209 M10 后端回归
+- 执行命令：  
+  `cd backend && GOCACHE=$PWD/.gocache GOMODCACHE=$PWD/.gomodcache go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment -count=1`
+- 结果：**通过**（4 个目标包全部通过）。
+
+### 26.3 T210 M10 前端构建与页面回归
+- 执行命令：`make build-admin`
+- 结果：**通过**（存在既有 Rollup circular/chunk warnings，不阻塞产物输出）。
+- 页面范围：
+  - `shipping/control-tower`
+  - `shipping/waybills`（智能分单、末端自愈、跨境履约面板）

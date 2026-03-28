@@ -231,4 +231,13 @@ func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 	if lastmilePerm.Resource != "com.powerx.plugins.ecommerce:logistics.lastmile_recovery" {
 		t.Fatalf("unexpected resource %s", lastmilePerm.Resource)
 	}
+
+	crossborderKey := "POST:/api/v1/admin/logistics/crossborder/tax-quote"
+	crossborderPerm, ok := entries[crossborderKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", crossborderKey)
+	}
+	if crossborderPerm.Resource != "com.powerx.plugins.ecommerce:logistics.crossborder" {
+		t.Fatalf("unexpected resource %s", crossborderPerm.Resource)
+	}
 }

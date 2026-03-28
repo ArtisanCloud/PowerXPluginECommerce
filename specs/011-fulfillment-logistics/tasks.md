@@ -468,19 +468,19 @@
 
 ### Implementation for User Story 33
 
-- [ ] T203 [P] [US33] 增加跨境资料与税费模型（`backend/internal/entity/models/logistics/crossborder*.go`）
-- [ ] T204 [US33] 实现跨境履约服务（资料校验、税费估算、标准化状态映射）（`backend/internal/services/admin/logistics/crossborder_service.go`）
-- [ ] T205 [US33] 实现跨境接口（资料管理、预估查询、轨迹映射）（`backend/internal/transport/http/admin/logistics/{crossborder_handler.go,routes.go,dto.go}`）
-- [ ] T206 [US33] 在运单页新增“跨境履约”区块（`web-admin/app/pages/shipping/waybills.vue`）
-- [ ] T207 [US33] 增加 US33 回归测试（校验规则、税费边界、状态映射准确性）（`backend/internal/services/admin/logistics/*_test.go`）
+- [X] T203 [P] [US33] 增加跨境资料与税费模型（`backend/internal/entity/models/logistics/crossborder*.go`）
+- [X] T204 [US33] 实现跨境履约服务（资料校验、税费估算、标准化状态映射）（`backend/internal/services/admin/logistics/crossborder_service.go`）
+- [X] T205 [US33] 实现跨境接口（资料管理、预估查询、轨迹映射）（`backend/internal/transport/http/admin/logistics/{crossborder_handler.go,routes.go,dto.go}`）
+- [X] T206 [US33] 在运单页新增“跨境履约”区块（`web-admin/app/pages/shipping/waybills.vue`）
+- [X] T207 [US33] 增加 US33 回归测试（校验规则、税费边界、状态映射准确性）（`backend/internal/services/admin/logistics/*_test.go`）
 
 ---
 
 ## Iteration-9 Polish
 
-- [ ] T208 [P] 更新 M10 quickstart 与执行记录模板（`specs/011-fulfillment-logistics/quickstart.md`）
-- [ ] T209 执行 M10 后端回归（`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment -count=1`）
-- [ ] T210 执行 M10 前端构建与页面回归（`make build-admin`）
+- [X] T208 [P] 更新 M10 quickstart 与执行记录模板（`specs/011-fulfillment-logistics/quickstart.md`）
+- [X] T209 执行 M10 后端回归（`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment -count=1`）
+- [X] T210 执行 M10 前端构建与页面回归（`make build-admin`）
 
 ---
 

@@ -104,6 +104,9 @@
             <UButton size="xs" variant="ghost" color="warning" @click="openLastmileRecovery(row.original)">
               末端自愈
             </UButton>
+            <UButton size="xs" variant="ghost" color="success" @click="openCrossborder(row.original)">
+              跨境履约
+            </UButton>
             <UButton size="xs" variant="ghost" color="info" @click="openAddressValidation(row.original)">
               地址校验
             </UButton>
@@ -375,6 +378,64 @@
         </div>
       </template>
     </UModal>
+
+    <UModal v-model:open="crossborderOpen" title="跨境履约">
+      <template #body>
+        <div class="space-y-3">
+          <p class="text-xs text-gray-500">运单：{{ crossborderForm.waybillNo || "-" }}</p>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <USelect v-model="crossborderForm.docType" :options="crossborderDocTypeOptions" />
+            <UInput v-model="crossborderForm.docNo" placeholder="单据号" />
+            <UInput v-model="crossborderForm.countryFrom" placeholder="起运国家（CN）" />
+            <UInput v-model="crossborderForm.countryTo" placeholder="目的国家（US）" />
+          </div>
+          <div class="flex gap-2">
+            <UButton size="xs" color="primary" :loading="crossborderLoading" @click="saveCrossborderDoc">保存资料</UButton>
+            <UButton size="xs" color="warning" :loading="crossborderLoading" @click="quoteCrossborderTax">税费预估</UButton>
+            <UButton size="xs" color="info" :loading="crossborderLoading" @click="normalizeCrossborderStatus">轨迹映射</UButton>
+          </div>
+          <UCard v-if="crossborderQuote">
+            <p class="text-xs">
+              税费：duty={{ crossborderQuote.dutyAmount.toFixed(2) }} + vat={{ crossborderQuote.vatAmount.toFixed(2) }} =
+              {{ crossborderQuote.totalTaxAmount.toFixed(2) }} {{ crossborderQuote.currency }}
+            </p>
+            <p class="text-xs text-gray-500">
+              目的地={{ crossborderQuote.destinationCountry }}，税率 duty={{ crossborderQuote.dutyRate }}，vat={{ crossborderQuote.vatRate }}
+            </p>
+          </UCard>
+          <UCard>
+            <template #header>
+              <div class="text-sm font-medium">跨境资料</div>
+            </template>
+            <ul class="space-y-1 text-xs">
+              <li v-for="item in crossborderDocuments" :key="item.id">
+                {{ item.docType }} · {{ item.docNo }} · {{ item.status }} · {{ item.countryFrom }}→{{ item.countryTo }}
+              </li>
+              <li v-if="!crossborderDocuments.length" class="text-gray-500">暂无资料</li>
+            </ul>
+          </UCard>
+          <UCard>
+            <template #header>
+              <div class="text-sm font-medium">轨迹映射</div>
+            </template>
+            <div class="grid gap-2 sm:grid-cols-2">
+              <UInput v-model="crossborderForm.provider" placeholder="provider (dhl)" />
+              <UInput v-model="crossborderForm.providerStatus" placeholder="provider_status (customs_hold)" />
+              <USelect v-model="crossborderForm.normalizedStatus" :options="crossborderNormalizedStatusOptions" />
+            </div>
+            <p class="text-xs text-gray-500 mt-2">
+              当前归一化：{{ crossborderNormalizedResult || "-" }}（source={{ crossborderNormalizedSource || "-" }}）
+            </p>
+            <ul class="space-y-1 text-xs mt-2">
+              <li v-for="item in crossborderTrackingMaps" :key="item.id">
+                {{ item.provider }} / {{ item.providerStatus }} -> {{ item.normalizedStatus }}
+              </li>
+              <li v-if="!crossborderTrackingMaps.length" class="text-gray-500">暂无映射</li>
+            </ul>
+          </UCard>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
 
@@ -383,6 +444,9 @@ import type { TableColumn } from "@nuxt/ui";
 import type {
   LogisticsAddressValidation,
   LogisticsAllocationResult,
+  LogisticsCrossborderDocument,
+  LogisticsCrossborderTaxQuote,
+  LogisticsCrossborderTrackingMap,
   LogisticsExceptionOrchestrationRun,
   LogisticsExceptionOrchestrationRule,
   LogisticsGatewayFailureEvent,
@@ -459,6 +523,13 @@ const lastmileRecoveryOpen = ref(false);
 const lastmileLoading = ref(false);
 const lastmileRules = ref<LogisticsLastmileRecoveryRule[]>([]);
 const lastmileRuns = ref<LogisticsLastmileRecoveryRun[]>([]);
+const crossborderOpen = ref(false);
+const crossborderLoading = ref(false);
+const crossborderDocuments = ref<LogisticsCrossborderDocument[]>([]);
+const crossborderTrackingMaps = ref<LogisticsCrossborderTrackingMap[]>([]);
+const crossborderQuote = ref<LogisticsCrossborderTaxQuote | null>(null);
+const crossborderNormalizedResult = ref("");
+const crossborderNormalizedSource = ref("");
 const routingForm = reactive({
   waybillNo: "",
   warehouseId: "",
@@ -507,6 +578,17 @@ const lastmileForm = reactive({
   action: "redispatch",
   maxRetries: 3,
 });
+const crossborderForm = reactive({
+  waybillId: "",
+  waybillNo: "",
+  docType: "invoice",
+  docNo: "",
+  countryFrom: "CN",
+  countryTo: "US",
+  provider: "dhl",
+  providerStatus: "customs_hold",
+  normalizedStatus: "exception",
+});
 const orchestrationTriggerOptions = [
   { label: "延误", value: "delay" },
   { label: "拒收", value: "rejected" },
@@ -528,6 +610,18 @@ const lastmileActionOptions = [
   { label: "补发", value: "reship" },
   { label: "退款", value: "refund" },
   { label: "人工复核", value: "manual_review" },
+];
+const crossborderDocTypeOptions = [
+  { label: "商业发票", value: "invoice" },
+  { label: "报关单", value: "customs_form" },
+  { label: "装箱单", value: "packing_list" },
+  { label: "资质证明", value: "certificate" },
+];
+const crossborderNormalizedStatusOptions = [
+  { label: "待揽收", value: "created" },
+  { label: "运输中", value: "in_transit" },
+  { label: "异常", value: "exception" },
+  { label: "已签收", value: "delivered" },
 ];
 const syncJobForm = reactive({
   carrierId: "",
@@ -988,6 +1082,96 @@ const takeoverLastmile = async (id: string) => {
     });
   } finally {
     lastmileLoading.value = false;
+  }
+};
+
+const openCrossborder = async (waybill: Waybill) => {
+  crossborderForm.waybillId = waybill.id;
+  crossborderForm.waybillNo = waybill.waybillNo;
+  crossborderForm.docNo = "";
+  crossborderQuote.value = null;
+  crossborderNormalizedResult.value = "";
+  crossborderNormalizedSource.value = "";
+  crossborderOpen.value = true;
+  crossborderLoading.value = true;
+  try {
+    crossborderDocuments.value = await logisticsApi.listCrossborderDocuments({
+      waybill_no: waybill.waybillNo,
+      limit: 20,
+    });
+    crossborderTrackingMaps.value = await logisticsApi.listCrossborderTrackingMaps({
+      provider: crossborderForm.provider || undefined,
+      enabled: true,
+      limit: 20,
+    });
+  } finally {
+    crossborderLoading.value = false;
+  }
+};
+
+const saveCrossborderDoc = async () => {
+  if (!crossborderForm.waybillNo || !crossborderForm.docType || !crossborderForm.docNo) return;
+  crossborderLoading.value = true;
+  try {
+    const row = await logisticsApi.upsertCrossborderDocument({
+      waybill_id: crossborderForm.waybillId || undefined,
+      waybill_no: crossborderForm.waybillNo,
+      doc_type: crossborderForm.docType,
+      doc_no: crossborderForm.docNo,
+      country_from: crossborderForm.countryFrom || undefined,
+      country_to: crossborderForm.countryTo || undefined,
+      status: "validated",
+    });
+    crossborderDocuments.value = [row, ...crossborderDocuments.value.filter((item) => item.id !== row.id)];
+  } finally {
+    crossborderLoading.value = false;
+  }
+};
+
+const quoteCrossborderTax = async () => {
+  if (!crossborderForm.countryTo) return;
+  crossborderLoading.value = true;
+  try {
+    const resp = await logisticsApi.quoteCrossborderTax({
+      request_key: `crossborder-tax#${crossborderForm.waybillNo}#${Date.now()}`,
+      waybill_id: crossborderForm.waybillId || undefined,
+      waybill_no: crossborderForm.waybillNo || undefined,
+      destination_country: crossborderForm.countryTo,
+      currency: "USD",
+      declared_value: 120,
+      shipping_fee: 12,
+      insurance_fee: 3,
+    });
+    crossborderQuote.value = resp.quote;
+  } finally {
+    crossborderLoading.value = false;
+  }
+};
+
+const normalizeCrossborderStatus = async () => {
+  if (!crossborderForm.provider || !crossborderForm.providerStatus) return;
+  crossborderLoading.value = true;
+  try {
+    await logisticsApi.upsertCrossborderTrackingMap({
+      provider: crossborderForm.provider,
+      provider_status: crossborderForm.providerStatus,
+      normalized_status: crossborderForm.normalizedStatus,
+      priority: 100,
+      enabled: true,
+    });
+    const result = await logisticsApi.normalizeCrossborderTracking({
+      provider: crossborderForm.provider,
+      provider_status: crossborderForm.providerStatus,
+    });
+    crossborderNormalizedResult.value = result.normalizedStatus;
+    crossborderNormalizedSource.value = result.source;
+    crossborderTrackingMaps.value = await logisticsApi.listCrossborderTrackingMaps({
+      provider: crossborderForm.provider,
+      enabled: true,
+      limit: 20,
+    });
+  } finally {
+    crossborderLoading.value = false;
   }
 };
 

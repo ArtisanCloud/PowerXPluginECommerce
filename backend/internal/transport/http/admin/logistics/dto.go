@@ -321,6 +321,45 @@ type upsertCapacityPlanRequest struct {
 	Config           map[string]any `json:"config,omitempty"`
 }
 
+type upsertCrossborderDocumentRequest struct {
+	ID          string         `json:"id,omitempty"`
+	WaybillID   string         `json:"waybill_id,omitempty"`
+	WaybillNo   string         `json:"waybill_no"`
+	DocType     string         `json:"doc_type"`
+	DocNo       string         `json:"doc_no"`
+	CountryFrom string         `json:"country_from,omitempty"`
+	CountryTo   string         `json:"country_to,omitempty"`
+	Status      string         `json:"status,omitempty"`
+	Metadata    map[string]any `json:"metadata,omitempty"`
+}
+
+type quoteCrossborderTaxRequest struct {
+	RequestKey    string  `json:"request_key,omitempty"`
+	WaybillID     string  `json:"waybill_id,omitempty"`
+	WaybillNo     string  `json:"waybill_no,omitempty"`
+	Destination   string  `json:"destination_country"`
+	Currency      string  `json:"currency,omitempty"`
+	DeclaredValue float64 `json:"declared_value"`
+	ShippingFee   float64 `json:"shipping_fee,omitempty"`
+	InsuranceFee  float64 `json:"insurance_fee,omitempty"`
+}
+
+type upsertCrossborderTrackingMapRequest struct {
+	ID               string         `json:"id,omitempty"`
+	Provider         string         `json:"provider"`
+	ProviderStatus   string         `json:"provider_status"`
+	NormalizedStatus string         `json:"normalized_status"`
+	Description      string         `json:"description,omitempty"`
+	Priority         int            `json:"priority,omitempty"`
+	Enabled          *bool          `json:"enabled,omitempty"`
+	Metadata         map[string]any `json:"metadata,omitempty"`
+}
+
+type normalizeCrossborderTrackingRequest struct {
+	Provider       string `json:"provider"`
+	ProviderStatus string `json:"provider_status"`
+}
+
 type allocationRequest struct {
 	RequestKey       string `json:"request_key,omitempty"`
 	WaybillID        string `json:"waybill_id,omitempty"`

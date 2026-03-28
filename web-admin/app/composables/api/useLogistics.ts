@@ -671,6 +671,55 @@ export type LogisticsLastmileRecoveryRun = {
   updatedAt: string;
 };
 
+export type LogisticsCrossborderDocument = {
+  id: string;
+  waybillId: string;
+  waybillNo: string;
+  docType: string;
+  docNo: string;
+  countryFrom: string;
+  countryTo: string;
+  status: string;
+  validatedAt: string;
+  metadata: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsCrossborderTaxQuote = {
+  id: string;
+  requestKey: string;
+  waybillId: string;
+  waybillNo: string;
+  destinationCountry: string;
+  currency: string;
+  declaredValue: number;
+  shippingFee: number;
+  insuranceFee: number;
+  exemptionAmount: number;
+  dutyRate: number;
+  vatRate: number;
+  dutyAmount: number;
+  vatAmount: number;
+  totalTaxAmount: number;
+  normalizedStatus: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsCrossborderTrackingMap = {
+  id: string;
+  provider: string;
+  providerStatus: string;
+  normalizedStatus: string;
+  description: string;
+  priority: number;
+  enabled: boolean;
+  metadata: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type LogisticsRateQuoteResult = {
   templateId: string;
   template: string;
@@ -1158,6 +1207,55 @@ const normalizeLastmileRecoveryRun = (raw: RawRecord): LogisticsLastmileRecovery
   takenBy: String(pick(raw, "takenBy", "taken_by") || ""),
   takenReason: String(pick(raw, "takenReason", "taken_reason") || ""),
   takenAt: String(pick(raw, "takenAt", "taken_at") || ""),
+  metadata: (pick(raw, "metadata", "metadata") || {}) as Record<string, any>,
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeCrossborderDocument = (raw: RawRecord): LogisticsCrossborderDocument => ({
+  id: String(pick(raw, "id", "id") || ""),
+  waybillId: String(pick(raw, "waybillId", "waybill_id") || ""),
+  waybillNo: String(pick(raw, "waybillNo", "waybill_no") || ""),
+  docType: String(pick(raw, "docType", "doc_type") || ""),
+  docNo: String(pick(raw, "docNo", "doc_no") || ""),
+  countryFrom: String(pick(raw, "countryFrom", "country_from") || ""),
+  countryTo: String(pick(raw, "countryTo", "country_to") || ""),
+  status: String(pick(raw, "status", "status") || "pending"),
+  validatedAt: String(pick(raw, "validatedAt", "validated_at") || ""),
+  metadata: (pick(raw, "metadata", "metadata") || {}) as Record<string, any>,
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeCrossborderTaxQuote = (raw: RawRecord): LogisticsCrossborderTaxQuote => ({
+  id: String(pick(raw, "id", "id") || ""),
+  requestKey: String(pick(raw, "requestKey", "request_key") || ""),
+  waybillId: String(pick(raw, "waybillId", "waybill_id") || ""),
+  waybillNo: String(pick(raw, "waybillNo", "waybill_no") || ""),
+  destinationCountry: String(pick(raw, "destinationCountry", "destination_country") || ""),
+  currency: String(pick(raw, "currency", "currency") || "USD"),
+  declaredValue: Number(pick(raw, "declaredValue", "declared_value") || 0),
+  shippingFee: Number(pick(raw, "shippingFee", "shipping_fee") || 0),
+  insuranceFee: Number(pick(raw, "insuranceFee", "insurance_fee") || 0),
+  exemptionAmount: Number(pick(raw, "exemptionAmount", "exemption_amount") || 0),
+  dutyRate: Number(pick(raw, "dutyRate", "duty_rate") || 0),
+  vatRate: Number(pick(raw, "vatRate", "vat_rate") || 0),
+  dutyAmount: Number(pick(raw, "dutyAmount", "duty_amount") || 0),
+  vatAmount: Number(pick(raw, "vatAmount", "vat_amount") || 0),
+  totalTaxAmount: Number(pick(raw, "totalTaxAmount", "total_tax_amount") || 0),
+  normalizedStatus: String(pick(raw, "normalizedStatus", "normalized_status") || "estimated"),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeCrossborderTrackingMap = (raw: RawRecord): LogisticsCrossborderTrackingMap => ({
+  id: String(pick(raw, "id", "id") || ""),
+  provider: String(pick(raw, "provider", "provider") || ""),
+  providerStatus: String(pick(raw, "providerStatus", "provider_status") || ""),
+  normalizedStatus: String(pick(raw, "normalizedStatus", "normalized_status") || "created"),
+  description: String(pick(raw, "description", "description") || ""),
+  priority: Number(pick(raw, "priority", "priority") || 100),
+  enabled: Boolean(pick(raw, "enabled", "enabled")),
   metadata: (pick(raw, "metadata", "metadata") || {}) as Record<string, any>,
   createdAt: String(pick(raw, "createdAt", "created_at") || ""),
   updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
@@ -2116,6 +2214,62 @@ export function useLogisticsApi() {
         apiPost<ApiEnvelope<RawRecord>>(`${basePath}/lastmile-recovery/runs/${id}/takeover`, payload, init),
       );
       return normalizeLastmileRecoveryRun((raw || {}) as RawRecord);
+    },
+
+    listCrossborderDocuments: async (
+      query?: { waybill_no?: string; limit?: number },
+      init?: any,
+    ): Promise<LogisticsCrossborderDocument[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/crossborder/documents`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeCrossborderDocument);
+    },
+
+    upsertCrossborderDocument: async (payload: Record<string, any>, init?: any): Promise<LogisticsCrossborderDocument> => {
+      const id = String(payload.id || "").trim();
+      const path = id ? `${basePath}/crossborder/documents/${id}` : `${basePath}/crossborder/documents`;
+      const req = id ? apiPatch<ApiEnvelope<RawRecord>>(path, payload, init) : apiPost<ApiEnvelope<RawRecord>>(path, payload, init);
+      const raw = await unwrap(req);
+      return normalizeCrossborderDocument((raw || {}) as RawRecord);
+    },
+
+    quoteCrossborderTax: async (
+      payload: Record<string, any>,
+      init?: any,
+    ): Promise<{ quote: LogisticsCrossborderTaxQuote; idempotencyStatus: string }> => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<{ quote: RawRecord; idempotency_status: string }>>(`${basePath}/crossborder/tax-quote`, payload, init),
+      );
+      return {
+        quote: normalizeCrossborderTaxQuote((raw?.quote || {}) as RawRecord),
+        idempotencyStatus: String(raw?.idempotency_status || "created"),
+      };
+    },
+
+    listCrossborderTrackingMaps: async (
+      query?: { provider?: string; enabled?: boolean; limit?: number },
+      init?: any,
+    ): Promise<LogisticsCrossborderTrackingMap[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/crossborder/tracking-maps`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeCrossborderTrackingMap);
+    },
+
+    upsertCrossborderTrackingMap: async (payload: Record<string, any>, init?: any): Promise<LogisticsCrossborderTrackingMap> => {
+      const id = String(payload.id || "").trim();
+      const path = id ? `${basePath}/crossborder/tracking-maps/${id}` : `${basePath}/crossborder/tracking-maps`;
+      const req = id ? apiPatch<ApiEnvelope<RawRecord>>(path, payload, init) : apiPost<ApiEnvelope<RawRecord>>(path, payload, init);
+      const raw = await unwrap(req);
+      return normalizeCrossborderTrackingMap((raw || {}) as RawRecord);
+    },
+
+    normalizeCrossborderTracking: async (
+      payload: { provider: string; provider_status: string },
+      init?: any,
+    ): Promise<{ normalizedStatus: string; source: string }> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/crossborder/tracking-maps/normalize`, payload, init));
+      return {
+        normalizedStatus: String(pick((raw || {}) as RawRecord, "normalizedStatus", "normalized_status") || ""),
+        source: String(pick((raw || {}) as RawRecord, "source", "source") || ""),
+      };
     },
   };
 }
