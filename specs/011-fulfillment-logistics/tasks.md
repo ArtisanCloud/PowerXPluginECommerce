@@ -574,11 +574,11 @@
 
 ### Iteration-12 Polish
 
-- [ ] T256 [P] 更新 M12 quickstart 与执行记录模板（`specs/011-fulfillment-logistics/quickstart.md`）
-- [ ] T257 执行 M12 后端回归（`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment -count=1`）
-- [ ] T258 执行 M12 前端构建与页面回归（`make build-admin`）
-- [ ] T259 执行 M12 关键链路冒烟（US38/US39/US40 核心服务用例）（`go test ./internal/services/admin/logistics -run 'TestCapacityForecastService_|TestTrackingRootCauseService_|TestInterwarehouseAllocationService_' -count=1`）
-- [ ] T260 归档 M12 执行记录与验收结论（`specs/011-fulfillment-logistics/quickstart.md`）
+- [X] T256 [P] 更新 M12 quickstart 与执行记录模板（`specs/011-fulfillment-logistics/quickstart.md`）
+- [X] T257 执行 M12 后端回归（`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment -count=1`）
+- [X] T258 执行 M12 前端构建与页面回归（`make build-admin`）
+- [X] T259 执行 M12 关键链路冒烟（US38/US39/US40 核心服务用例）（`go test ./internal/services/admin/logistics -run 'TestCapacityForecastService_|TestTrackingRootCauseService_|TestInterwarehouseAllocationService_' -count=1`）
+- [X] T260 归档 M12 执行记录与验收结论（`specs/011-fulfillment-logistics/quickstart.md`）
 
 ---
 

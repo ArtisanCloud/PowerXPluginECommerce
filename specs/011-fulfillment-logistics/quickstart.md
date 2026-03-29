@@ -518,3 +518,74 @@
 ### 29.5 T230 M11 执行记录归档
 - 已将 T226-T229 的执行结果归档到本节。
 - 当前结论：M11 代码与构建层面回归通过，可进入联调环境做实网抽样验收。
+
+## 30. M12 验证（预测 + 根因 + 跨仓协同 + 质量复盘）
+1. 打开容量预测页，生成并应用建议，核对风险等级、建议配额与计划容量更新一致。
+2. 打开 SLA 页执行根因分析，确认异常分布、责任归因与建议动作可钻取。
+3. 在运单页打开“跨仓协同”面板，生成候选并确认调拨，核对成本/时效影响与状态流转。
+4. 打开复盘报告页，按窗口生成报告，检查结论与行动项是否覆盖关键异常与容量风险。
+5. 导出复盘报告 CSV，校验字段稳定、内容可追溯。
+
+预期结果：
+- 预测建议、根因分析、跨仓调拨、复盘报告四条能力链路可闭环。
+- 关键接口支持幂等（建议生成/调拨确认）与租户隔离。
+- 复盘报告可用于运营复盘（结论 + 行动项 + 可导出）。
+
+## 31. Iteration-12 执行记录模板（可直接复制）
+```md
+### 31.1 T256 M12 quickstart 与模板更新
+- 变更文件：`specs/011-fulfillment-logistics/quickstart.md`
+- 覆盖范围：US38-US41 验证步骤、M12 发布前检查项
+- 结果：通过/待补充
+
+### 31.2 T257 M12 后端回归
+- 执行命令：`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment -count=1`
+- 结果：通过/失败（附失败包与错误）
+
+### 31.3 T258 M12 前端构建与页面回归
+- 执行命令：`make build-admin`
+- 结果：通过/失败
+- 页面回归：`shipping/capacity-forecast`、`shipping/sla`、`shipping/waybills`、`shipping/quality-reports`
+
+### 31.4 T259 M12 关键链路冒烟
+- 执行命令：`go test ./internal/services/admin/logistics -run 'TestCapacityForecastService_|TestTrackingRootCauseService_|TestInterwarehouseAllocationService_' -count=1`
+- 场景：容量预测建议、根因分析、跨仓协同候选与确认
+- 结果：通过/失败（附失败用例与日志）
+
+### 31.5 T260 M12 执行记录归档
+- 变更文件：`specs/011-fulfillment-logistics/quickstart.md`
+- 归档范围：T256-T259 执行结果、页面回归范围、风险与后续动作
+- 结果：通过/待补充
+```
+
+## 32. Iteration-12 执行记录（2026-03-29）
+### 32.1 T256 M12 quickstart 与模板更新
+- 已补齐 M12 验证章节（第 30 节）与 Iteration-12 执行记录模板（第 31 节）。
+- 覆盖范围：US38-US41（容量预测、根因分析、跨仓协同、质量复盘报告）。
+
+### 32.2 T257 M12 后端回归
+- 执行命令：  
+  `cd backend && GOCACHE=$PWD/.gocache GOMODCACHE=$PWD/.gomodcache go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment -count=1`
+- 结果：**通过**（4 个目标包全部通过）。
+
+### 32.3 T258 M12 前端构建与页面回归
+- 执行命令：`make build-admin`
+- 结果：**通过**（存在既有 Rollup circular/chunk warnings 与大 chunk 提示，不阻塞产物输出）。
+- 页面范围：
+  - `shipping/capacity-forecast`
+  - `shipping/sla`
+  - `shipping/waybills`（跨仓协同面板）
+  - `shipping/quality-reports`
+
+### 32.4 T259 M12 关键链路冒烟
+- 执行命令：  
+  `cd backend && GOCACHE=$PWD/.gocache GOMODCACHE=$PWD/.gomodcache go test ./internal/services/admin/logistics -run 'TestCapacityForecastService_|TestTrackingRootCauseService_|TestInterwarehouseAllocationService_' -count=1`
+- 场景覆盖：
+  - 容量预测：建议口径与下发幂等
+  - 根因分析：归因准确性与动作闭环
+  - 跨仓协同：候选排序、调拨约束、确认幂等
+- 结果：**通过**。
+
+### 32.5 T260 M12 执行记录归档
+- 已将 T256-T259 的执行结果归档到本节。
+- 当前结论：M12 代码与构建层面回归通过，可进入联调环境执行真实数据抽样验收。
