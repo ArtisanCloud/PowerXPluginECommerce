@@ -166,6 +166,7 @@ const (
 	TableLogisticsRoutingScoreSimulations        = "logistics_routing_score_simulations"
 	TableLogisticsCapacityPlans                  = "logistics_capacity_plans"
 	TableLogisticsCapacityForecasts              = "logistics_capacity_forecasts"
+	TableLogisticsInterwarehouseAllocations      = "logistics_interwarehouse_allocations"
 	TableLogisticsTrackingRootCauses             = "logistics_tracking_root_causes"
 	TableLogisticsAllocationDecisions            = "logistics_allocation_decisions"
 	TableLogisticsRiskRules                      = "logistics_risk_rules"

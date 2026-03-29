@@ -49,6 +49,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 		logisticssvc.NewSLOGuardService(deps),
 		logisticssvc.NewCapacityForecastService(deps),
 		logisticssvc.NewTrackingRootCauseService(deps),
+		logisticssvc.NewInterwarehouseAllocationService(deps),
 		logisticssvc.NewWebhookService(deps),
 	)
 
@@ -154,6 +155,9 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.GET("/allocation/forecasts", handler.ListCapacityForecasts)
 	rg.POST("/allocation/forecasts/generate", handler.GenerateCapacityForecast)
 	rg.POST("/allocation/forecasts/:id/apply", handler.ApplyCapacityForecast)
+	rg.GET("/allocation/interwarehouse/candidates", handler.ListInterwarehouseAllocationCandidates)
+	rg.POST("/allocation/interwarehouse/suggest", handler.SuggestInterwarehouseAllocation)
+	rg.POST("/allocation/interwarehouse/confirm", handler.ConfirmInterwarehouseAllocation)
 	rg.GET("/tracking-root-causes/summary", handler.GetTrackingRootCauseSummary)
 	rg.GET("/tracking-root-causes/items", handler.ListTrackingRootCauses)
 	rg.POST("/tracking-root-causes/analyze", handler.AnalyzeTrackingRootCauses)

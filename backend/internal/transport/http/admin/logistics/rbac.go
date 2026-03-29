@@ -202,6 +202,15 @@ func RBACEntries(prefix string) map[string]AuthX.Permission {
 		"POST:" + base + "/allocation/forecasts/:id/apply": {
 			Resource: res("logistics.capacity_forecast"), Action: "manage",
 		},
+		"GET:" + base + "/allocation/interwarehouse/candidates": {
+			Resource: res("logistics.interwarehouse"), Action: "read",
+		},
+		"POST:" + base + "/allocation/interwarehouse/suggest": {
+			Resource: res("logistics.interwarehouse"), Action: "manage",
+		},
+		"POST:" + base + "/allocation/interwarehouse/confirm": {
+			Resource: res("logistics.interwarehouse"), Action: "manage",
+		},
 		"GET:" + base + "/tracking-root-causes/summary": {
 			Resource: res("logistics.tracking_root_cause"), Action: "read",
 		},

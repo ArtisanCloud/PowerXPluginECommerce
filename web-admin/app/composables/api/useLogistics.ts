@@ -772,6 +772,35 @@ export type LogisticsAllocationResult = {
   createdAt: string;
 };
 
+export type LogisticsInterwarehouseAllocationCandidate = {
+  id: string;
+  requestKey: string;
+  waybillId: string;
+  orderId: string;
+  carrierId: string;
+  sourceWarehouseID: string;
+  targetWarehouseID: string;
+  destinationZone: string;
+  transferQty: number;
+  sourceAvailable: number;
+  targetAvailable: number;
+  transferCost: number;
+  etaImpactHours: number;
+  score: number;
+  strategy: string;
+  status: string;
+  reason: string;
+  confirmedBy: string;
+  confirmedAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsInterwarehouseAllocationConfirmResult = {
+  selected: LogisticsInterwarehouseAllocationCandidate;
+  items: LogisticsInterwarehouseAllocationCandidate[];
+};
+
 export type LogisticsCapacityForecast = {
   id: string;
   planId: string;
@@ -1552,6 +1581,35 @@ const normalizeAllocationResult = (raw: RawRecord): LogisticsAllocationResult =>
   reason: String(pick(raw, "reason", "reason") || ""),
   candidates: asArray<RawRecord>(pick(raw, "candidates", "candidates")).map(normalizeAllocationCandidate),
   createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+});
+
+const normalizeInterwarehouseAllocationCandidate = (raw: RawRecord): LogisticsInterwarehouseAllocationCandidate => ({
+  id: String(pick(raw, "id", "id") || ""),
+  requestKey: String(pick(raw, "requestKey", "request_key") || ""),
+  waybillId: String(pick(raw, "waybillId", "waybill_id") || ""),
+  orderId: String(pick(raw, "orderId", "order_id") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  sourceWarehouseID: String(pick(raw, "sourceWarehouseID", "source_warehouse_id") || ""),
+  targetWarehouseID: String(pick(raw, "targetWarehouseID", "target_warehouse_id") || ""),
+  destinationZone: String(pick(raw, "destinationZone", "destination_zone") || ""),
+  transferQty: Number(pick(raw, "transferQty", "transfer_qty") || 0),
+  sourceAvailable: Number(pick(raw, "sourceAvailable", "source_available") || 0),
+  targetAvailable: Number(pick(raw, "targetAvailable", "target_available") || 0),
+  transferCost: Number(pick(raw, "transferCost", "transfer_cost") || 0),
+  etaImpactHours: Number(pick(raw, "etaImpactHours", "eta_impact_hours") || 0),
+  score: Number(pick(raw, "score", "score") || 0),
+  strategy: String(pick(raw, "strategy", "strategy") || "collaboration_first"),
+  status: String(pick(raw, "status", "status") || "suggested"),
+  reason: String(pick(raw, "reason", "reason") || ""),
+  confirmedBy: String(pick(raw, "confirmedBy", "confirmed_by") || ""),
+  confirmedAt: String(pick(raw, "confirmedAt", "confirmed_at") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeInterwarehouseAllocationConfirmResult = (raw: RawRecord): LogisticsInterwarehouseAllocationConfirmResult => ({
+  selected: normalizeInterwarehouseAllocationCandidate((pick(raw, "selected", "selected") || {}) as RawRecord),
+  items: asArray<RawRecord>(pick(raw, "items", "items")).map(normalizeInterwarehouseAllocationCandidate),
 });
 
 const normalizeCapacityForecast = (raw: RawRecord): LogisticsCapacityForecast => ({
@@ -2800,6 +2858,52 @@ export function useLogisticsApi() {
     overrideAllocation: async (payload: Record<string, any>, init?: any): Promise<LogisticsAllocationResult> => {
       const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/allocation/override`, payload, init));
       return normalizeAllocationResult((raw || {}) as RawRecord);
+    },
+
+    listInterwarehouseAllocationCandidates: async (
+      query?: {
+        request_key?: string;
+        carrier_id?: string;
+        source_warehouse_id?: string;
+        target_warehouse_id?: string;
+        status?: string;
+        limit?: number;
+      },
+      init?: any,
+    ): Promise<LogisticsInterwarehouseAllocationCandidate[]> => {
+      const raw = await unwrap(
+        apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/allocation/interwarehouse/candidates`, query, init),
+      );
+      return asArray<RawRecord>(raw?.items).map(normalizeInterwarehouseAllocationCandidate);
+    },
+
+    suggestInterwarehouseAllocation: async (
+      payload: {
+        request_key?: string;
+        waybill_id?: string;
+        order_id?: string;
+        carrier_id?: string;
+        source_warehouse_id?: string;
+        destination_zone?: string;
+        required_qty?: number;
+        operator_id?: string;
+      },
+      init?: any,
+    ): Promise<LogisticsInterwarehouseAllocationCandidate[]> => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/allocation/interwarehouse/suggest`, payload, init),
+      );
+      return asArray<RawRecord>(raw?.items).map(normalizeInterwarehouseAllocationCandidate);
+    },
+
+    confirmInterwarehouseAllocation: async (
+      payload: { candidate_id?: string; request_key?: string; target_warehouse_id?: string; operator_id?: string },
+      init?: any,
+    ): Promise<LogisticsInterwarehouseAllocationConfirmResult> => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<RawRecord>>(`${basePath}/allocation/interwarehouse/confirm`, payload, init),
+      );
+      return normalizeInterwarehouseAllocationConfirmResult((raw || {}) as RawRecord);
     },
 
     listCapacityForecasts: async (

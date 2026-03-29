@@ -505,6 +505,24 @@ type overrideAllocationRequest struct {
 	OperatorID string `json:"operator_id,omitempty"`
 }
 
+type suggestInterwarehouseAllocationRequest struct {
+	RequestKey        string `json:"request_key,omitempty"`
+	WaybillID         string `json:"waybill_id,omitempty"`
+	OrderID           string `json:"order_id,omitempty"`
+	CarrierID         string `json:"carrier_id,omitempty"`
+	SourceWarehouseID string `json:"source_warehouse_id,omitempty"`
+	DestinationZone   string `json:"destination_zone,omitempty"`
+	RequiredQty       int    `json:"required_qty,omitempty"`
+	OperatorID        string `json:"operator_id,omitempty"`
+}
+
+type confirmInterwarehouseAllocationRequest struct {
+	CandidateID       string `json:"candidate_id,omitempty"`
+	RequestKey        string `json:"request_key,omitempty"`
+	TargetWarehouseID string `json:"target_warehouse_id,omitempty"`
+	OperatorID        string `json:"operator_id,omitempty"`
+}
+
 type upsertLastmileRecoveryRuleRequest struct {
 	ID           string         `json:"id,omitempty"`
 	Name         string         `json:"name"`

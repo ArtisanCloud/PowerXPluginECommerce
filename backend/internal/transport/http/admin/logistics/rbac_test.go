@@ -239,6 +239,33 @@ func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 	if forecastPerm.Resource != "com.powerx.plugins.ecommerce:logistics.capacity_forecast" {
 		t.Fatalf("unexpected resource %s", forecastPerm.Resource)
 	}
+	interCandidateKey := "GET:/api/v1/admin/logistics/allocation/interwarehouse/candidates"
+	interCandidatePerm, ok := entries[interCandidateKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", interCandidateKey)
+	}
+	if interCandidatePerm.Action != "read" {
+		t.Fatalf("expected read action, got %s", interCandidatePerm.Action)
+	}
+	if interCandidatePerm.Resource != "com.powerx.plugins.ecommerce:logistics.interwarehouse" {
+		t.Fatalf("unexpected resource %s", interCandidatePerm.Resource)
+	}
+	interSuggestKey := "POST:/api/v1/admin/logistics/allocation/interwarehouse/suggest"
+	interSuggestPerm, ok := entries[interSuggestKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", interSuggestKey)
+	}
+	if interSuggestPerm.Action != "manage" {
+		t.Fatalf("expected manage action, got %s", interSuggestPerm.Action)
+	}
+	interConfirmKey := "POST:/api/v1/admin/logistics/allocation/interwarehouse/confirm"
+	interConfirmPerm, ok := entries[interConfirmKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", interConfirmKey)
+	}
+	if interConfirmPerm.Resource != "com.powerx.plugins.ecommerce:logistics.interwarehouse" {
+		t.Fatalf("unexpected resource %s", interConfirmPerm.Resource)
+	}
 	rootCauseKey := "GET:/api/v1/admin/logistics/tracking-root-causes/summary"
 	rootCausePerm, ok := entries[rootCauseKey]
 	if !ok {

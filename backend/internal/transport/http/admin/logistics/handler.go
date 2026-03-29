@@ -13,39 +13,40 @@ import (
 )
 
 type Handler struct {
-	carrierSvc     *logisticssvc.CarrierService
-	rateSvc        *logisticssvc.RateTemplateService
-	quoteSvc       *logisticssvc.RateQuoteService
-	waybillSvc     *logisticssvc.WaybillService
-	etaSvc         *logisticssvc.ETAService
-	routingSvc     *logisticssvc.RoutingService
-	redelivSvc     *logisticssvc.RedeliveryService
-	riskSvc        *logisticssvc.RiskService
-	billingSvc     *logisticssvc.BillingService
-	caseSvc        *logisticssvc.BillingCaseService
-	notifySvc      *logisticssvc.NotificationService
-	slaSvc         *logisticssvc.SLAService
-	labelSvc       *logisticssvc.LabelPrintService
-	syncJobSvc     *logisticssvc.TrackingSyncJobService
-	schedSvc       *logisticssvc.TrackingSyncSchedulerService
-	gatewaySvc     *logisticssvc.GatewayMetricsService
-	costSvc        *logisticssvc.GatewayCostService
-	recoverSvc     *logisticssvc.GatewayRecoveryService
-	orchesSvc      *logisticssvc.ExceptionOrchestrationService
-	addressSvc     *logisticssvc.AddressValidationService
-	optimizerSvc   *logisticssvc.RoutingOptimizerService
-	settlementSvc  *logisticssvc.SettlementService
-	reconcileSvc   *logisticssvc.ReconciliationService
-	controlSvc     *logisticssvc.ControlTowerService
-	allocationSvc  *logisticssvc.AllocationService
-	lastmileSvc    *logisticssvc.LastmileRecoveryService
-	crossborderSvc *logisticssvc.CrossborderService
-	customsSvc     *logisticssvc.CustomsRuleService
-	kpiSvc         *logisticssvc.KPIDashboardService
-	sloGuardSvc    *logisticssvc.SLOGuardService
-	forecastSvc    *logisticssvc.CapacityForecastService
-	rootCauseSvc   *logisticssvc.TrackingRootCauseService
-	webhookSvc     *logisticssvc.WebhookService
+	carrierSvc        *logisticssvc.CarrierService
+	rateSvc           *logisticssvc.RateTemplateService
+	quoteSvc          *logisticssvc.RateQuoteService
+	waybillSvc        *logisticssvc.WaybillService
+	etaSvc            *logisticssvc.ETAService
+	routingSvc        *logisticssvc.RoutingService
+	redelivSvc        *logisticssvc.RedeliveryService
+	riskSvc           *logisticssvc.RiskService
+	billingSvc        *logisticssvc.BillingService
+	caseSvc           *logisticssvc.BillingCaseService
+	notifySvc         *logisticssvc.NotificationService
+	slaSvc            *logisticssvc.SLAService
+	labelSvc          *logisticssvc.LabelPrintService
+	syncJobSvc        *logisticssvc.TrackingSyncJobService
+	schedSvc          *logisticssvc.TrackingSyncSchedulerService
+	gatewaySvc        *logisticssvc.GatewayMetricsService
+	costSvc           *logisticssvc.GatewayCostService
+	recoverSvc        *logisticssvc.GatewayRecoveryService
+	orchesSvc         *logisticssvc.ExceptionOrchestrationService
+	addressSvc        *logisticssvc.AddressValidationService
+	optimizerSvc      *logisticssvc.RoutingOptimizerService
+	settlementSvc     *logisticssvc.SettlementService
+	reconcileSvc      *logisticssvc.ReconciliationService
+	controlSvc        *logisticssvc.ControlTowerService
+	allocationSvc     *logisticssvc.AllocationService
+	lastmileSvc       *logisticssvc.LastmileRecoveryService
+	crossborderSvc    *logisticssvc.CrossborderService
+	customsSvc        *logisticssvc.CustomsRuleService
+	kpiSvc            *logisticssvc.KPIDashboardService
+	sloGuardSvc       *logisticssvc.SLOGuardService
+	forecastSvc       *logisticssvc.CapacityForecastService
+	rootCauseSvc      *logisticssvc.TrackingRootCauseService
+	interwarehouseSvc *logisticssvc.InterwarehouseAllocationService
+	webhookSvc        *logisticssvc.WebhookService
 }
 
 func NewHandler(
@@ -81,42 +82,44 @@ func NewHandler(
 	sloGuardSvc *logisticssvc.SLOGuardService,
 	forecastSvc *logisticssvc.CapacityForecastService,
 	rootCauseSvc *logisticssvc.TrackingRootCauseService,
+	interwarehouseSvc *logisticssvc.InterwarehouseAllocationService,
 	webhookSvc *logisticssvc.WebhookService,
 ) *Handler {
 	return &Handler{
-		carrierSvc:     carrierSvc,
-		rateSvc:        rateSvc,
-		quoteSvc:       quoteSvc,
-		waybillSvc:     waybillSvc,
-		etaSvc:         etaSvc,
-		routingSvc:     routingSvc,
-		redelivSvc:     redelivSvc,
-		riskSvc:        riskSvc,
-		billingSvc:     billingSvc,
-		caseSvc:        caseSvc,
-		notifySvc:      notifySvc,
-		slaSvc:         slaSvc,
-		labelSvc:       labelSvc,
-		syncJobSvc:     syncJobSvc,
-		schedSvc:       schedSvc,
-		gatewaySvc:     gatewaySvc,
-		costSvc:        costSvc,
-		recoverSvc:     recoverSvc,
-		orchesSvc:      orchesSvc,
-		addressSvc:     addressSvc,
-		optimizerSvc:   optimizerSvc,
-		settlementSvc:  settlementSvc,
-		reconcileSvc:   reconcileSvc,
-		controlSvc:     controlSvc,
-		allocationSvc:  allocationSvc,
-		lastmileSvc:    lastmileSvc,
-		crossborderSvc: crossborderSvc,
-		customsSvc:     customsSvc,
-		kpiSvc:         kpiSvc,
-		sloGuardSvc:    sloGuardSvc,
-		forecastSvc:    forecastSvc,
-		rootCauseSvc:   rootCauseSvc,
-		webhookSvc:     webhookSvc,
+		carrierSvc:        carrierSvc,
+		rateSvc:           rateSvc,
+		quoteSvc:          quoteSvc,
+		waybillSvc:        waybillSvc,
+		etaSvc:            etaSvc,
+		routingSvc:        routingSvc,
+		redelivSvc:        redelivSvc,
+		riskSvc:           riskSvc,
+		billingSvc:        billingSvc,
+		caseSvc:           caseSvc,
+		notifySvc:         notifySvc,
+		slaSvc:            slaSvc,
+		labelSvc:          labelSvc,
+		syncJobSvc:        syncJobSvc,
+		schedSvc:          schedSvc,
+		gatewaySvc:        gatewaySvc,
+		costSvc:           costSvc,
+		recoverSvc:        recoverSvc,
+		orchesSvc:         orchesSvc,
+		addressSvc:        addressSvc,
+		optimizerSvc:      optimizerSvc,
+		settlementSvc:     settlementSvc,
+		reconcileSvc:      reconcileSvc,
+		controlSvc:        controlSvc,
+		allocationSvc:     allocationSvc,
+		lastmileSvc:       lastmileSvc,
+		crossborderSvc:    crossborderSvc,
+		customsSvc:        customsSvc,
+		kpiSvc:            kpiSvc,
+		sloGuardSvc:       sloGuardSvc,
+		forecastSvc:       forecastSvc,
+		rootCauseSvc:      rootCauseSvc,
+		interwarehouseSvc: interwarehouseSvc,
+		webhookSvc:        webhookSvc,
 	}
 }
 

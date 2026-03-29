@@ -558,11 +558,11 @@
 
 ### User Story 40 - 跨仓协同与调拨履约（P2）
 
-- [ ] T246 [P] [US40] 增加跨仓协同与调拨模型（源仓/目标仓、调拨成本、时效影响）（`backend/internal/entity/models/logistics/interwarehouse_allocation*.go`）
-- [ ] T247 [US40] 实现跨仓协同服务（缺货检测、调拨候选评分、履约路径重算）（`backend/internal/services/admin/logistics/interwarehouse_allocation_service.go`）
-- [ ] T248 [US40] 实现跨仓协同接口（候选查询、调拨确认、重算结果）（`backend/internal/transport/http/admin/logistics/{interwarehouse_allocation_handler.go,routes.go,dto.go}`）
-- [ ] T249 [US40] 在运单页新增“跨仓协同”面板（候选仓对比、成本/时效影响展示）（`web-admin/app/pages/shipping/waybills.vue`）
-- [ ] T250 [US40] 增加 US40 回归测试（候选排序稳定性、调拨约束、幂等防重）（`backend/internal/services/admin/logistics/*_test.go`）
+- [X] T246 [P] [US40] 增加跨仓协同与调拨模型（源仓/目标仓、调拨成本、时效影响）（`backend/internal/entity/models/logistics/interwarehouse_allocation*.go`）
+- [X] T247 [US40] 实现跨仓协同服务（缺货检测、调拨候选评分、履约路径重算）（`backend/internal/services/admin/logistics/interwarehouse_allocation_service.go`）
+- [X] T248 [US40] 实现跨仓协同接口（候选查询、调拨确认、重算结果）（`backend/internal/transport/http/admin/logistics/{interwarehouse_allocation_handler.go,routes.go,dto.go}`）
+- [X] T249 [US40] 在运单页新增“跨仓协同”面板（候选仓对比、成本/时效影响展示）（`web-admin/app/pages/shipping/waybills.vue`）
+- [X] T250 [US40] 增加 US40 回归测试（候选排序稳定性、调拨约束、幂等防重）（`backend/internal/services/admin/logistics/*_test.go`）
 
 ### User Story 41 - 履约质量审计与复盘报告（P3）
 

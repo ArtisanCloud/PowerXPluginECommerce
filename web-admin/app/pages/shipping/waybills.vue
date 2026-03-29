@@ -89,6 +89,9 @@
             <UButton size="xs" variant="ghost" color="primary" @click="openAllocation(row.original)">
               智能分单
             </UButton>
+            <UButton size="xs" variant="ghost" color="info" @click="openInterwarehouse(row.original)">
+              跨仓协同
+            </UButton>
             <UButton size="xs" variant="ghost" color="neutral" @click="openRoutingPreview(row.original)">
               联合路由仿真
             </UButton>
@@ -221,6 +224,60 @@
               <li v-for="item in allocationResult.candidates || []" :key="item.carrierId">
                 {{ item.carrierName }} · available={{ item.available }} · score={{ item.finalScore.toFixed(2) }}
               </li>
+            </ul>
+          </UCard>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="interwarehouseOpen" title="跨仓协同与调拨履约">
+      <template #body>
+        <div class="space-y-3">
+          <p class="text-xs text-gray-500">
+            运单：{{ interwarehouseForm.waybillNo || "-" }} / 订单：{{ interwarehouseForm.orderId || "-" }}
+          </p>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <UInput v-model="interwarehouseForm.sourceWarehouseId" placeholder="源仓ID（缺货仓）" />
+            <UInput v-model="interwarehouseForm.destinationZone" placeholder="目的区域（可选）" />
+            <UInput v-model.number="interwarehouseForm.requiredQty" type="number" placeholder="缺口件数（默认 1）" />
+            <UInput v-model="interwarehouseForm.requestKey" placeholder="请求幂等键（可选）" />
+          </div>
+          <div class="flex gap-2">
+            <UButton color="primary" :loading="interwarehouseLoading" @click="suggestInterwarehouseCandidates">
+              生成候选
+            </UButton>
+            <UButton color="neutral" :loading="interwarehouseLoading" @click="loadInterwarehouseCandidates">
+              刷新候选
+            </UButton>
+          </div>
+          <UCard>
+            <template #header>
+              <div class="text-sm font-medium">候选仓对比（按评分排序）</div>
+            </template>
+            <ul class="space-y-2 text-xs">
+              <li
+                v-for="item in interwarehouseCandidates"
+                :key="item.id"
+                class="rounded border border-gray-200 p-2 dark:border-gray-800"
+              >
+                <div class="flex items-center justify-between gap-3">
+                  <span>
+                    {{ item.sourceWarehouseID }} → {{ item.targetWarehouseID }} · qty={{ item.transferQty }} · score={{ item.score.toFixed(4) }}
+                  </span>
+                  <UButton
+                    size="xs"
+                    color="success"
+                    :loading="interwarehouseConfirmingId === item.id"
+                    @click="confirmInterwarehouseCandidate(item.id)"
+                  >
+                    确认调拨
+                  </UButton>
+                </div>
+                <p class="mt-1 text-gray-500">
+                  成本 {{ item.transferCost.toFixed(2) }} / 时效影响 {{ item.etaImpactHours.toFixed(2) }}h / 状态 {{ item.status }}
+                </p>
+              </li>
+              <li v-if="!interwarehouseCandidates.length" class="text-gray-500">暂无候选仓</li>
             </ul>
           </UCard>
         </div>
@@ -492,6 +549,7 @@ import type { TableColumn } from "@nuxt/ui";
 import type {
   LogisticsAddressValidation,
   LogisticsAllocationResult,
+  LogisticsInterwarehouseAllocationCandidate,
   LogisticsCrossborderDocument,
   LogisticsCustomsPrecheckResult,
   LogisticsCustomsRulePack,
@@ -560,6 +618,10 @@ const routingPreviewResult = ref<any>(null);
 const allocationOpen = ref(false);
 const allocationLoading = ref(false);
 const allocationResult = ref<LogisticsAllocationResult | null>(null);
+const interwarehouseOpen = ref(false);
+const interwarehouseLoading = ref(false);
+const interwarehouseConfirmingId = ref("");
+const interwarehouseCandidates = ref<LogisticsInterwarehouseAllocationCandidate[]>([]);
 const redeliveryOpen = ref(false);
 const redeliveryLoading = ref(false);
 const redeliveryTasks = ref<LogisticsRedeliveryTask[]>([]);
@@ -602,6 +664,16 @@ const allocationForm = reactive({
   destinationZone: "",
   preferredCarrier: "",
   overrideCarrierId: "",
+});
+const interwarehouseForm = reactive({
+  waybillId: "",
+  waybillNo: "",
+  orderId: "",
+  carrierId: "",
+  sourceWarehouseId: "",
+  destinationZone: "",
+  requiredQty: 1,
+  requestKey: "",
 });
 const redeliveryForm = reactive({
   taskId: "",
@@ -1385,6 +1457,75 @@ const openAllocation = (waybill: Waybill) => {
   allocationForm.overrideCarrierId = "";
   allocationResult.value = null;
   allocationOpen.value = true;
+};
+
+const loadInterwarehouseCandidates = async () => {
+  if (!interwarehouseForm.requestKey) return;
+  interwarehouseLoading.value = true;
+  try {
+    interwarehouseCandidates.value = await logisticsApi.listInterwarehouseAllocationCandidates({
+      request_key: interwarehouseForm.requestKey,
+      carrier_id: interwarehouseForm.carrierId || undefined,
+      source_warehouse_id: interwarehouseForm.sourceWarehouseId || undefined,
+      limit: 20,
+    });
+  } finally {
+    interwarehouseLoading.value = false;
+  }
+};
+
+const suggestInterwarehouseCandidates = async () => {
+  interwarehouseLoading.value = true;
+  try {
+    const requestKey =
+      interwarehouseForm.requestKey ||
+      `interwarehouse#${interwarehouseForm.waybillId || interwarehouseForm.orderId || "manual"}#${Date.now()}`;
+    interwarehouseForm.requestKey = requestKey;
+    interwarehouseCandidates.value = await logisticsApi.suggestInterwarehouseAllocation({
+      request_key: requestKey,
+      waybill_id: interwarehouseForm.waybillId || undefined,
+      order_id: interwarehouseForm.orderId || undefined,
+      carrier_id: interwarehouseForm.carrierId || undefined,
+      source_warehouse_id: interwarehouseForm.sourceWarehouseId || undefined,
+      destination_zone: interwarehouseForm.destinationZone || undefined,
+      required_qty: Number(interwarehouseForm.requiredQty || 1),
+      operator_id: "admin",
+    });
+  } finally {
+    interwarehouseLoading.value = false;
+  }
+};
+
+const confirmInterwarehouseCandidate = async (candidateId: string) => {
+  if (!candidateId) return;
+  interwarehouseConfirmingId.value = candidateId;
+  try {
+    const result = await logisticsApi.confirmInterwarehouseAllocation({
+      candidate_id: candidateId,
+      operator_id: "admin",
+    });
+    interwarehouseCandidates.value = result.items || [];
+    toast.add({
+      color: "success",
+      title: "调拨已确认",
+      description: `${result.selected.sourceWarehouseID} → ${result.selected.targetWarehouseID}，数量 ${result.selected.transferQty}`,
+    });
+  } finally {
+    interwarehouseConfirmingId.value = "";
+  }
+};
+
+const openInterwarehouse = (waybill: Waybill) => {
+  interwarehouseForm.waybillId = waybill.id;
+  interwarehouseForm.waybillNo = waybill.waybillNo;
+  interwarehouseForm.orderId = waybill.orderNo;
+  interwarehouseForm.carrierId = waybill.carrierId || "";
+  interwarehouseForm.sourceWarehouseId = "";
+  interwarehouseForm.destinationZone = "";
+  interwarehouseForm.requiredQty = 1;
+  interwarehouseForm.requestKey = "";
+  interwarehouseCandidates.value = [];
+  interwarehouseOpen.value = true;
 };
 
 const runAllocation = async () => {
