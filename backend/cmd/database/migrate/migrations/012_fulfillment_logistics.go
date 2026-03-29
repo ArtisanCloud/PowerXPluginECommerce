@@ -17,6 +17,7 @@ var FulfillmentLogisticsTables = []interface{}{
 	&LogisticsModel.RoutingScoreSimulation{},
 	&LogisticsModel.CapacityPlan{},
 	&LogisticsModel.CapacityForecast{},
+	&LogisticsModel.TrackingRootCause{},
 	&LogisticsModel.AllocationDecision{},
 	&LogisticsModel.ETAPolicy{},
 	&LogisticsModel.ETARecord{},

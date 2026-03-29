@@ -470,6 +470,21 @@ type applyCapacityForecastRequest struct {
 	OperatorID string `json:"operator_id,omitempty"`
 }
 
+type analyzeTrackingRootCauseRequest struct {
+	CarrierID       string `json:"carrier_id,omitempty"`
+	WarehouseID     string `json:"warehouse_id,omitempty"`
+	DestinationZone string `json:"destination_zone,omitempty"`
+	WindowHours     int    `json:"window_hours,omitempty"`
+	Limit           int    `json:"limit,omitempty"`
+}
+
+type handleTrackingRootCauseRequest struct {
+	Action     string `json:"action"`
+	Status     string `json:"status,omitempty"`
+	OperatorID string `json:"operator_id,omitempty"`
+	ResultNote string `json:"result_note,omitempty"`
+}
+
 type allocationRequest struct {
 	RequestKey       string `json:"request_key,omitempty"`
 	WaybillID        string `json:"waybill_id,omitempty"`

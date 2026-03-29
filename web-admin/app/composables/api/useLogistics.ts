@@ -795,6 +795,43 @@ export type LogisticsCapacityForecast = {
   updatedAt: string;
 };
 
+export type LogisticsTrackingRootCause = {
+  id: string;
+  waybillId: string;
+  waybillNo: string;
+  carrierId: string;
+  warehouseId: string;
+  destinationZone: string;
+  anomalyType: string;
+  ownerType: string;
+  severity: string;
+  suggestedAction: string;
+  selectedAction: string;
+  status: string;
+  evidenceChain: Record<string, any>;
+  resultNote: string;
+  handledBy: string;
+  detectedAt: string;
+  handledAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsTrackingRootCauseDistribution = {
+  key: string;
+  count: number;
+};
+
+export type LogisticsTrackingRootCauseSummary = {
+  windowHours: number;
+  totalCases: number;
+  openCases: number;
+  resolvedCases: number;
+  anomalyDistribution: LogisticsTrackingRootCauseDistribution[];
+  ownerDistribution: LogisticsTrackingRootCauseDistribution[];
+  suggestedActions: string[];
+};
+
 export type LogisticsLastmileRecoveryRule = {
   id: string;
   name: string;
@@ -1538,6 +1575,47 @@ const normalizeCapacityForecast = (raw: RawRecord): LogisticsCapacityForecast =>
   updatedBy: String(pick(raw, "updatedBy", "updated_by") || ""),
   createdAt: String(pick(raw, "createdAt", "created_at") || ""),
   updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeTrackingRootCause = (raw: RawRecord): LogisticsTrackingRootCause => ({
+  id: String(pick(raw, "id", "id") || ""),
+  waybillId: String(pick(raw, "waybillId", "waybill_id") || ""),
+  waybillNo: String(pick(raw, "waybillNo", "waybill_no") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  warehouseId: String(pick(raw, "warehouseId", "warehouse_id") || ""),
+  destinationZone: String(pick(raw, "destinationZone", "destination_zone") || ""),
+  anomalyType: String(pick(raw, "anomalyType", "anomaly_type") || ""),
+  ownerType: String(pick(raw, "ownerType", "owner_type") || ""),
+  severity: String(pick(raw, "severity", "severity") || ""),
+  suggestedAction: String(pick(raw, "suggestedAction", "suggested_action") || ""),
+  selectedAction: String(pick(raw, "selectedAction", "selected_action") || ""),
+  status: String(pick(raw, "status", "status") || ""),
+  evidenceChain: (pick(raw, "evidenceChain", "evidence_chain") || {}) as Record<string, any>,
+  resultNote: String(pick(raw, "resultNote", "result_note") || ""),
+  handledBy: String(pick(raw, "handledBy", "handled_by") || ""),
+  detectedAt: String(pick(raw, "detectedAt", "detected_at") || ""),
+  handledAt: String(pick(raw, "handledAt", "handled_at") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeTrackingRootCauseDistribution = (raw: RawRecord): LogisticsTrackingRootCauseDistribution => ({
+  key: String(pick(raw, "key", "key") || ""),
+  count: Number(pick(raw, "count", "count") || 0),
+});
+
+const normalizeTrackingRootCauseSummary = (raw: RawRecord): LogisticsTrackingRootCauseSummary => ({
+  windowHours: Number(pick(raw, "windowHours", "window_hours") || 24),
+  totalCases: Number(pick(raw, "totalCases", "total_cases") || 0),
+  openCases: Number(pick(raw, "openCases", "open_cases") || 0),
+  resolvedCases: Number(pick(raw, "resolvedCases", "resolved_cases") || 0),
+  anomalyDistribution: asArray<RawRecord>(
+    pick(raw, "anomalyDistribution", "anomaly_distribution"),
+  ).map(normalizeTrackingRootCauseDistribution),
+  ownerDistribution: asArray<RawRecord>(
+    pick(raw, "ownerDistribution", "owner_distribution"),
+  ).map(normalizeTrackingRootCauseDistribution),
+  suggestedActions: asArray<any>(pick(raw, "suggestedActions", "suggested_actions")).map((item) => String(item || "")),
 });
 
 const normalizeLastmileRecoveryRule = (raw: RawRecord): LogisticsLastmileRecoveryRule => ({
@@ -2759,6 +2837,63 @@ export function useLogisticsApi() {
     ): Promise<LogisticsCapacityForecast> => {
       const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/allocation/forecasts/${id}/apply`, payload || {}, init));
       return normalizeCapacityForecast((raw || {}) as RawRecord);
+    },
+
+    getTrackingRootCauseSummary: async (
+      query?: {
+        carrier_id?: string;
+        warehouse_id?: string;
+        destination_zone?: string;
+        anomaly_type?: string;
+        status?: string;
+        window_hours?: number;
+        limit?: number;
+      },
+      init?: any,
+    ): Promise<LogisticsTrackingRootCauseSummary> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<RawRecord>>(`${basePath}/tracking-root-causes/summary`, query, init));
+      return normalizeTrackingRootCauseSummary((raw || {}) as RawRecord);
+    },
+
+    listTrackingRootCauses: async (
+      query?: {
+        carrier_id?: string;
+        warehouse_id?: string;
+        destination_zone?: string;
+        anomaly_type?: string;
+        status?: string;
+        window_hours?: number;
+        limit?: number;
+      },
+      init?: any,
+    ): Promise<LogisticsTrackingRootCause[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/tracking-root-causes/items`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeTrackingRootCause);
+    },
+
+    analyzeTrackingRootCauses: async (
+      payload?: {
+        carrier_id?: string;
+        warehouse_id?: string;
+        destination_zone?: string;
+        window_hours?: number;
+        limit?: number;
+      },
+      init?: any,
+    ): Promise<LogisticsTrackingRootCause[]> => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/tracking-root-causes/analyze`, payload || {}, init),
+      );
+      return asArray<RawRecord>(raw?.items).map(normalizeTrackingRootCause);
+    },
+
+    handleTrackingRootCause: async (
+      id: string,
+      payload: { action: string; status?: string; operator_id?: string; result_note?: string },
+      init?: any,
+    ): Promise<LogisticsTrackingRootCause> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/tracking-root-causes/${id}/handle`, payload, init));
+      return normalizeTrackingRootCause((raw || {}) as RawRecord);
     },
 
     listLastmileRecoveryRules: async (query?: { enabled?: boolean }, init?: any): Promise<LogisticsLastmileRecoveryRule[]> => {

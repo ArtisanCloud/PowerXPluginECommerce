@@ -44,6 +44,7 @@ type Handler struct {
 	kpiSvc         *logisticssvc.KPIDashboardService
 	sloGuardSvc    *logisticssvc.SLOGuardService
 	forecastSvc    *logisticssvc.CapacityForecastService
+	rootCauseSvc   *logisticssvc.TrackingRootCauseService
 	webhookSvc     *logisticssvc.WebhookService
 }
 
@@ -79,6 +80,7 @@ func NewHandler(
 	kpiSvc *logisticssvc.KPIDashboardService,
 	sloGuardSvc *logisticssvc.SLOGuardService,
 	forecastSvc *logisticssvc.CapacityForecastService,
+	rootCauseSvc *logisticssvc.TrackingRootCauseService,
 	webhookSvc *logisticssvc.WebhookService,
 ) *Handler {
 	return &Handler{
@@ -113,6 +115,7 @@ func NewHandler(
 		kpiSvc:         kpiSvc,
 		sloGuardSvc:    sloGuardSvc,
 		forecastSvc:    forecastSvc,
+		rootCauseSvc:   rootCauseSvc,
 		webhookSvc:     webhookSvc,
 	}
 }

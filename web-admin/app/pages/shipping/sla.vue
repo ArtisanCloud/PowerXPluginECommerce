@@ -181,6 +181,87 @@
 
     <UCard>
       <template #header>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">根因分析</h3>
+      </template>
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+          <p class="text-xs text-gray-500">异常总数</p>
+          <p class="mt-1 text-xl font-semibold">{{ rootCauseSummary.totalCases }}</p>
+        </div>
+        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+          <p class="text-xs text-gray-500">待处理</p>
+          <p class="mt-1 text-xl font-semibold text-warning-600">{{ rootCauseSummary.openCases }}</p>
+        </div>
+        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+          <p class="text-xs text-gray-500">已闭环</p>
+          <p class="mt-1 text-xl font-semibold text-success-600">{{ rootCauseSummary.resolvedCases }}</p>
+        </div>
+        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+          <p class="text-xs text-gray-500">分析窗口</p>
+          <p class="mt-1 text-xl font-semibold">{{ rootCauseSummary.windowHours }}h</p>
+        </div>
+      </div>
+      <div class="mt-3 flex flex-wrap gap-2">
+        <UInput v-model.number="rootCauseWindowHours" class="w-36" type="number" placeholder="窗口(h)" />
+        <UButton size="sm" color="primary" :loading="rootCauseLoading" @click="analyzeRootCauses">
+          执行分析
+        </UButton>
+      </div>
+      <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+        <div class="rounded border border-gray-200 p-3 text-xs dark:border-gray-800">
+          <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">异常分布</p>
+          <div v-if="!rootCauseSummary.anomalyDistribution.length" class="text-gray-500">暂无数据</div>
+          <div
+            v-for="item in rootCauseSummary.anomalyDistribution"
+            :key="`anomaly-${item.key}`"
+            class="mb-1 flex items-center justify-between"
+          >
+            <span>{{ item.key }}</span>
+            <span>{{ item.count }}</span>
+          </div>
+        </div>
+        <div class="rounded border border-gray-200 p-3 text-xs dark:border-gray-800">
+          <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">责任占比</p>
+          <div v-if="!rootCauseSummary.ownerDistribution.length" class="text-gray-500">暂无数据</div>
+          <div
+            v-for="item in rootCauseSummary.ownerDistribution"
+            :key="`owner-${item.key}`"
+            class="mb-1 flex items-center justify-between"
+          >
+            <span>{{ item.key }}</span>
+            <span>{{ item.count }}</span>
+          </div>
+        </div>
+      </div>
+      <div class="mt-3 rounded border border-gray-200 p-3 text-xs dark:border-gray-800">
+        <p class="mb-2 text-sm font-medium text-gray-900 dark:text-white">建议动作</p>
+        <div class="flex flex-wrap gap-2">
+          <UBadge v-for="item in rootCauseSummary.suggestedActions" :key="item" color="info" variant="soft">{{ item }}</UBadge>
+          <span v-if="!rootCauseSummary.suggestedActions.length" class="text-gray-500">暂无建议动作</span>
+        </div>
+      </div>
+      <UTable class="mt-3" :columns="rootCauseColumns" :data="rootCauseItems">
+        <template #status-cell="{ row }">
+          <UBadge :color="row.original.status === 'resolved' ? 'success' : 'warning'" variant="soft">
+            {{ row.original.status }}
+          </UBadge>
+        </template>
+        <template #actions-cell="{ row }">
+          <UButton
+            size="xs"
+            color="primary"
+            :loading="rootCauseLoading"
+            :disabled="row.original.status === 'resolved'"
+            @click="resolveRootCause(row.original.id)"
+          >
+            标记闭环
+          </UButton>
+        </template>
+      </UTable>
+    </UCard>
+
+    <UCard>
+      <template #header>
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">总体指标</h3>
       </template>
       <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
@@ -228,6 +309,8 @@ import {
   useLogisticsApi,
   type LogisticsGatewayCostSnapshot,
   type LogisticsGatewayHealthSnapshot,
+  type LogisticsTrackingRootCause,
+  type LogisticsTrackingRootCauseSummary,
   type LogisticsSLOGuardPolicy,
   type LogisticsSLOGuardStatusSnapshot,
   type LogisticsSLASummaryItem,
@@ -246,8 +329,20 @@ const rows = ref<LogisticsSLASummaryItem[]>([]);
 const syncJobLoading = ref(false);
 const scheduleLoading = ref(false);
 const sloLoading = ref(false);
+const rootCauseLoading = ref(false);
+const rootCauseWindowHours = ref(24);
 const schedules = ref<LogisticsTrackingSyncSchedule[]>([]);
 const sloPolicies = ref<LogisticsSLOGuardPolicy[]>([]);
+const rootCauseItems = ref<LogisticsTrackingRootCause[]>([]);
+const rootCauseSummary = ref<LogisticsTrackingRootCauseSummary>({
+  windowHours: 24,
+  totalCases: 0,
+  openCases: 0,
+  resolvedCases: 0,
+  anomalyDistribution: [],
+  ownerDistribution: [],
+  suggestedActions: [],
+});
 const sloStatus = ref<LogisticsSLOGuardStatusSnapshot>({
   windowHours: 24,
   carrierId: "",
@@ -355,6 +450,16 @@ const sloColumns = computed<TableColumn<LogisticsSLOGuardPolicy>[]>(() => [
   { accessorKey: "enabled", header: "启用" },
 ]);
 
+const rootCauseColumns = computed<TableColumn<LogisticsTrackingRootCause>[]>(() => [
+  { accessorKey: "waybillNo", header: "运单号" },
+  { accessorKey: "anomalyType", header: "异常类型" },
+  { accessorKey: "ownerType", header: "责任归因" },
+  { accessorKey: "severity", header: "严重级别" },
+  { accessorKey: "suggestedAction", header: "建议动作" },
+  { accessorKey: "status", header: "状态" },
+  { id: "actions", header: "处理" },
+]);
+
 const loadSnapshot = async () => {
   const snapshot = await logisticsApi.getSLADashboard({
     carrier_id: carrierId.value || undefined,
@@ -368,6 +473,49 @@ const loadSnapshot = async () => {
   schedules.value = await logisticsApi.listTrackingSyncSchedules({ limit: 20 });
   sloPolicies.value = await logisticsApi.listSLOGuardPolicies({ carrier_id: carrierId.value || undefined, limit: 20 });
   sloStatus.value = await logisticsApi.getSLOGuardStatus({ carrier_id: carrierId.value || undefined, window_hours: 24 });
+  rootCauseSummary.value = await logisticsApi.getTrackingRootCauseSummary({
+    carrier_id: carrierId.value || undefined,
+    window_hours: rootCauseWindowHours.value || 24,
+    limit: 50,
+  });
+  rootCauseItems.value = await logisticsApi.listTrackingRootCauses({
+    carrier_id: carrierId.value || undefined,
+    window_hours: rootCauseWindowHours.value || 24,
+    limit: 50,
+  });
+};
+
+const analyzeRootCauses = async () => {
+  rootCauseLoading.value = true;
+  try {
+    rootCauseItems.value = await logisticsApi.analyzeTrackingRootCauses({
+      carrier_id: carrierId.value || undefined,
+      window_hours: rootCauseWindowHours.value || 24,
+      limit: 50,
+    });
+    rootCauseSummary.value = await logisticsApi.getTrackingRootCauseSummary({
+      carrier_id: carrierId.value || undefined,
+      window_hours: rootCauseWindowHours.value || 24,
+      limit: 50,
+    });
+  } finally {
+    rootCauseLoading.value = false;
+  }
+};
+
+const resolveRootCause = async (id: string) => {
+  rootCauseLoading.value = true;
+  try {
+    await logisticsApi.handleTrackingRootCause(id, {
+      action: "manual_review",
+      status: "resolved",
+      operator_id: "admin",
+      result_note: "resolved from sla dashboard",
+    });
+    await loadSnapshot();
+  } finally {
+    rootCauseLoading.value = false;
+  }
 };
 
 const createSyncJob = async () => {

@@ -550,11 +550,11 @@
 
 ### User Story 39 - 轨迹异常根因分析中心（P2）
 
-- [ ] T241 [P] [US39] 增加轨迹异常根因模型（异常类型、责任归因、修复动作、证据链）（`backend/internal/entity/models/logistics/tracking_root_cause*.go`）
-- [ ] T242 [US39] 实现根因分析服务（异常聚类、归因规则、处置建议）（`backend/internal/services/admin/logistics/tracking_root_cause_service.go`）
-- [ ] T243 [US39] 实现根因分析接口（异常聚合、明细钻取、动作回写）（`backend/internal/transport/http/admin/logistics/{tracking_root_cause_handler.go,routes.go,dto.go}`）
-- [ ] T244 [US39] 在 SLA 页新增“根因分析”区块（异常分布、责任占比、建议动作）（`web-admin/app/pages/shipping/sla.vue`）
-- [ ] T245 [US39] 增加 US39 回归测试（归因准确性、动作闭环、跨租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+- [X] T241 [P] [US39] 增加轨迹异常根因模型（异常类型、责任归因、修复动作、证据链）（`backend/internal/entity/models/logistics/tracking_root_cause*.go`）
+- [X] T242 [US39] 实现根因分析服务（异常聚类、归因规则、处置建议）（`backend/internal/services/admin/logistics/tracking_root_cause_service.go`）
+- [X] T243 [US39] 实现根因分析接口（异常聚合、明细钻取、动作回写）（`backend/internal/transport/http/admin/logistics/{tracking_root_cause_handler.go,routes.go,dto.go}`）
+- [X] T244 [US39] 在 SLA 页新增“根因分析”区块（异常分布、责任占比、建议动作）（`web-admin/app/pages/shipping/sla.vue`）
+- [X] T245 [US39] 增加 US39 回归测试（归因准确性、动作闭环、跨租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
 
 ### User Story 40 - 跨仓协同与调拨履约（P2）
 
