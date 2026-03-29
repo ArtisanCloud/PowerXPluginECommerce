@@ -267,4 +267,13 @@ func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 	if kpiPerm.Resource != "com.powerx.plugins.ecommerce:logistics.kpi_dashboard" {
 		t.Fatalf("unexpected resource %s", kpiPerm.Resource)
 	}
+
+	sloGuardKey := "GET:/api/v1/admin/logistics/slo-guard/status"
+	sloGuardPerm, ok := entries[sloGuardKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", sloGuardKey)
+	}
+	if sloGuardPerm.Resource != "com.powerx.plugins.ecommerce:logistics.slo_guard" {
+		t.Fatalf("unexpected resource %s", sloGuardPerm.Resource)
+	}
 }

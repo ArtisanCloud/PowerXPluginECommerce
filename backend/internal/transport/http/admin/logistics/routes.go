@@ -46,6 +46,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 		logisticssvc.NewCrossborderService(deps),
 		logisticssvc.NewCustomsRuleService(deps),
 		logisticssvc.NewKPIDashboardService(deps),
+		logisticssvc.NewSLOGuardService(deps),
 		logisticssvc.NewWebhookService(deps),
 	)
 
@@ -172,6 +173,12 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.GET("/kpi-dashboard/trends", handler.GetKPIDashboardTrends)
 	rg.GET("/kpi-dashboard/drilldown", handler.GetKPIDashboardDrilldown)
 	rg.GET("/kpi-dashboard/export", handler.ExportKPIDashboard)
+	rg.GET("/slo-guard/policies", handler.ListSLOGuardPolicies)
+	rg.POST("/slo-guard/policies", handler.UpsertSLOGuardPolicy)
+	rg.PATCH("/slo-guard/policies/:id", handler.UpsertSLOGuardPolicy)
+	rg.GET("/slo-guard/status", handler.GetSLOGuardStatus)
+	rg.POST("/slo-guard/evaluate", handler.EvaluateSLOGuard)
+	rg.POST("/slo-guard/policies/:id/release", handler.ReleaseSLOGuardPolicy)
 
 	rg.POST("/webhook", handler.HandleWebhook)
 	return rg

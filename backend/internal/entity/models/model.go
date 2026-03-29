@@ -197,6 +197,8 @@ const (
 	TableLogisticsCrossborderTrackingMaps        = "logistics_crossborder_tracking_maps"
 	TableLogisticsCustomsRulePacks               = "logistics_customs_rule_packs"
 	TableLogisticsCustomsRuleVersions            = "logistics_customs_rule_versions"
+	TableLogisticsSLOGuardPolicies               = "logistics_slo_guard_policies"
+	TableLogisticsSLOGuardStates                 = "logistics_slo_guard_states"
 	TableLogisticsKPISnapshots                   = "logistics_kpi_snapshots"
 	TableLogisticsNotificationTemplates          = "logistics_notification_templates"
 	TableLogisticsNotificationRecords            = "logistics_notification_records"

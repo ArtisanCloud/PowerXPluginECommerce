@@ -360,6 +360,46 @@ export type LogisticsGatewayHealthSnapshot = {
   alerts: LogisticsGatewayAlert[];
 };
 
+export type LogisticsSLOGuardPolicy = {
+  id: string;
+  name: string;
+  carrierId: string;
+  windowHours: number;
+  minSuccessRate: number;
+  maxP95LatencyMS: number;
+  maxFailedRequests: number;
+  action: string;
+  throttleRatio: number;
+  enabled: boolean;
+  metadata: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsSLOGuardTriggeredItem = {
+  policyId: string;
+  policyName: string;
+  carrierId: string;
+  action: string;
+  throttleRatio: number;
+  reasonCode: string;
+  reasonMessage: string;
+  successRate: number;
+  failedCount: number;
+  p95LatencyMS: number;
+};
+
+export type LogisticsSLOGuardStatusSnapshot = {
+  windowHours: number;
+  carrierId: string;
+  totalPolicies: number;
+  enabledPolicies: number;
+  throttledPolicies: number;
+  throttleRequired: boolean;
+  gateway: LogisticsGatewayHealthSummary;
+  triggered: LogisticsSLOGuardTriggeredItem[];
+};
+
 export type LogisticsGatewayCostSummary = {
   windowHours: number;
   totalRequests: number;
@@ -1051,6 +1091,46 @@ const normalizeGatewayHealthSummary = (raw: RawRecord): LogisticsGatewayHealthSu
   failedRequests: Number(pick(raw, "failedRequests", "failed_requests") || 0),
   successRate: Number(pick(raw, "successRate", "success_rate") || 0),
   p95LatencyMS: Number(pick(raw, "p95LatencyMS", "p95_latency_ms") || 0),
+});
+
+const normalizeSLOGuardPolicy = (raw: RawRecord): LogisticsSLOGuardPolicy => ({
+  id: String(pick(raw, "id", "id") || ""),
+  name: String(pick(raw, "name", "name") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  windowHours: Number(pick(raw, "windowHours", "window_hours") || 24),
+  minSuccessRate: Number(pick(raw, "minSuccessRate", "min_success_rate") || 95),
+  maxP95LatencyMS: Number(pick(raw, "maxP95LatencyMS", "max_p95_latency_ms") || 2000),
+  maxFailedRequests: Number(pick(raw, "maxFailedRequests", "max_failed_requests") || 10),
+  action: String(pick(raw, "action", "action") || "throttle"),
+  throttleRatio: Number(pick(raw, "throttleRatio", "throttle_ratio") || 50),
+  enabled: Boolean(pick(raw, "enabled", "enabled")),
+  metadata: (pick(raw, "metadata", "metadata") || {}) as Record<string, any>,
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeSLOGuardTriggered = (raw: RawRecord): LogisticsSLOGuardTriggeredItem => ({
+  policyId: String(pick(raw, "policyId", "policy_id") || ""),
+  policyName: String(pick(raw, "policyName", "policy_name") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  action: String(pick(raw, "action", "action") || "throttle"),
+  throttleRatio: Number(pick(raw, "throttleRatio", "throttle_ratio") || 0),
+  reasonCode: String(pick(raw, "reasonCode", "reason_code") || ""),
+  reasonMessage: String(pick(raw, "reasonMessage", "reason_message") || ""),
+  successRate: Number(pick(raw, "successRate", "success_rate") || 0),
+  failedCount: Number(pick(raw, "failedCount", "failed_count") || 0),
+  p95LatencyMS: Number(pick(raw, "p95LatencyMS", "p95_latency_ms") || 0),
+});
+
+const normalizeSLOGuardStatus = (raw: RawRecord): LogisticsSLOGuardStatusSnapshot => ({
+  windowHours: Number(pick(raw, "windowHours", "window_hours") || 24),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  totalPolicies: Number(pick(raw, "totalPolicies", "total_policies") || 0),
+  enabledPolicies: Number(pick(raw, "enabledPolicies", "enabled_policies") || 0),
+  throttledPolicies: Number(pick(raw, "throttledPolicies", "throttled_policies") || 0),
+  throttleRequired: Boolean(pick(raw, "throttleRequired", "throttle_required")),
+  gateway: normalizeGatewayHealthSummary((pick(raw, "gateway", "gateway") || {}) as RawRecord),
+  triggered: asArray<RawRecord>(pick(raw, "triggered", "triggered")).map(normalizeSLOGuardTriggered),
 });
 
 const normalizeGatewayCostSummary = (raw: RawRecord): LogisticsGatewayCostSummary => ({
@@ -2155,6 +2235,46 @@ export function useLogisticsApi() {
         summary: asArray<RawRecord>(raw?.summary).map(normalizeSLASummary),
         total: normalizeSLASummary((raw?.total || {}) as RawRecord),
       };
+    },
+
+    listSLOGuardPolicies: async (
+      query?: { carrier_id?: string; enabled?: boolean; limit?: number },
+      init?: any,
+    ): Promise<LogisticsSLOGuardPolicy[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/slo-guard/policies`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeSLOGuardPolicy);
+    },
+
+    upsertSLOGuardPolicy: async (payload: Record<string, any>, init?: any): Promise<LogisticsSLOGuardPolicy> => {
+      const id = String(payload.id || "").trim();
+      const path = id ? `${basePath}/slo-guard/policies/${id}` : `${basePath}/slo-guard/policies`;
+      const req = id ? apiPatch<ApiEnvelope<RawRecord>>(path, payload, init) : apiPost<ApiEnvelope<RawRecord>>(path, payload, init);
+      const raw = await unwrap(req);
+      return normalizeSLOGuardPolicy((raw || {}) as RawRecord);
+    },
+
+    getSLOGuardStatus: async (
+      query?: { carrier_id?: string; window_hours?: number },
+      init?: any,
+    ): Promise<LogisticsSLOGuardStatusSnapshot> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<RawRecord>>(`${basePath}/slo-guard/status`, query, init));
+      return normalizeSLOGuardStatus((raw || {}) as RawRecord);
+    },
+
+    evaluateSLOGuard: async (
+      payload?: { carrier_id?: string; window_hours?: number },
+      init?: any,
+    ): Promise<LogisticsSLOGuardStatusSnapshot> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/slo-guard/evaluate`, payload || {}, init));
+      return normalizeSLOGuardStatus((raw || {}) as RawRecord);
+    },
+
+    releaseSLOGuardPolicy: async (
+      id: string,
+      payload?: { operator_id?: string; reason?: string },
+      init?: any,
+    ): Promise<RawRecord> => {
+      return await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/slo-guard/policies/${id}/release`, payload || {}, init));
     },
 
     listTrackingSyncJobs: async (

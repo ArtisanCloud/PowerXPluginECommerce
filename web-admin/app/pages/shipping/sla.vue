@@ -123,6 +123,64 @@
 
     <UCard>
       <template #header>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">SLO 守卫与自动限流</h3>
+      </template>
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
+        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+          <p class="text-xs text-gray-500">策略总数</p>
+          <p class="mt-1 text-xl font-semibold">{{ sloStatus.totalPolicies }}</p>
+        </div>
+        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+          <p class="text-xs text-gray-500">启用策略</p>
+          <p class="mt-1 text-xl font-semibold">{{ sloStatus.enabledPolicies }}</p>
+        </div>
+        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+          <p class="text-xs text-gray-500">触发限流</p>
+          <p class="mt-1 text-xl font-semibold" :class="sloStatus.throttledPolicies > 0 ? 'text-error-600' : ''">
+            {{ sloStatus.throttledPolicies }}
+          </p>
+        </div>
+        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+          <p class="text-xs text-gray-500">守卫状态</p>
+          <p class="mt-1 text-xl font-semibold" :class="sloStatus.throttleRequired ? 'text-error-600' : 'text-success-600'">
+            {{ sloStatus.throttleRequired ? "限流中" : "正常" }}
+          </p>
+        </div>
+      </div>
+      <div class="mt-3 grid gap-2 md:grid-cols-8">
+        <UInput v-model="sloForm.name" placeholder="策略名称" />
+        <UInput v-model="sloForm.carrierId" placeholder="承运商ID（可选）" />
+        <UInput v-model.number="sloForm.windowHours" type="number" placeholder="窗口(h)" />
+        <UInput v-model.number="sloForm.minSuccessRate" type="number" placeholder="最小成功率%" />
+        <UInput v-model.number="sloForm.maxP95LatencyMS" type="number" placeholder="最大P95(ms)" />
+        <UInput v-model.number="sloForm.maxFailedRequests" type="number" placeholder="最大失败数" />
+        <UInput v-model.number="sloForm.throttleRatio" type="number" placeholder="限流比例%" />
+        <USelect v-model="sloForm.action" :options="sloActionOptions" />
+      </div>
+      <div class="mt-2 flex flex-wrap gap-2">
+        <UButton size="sm" color="primary" :loading="sloLoading" @click="saveSLOPolicy">保存策略</UButton>
+        <UButton size="sm" color="warning" variant="soft" :loading="sloLoading" @click="evaluateSLOGuard">
+          立即评估
+        </UButton>
+      </div>
+      <ul class="mt-3 space-y-2 text-xs">
+        <li v-for="item in sloStatus.triggered" :key="item.policyId" class="rounded border border-error-200 p-2 dark:border-error-800">
+          <div class="flex items-center justify-between gap-2">
+            <span>
+              <b>{{ item.policyName }}</b> · {{ item.reasonMessage }} · 限流 {{ item.throttleRatio }}%
+            </span>
+            <UButton size="xs" variant="ghost" :loading="sloLoading" @click="releaseSLOPolicy(item.policyId)">
+              手动解除
+            </UButton>
+          </div>
+        </li>
+        <li v-if="!sloStatus.triggered.length" class="text-gray-500">当前无触发限流策略</li>
+      </ul>
+      <UTable class="mt-3" :columns="sloColumns" :data="sloPolicies" />
+    </UCard>
+
+    <UCard>
+      <template #header>
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">总体指标</h3>
       </template>
       <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
@@ -170,6 +228,8 @@ import {
   useLogisticsApi,
   type LogisticsGatewayCostSnapshot,
   type LogisticsGatewayHealthSnapshot,
+  type LogisticsSLOGuardPolicy,
+  type LogisticsSLOGuardStatusSnapshot,
   type LogisticsSLASummaryItem,
   type LogisticsTrackingSyncSchedule,
 } from "~/composables/api";
@@ -185,7 +245,26 @@ const deliverySlaHours = ref(72);
 const rows = ref<LogisticsSLASummaryItem[]>([]);
 const syncJobLoading = ref(false);
 const scheduleLoading = ref(false);
+const sloLoading = ref(false);
 const schedules = ref<LogisticsTrackingSyncSchedule[]>([]);
+const sloPolicies = ref<LogisticsSLOGuardPolicy[]>([]);
+const sloStatus = ref<LogisticsSLOGuardStatusSnapshot>({
+  windowHours: 24,
+  carrierId: "",
+  totalPolicies: 0,
+  enabledPolicies: 0,
+  throttledPolicies: 0,
+  throttleRequired: false,
+  gateway: {
+    windowHours: 24,
+    totalRequests: 0,
+    successRequests: 0,
+    failedRequests: 0,
+    successRate: 0,
+    p95LatencyMS: 0,
+  },
+  triggered: [],
+});
 const gateway = ref<LogisticsGatewayHealthSnapshot>({
   summary: {
     windowHours: 24,
@@ -226,6 +305,20 @@ const scheduleStatusOptions = [
   { label: "延误", value: "delay" },
   { label: "全部状态", value: "" },
 ];
+const sloActionOptions = [
+  { label: "限流", value: "throttle" },
+  { label: "拒绝", value: "reject" },
+];
+const sloForm = reactive({
+  name: "",
+  carrierId: "",
+  windowHours: 24,
+  minSuccessRate: 95,
+  maxP95LatencyMS: 2000,
+  maxFailedRequests: 10,
+  throttleRatio: 50,
+  action: "throttle",
+});
 const total = ref<LogisticsSLASummaryItem>({
   carrierId: "all",
   carrierName: "全部承运商",
@@ -251,6 +344,17 @@ const columns = computed<TableColumn<LogisticsSLASummaryItem>[]>(() => [
   { accessorKey: "exceptionRate", header: "异常率" },
 ]);
 
+const sloColumns = computed<TableColumn<LogisticsSLOGuardPolicy>[]>(() => [
+  { accessorKey: "name", header: "策略" },
+  { accessorKey: "carrierId", header: "承运商" },
+  { accessorKey: "windowHours", header: "窗口(h)" },
+  { accessorKey: "minSuccessRate", header: "成功率阈值%" },
+  { accessorKey: "maxP95LatencyMS", header: "P95阈值(ms)" },
+  { accessorKey: "maxFailedRequests", header: "失败阈值" },
+  { accessorKey: "throttleRatio", header: "限流比例%" },
+  { accessorKey: "enabled", header: "启用" },
+]);
+
 const loadSnapshot = async () => {
   const snapshot = await logisticsApi.getSLADashboard({
     carrier_id: carrierId.value || undefined,
@@ -262,6 +366,8 @@ const loadSnapshot = async () => {
   gateway.value = await logisticsApi.getGatewayHealth({ window_hours: 24 });
   gatewayCost.value = await logisticsApi.getGatewayCosts({ window_hours: 24, quota_limit: 5000 });
   schedules.value = await logisticsApi.listTrackingSyncSchedules({ limit: 20 });
+  sloPolicies.value = await logisticsApi.listSLOGuardPolicies({ carrier_id: carrierId.value || undefined, limit: 20 });
+  sloStatus.value = await logisticsApi.getSLOGuardStatus({ carrier_id: carrierId.value || undefined, window_hours: 24 });
 };
 
 const createSyncJob = async () => {
@@ -314,6 +420,52 @@ const triggerSchedule = async (id: string) => {
     await loadSnapshot();
   } finally {
     scheduleLoading.value = false;
+  }
+};
+
+const saveSLOPolicy = async () => {
+  sloLoading.value = true;
+  try {
+    await logisticsApi.upsertSLOGuardPolicy({
+      name: sloForm.name || "默认SLO守卫",
+      carrier_id: sloForm.carrierId || undefined,
+      window_hours: Number(sloForm.windowHours || 24),
+      min_success_rate: Number(sloForm.minSuccessRate || 95),
+      max_p95_latency_ms: Number(sloForm.maxP95LatencyMS || 2000),
+      max_failed_requests: Number(sloForm.maxFailedRequests || 10),
+      throttle_ratio: Number(sloForm.throttleRatio || 50),
+      action: sloForm.action || "throttle",
+      enabled: true,
+    });
+    await loadSnapshot();
+  } finally {
+    sloLoading.value = false;
+  }
+};
+
+const evaluateSLOGuard = async () => {
+  sloLoading.value = true;
+  try {
+    sloStatus.value = await logisticsApi.evaluateSLOGuard({
+      carrier_id: carrierId.value || undefined,
+      window_hours: 24,
+    });
+    await loadSnapshot();
+  } finally {
+    sloLoading.value = false;
+  }
+};
+
+const releaseSLOPolicy = async (policyId: string) => {
+  sloLoading.value = true;
+  try {
+    await logisticsApi.releaseSLOGuardPolicy(policyId, {
+      operator_id: "admin",
+      reason: "manual release from sla dashboard",
+    });
+    await loadSnapshot();
+  } finally {
+    sloLoading.value = false;
   }
 };
 

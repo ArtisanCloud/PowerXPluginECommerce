@@ -522,6 +522,20 @@
 
 ---
 
+## Phase 17: Iteration-11 - 履约稳定性治理（Backlog）
+
+**Purpose**: 在 M11 基础上补齐履约稳定性治理能力，覆盖 SLO 监控、阈值预警与自动限流，降低高峰期接口抖动导致的履约失败。
+
+### User Story 37 - 履约 SLO 守卫与自动限流（P2）
+
+- [X] T231 [P] [US37] 增加 SLO 指标与限流策略模型（窗口、阈值、动作、租户作用域）（`backend/internal/entity/models/logistics/slo_guard*.go`）
+- [X] T232 [US37] 实现 SLO 守卫服务（指标聚合、阈值判定、自动限流/恢复）（`backend/internal/services/admin/logistics/slo_guard_service.go`）
+- [X] T233 [US37] 实现 SLO 守卫接口（策略管理、状态查询、手动解除限流）（`backend/internal/transport/http/admin/logistics/{slo_guard_handler.go,routes.go,dto.go}`）
+- [X] T234 [US37] 新增 SLO 守卫页面区块（策略配置、实时状态、告警与处置）（`web-admin/app/pages/shipping/sla.vue`）
+- [X] T235 [US37] 增加 US37 回归测试（阈值命中准确性、限流恢复、跨租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -545,6 +559,7 @@
 - **US34 (P2)**: 依赖 US30 的控制塔聚合能力，扩展为多维 KPI 分析与导出
 - **US35 (P2)**: 依赖 US29 的结算闭环能力，扩展账单/流水/发票三方自动核对
 - **US36 (P3)**: 依赖 US33 的跨境履约能力，扩展为清关规则中心与预检风控
+- **US37 (P2)**: 依赖 US34 的指标聚合与 US31/US32 的异常处置能力，扩展为稳定性守卫与自动限流
 
 ### Within Each User Story
 

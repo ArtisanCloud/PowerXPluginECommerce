@@ -434,6 +434,30 @@ type kpiDashboardQueryRequest struct {
 	Limit           int    `json:"limit,omitempty"`
 }
 
+type upsertSLOGuardPolicyRequest struct {
+	ID                string         `json:"id,omitempty"`
+	Name              string         `json:"name"`
+	CarrierID         string         `json:"carrier_id,omitempty"`
+	WindowHours       int            `json:"window_hours,omitempty"`
+	MinSuccessRate    float64        `json:"min_success_rate,omitempty"`
+	MaxP95LatencyMS   int            `json:"max_p95_latency_ms,omitempty"`
+	MaxFailedRequests int            `json:"max_failed_requests,omitempty"`
+	Action            string         `json:"action,omitempty"`
+	ThrottleRatio     int            `json:"throttle_ratio,omitempty"`
+	Enabled           *bool          `json:"enabled,omitempty"`
+	Metadata          map[string]any `json:"metadata,omitempty"`
+}
+
+type evaluateSLOGuardRequest struct {
+	WindowHours int    `json:"window_hours,omitempty"`
+	CarrierID   string `json:"carrier_id,omitempty"`
+}
+
+type releaseSLOGuardRequest struct {
+	OperatorID string `json:"operator_id,omitempty"`
+	Reason     string `json:"reason,omitempty"`
+}
+
 type allocationRequest struct {
 	RequestKey       string `json:"request_key,omitempty"`
 	WaybillID        string `json:"waybill_id,omitempty"`

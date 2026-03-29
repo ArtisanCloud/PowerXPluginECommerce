@@ -265,6 +265,24 @@ func RBACEntries(prefix string) map[string]AuthX.Permission {
 		"GET:" + base + "/kpi-dashboard/export": {
 			Resource: res("logistics.kpi_dashboard"), Action: "export",
 		},
+		"GET:" + base + "/slo-guard/policies": {
+			Resource: res("logistics.slo_guard"), Action: "read",
+		},
+		"POST:" + base + "/slo-guard/policies": {
+			Resource: res("logistics.slo_guard"), Action: "manage",
+		},
+		"PATCH:" + base + "/slo-guard/policies/:id": {
+			Resource: res("logistics.slo_guard"), Action: "manage",
+		},
+		"GET:" + base + "/slo-guard/status": {
+			Resource: res("logistics.slo_guard"), Action: "read",
+		},
+		"POST:" + base + "/slo-guard/evaluate": {
+			Resource: res("logistics.slo_guard"), Action: "manage",
+		},
+		"POST:" + base + "/slo-guard/policies/:id/release": {
+			Resource: res("logistics.slo_guard"), Action: "manage",
+		},
 		"POST:" + base + "/webhook": {Resource: res("logistics.webhook"), Action: "manage"},
 	}
 }
