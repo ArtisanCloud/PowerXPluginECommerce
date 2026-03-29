@@ -195,6 +195,8 @@ const (
 	TableLogisticsCrossborderDocuments           = "logistics_crossborder_documents"
 	TableLogisticsCrossborderTaxQuotes           = "logistics_crossborder_tax_quotes"
 	TableLogisticsCrossborderTrackingMaps        = "logistics_crossborder_tracking_maps"
+	TableLogisticsCustomsRulePacks               = "logistics_customs_rule_packs"
+	TableLogisticsCustomsRuleVersions            = "logistics_customs_rule_versions"
 	TableLogisticsKPISnapshots                   = "logistics_kpi_snapshots"
 	TableLogisticsNotificationTemplates          = "logistics_notification_templates"
 	TableLogisticsNotificationRecords            = "logistics_notification_records"

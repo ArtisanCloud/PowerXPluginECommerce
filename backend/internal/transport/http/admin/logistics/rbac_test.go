@@ -250,6 +250,15 @@ func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 		t.Fatalf("unexpected resource %s", crossborderPerm.Resource)
 	}
 
+	customsKey := "POST:/api/v1/admin/logistics/customs/precheck"
+	customsPerm, ok := entries[customsKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", customsKey)
+	}
+	if customsPerm.Resource != "com.powerx.plugins.ecommerce:logistics.customs_rule" {
+		t.Fatalf("unexpected resource %s", customsPerm.Resource)
+	}
+
 	kpiKey := "GET:/api/v1/admin/logistics/kpi-dashboard/overview"
 	kpiPerm, ok := entries[kpiKey]
 	if !ok {

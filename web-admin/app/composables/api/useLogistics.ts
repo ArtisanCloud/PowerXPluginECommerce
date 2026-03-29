@@ -815,6 +815,52 @@ export type LogisticsCrossborderTrackingMap = {
   updatedAt: string;
 };
 
+export type LogisticsCustomsRulePack = {
+  id: string;
+  name: string;
+  countryCode: string;
+  status: string;
+  strategy: string;
+  defaultRiskLevel: string;
+  description: string;
+  metadata: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsCustomsRuleVersion = {
+  id: string;
+  packId: string;
+  versionNo: number;
+  status: string;
+  hitStrategy: string;
+  rules: Record<string, any>[];
+  riskSnapshot: Record<string, any>;
+  publishedAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsCustomsPrecheckMatchedRule = {
+  code: string;
+  name: string;
+  riskLevel: string;
+  suggestion: string;
+  reason: string;
+};
+
+export type LogisticsCustomsPrecheckResult = {
+  packId: string;
+  versionId: string;
+  versionNo: number;
+  countryCode: string;
+  decision: string;
+  riskLevel: string;
+  suggestion: string;
+  matchedRules: LogisticsCustomsPrecheckMatchedRule[];
+  manualRelease: boolean;
+};
+
 export type LogisticsRateQuoteResult = {
   templateId: string;
   template: string;
@@ -1449,6 +1495,52 @@ const normalizeCrossborderTrackingMap = (raw: RawRecord): LogisticsCrossborderTr
   metadata: (pick(raw, "metadata", "metadata") || {}) as Record<string, any>,
   createdAt: String(pick(raw, "createdAt", "created_at") || ""),
   updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeCustomsRulePack = (raw: RawRecord): LogisticsCustomsRulePack => ({
+  id: String(pick(raw, "id", "id") || ""),
+  name: String(pick(raw, "name", "name") || ""),
+  countryCode: String(pick(raw, "countryCode", "country_code") || ""),
+  status: String(pick(raw, "status", "status") || "draft"),
+  strategy: String(pick(raw, "strategy", "strategy") || "first_hit"),
+  defaultRiskLevel: String(pick(raw, "defaultRiskLevel", "default_risk_level") || "low"),
+  description: String(pick(raw, "description", "description") || ""),
+  metadata: (pick(raw, "metadata", "metadata") || {}) as Record<string, any>,
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeCustomsRuleVersion = (raw: RawRecord): LogisticsCustomsRuleVersion => ({
+  id: String(pick(raw, "id", "id") || ""),
+  packId: String(pick(raw, "packId", "pack_id") || ""),
+  versionNo: Number(pick(raw, "versionNo", "version_no") || 1),
+  status: String(pick(raw, "status", "status") || "draft"),
+  hitStrategy: String(pick(raw, "hitStrategy", "hit_strategy") || "first_hit"),
+  rules: asArray<RawRecord>(pick(raw, "rules", "rules")),
+  riskSnapshot: (pick(raw, "riskSnapshot", "risk_snapshot") || {}) as Record<string, any>,
+  publishedAt: String(pick(raw, "publishedAt", "published_at") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeCustomsPrecheckMatchedRule = (raw: RawRecord): LogisticsCustomsPrecheckMatchedRule => ({
+  code: String(pick(raw, "code", "code") || ""),
+  name: String(pick(raw, "name", "name") || ""),
+  riskLevel: String(pick(raw, "riskLevel", "risk_level") || ""),
+  suggestion: String(pick(raw, "suggestion", "suggestion") || ""),
+  reason: String(pick(raw, "reason", "reason") || ""),
+});
+
+const normalizeCustomsPrecheckResult = (raw: RawRecord): LogisticsCustomsPrecheckResult => ({
+  packId: String(pick(raw, "packId", "pack_id") || ""),
+  versionId: String(pick(raw, "versionId", "version_id") || ""),
+  versionNo: Number(pick(raw, "versionNo", "version_no") || 1),
+  countryCode: String(pick(raw, "countryCode", "country_code") || ""),
+  decision: String(pick(raw, "decision", "decision") || "pass"),
+  riskLevel: String(pick(raw, "riskLevel", "risk_level") || "low"),
+  suggestion: String(pick(raw, "suggestion", "suggestion") || ""),
+  matchedRules: asArray<RawRecord>(pick(raw, "matchedRules", "matched_rules")).map(normalizeCustomsPrecheckMatchedRule),
+  manualRelease: Boolean(pick(raw, "manualRelease", "manual_release")),
 });
 
 const normalizeRoutingRule = (raw: RawRecord): LogisticsRoutingRule => ({
@@ -2561,6 +2653,43 @@ export function useLogisticsApi() {
         normalizedStatus: String(pick((raw || {}) as RawRecord, "normalizedStatus", "normalized_status") || ""),
         source: String(pick((raw || {}) as RawRecord, "source", "source") || ""),
       };
+    },
+
+    listCustomsRulePacks: async (
+      query?: { country_code?: string; status?: string; limit?: number },
+      init?: any,
+    ): Promise<LogisticsCustomsRulePack[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/customs/rule-packs`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeCustomsRulePack);
+    },
+
+    upsertCustomsRulePack: async (payload: Record<string, any>, init?: any): Promise<LogisticsCustomsRulePack> => {
+      const id = String(payload.id || "").trim();
+      const path = id ? `${basePath}/customs/rule-packs/${id}` : `${basePath}/customs/rule-packs`;
+      const req = id ? apiPatch<ApiEnvelope<RawRecord>>(path, payload, init) : apiPost<ApiEnvelope<RawRecord>>(path, payload, init);
+      const raw = await unwrap(req);
+      return normalizeCustomsRulePack((raw || {}) as RawRecord);
+    },
+
+    listCustomsRuleVersions: async (packId: string, query?: { limit?: number }, init?: any): Promise<LogisticsCustomsRuleVersion[]> => {
+      const raw = await unwrap(
+        apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/customs/rule-packs/${packId}/versions`, query, init),
+      );
+      return asArray<RawRecord>(raw?.items).map(normalizeCustomsRuleVersion);
+    },
+
+    publishCustomsRuleVersion: async (
+      packId: string,
+      payload: Record<string, any>,
+      init?: any,
+    ): Promise<LogisticsCustomsRuleVersion> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/customs/rule-packs/${packId}/versions`, payload, init));
+      return normalizeCustomsRuleVersion((raw || {}) as RawRecord);
+    },
+
+    customsPrecheck: async (payload: Record<string, any>, init?: any): Promise<LogisticsCustomsPrecheckResult> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/customs/precheck`, payload, init));
+      return normalizeCustomsPrecheckResult((raw || {}) as RawRecord);
     },
   };
 }

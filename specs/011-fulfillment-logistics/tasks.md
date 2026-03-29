@@ -506,17 +506,19 @@
 
 ### User Story 36 - 跨境清关规则中心（P3）
 
-- [ ] T221 [P] [US36] 增加清关规则包与版本模型（国家规则、命中策略、启停状态）（`backend/internal/entity/models/logistics/customs_rule*.go`）
-- [ ] T222 [US36] 实现清关规则服务（规则编排、风险预判、建议动作生成）（`backend/internal/services/admin/logistics/customs_rule_service.go`）
-- [ ] T223 [US36] 实现清关规则接口（规则管理、预检执行、命中解释）（`backend/internal/transport/http/admin/logistics/{customs_rule_handler.go,routes.go,dto.go}`）
-- [ ] T224 [US36] 在运单页新增“清关预检”面板（国家规则选择、风险预判结果、人工确认）（`web-admin/app/pages/shipping/waybills.vue`）
-- [ ] T225 [US36] 增加 US36 回归测试（规则版本切换、命中解释完整性、误拦截放行）（`backend/internal/services/admin/logistics/*_test.go`）
+- [X] T221 [P] [US36] 增加清关规则包与版本模型（国家规则、命中策略、启停状态）（`backend/internal/entity/models/logistics/customs_rule*.go`）
+- [X] T222 [US36] 实现清关规则服务（规则编排、风险预判、建议动作生成）（`backend/internal/services/admin/logistics/customs_rule_service.go`）
+- [X] T223 [US36] 实现清关规则接口（规则管理、预检执行、命中解释）（`backend/internal/transport/http/admin/logistics/{customs_rule_handler.go,routes.go,dto.go}`）
+- [X] T224 [US36] 在运单页新增“清关预检”面板（国家规则选择、风险预判结果、人工确认）（`web-admin/app/pages/shipping/waybills.vue`）
+- [X] T225 [US36] 增加 US36 回归测试（规则版本切换、命中解释完整性、误拦截放行）（`backend/internal/services/admin/logistics/*_test.go`）
 
 ### Iteration-10 Polish
 
-- [ ] T226 [P] 更新 M11 quickstart 与执行记录模板（`specs/011-fulfillment-logistics/quickstart.md`）
-- [ ] T227 执行 M11 后端回归（`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment -count=1`）
-- [ ] T228 执行 M11 前端构建与页面回归（`make build-admin`）
+- [X] T226 [P] 更新 M11 quickstart 与执行记录模板（`specs/011-fulfillment-logistics/quickstart.md`）
+- [X] T227 执行 M11 后端回归（`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment -count=1`）
+- [X] T228 执行 M11 前端构建与页面回归（`make build-admin`）
+- [X] T229 执行 M11 关键链路冒烟（US34/US35/US36 核心服务用例）（`go test ./internal/services/admin/logistics -run 'TestKPIDashboardService_OverviewTrendDrilldown|TestReconciliationService_MatchingAndCaseFlow|TestCustomsRuleService_VersionSwitching' -count=1`）
+- [X] T230 归档 M11 执行记录与验收结论（`specs/011-fulfillment-logistics/quickstart.md`）
 
 ---
 

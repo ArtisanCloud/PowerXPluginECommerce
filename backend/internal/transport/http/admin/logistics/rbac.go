@@ -235,6 +235,24 @@ func RBACEntries(prefix string) map[string]AuthX.Permission {
 		"POST:" + base + "/crossborder/tracking-maps/normalize": {
 			Resource: res("logistics.crossborder"), Action: "read",
 		},
+		"GET:" + base + "/customs/rule-packs": {
+			Resource: res("logistics.customs_rule"), Action: "read",
+		},
+		"POST:" + base + "/customs/rule-packs": {
+			Resource: res("logistics.customs_rule"), Action: "manage",
+		},
+		"PATCH:" + base + "/customs/rule-packs/:id": {
+			Resource: res("logistics.customs_rule"), Action: "manage",
+		},
+		"GET:" + base + "/customs/rule-packs/:id/versions": {
+			Resource: res("logistics.customs_rule"), Action: "read",
+		},
+		"POST:" + base + "/customs/rule-packs/:id/versions": {
+			Resource: res("logistics.customs_rule"), Action: "manage",
+		},
+		"POST:" + base + "/customs/precheck": {
+			Resource: res("logistics.customs_rule"), Action: "read",
+		},
 		"GET:" + base + "/kpi-dashboard/overview": {
 			Resource: res("logistics.kpi_dashboard"), Action: "read",
 		},

@@ -476,4 +476,45 @@
 - 执行命令：`make build-admin`
 - 结果：通过/失败
 - 页面回归：`shipping/kpi-dashboard`、`shipping/billing`、`shipping/waybills`
+
+### 28.4 T229 M11 关键链路冒烟
+- 执行命令：`go test ./internal/services/admin/logistics -run 'TestKPIDashboardService_OverviewTrendDrilldown|TestReconciliationService_MatchingAndCaseFlow|TestCustomsRuleService_VersionSwitching' -count=1`
+- 场景：KPI 聚合与钻取、自动对账匹配与工单流转、清关规则版本切换
+- 结果：通过/失败（附失败用例与日志）
+
+### 28.5 T230 M11 执行记录归档
+- 变更文件：`specs/011-fulfillment-logistics/quickstart.md`
+- 归档范围：T226-T229 执行结果、页面回归范围、风险与后续动作
+- 结果：通过/待补充
 ```
+
+## 29. Iteration-10 执行记录（2026-03-29）
+### 29.1 T226 M11 quickstart 与模板更新
+- 已补齐 Iteration-10 模板，新增 `T229` 关键链路冒烟与 `T230` 执行归档模板项。
+- 覆盖范围：US34-US36（KPI 大屏、自动对账、清关规则中心）。
+
+### 29.2 T227 M11 后端回归
+- 执行命令：  
+  `cd backend && GOCACHE=$PWD/.gocache GOMODCACHE=$PWD/.gomodcache go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment -count=1`
+- 结果：**通过**（4 个目标包全部通过）。
+
+### 29.3 T228 M11 前端构建与页面回归
+- 执行命令：`make build-admin`
+- 结果：**通过**（存在既有 Rollup circular/chunk warnings，不阻塞产物输出）。
+- 页面范围：
+  - `shipping/kpi-dashboard`
+  - `shipping/billing`
+  - `shipping/waybills`（跨境清关预检面板）
+
+### 29.4 T229 M11 关键链路冒烟
+- 执行命令：  
+  `cd backend && GOCACHE=$PWD/.gocache GOMODCACHE=$PWD/.gomodcache go test ./internal/services/admin/logistics -run 'TestKPIDashboardService_OverviewTrendDrilldown|TestReconciliationService_MatchingAndCaseFlow|TestCustomsRuleService_VersionSwitching' -count=1`
+- 场景覆盖：
+  - KPI 聚合、趋势、钻取关键口径
+  - 自动对账匹配与工单流转
+  - 清关规则版本切换生效
+- 结果：**通过**。
+
+### 29.5 T230 M11 执行记录归档
+- 已将 T226-T229 的执行结果归档到本节。
+- 当前结论：M11 代码与构建层面回归通过，可进入联调环境做实网抽样验收。

@@ -382,6 +382,49 @@ type normalizeCrossborderTrackingRequest struct {
 	ProviderStatus string `json:"provider_status"`
 }
 
+type customsRuleDefinitionRequest struct {
+	Code       string `json:"code"`
+	Name       string `json:"name"`
+	Field      string `json:"field"`
+	Operator   string `json:"operator"`
+	Value      any    `json:"value"`
+	RiskLevel  string `json:"risk_level"`
+	Suggestion string `json:"suggestion"`
+	Enabled    bool   `json:"enabled"`
+}
+
+type upsertCustomsRulePackRequest struct {
+	ID               string         `json:"id,omitempty"`
+	Name             string         `json:"name"`
+	CountryCode      string         `json:"country_code"`
+	Status           string         `json:"status,omitempty"`
+	Strategy         string         `json:"strategy,omitempty"`
+	DefaultRiskLevel string         `json:"default_risk_level,omitempty"`
+	Description      string         `json:"description,omitempty"`
+	Metadata         map[string]any `json:"metadata,omitempty"`
+}
+
+type publishCustomsRuleVersionRequest struct {
+	VersionNo   int                            `json:"version_no,omitempty"`
+	Status      string                         `json:"status,omitempty"`
+	HitStrategy string                         `json:"hit_strategy,omitempty"`
+	Rules       []customsRuleDefinitionRequest `json:"rules"`
+	RiskConfig  map[string]any                 `json:"risk_config,omitempty"`
+}
+
+type customsPrecheckRequest struct {
+	PackID        string         `json:"pack_id,omitempty"`
+	CountryCode   string         `json:"country_code,omitempty"`
+	WaybillNo     string         `json:"waybill_no,omitempty"`
+	DeclaredValue float64        `json:"declared_value,omitempty"`
+	TaxNo         string         `json:"tax_no,omitempty"`
+	HSCode        string         `json:"hs_code,omitempty"`
+	DocumentType  string         `json:"document_type,omitempty"`
+	DocumentCount int            `json:"document_count,omitempty"`
+	ManualRelease bool           `json:"manual_release,omitempty"`
+	Payload       map[string]any `json:"payload,omitempty"`
+}
+
 type kpiDashboardQueryRequest struct {
 	WindowHours     int    `json:"window_hours,omitempty"`
 	Dimension       string `json:"dimension,omitempty"`

@@ -433,6 +433,54 @@
               <li v-if="!crossborderTrackingMaps.length" class="text-gray-500">暂无映射</li>
             </ul>
           </UCard>
+          <UCard>
+            <template #header>
+              <div class="text-sm font-medium">清关预检</div>
+            </template>
+            <div class="grid gap-2 sm:grid-cols-2">
+              <USelect
+                v-model="customsForm.packId"
+                :options="customsPackOptions"
+                placeholder="选择规则包（可选）"
+              />
+              <UInput v-model="customsForm.countryCode" placeholder="国家代码（US）" />
+              <UInput v-model.number="customsForm.declaredValue" type="number" step="0.01" placeholder="申报价值" />
+              <UInput v-model="customsForm.taxNo" placeholder="税号（可选）" />
+              <UInput v-model="customsForm.hsCode" placeholder="HS CODE（可选）" />
+              <USelect v-model="customsForm.documentType" :options="customsDocumentTypeOptions" />
+              <UInput v-model.number="customsForm.documentCount" type="number" placeholder="单据数量" />
+            </div>
+            <div class="mt-2 flex gap-2">
+              <UButton size="xs" color="warning" :loading="customsLoading" @click="runCustomsPrecheck">执行预检</UButton>
+              <UButton
+                size="xs"
+                color="success"
+                variant="soft"
+                :loading="customsLoading"
+                :disabled="!customsPrecheckResult || customsPrecheckResult.decision !== 'block'"
+                @click="manualReleaseCustoms"
+              >
+                人工确认放行
+              </UButton>
+            </div>
+            <UCard v-if="customsPrecheckResult" class="mt-2">
+              <p class="text-xs">
+                结论：{{ customsPrecheckResult.decision }} · 风险：{{ customsPrecheckResult.riskLevel }} · 建议：{{ customsPrecheckResult.suggestion }}
+              </p>
+              <p class="text-xs text-gray-500">
+                规则包={{ customsPrecheckResult.packId }}，版本={{ customsPrecheckResult.versionNo }}
+              </p>
+              <ul class="space-y-1 text-xs mt-2">
+                <li v-for="item in customsPrecheckResult.matchedRules" :key="`${item.code}-${item.reason}`">
+                  {{ item.code }} / {{ item.riskLevel }} / {{ item.suggestion }} · {{ item.reason }}
+                </li>
+                <li v-if="!customsPrecheckResult.matchedRules.length" class="text-gray-500">未命中规则</li>
+              </ul>
+            </UCard>
+            <p class="text-xs text-gray-500 mt-2" v-if="customsRuleVersions.length">
+              最新版本：v{{ customsRuleVersions[0]?.versionNo }}（{{ customsRuleVersions[0]?.status }}）
+            </p>
+          </UCard>
         </div>
       </template>
     </UModal>
@@ -445,6 +493,9 @@ import type {
   LogisticsAddressValidation,
   LogisticsAllocationResult,
   LogisticsCrossborderDocument,
+  LogisticsCustomsPrecheckResult,
+  LogisticsCustomsRulePack,
+  LogisticsCustomsRuleVersion,
   LogisticsCrossborderTaxQuote,
   LogisticsCrossborderTrackingMap,
   LogisticsExceptionOrchestrationRun,
@@ -530,6 +581,10 @@ const crossborderTrackingMaps = ref<LogisticsCrossborderTrackingMap[]>([]);
 const crossborderQuote = ref<LogisticsCrossborderTaxQuote | null>(null);
 const crossborderNormalizedResult = ref("");
 const crossborderNormalizedSource = ref("");
+const customsLoading = ref(false);
+const customsRulePacks = ref<LogisticsCustomsRulePack[]>([]);
+const customsRuleVersions = ref<LogisticsCustomsRuleVersion[]>([]);
+const customsPrecheckResult = ref<LogisticsCustomsPrecheckResult | null>(null);
 const routingForm = reactive({
   waybillNo: "",
   warehouseId: "",
@@ -589,6 +644,15 @@ const crossborderForm = reactive({
   providerStatus: "customs_hold",
   normalizedStatus: "exception",
 });
+const customsForm = reactive({
+  packId: "",
+  countryCode: "US",
+  declaredValue: 0,
+  taxNo: "",
+  hsCode: "",
+  documentType: "invoice",
+  documentCount: 1,
+});
 const orchestrationTriggerOptions = [
   { label: "延误", value: "delay" },
   { label: "拒收", value: "rejected" },
@@ -622,6 +686,11 @@ const crossborderNormalizedStatusOptions = [
   { label: "运输中", value: "in_transit" },
   { label: "异常", value: "exception" },
   { label: "已签收", value: "delivered" },
+];
+const customsDocumentTypeOptions = [
+  { label: "商业发票", value: "invoice" },
+  { label: "报关单", value: "customs_form" },
+  { label: "装箱单", value: "packing_list" },
 ];
 const syncJobForm = reactive({
   carrierId: "",
@@ -754,6 +823,13 @@ const carrierOptions = computed(() =>
       value: carrier,
     })),
   ),
+);
+
+const customsPackOptions = computed(() =>
+  customsRulePacks.value.map((item) => ({
+    label: `${item.name} (${item.countryCode})`,
+    value: item.id,
+  })),
 );
 
 const statusOptions = [
@@ -1092,6 +1168,14 @@ const openCrossborder = async (waybill: Waybill) => {
   crossborderQuote.value = null;
   crossborderNormalizedResult.value = "";
   crossborderNormalizedSource.value = "";
+  customsPrecheckResult.value = null;
+  customsForm.packId = "";
+  customsForm.countryCode = (crossborderForm.countryTo || "US").toUpperCase();
+  customsForm.declaredValue = 0;
+  customsForm.taxNo = "";
+  customsForm.hsCode = "";
+  customsForm.documentType = "invoice";
+  customsForm.documentCount = 1;
   crossborderOpen.value = true;
   crossborderLoading.value = true;
   try {
@@ -1104,6 +1188,17 @@ const openCrossborder = async (waybill: Waybill) => {
       enabled: true,
       limit: 20,
     });
+    customsRulePacks.value = await logisticsApi.listCustomsRulePacks({
+      country_code: customsForm.countryCode || undefined,
+      status: "active",
+      limit: 20,
+    });
+    if (customsRulePacks.value.length > 0) {
+      customsForm.packId = customsRulePacks.value[0].id;
+      customsRuleVersions.value = await logisticsApi.listCustomsRuleVersions(customsForm.packId, { limit: 10 });
+    } else {
+      customsRuleVersions.value = [];
+    }
   } finally {
     crossborderLoading.value = false;
   }
@@ -1175,6 +1270,50 @@ const normalizeCrossborderStatus = async () => {
   }
 };
 
+const runCustomsPrecheck = async () => {
+  customsLoading.value = true;
+  try {
+    customsPrecheckResult.value = await logisticsApi.customsPrecheck({
+      pack_id: customsForm.packId || undefined,
+      country_code: customsForm.countryCode || undefined,
+      waybill_no: crossborderForm.waybillNo || undefined,
+      declared_value: Number(customsForm.declaredValue || 0),
+      tax_no: customsForm.taxNo || undefined,
+      hs_code: customsForm.hsCode || undefined,
+      document_type: customsForm.documentType || undefined,
+      document_count: Number(customsForm.documentCount || 0),
+      payload: {
+        country_code: customsForm.countryCode || undefined,
+      },
+    });
+  } finally {
+    customsLoading.value = false;
+  }
+};
+
+const manualReleaseCustoms = async () => {
+  customsLoading.value = true;
+  try {
+    customsPrecheckResult.value = await logisticsApi.customsPrecheck({
+      pack_id: customsForm.packId || undefined,
+      country_code: customsForm.countryCode || undefined,
+      waybill_no: crossborderForm.waybillNo || undefined,
+      declared_value: Number(customsForm.declaredValue || 0),
+      tax_no: customsForm.taxNo || undefined,
+      hs_code: customsForm.hsCode || undefined,
+      document_type: customsForm.documentType || undefined,
+      document_count: Number(customsForm.documentCount || 0),
+      manual_release: true,
+      payload: {
+        country_code: customsForm.countryCode || undefined,
+      },
+    });
+    toast.add({ title: "已人工确认放行", color: "success" });
+  } finally {
+    customsLoading.value = false;
+  }
+};
+
 const openAddressValidation = (waybill: Waybill) => {
   addressForm.waybillId = waybill.id;
   addressForm.waybillNo = waybill.waybillNo;
@@ -1197,6 +1336,32 @@ const checkAddressValidation = async () => {
     addressLoading.value = false;
   }
 };
+
+watch(
+  () => customsForm.packId,
+  async (value) => {
+    if (!value) {
+      customsRuleVersions.value = [];
+      return;
+    }
+    customsRuleVersions.value = await logisticsApi.listCustomsRuleVersions(value, { limit: 10 });
+  },
+);
+
+watch(
+  () => customsForm.countryCode,
+  async (value) => {
+    if (!crossborderOpen.value) return;
+    customsRulePacks.value = await logisticsApi.listCustomsRulePacks({
+      country_code: (value || "").trim() || undefined,
+      status: "active",
+      limit: 20,
+    });
+    if (!customsRulePacks.value.find((item) => item.id === customsForm.packId)) {
+      customsForm.packId = customsRulePacks.value[0]?.id || "";
+    }
+  },
+);
 
 onMounted(async () => {
   await loadWaybills();

@@ -46,6 +46,8 @@ var FulfillmentLogisticsTables = []interface{}{
 	&LogisticsModel.CrossborderDocument{},
 	&LogisticsModel.CrossborderTaxQuote{},
 	&LogisticsModel.CrossborderTrackingMap{},
+	&LogisticsModel.CustomsRulePack{},
+	&LogisticsModel.CustomsRuleVersion{},
 	&LogisticsModel.KPISnapshot{},
 	&LogisticsModel.NotificationTemplate{},
 	&LogisticsModel.NotificationRecord{},
