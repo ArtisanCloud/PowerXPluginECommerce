@@ -231,6 +231,14 @@ func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 	if allocationPerm.Resource != "com.powerx.plugins.ecommerce:logistics.allocation" {
 		t.Fatalf("unexpected resource %s", allocationPerm.Resource)
 	}
+	forecastKey := "GET:/api/v1/admin/logistics/allocation/forecasts"
+	forecastPerm, ok := entries[forecastKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", forecastKey)
+	}
+	if forecastPerm.Resource != "com.powerx.plugins.ecommerce:logistics.capacity_forecast" {
+		t.Fatalf("unexpected resource %s", forecastPerm.Resource)
+	}
 
 	lastmileKey := "POST:/api/v1/admin/logistics/lastmile-recovery/execute"
 	lastmilePerm, ok := entries[lastmileKey]

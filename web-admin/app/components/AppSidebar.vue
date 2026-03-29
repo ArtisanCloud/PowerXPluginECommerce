@@ -1015,6 +1015,20 @@
           </UButton>
 
           <UButton
+            to="/shipping/capacity-forecast"
+            variant="ghost"
+            color="neutral"
+            class="w-full justify-start"
+            :class="{
+              'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
+                $route.path === '/shipping/capacity-forecast',
+            }"
+          >
+            <UIcon name="i-heroicons-chart-bar" class="w-4 h-4 mr-3"/>
+            容量预测
+          </UButton>
+
+          <UButton
             to="/shipping/notifications"
             variant="ghost"
             color="neutral"

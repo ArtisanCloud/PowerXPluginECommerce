@@ -772,6 +772,29 @@ export type LogisticsAllocationResult = {
   createdAt: string;
 };
 
+export type LogisticsCapacityForecast = {
+  id: string;
+  planId: string;
+  carrierId: string;
+  warehouseId: string;
+  destinationZone: string;
+  windowDays: number;
+  currentDailyCapacity: number;
+  predictedDailyVolume: number;
+  targetCapacity: number;
+  recommendedQuota: number;
+  confidence: number;
+  riskLevel: string;
+  strategy: string;
+  status: string;
+  metrics: Record<string, any>;
+  appliedAt: string;
+  createdBy: string;
+  updatedBy: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type LogisticsLastmileRecoveryRule = {
   id: string;
   name: string;
@@ -1492,6 +1515,29 @@ const normalizeAllocationResult = (raw: RawRecord): LogisticsAllocationResult =>
   reason: String(pick(raw, "reason", "reason") || ""),
   candidates: asArray<RawRecord>(pick(raw, "candidates", "candidates")).map(normalizeAllocationCandidate),
   createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+});
+
+const normalizeCapacityForecast = (raw: RawRecord): LogisticsCapacityForecast => ({
+  id: String(pick(raw, "id", "id") || ""),
+  planId: String(pick(raw, "planId", "plan_id") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  warehouseId: String(pick(raw, "warehouseId", "warehouse_id") || ""),
+  destinationZone: String(pick(raw, "destinationZone", "destination_zone") || ""),
+  windowDays: Number(pick(raw, "windowDays", "window_days") || 7),
+  currentDailyCapacity: Number(pick(raw, "currentDailyCapacity", "current_daily_capacity") || 0),
+  predictedDailyVolume: Number(pick(raw, "predictedDailyVolume", "predicted_daily_volume") || 0),
+  targetCapacity: Number(pick(raw, "targetCapacity", "target_capacity") || 0),
+  recommendedQuota: Number(pick(raw, "recommendedQuota", "recommended_quota") || 0),
+  confidence: Number(pick(raw, "confidence", "confidence") || 0),
+  riskLevel: String(pick(raw, "riskLevel", "risk_level") || ""),
+  strategy: String(pick(raw, "strategy", "strategy") || ""),
+  status: String(pick(raw, "status", "status") || "suggested"),
+  metrics: (pick(raw, "metrics", "metrics") || {}) as Record<string, any>,
+  appliedAt: String(pick(raw, "appliedAt", "applied_at") || ""),
+  createdBy: String(pick(raw, "createdBy", "created_by") || ""),
+  updatedBy: String(pick(raw, "updatedBy", "updated_by") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
 });
 
 const normalizeLastmileRecoveryRule = (raw: RawRecord): LogisticsLastmileRecoveryRule => ({
@@ -2676,6 +2722,43 @@ export function useLogisticsApi() {
     overrideAllocation: async (payload: Record<string, any>, init?: any): Promise<LogisticsAllocationResult> => {
       const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/allocation/override`, payload, init));
       return normalizeAllocationResult((raw || {}) as RawRecord);
+    },
+
+    listCapacityForecasts: async (
+      query?: {
+        carrier_id?: string;
+        warehouse_id?: string;
+        destination_zone?: string;
+        status?: "suggested" | "applied" | "dismissed" | string;
+        limit?: number;
+      },
+      init?: any,
+    ): Promise<LogisticsCapacityForecast[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/allocation/forecasts`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeCapacityForecast);
+    },
+
+    generateCapacityForecast: async (
+      payload: {
+        carrier_id?: string;
+        warehouse_id?: string;
+        destination_zone?: string;
+        window_days?: number;
+        operator_id?: string;
+      },
+      init?: any,
+    ): Promise<LogisticsCapacityForecast[]> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/allocation/forecasts/generate`, payload, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeCapacityForecast);
+    },
+
+    applyCapacityForecast: async (
+      id: string,
+      payload?: { operator_id?: string },
+      init?: any,
+    ): Promise<LogisticsCapacityForecast> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/allocation/forecasts/${id}/apply`, payload || {}, init));
+      return normalizeCapacityForecast((raw || {}) as RawRecord);
     },
 
     listLastmileRecoveryRules: async (query?: { enabled?: boolean }, init?: any): Promise<LogisticsLastmileRecoveryRule[]> => {

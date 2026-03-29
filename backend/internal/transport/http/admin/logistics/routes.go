@@ -47,6 +47,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 		logisticssvc.NewCustomsRuleService(deps),
 		logisticssvc.NewKPIDashboardService(deps),
 		logisticssvc.NewSLOGuardService(deps),
+		logisticssvc.NewCapacityForecastService(deps),
 		logisticssvc.NewWebhookService(deps),
 	)
 
@@ -149,6 +150,9 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.PATCH("/allocation/plans/:id", handler.UpsertCapacityPlan)
 	rg.POST("/allocation/allocate", handler.AllocateCarrier)
 	rg.POST("/allocation/override", handler.OverrideAllocation)
+	rg.GET("/allocation/forecasts", handler.ListCapacityForecasts)
+	rg.POST("/allocation/forecasts/generate", handler.GenerateCapacityForecast)
+	rg.POST("/allocation/forecasts/:id/apply", handler.ApplyCapacityForecast)
 	rg.GET("/lastmile-recovery/rules", handler.ListLastmileRecoveryRules)
 	rg.POST("/lastmile-recovery/rules", handler.UpsertLastmileRecoveryRule)
 	rg.PATCH("/lastmile-recovery/rules/:id", handler.UpsertLastmileRecoveryRule)

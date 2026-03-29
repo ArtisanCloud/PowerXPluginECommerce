@@ -458,6 +458,18 @@ type releaseSLOGuardRequest struct {
 	Reason     string `json:"reason,omitempty"`
 }
 
+type generateCapacityForecastRequest struct {
+	CarrierID       string `json:"carrier_id,omitempty"`
+	WarehouseID     string `json:"warehouse_id,omitempty"`
+	DestinationZone string `json:"destination_zone,omitempty"`
+	WindowDays      int    `json:"window_days,omitempty"`
+	OperatorID      string `json:"operator_id,omitempty"`
+}
+
+type applyCapacityForecastRequest struct {
+	OperatorID string `json:"operator_id,omitempty"`
+}
+
 type allocationRequest struct {
 	RequestKey       string `json:"request_key,omitempty"`
 	WaybillID        string `json:"waybill_id,omitempty"`

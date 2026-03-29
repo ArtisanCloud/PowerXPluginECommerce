@@ -536,6 +536,52 @@
 
 ---
 
+## Phase 18: Iteration-12 - 预测与协同履约（Backlog）
+
+**Purpose**: 在 M11 稳定性治理基础上，补齐“预测 + 根因 + 跨仓协同 + 质量复盘”，将履约从被动响应升级到主动优化。
+
+### User Story 38 - 履约容量预测与动态配额（P2）
+
+- [X] T236 [P] [US38] 增加容量预测与动态配额模型（预测窗口、目标容量、调整策略、置信区间）（`backend/internal/entity/models/logistics/capacity_forecast*.go`）
+- [X] T237 [US38] 实现容量预测服务（历史样本聚合、峰值预警、配额建议生成）（`backend/internal/services/admin/logistics/capacity_forecast_service.go`）
+- [X] T238 [US38] 实现容量预测接口（预测查询、建议确认、配额下发）（`backend/internal/transport/http/admin/logistics/{capacity_forecast_handler.go,routes.go,dto.go}`）
+- [X] T239 [US38] 新增容量预测页面（趋势图、建议面板、一键下发）（`web-admin/app/pages/shipping/capacity-forecast.vue`）
+- [X] T240 [US38] 增加 US38 回归测试（预测口径一致性、建议幂等、租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### User Story 39 - 轨迹异常根因分析中心（P2）
+
+- [ ] T241 [P] [US39] 增加轨迹异常根因模型（异常类型、责任归因、修复动作、证据链）（`backend/internal/entity/models/logistics/tracking_root_cause*.go`）
+- [ ] T242 [US39] 实现根因分析服务（异常聚类、归因规则、处置建议）（`backend/internal/services/admin/logistics/tracking_root_cause_service.go`）
+- [ ] T243 [US39] 实现根因分析接口（异常聚合、明细钻取、动作回写）（`backend/internal/transport/http/admin/logistics/{tracking_root_cause_handler.go,routes.go,dto.go}`）
+- [ ] T244 [US39] 在 SLA 页新增“根因分析”区块（异常分布、责任占比、建议动作）（`web-admin/app/pages/shipping/sla.vue`）
+- [ ] T245 [US39] 增加 US39 回归测试（归因准确性、动作闭环、跨租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### User Story 40 - 跨仓协同与调拨履约（P2）
+
+- [ ] T246 [P] [US40] 增加跨仓协同与调拨模型（源仓/目标仓、调拨成本、时效影响）（`backend/internal/entity/models/logistics/interwarehouse_allocation*.go`）
+- [ ] T247 [US40] 实现跨仓协同服务（缺货检测、调拨候选评分、履约路径重算）（`backend/internal/services/admin/logistics/interwarehouse_allocation_service.go`）
+- [ ] T248 [US40] 实现跨仓协同接口（候选查询、调拨确认、重算结果）（`backend/internal/transport/http/admin/logistics/{interwarehouse_allocation_handler.go,routes.go,dto.go}`）
+- [ ] T249 [US40] 在运单页新增“跨仓协同”面板（候选仓对比、成本/时效影响展示）（`web-admin/app/pages/shipping/waybills.vue`）
+- [ ] T250 [US40] 增加 US40 回归测试（候选排序稳定性、调拨约束、幂等防重）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### User Story 41 - 履约质量审计与复盘报告（P3）
+
+- [ ] T251 [P] [US41] 增加履约质量审计与复盘模型（报告周期、指标快照、结论与行动项）（`backend/internal/entity/models/logistics/quality_audit_report*.go`）
+- [ ] T252 [US41] 实现复盘报告服务（指标汇总、异常摘要、行动建议生成）（`backend/internal/services/admin/logistics/quality_audit_report_service.go`）
+- [ ] T253 [US41] 实现复盘报告接口（报告生成、详情查看、导出）（`backend/internal/transport/http/admin/logistics/{quality_audit_report_handler.go,routes.go,dto.go}`）
+- [ ] T254 [US41] 新增复盘报告页面（周期筛选、结论摘要、行动项追踪）（`web-admin/app/pages/shipping/quality-reports.vue`）
+- [ ] T255 [US41] 增加 US41 回归测试（报告口径正确性、导出稳定性、租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### Iteration-12 Polish
+
+- [ ] T256 [P] 更新 M12 quickstart 与执行记录模板（`specs/011-fulfillment-logistics/quickstart.md`）
+- [ ] T257 执行 M12 后端回归（`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment -count=1`）
+- [ ] T258 执行 M12 前端构建与页面回归（`make build-admin`）
+- [ ] T259 执行 M12 关键链路冒烟（US38/US39/US40 核心服务用例）（`go test ./internal/services/admin/logistics -run 'TestCapacityForecastService_|TestTrackingRootCauseService_|TestInterwarehouseAllocationService_' -count=1`）
+- [ ] T260 归档 M12 执行记录与验收结论（`specs/011-fulfillment-logistics/quickstart.md`）
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -560,6 +606,10 @@
 - **US35 (P2)**: 依赖 US29 的结算闭环能力，扩展账单/流水/发票三方自动核对
 - **US36 (P3)**: 依赖 US33 的跨境履约能力，扩展为清关规则中心与预检风控
 - **US37 (P2)**: 依赖 US34 的指标聚合与 US31/US32 的异常处置能力，扩展为稳定性守卫与自动限流
+- **US38 (P2)**: 依赖 US34/US37 的指标与稳定性能力，扩展为预测驱动的容量治理
+- **US39 (P2)**: 依赖 US31/US37 的异常与守卫能力，扩展为根因分析与处置建议
+- **US40 (P2)**: 依赖 US25/US30 的路由与仓配能力，扩展跨仓协同调拨
+- **US41 (P3)**: 依赖 US34-US40 的数据沉淀，扩展为质量审计与复盘报告
 
 ### Within Each User Story
 
