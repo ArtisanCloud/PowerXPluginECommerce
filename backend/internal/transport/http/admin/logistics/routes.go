@@ -50,6 +50,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 		logisticssvc.NewCapacityForecastService(deps),
 		logisticssvc.NewTrackingRootCauseService(deps),
 		logisticssvc.NewInterwarehouseAllocationService(deps),
+		logisticssvc.NewQualityAuditReportService(deps),
 		logisticssvc.NewWebhookService(deps),
 	)
 
@@ -162,6 +163,10 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.GET("/tracking-root-causes/items", handler.ListTrackingRootCauses)
 	rg.POST("/tracking-root-causes/analyze", handler.AnalyzeTrackingRootCauses)
 	rg.POST("/tracking-root-causes/:id/handle", handler.HandleTrackingRootCause)
+	rg.GET("/quality-reports", handler.ListQualityAuditReports)
+	rg.GET("/quality-reports/:id", handler.GetQualityAuditReport)
+	rg.POST("/quality-reports/generate", handler.GenerateQualityAuditReport)
+	rg.GET("/quality-reports/export", handler.ExportQualityAuditReport)
 	rg.GET("/lastmile-recovery/rules", handler.ListLastmileRecoveryRules)
 	rg.POST("/lastmile-recovery/rules", handler.UpsertLastmileRecoveryRule)
 	rg.PATCH("/lastmile-recovery/rules/:id", handler.UpsertLastmileRecoveryRule)

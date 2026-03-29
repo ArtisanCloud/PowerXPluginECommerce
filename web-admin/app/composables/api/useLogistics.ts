@@ -861,6 +861,40 @@ export type LogisticsTrackingRootCauseSummary = {
   suggestedActions: string[];
 };
 
+export type LogisticsQualityAuditActionItem = {
+  area: string;
+  priority: string;
+  action: string;
+};
+
+export type LogisticsQualityAuditReport = {
+  id: string;
+  reportPeriodFrom: string;
+  reportPeriodTo: string;
+  windowHours: number;
+  carrierId: string;
+  warehouseId: string;
+  destinationZone: string;
+  totalWaybills: number;
+  deliveredCount: number;
+  exceptionCount: number;
+  timeoutCount: number;
+  onTimeRate: number;
+  deliverySuccessRate: number;
+  totalCost: number;
+  avgCost: number;
+  forecastCount: number;
+  rootCauseCount: number;
+  interwarehouseCount: number;
+  conclusion: string;
+  actionItems: LogisticsQualityAuditActionItem[];
+  status: string;
+  generatedBy: string;
+  generatedAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type LogisticsLastmileRecoveryRule = {
   id: string;
   name: string;
@@ -1674,6 +1708,40 @@ const normalizeTrackingRootCauseSummary = (raw: RawRecord): LogisticsTrackingRoo
     pick(raw, "ownerDistribution", "owner_distribution"),
   ).map(normalizeTrackingRootCauseDistribution),
   suggestedActions: asArray<any>(pick(raw, "suggestedActions", "suggested_actions")).map((item) => String(item || "")),
+});
+
+const normalizeQualityAuditActionItem = (raw: RawRecord): LogisticsQualityAuditActionItem => ({
+  area: String(pick(raw, "area", "area") || ""),
+  priority: String(pick(raw, "priority", "priority") || ""),
+  action: String(pick(raw, "action", "action") || ""),
+});
+
+const normalizeQualityAuditReport = (raw: RawRecord): LogisticsQualityAuditReport => ({
+  id: String(pick(raw, "id", "id") || ""),
+  reportPeriodFrom: String(pick(raw, "reportPeriodFrom", "report_period_from") || ""),
+  reportPeriodTo: String(pick(raw, "reportPeriodTo", "report_period_to") || ""),
+  windowHours: Number(pick(raw, "windowHours", "window_hours") || 24),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  warehouseId: String(pick(raw, "warehouseId", "warehouse_id") || ""),
+  destinationZone: String(pick(raw, "destinationZone", "destination_zone") || ""),
+  totalWaybills: Number(pick(raw, "totalWaybills", "total_waybills") || 0),
+  deliveredCount: Number(pick(raw, "deliveredCount", "delivered_count") || 0),
+  exceptionCount: Number(pick(raw, "exceptionCount", "exception_count") || 0),
+  timeoutCount: Number(pick(raw, "timeoutCount", "timeout_count") || 0),
+  onTimeRate: Number(pick(raw, "onTimeRate", "on_time_rate") || 0),
+  deliverySuccessRate: Number(pick(raw, "deliverySuccessRate", "delivery_success_rate") || 0),
+  totalCost: Number(pick(raw, "totalCost", "total_cost") || 0),
+  avgCost: Number(pick(raw, "avgCost", "avg_cost") || 0),
+  forecastCount: Number(pick(raw, "forecastCount", "forecast_count") || 0),
+  rootCauseCount: Number(pick(raw, "rootCauseCount", "root_cause_count") || 0),
+  interwarehouseCount: Number(pick(raw, "interwarehouseCount", "interwarehouse_count") || 0),
+  conclusion: String(pick(raw, "conclusion", "conclusion") || ""),
+  actionItems: asArray<RawRecord>(pick(raw, "actionItems", "action_items")).map(normalizeQualityAuditActionItem),
+  status: String(pick(raw, "status", "status") || "generated"),
+  generatedBy: String(pick(raw, "generatedBy", "generated_by") || ""),
+  generatedAt: String(pick(raw, "generatedAt", "generated_at") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
 });
 
 const normalizeLastmileRecoveryRule = (raw: RawRecord): LogisticsLastmileRecoveryRule => ({
@@ -2998,6 +3066,60 @@ export function useLogisticsApi() {
     ): Promise<LogisticsTrackingRootCause> => {
       const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/tracking-root-causes/${id}/handle`, payload, init));
       return normalizeTrackingRootCause((raw || {}) as RawRecord);
+    },
+
+    listQualityAuditReports: async (
+      query?: {
+        carrier_id?: string;
+        warehouse_id?: string;
+        destination_zone?: string;
+        status?: string;
+        window_hours?: number;
+        limit?: number;
+      },
+      init?: any,
+    ): Promise<LogisticsQualityAuditReport[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/quality-reports`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeQualityAuditReport);
+    },
+
+    generateQualityAuditReport: async (
+      payload: {
+        carrier_id?: string;
+        warehouse_id?: string;
+        destination_zone?: string;
+        report_period_from?: string;
+        report_period_to?: string;
+        window_hours?: number;
+        operator_id?: string;
+      },
+      init?: any,
+    ): Promise<LogisticsQualityAuditReport> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/quality-reports/generate`, payload, init));
+      return normalizeQualityAuditReport((raw || {}) as RawRecord);
+    },
+
+    getQualityAuditReport: async (id: string, init?: any): Promise<LogisticsQualityAuditReport> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<RawRecord>>(`${basePath}/quality-reports/${id}`, undefined, init));
+      return normalizeQualityAuditReport((raw || {}) as RawRecord);
+    },
+
+    exportQualityAuditReports: async (
+      query?: {
+        carrier_id?: string;
+        warehouse_id?: string;
+        destination_zone?: string;
+        status?: string;
+        window_hours?: number;
+        limit?: number;
+      },
+      init?: any,
+    ): Promise<{ content: string; format: string }> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<RawRecord>>(`${basePath}/quality-reports/export`, query, init));
+      return {
+        content: String(pick((raw || {}) as RawRecord, "content", "content") || ""),
+        format: String(pick((raw || {}) as RawRecord, "format", "format") || "csv"),
+      };
     },
 
     listLastmileRecoveryRules: async (query?: { enabled?: boolean }, init?: any): Promise<LogisticsLastmileRecoveryRule[]> => {

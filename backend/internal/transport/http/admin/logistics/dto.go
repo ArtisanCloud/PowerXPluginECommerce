@@ -470,6 +470,16 @@ type applyCapacityForecastRequest struct {
 	OperatorID string `json:"operator_id,omitempty"`
 }
 
+type generateQualityAuditReportRequest struct {
+	CarrierID        string `json:"carrier_id,omitempty"`
+	WarehouseID      string `json:"warehouse_id,omitempty"`
+	DestinationZone  string `json:"destination_zone,omitempty"`
+	ReportPeriodFrom string `json:"report_period_from,omitempty"`
+	ReportPeriodTo   string `json:"report_period_to,omitempty"`
+	WindowHours      int    `json:"window_hours,omitempty"`
+	OperatorID       string `json:"operator_id,omitempty"`
+}
+
 type analyzeTrackingRootCauseRequest struct {
 	CarrierID       string `json:"carrier_id,omitempty"`
 	WarehouseID     string `json:"warehouse_id,omitempty"`

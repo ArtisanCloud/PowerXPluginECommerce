@@ -46,6 +46,7 @@ type Handler struct {
 	forecastSvc       *logisticssvc.CapacityForecastService
 	rootCauseSvc      *logisticssvc.TrackingRootCauseService
 	interwarehouseSvc *logisticssvc.InterwarehouseAllocationService
+	qualityAuditSvc   *logisticssvc.QualityAuditReportService
 	webhookSvc        *logisticssvc.WebhookService
 }
 
@@ -83,6 +84,7 @@ func NewHandler(
 	forecastSvc *logisticssvc.CapacityForecastService,
 	rootCauseSvc *logisticssvc.TrackingRootCauseService,
 	interwarehouseSvc *logisticssvc.InterwarehouseAllocationService,
+	qualityAuditSvc *logisticssvc.QualityAuditReportService,
 	webhookSvc *logisticssvc.WebhookService,
 ) *Handler {
 	return &Handler{
@@ -119,6 +121,7 @@ func NewHandler(
 		forecastSvc:       forecastSvc,
 		rootCauseSvc:      rootCauseSvc,
 		interwarehouseSvc: interwarehouseSvc,
+		qualityAuditSvc:   qualityAuditSvc,
 		webhookSvc:        webhookSvc,
 	}
 }

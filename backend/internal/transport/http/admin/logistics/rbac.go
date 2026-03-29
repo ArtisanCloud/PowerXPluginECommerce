@@ -223,6 +223,18 @@ func RBACEntries(prefix string) map[string]AuthX.Permission {
 		"POST:" + base + "/tracking-root-causes/:id/handle": {
 			Resource: res("logistics.tracking_root_cause"), Action: "manage",
 		},
+		"GET:" + base + "/quality-reports": {
+			Resource: res("logistics.quality_audit"), Action: "read",
+		},
+		"GET:" + base + "/quality-reports/:id": {
+			Resource: res("logistics.quality_audit"), Action: "read",
+		},
+		"POST:" + base + "/quality-reports/generate": {
+			Resource: res("logistics.quality_audit"), Action: "manage",
+		},
+		"GET:" + base + "/quality-reports/export": {
+			Resource: res("logistics.quality_audit"), Action: "export",
+		},
 		"GET:" + base + "/lastmile-recovery/rules": {
 			Resource: res("logistics.lastmile_recovery"), Action: "read",
 		},

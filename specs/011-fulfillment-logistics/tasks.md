@@ -566,11 +566,11 @@
 
 ### User Story 41 - 履约质量审计与复盘报告（P3）
 
-- [ ] T251 [P] [US41] 增加履约质量审计与复盘模型（报告周期、指标快照、结论与行动项）（`backend/internal/entity/models/logistics/quality_audit_report*.go`）
-- [ ] T252 [US41] 实现复盘报告服务（指标汇总、异常摘要、行动建议生成）（`backend/internal/services/admin/logistics/quality_audit_report_service.go`）
-- [ ] T253 [US41] 实现复盘报告接口（报告生成、详情查看、导出）（`backend/internal/transport/http/admin/logistics/{quality_audit_report_handler.go,routes.go,dto.go}`）
-- [ ] T254 [US41] 新增复盘报告页面（周期筛选、结论摘要、行动项追踪）（`web-admin/app/pages/shipping/quality-reports.vue`）
-- [ ] T255 [US41] 增加 US41 回归测试（报告口径正确性、导出稳定性、租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+- [X] T251 [P] [US41] 增加履约质量审计与复盘模型（报告周期、指标快照、结论与行动项）（`backend/internal/entity/models/logistics/quality_audit_report*.go`）
+- [X] T252 [US41] 实现复盘报告服务（指标汇总、异常摘要、行动建议生成）（`backend/internal/services/admin/logistics/quality_audit_report_service.go`）
+- [X] T253 [US41] 实现复盘报告接口（报告生成、详情查看、导出）（`backend/internal/transport/http/admin/logistics/{quality_audit_report_handler.go,routes.go,dto.go}`）
+- [X] T254 [US41] 新增复盘报告页面（周期筛选、结论摘要、行动项追踪）（`web-admin/app/pages/shipping/quality-reports.vue`）
+- [X] T255 [US41] 增加 US41 回归测试（报告口径正确性、导出稳定性、租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
 
 ### Iteration-12 Polish
 

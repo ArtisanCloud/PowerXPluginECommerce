@@ -274,6 +274,30 @@ func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 	if rootCausePerm.Resource != "com.powerx.plugins.ecommerce:logistics.tracking_root_cause" {
 		t.Fatalf("unexpected resource %s", rootCausePerm.Resource)
 	}
+	qualityListKey := "GET:/api/v1/admin/logistics/quality-reports"
+	qualityListPerm, ok := entries[qualityListKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", qualityListKey)
+	}
+	if qualityListPerm.Resource != "com.powerx.plugins.ecommerce:logistics.quality_audit" {
+		t.Fatalf("unexpected resource %s", qualityListPerm.Resource)
+	}
+	qualityGenerateKey := "POST:/api/v1/admin/logistics/quality-reports/generate"
+	qualityGeneratePerm, ok := entries[qualityGenerateKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", qualityGenerateKey)
+	}
+	if qualityGeneratePerm.Action != "manage" {
+		t.Fatalf("expected manage action, got %s", qualityGeneratePerm.Action)
+	}
+	qualityExportKey := "GET:/api/v1/admin/logistics/quality-reports/export"
+	qualityExportPerm, ok := entries[qualityExportKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", qualityExportKey)
+	}
+	if qualityExportPerm.Action != "export" {
+		t.Fatalf("expected export action, got %s", qualityExportPerm.Action)
+	}
 
 	lastmileKey := "POST:/api/v1/admin/logistics/lastmile-recovery/execute"
 	lastmilePerm, ok := entries[lastmileKey]
