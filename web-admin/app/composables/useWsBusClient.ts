@@ -35,6 +35,17 @@ const subscribedTopics = new Set<string>()
 
 const normalizeTopic = (topic?: string) => String(topic || '').trim()
 
+const resolveBrowserLocation = () => {
+  if (typeof window === 'undefined') return null
+  const location = (window as any)?.location
+  if (!location || typeof location !== 'object') return null
+  const protocol = String(location.protocol || '').trim()
+  const host = String(location.host || '').trim()
+  const pathname = String(location.pathname || '')
+  if (!protocol || !host) return null
+  return { protocol, host, pathname }
+}
+
 const isHostMode = () => {
   try {
     const cfg = useRuntimeConfig()
@@ -43,8 +54,9 @@ const isHostMode = () => {
     // ignore
   }
 
-  if (typeof window !== 'undefined') {
-    const p = String(window.location.pathname || '')
+  const browserLocation = resolveBrowserLocation()
+  if (browserLocation) {
+    const p = browserLocation.pathname
     // 兼容 env 未注入 insidePowerX 的场景：根据宿主嵌入路径兜底识别
     if (/\/_p\/[^/]+\/admin(?:\/|$)/.test(p)) {
       return true
@@ -54,8 +66,8 @@ const isHostMode = () => {
   try {
     const cfg = useRuntimeConfig()
     const base = String(cfg.public?.pluginAdminBase || '').trim()
-    if (base && typeof window !== 'undefined') {
-      return String(window.location.pathname || '').startsWith(base.replace(/\/+$/, ''))
+    if (base && browserLocation) {
+      return browserLocation.pathname.startsWith(base.replace(/\/+$/, ''))
     }
   } catch {
     // ignore
@@ -120,11 +132,12 @@ const wsOriginFromApiBase = (apiBase?: string | null) => {
 }
 
 const resolveWsURL = () => {
-  if (typeof window === 'undefined') return ''
+  const browserLocation = resolveBrowserLocation()
+  if (!browserLocation) return ''
 
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
+  const protocol = browserLocation.protocol === 'https:' ? 'wss:' : 'ws:'
   // 与其他插件对齐：默认同源 /api/ws，经由当前站点代理转发。
-  let wsURL = new URL(resolveWsPath(), `${protocol}//${window.location.host}`).toString()
+  let wsURL = new URL(resolveWsPath(), `${protocol}//${browserLocation.host}`).toString()
   let mode = isHostMode() ? 'host-same-origin' : 'same-origin'
 
   // 允许通过 runtimeConfig.public.wsBaseUrl 显式覆盖（仅在明确配置时生效）。
