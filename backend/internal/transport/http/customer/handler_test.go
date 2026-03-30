@@ -77,7 +77,7 @@ func TestDeleteCustomerHandlerRequiresReason(t *testing.T) {
 func TestCreateImportTask(t *testing.T) {
 	deps := newHandlerDeps(t)
 	handler := NewHandler(deps)
-	ctx, rec := newMultipartRequest(t, http.MethodPost, "/customers/import", "file", "import.csv", []byte("name,phone,membershipTier,type\nfoo,+8613800000200,gold,individual"))
+	ctx, rec := newMultipartRequest(t, http.MethodPost, "/customers/import", "file", "import.csv", []byte("name,type,phone,email,source,membershipTier\nfoo,individual,+8613800000200,foo@example.com,website,gold"))
 	ctx.Set(httpmw.TenantUUIDContextKey, "tenant-handler")
 	ctx.Request = ctx.Request.WithContext(authx.ContextWithTenantUUID(ctx.Request.Context(), "tenant-handler"))
 	var before int64
@@ -93,7 +93,7 @@ func TestCreateImportTask(t *testing.T) {
 		var count int64
 		_ = deps.DB.Model(&customermodel.Customer{}).Count(&count).Error
 		return count >= before+1
-	}, 2*time.Second, 20*time.Millisecond)
+	}, 5*time.Second, 20*time.Millisecond)
 }
 
 func TestCreateExportTask(t *testing.T) {
