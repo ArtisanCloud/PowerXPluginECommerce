@@ -138,12 +138,12 @@
 
 ### Implementation for User Story 5
 
-- [ ] T065 [US5] 未开未实现：web-admin 新建订单表单支持多 SKU 行（增删行、每行 SKU + 数量），提交时映射为 `items[]`（`web-admin/app/pages/market/orders.vue`）
-- [ ] T066 [US5] 未开未实现：新增 SPU 搜索与选择（typeahead），选中后加载规格组；仅在有规格时加载 SKU 列表（`web-admin/app/pages/market/orders.vue`，`web-admin/app/composables/api/useSpu.ts`，`web-admin/app/composables/api/useProductSpec.ts`，`web-admin/app/composables/api/useSku.ts`）
-- [ ] T067 [US5] 未开未实现：规格选择组件（必选规格校验），根据规格组合自动定位唯一 SKU 并展示规格摘要；不允许手动选择 SKU（`web-admin/app/pages/market/orders.vue`）
-- [ ] T068 [US5] 未开未实现：客户下拉改为“搜索优先 + 最近排序”，无关键词时按 `lastOrderAt` 降序取 TopN；有关键词时按匹配结果返回；不显示分页控件（`web-admin/app/pages/market/orders.vue`，`backend/internal/entity/repository/customer/customer_repo.go`）
-- [ ] T069 [US5] 未开未实现：更新文案与空态提示，强调“先选 SPU/规格 → 自动定位 SKU”，补充多 SKU 下单校验与“无规格不可下单”提示（`web-admin/app/pages/market/orders.vue`，`web-admin/app/i18n/*.json`）
-- [ ] T070 [US5] 未开未实现：渠道下拉改为从渠道主数据接口拉取，保持与渠道管理一致（`web-admin/app/pages/market/orders.vue`，`web-admin/app/composables/useChannels.ts`）
+- [x] T065 [US5] web-admin 新建订单表单支持多 SKU 行（增删行、每行 SKU + 数量），提交时映射为 `items[]`（`web-admin/app/pages/market/orders/index.vue`）
+- [x] T066 [US5] 新增 SPU 搜索与选择（typeahead），选中后加载规格组；仅在有规格时加载 SKU 列表（`web-admin/app/pages/market/orders/index.vue`，`web-admin/app/composables/api/useSpu.ts`，`web-admin/app/composables/api/useProductSpec.ts`，`web-admin/app/composables/api/useSku.ts`）
+- [x] T067 [US5] 规格选择组件（必选规格校验），根据规格组合自动定位唯一 SKU 并展示规格摘要；不允许手动选择 SKU（`web-admin/app/pages/market/orders/index.vue`）
+- [x] T068 [US5] 客户下拉改为“搜索优先 + 最近排序”，无关键词时按 `lastOrderAt` 降序取 TopN；有关键词时按匹配结果返回；不显示分页控件（`web-admin/app/pages/market/orders/index.vue`，`backend/internal/entity/repository/customer/customer_repo.go`）
+- [x] T069 [US5] 更新文案与空态提示，强调“先选 SPU/规格 → 自动定位 SKU”，补充多 SKU 下单校验与“无规格不可下单”提示（`web-admin/app/pages/market/orders/index.vue`，`web-admin/i18n/locales/*.json`）
+- [x] T070 [US5] 渠道下拉改为从渠道主数据接口拉取，保持与渠道管理一致（`web-admin/app/pages/market/orders/index.vue`，`web-admin/app/composables/useChannels.ts`）
 
 ---
 

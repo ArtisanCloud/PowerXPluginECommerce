@@ -52,8 +52,7 @@ func (r *Repository) List(
 	callback := func(db *gorm.DB, arg interface{}) *gorm.DB {
 		filters, _ := arg.(ListQueryOptions)
 		db = applyListFilters(db, filters)
-		order := buildOrderClause(filters.Sort)
-		return db.Order(order)
+		return applyListOrder(db, filters)
 	}
 	return r.BaseRepository.FindByCondition(ctx, conditions, opts.Page, opts.PageSize, callback, opts)
 }
@@ -216,6 +215,18 @@ func buildOrderClause(raw string) clause.OrderByColumn {
 		descending = true
 	}
 	return clause.OrderByColumn{Column: clause.Column{Name: column}, Desc: descending}
+}
+
+func applyListOrder(db *gorm.DB, filters ListQueryOptions) *gorm.DB {
+	sortField := strings.TrimSpace(filters.Sort)
+	keyword := strings.TrimSpace(filters.Keyword)
+	if sortField == "" && keyword == "" {
+		return db.
+			Order(clause.Expr{SQL: "(last_order_at IS NULL) ASC"}).
+			Order("last_order_at DESC").
+			Order("created_at DESC")
+	}
+	return db.Order(buildOrderClause(sortField))
 }
 
 var customerSortColumns = map[string]string{

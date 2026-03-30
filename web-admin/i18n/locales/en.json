@@ -982,6 +982,7 @@
     "createAddressSaveFailed": "Failed to save address",
     "createAddressSaveFailedDesc": "Please try again later",
     "createItemsTitle": "Order items",
+    "createItemsGuide": "Select SPU and required specs first, then SKU is auto-resolved; multiple item lines are supported.",
     "createItemAdd": "Add item",
     "createItemRemove": "Remove",
     "createItemIndex": "Item {index}",

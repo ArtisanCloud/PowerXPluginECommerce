@@ -1592,6 +1592,7 @@
     "createAddressSaveFailed": "保存地址失败",
     "createAddressSaveFailedDesc": "请稍后重试",
     "createItemsTitle": "商品明细",
+    "createItemsGuide": "先选 SPU 并完成规格选择，系统会自动定位 SKU；支持添加多条商品行。",
     "createItemAdd": "添加商品",
     "createItemRemove": "删除",
     "createItemIndex": "商品 {index}",

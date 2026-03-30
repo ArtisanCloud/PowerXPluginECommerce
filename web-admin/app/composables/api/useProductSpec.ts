@@ -79,6 +79,17 @@ const normalizeSpecGroup = (group: Record<string, any>): ProductSpecGroup => ({
 export function useProductSpecApi() {
   const basePath = "admin/product/spus";
 
+  const normalizeOrderGroups = (groups: ProductSpecGroup[]) =>
+    (groups || [])
+      .filter((group) => String(group.status || "active").toLowerCase() !== "disabled")
+      .map((group) => ({
+        ...group,
+        options: (group.options || []).filter(
+          (opt) => String(opt.status || "active").toLowerCase() !== "disabled",
+        ),
+      }))
+      .filter((group) => (group.options || []).length > 0)
+
   return {
     list: (spuId: string, init?: any) =>
       unwrap(apiGet<ApiEnvelope<{ groups: ProductSpecGroup[] }>>(`${basePath}/${spuId}/spec-groups`, undefined, init)).then((resp) => ({
@@ -88,6 +99,15 @@ export function useProductSpecApi() {
     replace: (spuId: string, payload: ReplaceProductSpecRequest, init?: any) =>
       unwrap(apiPut<ApiEnvelope<{ groups: ProductSpecGroup[] }>>(`${basePath}/${spuId}/spec-groups`, payload, init)).then((resp) => ({
         groups: Array.isArray(resp?.groups) ? resp.groups.map((group) => normalizeSpecGroup(group as Record<string, any>)) : [],
+      })),
+
+    listForOrder: (spuId: string, init?: any) =>
+      unwrap(apiGet<ApiEnvelope<{ groups: ProductSpecGroup[] }>>(`${basePath}/${spuId}/spec-groups`, undefined, init)).then((resp) => ({
+        groups: normalizeOrderGroups(
+          Array.isArray(resp?.groups)
+            ? resp.groups.map((group) => normalizeSpecGroup(group as Record<string, any>))
+            : [],
+        ),
       })),
   };
 }

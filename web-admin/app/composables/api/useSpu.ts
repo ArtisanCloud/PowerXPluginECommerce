@@ -12,6 +12,11 @@ export interface SpuListParams {
   pageSize?: number
 }
 
+export interface SpuOrderSearchParams {
+  keyword?: string
+  pageSize?: number
+}
+
 export interface SpuSummary {
   id: string
   name: string
@@ -238,6 +243,17 @@ export function useSpuApi() {
   const listSpus = (params?: SpuListParams, init?: any) =>
     unwrap(apiGet<ApiResponse<SpuListResponse>>(basePath, params, init)).then(normalizeSpuList)
 
+  const searchSpusForOrder = (params?: SpuOrderSearchParams, init?: any) =>
+    listSpus(
+      {
+        keyword: String(params?.keyword || '').trim() || undefined,
+        status: 'published',
+        page: 1,
+        pageSize: params?.pageSize && params.pageSize > 0 ? params.pageSize : 20,
+      },
+      init,
+    )
+
   const getSpu = (id: string, init?: any) =>
     unwrap(apiGet<ApiResponse<SpuDetail>>(`${basePath}/${id}`, undefined, init)).then((item) =>
       normalizeSpuDetail(item as Record<string, any>),
@@ -298,6 +314,7 @@ export function useSpuApi() {
   return {
     baseURL,
     listSpus,
+    searchSpusForOrder,
     createSpu,
     updateSpu,
     getSpu,

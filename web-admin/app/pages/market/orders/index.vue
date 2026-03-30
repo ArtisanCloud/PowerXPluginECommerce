@@ -301,8 +301,13 @@
           </div>
           <div class="space-y-3">
             <div class="flex items-center justify-between">
-              <div class="text-sm font-medium text-gray-900 dark:text-white">
-                {{ $t("orders.createItemsTitle") }}
+              <div class="space-y-1">
+                <div class="text-sm font-medium text-gray-900 dark:text-white">
+                  {{ $t("orders.createItemsTitle") }}
+                </div>
+                <div class="text-xs text-gray-500">
+                  {{ $t("orders.createItemsGuide") }}
+                </div>
               </div>
               <UButton
                 size="xs"
@@ -609,7 +614,7 @@ const spuApi = useSpuApi();
 const specApi = useProductSpecApi();
 const customerService = useCustomerService();
 const customerAddressService = useCustomerAddressService();
-const { listChannels } = useChannelsApi();
+const { listOrderChannels } = useChannelsApi();
 const route = useRoute();
 const router = useRouter();
 
@@ -1390,10 +1395,9 @@ const fetchChannels = async (keyword?: string) => {
   channelLoading.value = true;
   try {
     const normalized = String(keyword || "").trim();
-    const resp = await listChannels({
+    const resp = await listOrderChannels({
       keyword: normalized || undefined,
-      page: 1,
-      pageSize: 50,
+      limit: 50,
     });
     channelOptions.value = buildChannelOptions(resp?.items || []);
     if (!createForm.channel && channelOptions.value.length === 1) {
@@ -1415,9 +1419,8 @@ const fetchSpus = async (row: OrderItemRow, keyword?: string) => {
   }
   row.spuLoading = true;
   try {
-    const resp = await spuApi.listSpus({
+    const resp = await spuApi.searchSpusForOrder({
       keyword: normalized || undefined,
-      page: 1,
       pageSize: 20,
     });
     row.spuOptions = buildSpuOptions(resp?.items || []);
@@ -1460,7 +1463,7 @@ const handleSpuChange = async (row: OrderItemRow) => {
   if (!row.spuId) return;
   row.skuLoading = true;
   try {
-    const specResp = await specApi.list(row.spuId);
+    const specResp = await specApi.listForOrder(row.spuId);
     row.specGroups = specResp?.groups || [];
     if (!row.specGroups.length) {
       row.skuList = [];
@@ -1468,7 +1471,7 @@ const handleSpuChange = async (row: OrderItemRow) => {
       row.skuTotal = 0;
       return;
     }
-    const skuResp = await skuApi.listBySpu(row.spuId, { page: 1, pageSize: 200 });
+    const skuResp = await skuApi.listBySpuForOrder(row.spuId, { page: 1, pageSize: 200 });
     row.skuList = skuResp?.items || [];
     row.skuTotal = extractSkuTotal(skuResp) || row.skuList.length;
     updateSkuOptions(row);
@@ -1517,7 +1520,7 @@ const findSkuBySpecs = async (row: OrderItemRow) => {
     let page = 1;
     const totalPages = row.skuTotal ? Math.ceil(row.skuTotal / pageSize) : 0;
     while (!totalPages || page <= totalPages) {
-      const resp = await skuApi.listBySpu(row.spuId, { page, pageSize });
+      const resp = await skuApi.listBySpuForOrder(row.spuId, { page, pageSize });
       const items = resp?.items || [];
       const matched = filterSkusBySpecs(items, row.specGroups, selections);
       if (matched.length) {

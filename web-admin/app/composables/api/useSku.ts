@@ -40,6 +40,11 @@ export interface SkuListResponse {
 	}
 }
 
+export interface SkuOrderListParams {
+	page?: number
+	pageSize?: number
+}
+
 type AnySku = Record<string, any>
 
 const normalizeSpec = (spec: AnySku) => ({
@@ -95,6 +100,19 @@ export function useSkuApi() {
 			unwrap(apiGet<any>(`${basePath}/${skuId}`, params, init)).then((item) => normalizeSku(item as AnySku)),
 		listBySpu: (spuId: string, params?: Omit<SkuListParams, 'spuId'>, init?: any) =>
 			unwrap(apiGet<SkuListResponse>(basePath, { ...params, spuId }, init)).then(normalizeSkuList),
+		listBySpuForOrder: (spuId: string, params?: SkuOrderListParams, init?: any) =>
+			unwrap(
+				apiGet<SkuListResponse>(
+					basePath,
+					{
+						spuId,
+						status: 'online',
+						page: params?.page && params.page > 0 ? params.page : 1,
+						pageSize: params?.pageSize && params.pageSize > 0 ? params.pageSize : 200,
+					},
+					init,
+				),
+			).then(normalizeSkuList),
 		generate: (spuId: string, payload: SkuGeneratorRequest, init?: any) =>
 			unwrap(
 				apiPost<ApiResponse<SkuGeneratorResponse>>(

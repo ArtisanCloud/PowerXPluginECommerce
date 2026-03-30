@@ -57,6 +57,16 @@ const normalizeChannelList = (payload: ChannelListResponse): ChannelListResponse
 })
 
 export const useChannelsApi = () => {
+  const listOrderChannels = async (params?: { keyword?: string; limit?: number }) => {
+    const response = await listChannels({
+      keyword: String(params?.keyword || '').trim() || undefined,
+      status: ['authorized'],
+      page: 1,
+      pageSize: params?.limit && params.limit > 0 ? params.limit : 50,
+    })
+    return response
+  }
+
   const listChannels = async (params?: ChannelListParams) => {
     const response = await apiGet<ChannelListApiResponse>(API_PREFIX, params)
     return normalizeChannelList(unwrapApiData<ChannelListResponse>(response))
@@ -194,6 +204,7 @@ export const useChannelsApi = () => {
   }
 
   return {
+    listOrderChannels,
     listChannels,
     createChannel,
     updateChannel,
