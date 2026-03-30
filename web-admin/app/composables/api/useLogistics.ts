@@ -280,6 +280,42 @@ export type LogisticsBillingCase = {
   updatedAt: string;
 };
 
+export type LogisticsFulfillmentFinanceRisk = {
+  id: string;
+  waybillId: string;
+  waybillNo: string;
+  carrierId: string;
+  billingCaseID: string;
+  payoutRiskScore: number;
+  chargebackRiskScore: number;
+  compositeRiskScore: number;
+  riskLevel: string;
+  thresholdValue: number;
+  stopLossAction: string;
+  status: string;
+  suggestion: string;
+  riskFactors: Record<string, any>;
+  lastAction: string;
+  lastActionBy: string;
+  lastActionAt: string;
+  actionCount: number;
+  resolvedAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsFulfillmentFinanceRiskAudit = {
+  id: string;
+  riskID: string;
+  requestKey: string;
+  action: string;
+  operatorID: string;
+  note: string;
+  payload: Record<string, any>;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type LogisticsLabelPrintTask = {
   id: string;
   requestKey: string;
@@ -2368,6 +2404,42 @@ const normalizeBillingCase = (raw: RawRecord): LogisticsBillingCase => ({
   updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
 });
 
+const normalizeFulfillmentFinanceRisk = (raw: RawRecord): LogisticsFulfillmentFinanceRisk => ({
+  id: String(pick(raw, "id", "id") || ""),
+  waybillId: String(pick(raw, "waybillId", "waybill_id") || ""),
+  waybillNo: String(pick(raw, "waybillNo", "waybill_no") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  billingCaseID: String(pick(raw, "billingCaseID", "billing_case_id") || ""),
+  payoutRiskScore: Number(pick(raw, "payoutRiskScore", "payout_risk_score") || 0),
+  chargebackRiskScore: Number(pick(raw, "chargebackRiskScore", "chargeback_risk_score") || 0),
+  compositeRiskScore: Number(pick(raw, "compositeRiskScore", "composite_risk_score") || 0),
+  riskLevel: String(pick(raw, "riskLevel", "risk_level") || "low"),
+  thresholdValue: Number(pick(raw, "thresholdValue", "threshold_value") || 70),
+  stopLossAction: String(pick(raw, "stopLossAction", "stop_loss_action") || "observe"),
+  status: String(pick(raw, "status", "status") || "open"),
+  suggestion: String(pick(raw, "suggestion", "suggestion") || ""),
+  riskFactors: (pick(raw, "riskFactors", "risk_factors") || {}) as Record<string, any>,
+  lastAction: String(pick(raw, "lastAction", "last_action") || ""),
+  lastActionBy: String(pick(raw, "lastActionBy", "last_action_by") || ""),
+  lastActionAt: String(pick(raw, "lastActionAt", "last_action_at") || ""),
+  actionCount: Number(pick(raw, "actionCount", "action_count") || 0),
+  resolvedAt: String(pick(raw, "resolvedAt", "resolved_at") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeFulfillmentFinanceRiskAudit = (raw: RawRecord): LogisticsFulfillmentFinanceRiskAudit => ({
+  id: String(pick(raw, "id", "id") || ""),
+  riskID: String(pick(raw, "riskID", "risk_id") || ""),
+  requestKey: String(pick(raw, "requestKey", "request_key") || ""),
+  action: String(pick(raw, "action", "action") || ""),
+  operatorID: String(pick(raw, "operatorID", "operator_id") || ""),
+  note: String(pick(raw, "note", "note") || ""),
+  payload: (pick(raw, "payload", "payload") || {}) as Record<string, any>,
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
 const normalizeRateQuote = (raw: RawRecord): LogisticsRateQuoteResult => {
   const zone = (pick(raw, "matchedZone", "matched_zone") || {}) as RawRecord;
   return {
@@ -2733,6 +2805,59 @@ export function useLogisticsApi() {
         apiPatch<ApiEnvelope<RawRecord>>(`${basePath}/billing/cases/${id}/transition`, payload, init),
       );
       return normalizeBillingCase(raw || {});
+    },
+
+    listFinanceRisks: async (
+      query?: { carrier_id?: string; status?: string; risk_level?: string; limit?: number },
+      init?: any,
+    ): Promise<LogisticsFulfillmentFinanceRisk[]> => {
+      const raw = await unwrap(
+        apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/billing/finance-risks`, query, init),
+      );
+      return asArray<RawRecord>(raw?.items).map(normalizeFulfillmentFinanceRisk);
+    },
+
+    evaluateFinanceRisks: async (
+      payload?: { carrier_id?: string; threshold?: number },
+      init?: any,
+    ): Promise<LogisticsFulfillmentFinanceRisk[]> => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/billing/finance-risks/evaluate`, payload || {}, init),
+      );
+      return asArray<RawRecord>(raw?.items).map(normalizeFulfillmentFinanceRisk);
+    },
+
+    executeFinanceRiskAction: async (
+      id: string,
+      payload: {
+        action: "freeze_settlement" | "hold_payout" | "manual_review" | "release" | "close";
+        operator_id?: string;
+        note?: string;
+        request_key?: string;
+      },
+      init?: any,
+    ): Promise<{ risk: LogisticsFulfillmentFinanceRisk; idempotencyStatus: string }> => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<{ risk: RawRecord; idempotency_status: string }>>(
+          `${basePath}/billing/finance-risks/${id}/actions`,
+          payload,
+          init,
+        ),
+      );
+      return {
+        risk: normalizeFulfillmentFinanceRisk((raw?.risk || {}) as RawRecord),
+        idempotencyStatus: String(raw?.idempotency_status || "executed"),
+      };
+    },
+
+    listFinanceRiskAudits: async (
+      query?: { risk_id?: string; limit?: number },
+      init?: any,
+    ): Promise<LogisticsFulfillmentFinanceRiskAudit[]> => {
+      const raw = await unwrap(
+        apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/billing/finance-risks/audits`, query, init),
+      );
+      return asArray<RawRecord>(raw?.items).map(normalizeFulfillmentFinanceRiskAudit);
     },
 
     listNotificationTemplates: async (init?: any): Promise<LogisticsNotificationTemplate[]> => {

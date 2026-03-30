@@ -620,11 +620,11 @@
 
 ### User Story 46 - 履约资金风险联动（P3）
 
-- [ ] T281 [P] [US46] 增加履约资金风险模型（赔付风险、拒付关联、止损动作、阈值）（`backend/internal/entity/models/logistics/fulfillment_finance_risk*.go`）
-- [ ] T282 [US46] 实现资金风险服务（风险评分、止损建议、处置闭环）（`backend/internal/services/admin/logistics/fulfillment_finance_risk_service.go`）
-- [ ] T283 [US46] 实现资金风险接口（风险查询、动作执行、处置审计）（`backend/internal/transport/http/admin/logistics/{fulfillment_finance_risk_handler.go,routes.go,dto.go}`）
-- [ ] T284 [US46] 在对账页新增“资金风险联动”区块（风险榜单、止损动作、处置记录）（`web-admin/app/pages/shipping/billing.vue`）
-- [ ] T285 [US46] 增加 US46 回归测试（风险评分边界、动作幂等、审计完整性）（`backend/internal/services/admin/logistics/*_test.go`）
+- [X] T281 [P] [US46] 增加履约资金风险模型（赔付风险、拒付关联、止损动作、阈值）（`backend/internal/entity/models/logistics/fulfillment_finance_risk*.go`）
+- [X] T282 [US46] 实现资金风险服务（风险评分、止损建议、处置闭环）（`backend/internal/services/admin/logistics/fulfillment_finance_risk_service.go`）
+- [X] T283 [US46] 实现资金风险接口（风险查询、动作执行、处置审计）（`backend/internal/transport/http/admin/logistics/{fulfillment_finance_risk_handler.go,routes.go,dto.go}`）
+- [X] T284 [US46] 在对账页新增“资金风险联动”区块（风险榜单、止损动作、处置记录）（`web-admin/app/pages/shipping/billing.vue`）
+- [X] T285 [US46] 增加 US46 回归测试（风险评分边界、动作幂等、审计完整性）（`backend/internal/services/admin/logistics/*_test.go`）
 
 ### User Story 47 - 履约自动化运维中心（P2）
 

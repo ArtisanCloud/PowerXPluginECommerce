@@ -192,6 +192,8 @@ const (
 	TableLogisticsETARecords                     = "logistics_eta_records"
 	TableLogisticsLabelPrintTasks                = "logistics_label_print_tasks"
 	TableLogisticsBillingCases                   = "logistics_billing_cases"
+	TableLogisticsFinanceRisks                   = "logistics_finance_risks"
+	TableLogisticsFinanceRiskAudits              = "logistics_finance_risk_audits"
 	TableLogisticsSettlementBatches              = "logistics_settlement_batches"
 	TableLogisticsSettlementDiffs                = "logistics_settlement_diffs"
 	TableLogisticsReconciliationBatches          = "logistics_reconciliation_batches"

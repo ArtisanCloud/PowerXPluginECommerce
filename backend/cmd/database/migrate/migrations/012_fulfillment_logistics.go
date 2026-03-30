@@ -43,6 +43,8 @@ var FulfillmentLogisticsTables = []interface{}{
 	&LogisticsModel.GatewayUsage{},
 	&LogisticsModel.LabelPrintTask{},
 	&LogisticsModel.BillingCase{},
+	&LogisticsModel.FulfillmentFinanceRisk{},
+	&LogisticsModel.FulfillmentFinanceRiskAudit{},
 	&LogisticsModel.SettlementBatch{},
 	&LogisticsModel.SettlementDiff{},
 	&LogisticsModel.ReconciliationBatch{},

@@ -69,6 +69,18 @@ func RBACEntries(prefix string) map[string]AuthX.Permission {
 		"PATCH:" + base + "/billing/cases/:id/transition": {
 			Resource: res("logistics.billing.case"), Action: "manage",
 		},
+		"GET:" + base + "/billing/finance-risks": {
+			Resource: res("logistics.finance_risk"), Action: "read",
+		},
+		"POST:" + base + "/billing/finance-risks/evaluate": {
+			Resource: res("logistics.finance_risk"), Action: "manage",
+		},
+		"POST:" + base + "/billing/finance-risks/:id/actions": {
+			Resource: res("logistics.finance_risk"), Action: "manage",
+		},
+		"GET:" + base + "/billing/finance-risks/audits": {
+			Resource: res("logistics.finance_risk"), Action: "read",
+		},
 		"GET:" + base + "/notifications/templates":  {Resource: res("logistics.notification"), Action: "read"},
 		"POST:" + base + "/notifications/templates": {Resource: res("logistics.notification"), Action: "manage"},
 		"GET:" + base + "/notifications/records":    {Resource: res("logistics.notification"), Action: "read"},

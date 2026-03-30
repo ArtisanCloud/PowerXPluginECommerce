@@ -24,6 +24,7 @@ type Handler struct {
 	riskSvc           *logisticssvc.RiskService
 	billingSvc        *logisticssvc.BillingService
 	caseSvc           *logisticssvc.BillingCaseService
+	financeRiskSvc    *logisticssvc.FulfillmentFinanceRiskService
 	notifySvc         *logisticssvc.NotificationService
 	slaSvc            *logisticssvc.SLAService
 	labelSvc          *logisticssvc.LabelPrintService
@@ -66,6 +67,7 @@ func NewHandler(
 	riskSvc *logisticssvc.RiskService,
 	billingSvc *logisticssvc.BillingService,
 	caseSvc *logisticssvc.BillingCaseService,
+	financeRiskSvc *logisticssvc.FulfillmentFinanceRiskService,
 	notifySvc *logisticssvc.NotificationService,
 	slaSvc *logisticssvc.SLAService,
 	labelSvc *logisticssvc.LabelPrintService,
@@ -107,6 +109,7 @@ func NewHandler(
 		riskSvc:           riskSvc,
 		billingSvc:        billingSvc,
 		caseSvc:           caseSvc,
+		financeRiskSvc:    financeRiskSvc,
 		notifySvc:         notifySvc,
 		slaSvc:            slaSvc,
 		labelSvc:          labelSvc,

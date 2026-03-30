@@ -143,6 +143,57 @@
         </div>
       </UCard>
     </UCard>
+
+    <UCard>
+      <template #header>
+        <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">资金风险联动</h3>
+          <div class="flex flex-wrap gap-2">
+            <USelect v-model="financeRiskStatus" class="w-36" :options="financeRiskStatusOptions" />
+            <USelect v-model="financeRiskLevel" class="w-36" :options="financeRiskLevelOptions" />
+            <UButton color="warning" variant="soft" @click="evaluateFinanceRisks">评估风险</UButton>
+            <UButton color="neutral" variant="ghost" @click="loadFinanceRisks">刷新风险</UButton>
+          </div>
+        </div>
+      </template>
+      <UTable :columns="financeRiskColumns" :data="financeRiskRows">
+        <template #riskLevel-cell="{ getValue }">
+          <UBadge :color="financeRiskLevelMeta(getValue()).color" variant="subtle">
+            {{ financeRiskLevelMeta(getValue()).label }}
+          </UBadge>
+        </template>
+        <template #status-cell="{ getValue }">
+          <UBadge :color="financeRiskStatusMeta(getValue()).color" variant="subtle">
+            {{ financeRiskStatusMeta(getValue()).label }}
+          </UBadge>
+        </template>
+        <template #actions-cell="{ row }">
+          <div class="flex flex-wrap gap-2">
+            <UButton size="xs" variant="ghost" color="error" @click="executeFinanceRiskAction(row.original.id, 'freeze_settlement')">
+              冻结结算
+            </UButton>
+            <UButton size="xs" variant="ghost" color="warning" @click="executeFinanceRiskAction(row.original.id, 'hold_payout')">
+              暂停赔付
+            </UButton>
+            <UButton size="xs" variant="ghost" color="info" @click="executeFinanceRiskAction(row.original.id, 'manual_review')">
+              人工复核
+            </UButton>
+            <UButton size="xs" variant="ghost" color="success" @click="executeFinanceRiskAction(row.original.id, 'release')">
+              解除
+            </UButton>
+            <UButton size="xs" variant="ghost" color="neutral" @click="loadFinanceRiskAudits(row.original.id)">
+              审计
+            </UButton>
+          </div>
+        </template>
+      </UTable>
+      <UCard class="mt-3" v-if="financeRiskAudits.length">
+        <template #header>
+          <h4 class="text-sm font-semibold">处置审计记录</h4>
+        </template>
+        <UTable :columns="financeRiskAuditColumns" :data="financeRiskAudits" />
+      </UCard>
+    </UCard>
   </div>
 </template>
 
@@ -166,10 +217,28 @@ const reconciliationBatches = ref<any[]>([]);
 const reconciliationRecords = ref<any[]>([]);
 const reconciliationCases = ref<any[]>([]);
 const selectedReconciliationBatchId = ref("");
+const financeRiskRows = ref<any[]>([]);
+const financeRiskAudits = ref<any[]>([]);
+const financeRiskStatus = ref("all");
+const financeRiskLevel = ref("all");
 const newCase = reactive({
   waybillId: "",
   reason: "",
 });
+const financeRiskStatusOptions = [
+  { label: "全部状态", value: "all" },
+  { label: "开放", value: "open" },
+  { label: "监控", value: "monitor" },
+  { label: "处理中", value: "mitigating" },
+  { label: "已关闭", value: "closed" },
+];
+const financeRiskLevelOptions = [
+  { label: "全部级别", value: "all" },
+  { label: "严重", value: "critical" },
+  { label: "高", value: "high" },
+  { label: "中", value: "medium" },
+  { label: "低", value: "low" },
+];
 
 const summaryColumns = computed<TableColumn<any>[]>(() => [
   { accessorKey: "carrierName", header: "承运商" },
@@ -249,6 +318,27 @@ const reconciliationCaseColumns = computed<TableColumn<any>[]>(() => [
   { id: "actions", header: "处理" },
 ]);
 
+const financeRiskColumns = computed<TableColumn<any>[]>(() => [
+  { accessorKey: "waybillNo", header: "运单号" },
+  { accessorKey: "carrierId", header: "承运商ID" },
+  { accessorKey: "payoutRiskScore", header: "赔付风险分" },
+  { accessorKey: "chargebackRiskScore", header: "拒付风险分" },
+  { accessorKey: "compositeRiskScore", header: "综合风险分" },
+  { accessorKey: "riskLevel", header: "风险等级" },
+  { accessorKey: "stopLossAction", header: "建议止损" },
+  { accessorKey: "status", header: "状态" },
+  { id: "actions", header: "操作" },
+]);
+
+const financeRiskAuditColumns = computed<TableColumn<any>[]>(() => [
+  { accessorKey: "riskID", header: "风险ID" },
+  { accessorKey: "action", header: "动作" },
+  { accessorKey: "operatorID", header: "操作人" },
+  { accessorKey: "note", header: "备注" },
+  { accessorKey: "requestKey", header: "请求幂等键" },
+  { accessorKey: "createdAt", header: "时间" },
+]);
+
 const caseStatusMeta = (status: string) => {
   switch (status) {
     case "confirmed":
@@ -259,6 +349,32 @@ const caseStatusMeta = (status: string) => {
       return { label: "已核销", color: "success" as const };
     default:
       return { label: "待处理", color: "neutral" as const };
+  }
+};
+
+const financeRiskLevelMeta = (level: string) => {
+  switch (level) {
+    case "critical":
+      return { label: "严重", color: "error" as const };
+    case "high":
+      return { label: "高", color: "warning" as const };
+    case "medium":
+      return { label: "中", color: "info" as const };
+    default:
+      return { label: "低", color: "neutral" as const };
+  }
+};
+
+const financeRiskStatusMeta = (status: string) => {
+  switch (status) {
+    case "mitigating":
+      return { label: "处理中", color: "warning" as const };
+    case "closed":
+      return { label: "已关闭", color: "success" as const };
+    case "monitor":
+      return { label: "监控", color: "info" as const };
+    default:
+      return { label: "开放", color: "error" as const };
   }
 };
 
@@ -273,6 +389,45 @@ const loadSnapshot = async () => {
   });
   await loadSettlementData();
   await loadReconciliationData();
+  await loadFinanceRisks();
+};
+
+const loadFinanceRisks = async () => {
+  financeRiskRows.value = await logisticsApi.listFinanceRisks({
+    carrier_id: carrierId.value || undefined,
+    status: financeRiskStatus.value === "all" ? undefined : financeRiskStatus.value,
+    risk_level: financeRiskLevel.value === "all" ? undefined : financeRiskLevel.value,
+    limit: 100,
+  });
+};
+
+const evaluateFinanceRisks = async () => {
+  await logisticsApi.evaluateFinanceRisks({
+    carrier_id: carrierId.value || undefined,
+    threshold: 70,
+  });
+  await loadFinanceRisks();
+};
+
+const executeFinanceRiskAction = async (
+  id: string,
+  action: "freeze_settlement" | "hold_payout" | "manual_review" | "release" | "close",
+) => {
+  await logisticsApi.executeFinanceRiskAction(id, {
+    action,
+    operator_id: "admin",
+    note: `manual-${action}`,
+    request_key: `${id}-${action}`,
+  });
+  await loadFinanceRisks();
+  await loadFinanceRiskAudits(id);
+};
+
+const loadFinanceRiskAudits = async (riskId?: string) => {
+  financeRiskAudits.value = await logisticsApi.listFinanceRiskAudits({
+    risk_id: riskId || undefined,
+    limit: 100,
+  });
 };
 
 const loadSettlementData = async () => {

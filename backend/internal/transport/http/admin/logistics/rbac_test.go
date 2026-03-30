@@ -71,6 +71,25 @@ func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 	if casePerm.Resource != "com.powerx.plugins.ecommerce:logistics.billing.case" {
 		t.Fatalf("unexpected resource %s", casePerm.Resource)
 	}
+	financeRiskReadKey := "GET:/api/v1/admin/logistics/billing/finance-risks"
+	financeRiskReadPerm, ok := entries[financeRiskReadKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", financeRiskReadKey)
+	}
+	if financeRiskReadPerm.Action != "read" {
+		t.Fatalf("expected read action, got %s", financeRiskReadPerm.Action)
+	}
+	if financeRiskReadPerm.Resource != "com.powerx.plugins.ecommerce:logistics.finance_risk" {
+		t.Fatalf("unexpected resource %s", financeRiskReadPerm.Resource)
+	}
+	financeRiskActionKey := "POST:/api/v1/admin/logistics/billing/finance-risks/:id/actions"
+	financeRiskActionPerm, ok := entries[financeRiskActionKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", financeRiskActionKey)
+	}
+	if financeRiskActionPerm.Action != "manage" {
+		t.Fatalf("expected manage action, got %s", financeRiskActionPerm.Action)
+	}
 
 	notifyKey := "POST:/api/v1/admin/logistics/notifications/send"
 	notifyPerm, ok := entries[notifyKey]

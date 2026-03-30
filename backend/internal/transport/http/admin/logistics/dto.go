@@ -234,6 +234,18 @@ type transitionBillingCaseRequest struct {
 	Metadata   map[string]any `json:"metadata,omitempty"`
 }
 
+type evaluateFinanceRiskRequest struct {
+	CarrierID string  `json:"carrier_id,omitempty"`
+	Threshold float64 `json:"threshold,omitempty"`
+}
+
+type executeFinanceRiskActionRequest struct {
+	Action     string `json:"action"`
+	OperatorID string `json:"operator_id,omitempty"`
+	Note       string `json:"note,omitempty"`
+	RequestKey string `json:"request_key,omitempty"`
+}
+
 type upsertNotificationTemplateRequest struct {
 	ID       string         `json:"id,omitempty"`
 	Name     string         `json:"name"`
