@@ -538,6 +538,55 @@
               最新版本：v{{ customsRuleVersions[0]?.versionNo }}（{{ customsRuleVersions[0]?.status }}）
             </p>
           </UCard>
+          <UCard>
+            <template #header>
+              <div class="text-sm font-medium">合规版本联动</div>
+            </template>
+            <div class="grid gap-2 sm:grid-cols-2">
+              <USelect
+                v-model="complianceKBForm.basePolicyId"
+                :options="complianceKBOptions"
+                placeholder="基线版本"
+              />
+              <USelect
+                v-model="complianceKBForm.targetPolicyId"
+                :options="complianceKBOptions"
+                placeholder="目标版本"
+              />
+              <UInput
+                v-model.number="complianceKBForm.rolloutPercent"
+                type="number"
+                min="1"
+                max="100"
+                placeholder="灰度比例(1-100)"
+              />
+              <UInput v-model="complianceKBForm.effectiveFrom" placeholder="生效开始 RFC3339（可选）" />
+              <UInput v-model="complianceKBForm.effectiveTo" placeholder="生效结束 RFC3339（可选）" />
+            </div>
+            <div class="mt-2 flex gap-2">
+              <UButton size="xs" color="primary" :loading="complianceKBLoading" @click="syncComplianceKBPolicy">政策同步</UButton>
+              <UButton size="xs" color="info" :loading="complianceKBLoading" @click="diffComplianceKBPolicies">版本比对</UButton>
+              <UButton size="xs" color="success" :loading="complianceKBLoading" @click="publishComplianceKBPolicy">规则发布</UButton>
+            </div>
+            <UCard v-if="complianceKBDiff" class="mt-2">
+              <p class="text-xs">
+                新增 {{ complianceKBDiff.addedRuleCodes.length }}，移除 {{ complianceKBDiff.removedRuleCodes.length }}，
+                变更 {{ complianceKBDiff.changedRuleCodes.length }}，未变更 {{ complianceKBDiff.unchangedRuleCount }}
+              </p>
+              <p class="text-xs text-gray-500">
+                base={{ complianceKBDiff.basePolicyId }} -> target={{ complianceKBDiff.targetPolicyId }}
+              </p>
+            </UCard>
+            <ul class="space-y-1 text-xs mt-2">
+              <li v-for="item in complianceKBVersions" :key="item.id">
+                {{ item.policyVersion }} · {{ item.status }} · source v{{ item.sourceVersionNo }}
+                <span v-if="item.effectiveFrom || item.effectiveTo">
+                  · 生效窗 {{ item.effectiveFrom || "-" }} ~ {{ item.effectiveTo || "-" }}
+                </span>
+              </li>
+              <li v-if="!complianceKBVersions.length" class="text-gray-500">暂无合规版本</li>
+            </ul>
+          </UCard>
         </div>
       </template>
     </UModal>
@@ -551,6 +600,8 @@ import type {
   LogisticsAllocationResult,
   LogisticsInterwarehouseAllocationCandidate,
   LogisticsCrossborderDocument,
+  LogisticsComplianceKBDiff,
+  LogisticsComplianceKBVersion,
   LogisticsCustomsPrecheckResult,
   LogisticsCustomsRulePack,
   LogisticsCustomsRuleVersion,
@@ -647,6 +698,9 @@ const customsLoading = ref(false);
 const customsRulePacks = ref<LogisticsCustomsRulePack[]>([]);
 const customsRuleVersions = ref<LogisticsCustomsRuleVersion[]>([]);
 const customsPrecheckResult = ref<LogisticsCustomsPrecheckResult | null>(null);
+const complianceKBLoading = ref(false);
+const complianceKBVersions = ref<LogisticsComplianceKBVersion[]>([]);
+const complianceKBDiff = ref<LogisticsComplianceKBDiff | null>(null);
 const routingForm = reactive({
   waybillNo: "",
   warehouseId: "",
@@ -724,6 +778,13 @@ const customsForm = reactive({
   hsCode: "",
   documentType: "invoice",
   documentCount: 1,
+});
+const complianceKBForm = reactive({
+  basePolicyId: "",
+  targetPolicyId: "",
+  rolloutPercent: 100,
+  effectiveFrom: "",
+  effectiveTo: "",
 });
 const orchestrationTriggerOptions = [
   { label: "延误", value: "delay" },
@@ -900,6 +961,13 @@ const carrierOptions = computed(() =>
 const customsPackOptions = computed(() =>
   customsRulePacks.value.map((item) => ({
     label: `${item.name} (${item.countryCode})`,
+    value: item.id,
+  })),
+);
+
+const complianceKBOptions = computed(() =>
+  complianceKBVersions.value.map((item) => ({
+    label: `${item.policyVersion} (${item.status})`,
     value: item.id,
   })),
 );
@@ -1248,6 +1316,12 @@ const openCrossborder = async (waybill: Waybill) => {
   customsForm.hsCode = "";
   customsForm.documentType = "invoice";
   customsForm.documentCount = 1;
+  complianceKBDiff.value = null;
+  complianceKBForm.basePolicyId = "";
+  complianceKBForm.targetPolicyId = "";
+  complianceKBForm.rolloutPercent = 100;
+  complianceKBForm.effectiveFrom = "";
+  complianceKBForm.effectiveTo = "";
   crossborderOpen.value = true;
   crossborderLoading.value = true;
   try {
@@ -1271,9 +1345,19 @@ const openCrossborder = async (waybill: Waybill) => {
     } else {
       customsRuleVersions.value = [];
     }
+    await loadComplianceKBVersions();
   } finally {
     crossborderLoading.value = false;
   }
+};
+
+const loadComplianceKBVersions = async () => {
+  complianceKBVersions.value = await logisticsApi.listComplianceKBVersions({
+    country_code: customsForm.countryCode || undefined,
+    limit: 30,
+  });
+  complianceKBForm.targetPolicyId = complianceKBVersions.value[0]?.id || "";
+  complianceKBForm.basePolicyId = complianceKBVersions.value[1]?.id || complianceKBVersions.value[0]?.id || "";
 };
 
 const saveCrossborderDoc = async () => {
@@ -1386,6 +1470,62 @@ const manualReleaseCustoms = async () => {
   }
 };
 
+const syncComplianceKBPolicy = async () => {
+  complianceKBLoading.value = true;
+  try {
+    await logisticsApi.syncComplianceKBPolicy({
+      country_code: customsForm.countryCode || undefined,
+      pack_id: customsForm.packId || undefined,
+      source_version_id: customsRuleVersions.value[0]?.id || undefined,
+      effective_from: complianceKBForm.effectiveFrom || undefined,
+      effective_to: complianceKBForm.effectiveTo || undefined,
+      notes: `sync by waybill ${crossborderForm.waybillNo || "-"}`,
+      operator_id: "admin",
+    });
+    await loadComplianceKBVersions();
+    toast.add({ title: "合规版本同步成功", color: "success" });
+  } catch (error: any) {
+    toast.add({ title: "合规版本同步失败", description: resolveErrorMessage(error), color: "error" });
+  } finally {
+    complianceKBLoading.value = false;
+  }
+};
+
+const diffComplianceKBPolicies = async () => {
+  if (!complianceKBForm.basePolicyId || !complianceKBForm.targetPolicyId) return;
+  complianceKBLoading.value = true;
+  try {
+    complianceKBDiff.value = await logisticsApi.diffComplianceKBPolicies({
+      base_policy_id: complianceKBForm.basePolicyId,
+      target_policy_id: complianceKBForm.targetPolicyId,
+    });
+  } catch (error: any) {
+    toast.add({ title: "版本比对失败", description: resolveErrorMessage(error), color: "error" });
+  } finally {
+    complianceKBLoading.value = false;
+  }
+};
+
+const publishComplianceKBPolicy = async () => {
+  if (!complianceKBForm.targetPolicyId) return;
+  complianceKBLoading.value = true;
+  try {
+    await logisticsApi.publishComplianceKBPolicy(complianceKBForm.targetPolicyId, {
+      rollout_percent: Number(complianceKBForm.rolloutPercent || 100),
+      rollout_tenants: [],
+      effective_from: complianceKBForm.effectiveFrom || undefined,
+      effective_to: complianceKBForm.effectiveTo || undefined,
+      operator_id: "admin",
+    });
+    await loadComplianceKBVersions();
+    toast.add({ title: "合规版本已发布", color: "success" });
+  } catch (error: any) {
+    toast.add({ title: "发布失败", description: resolveErrorMessage(error), color: "error" });
+  } finally {
+    complianceKBLoading.value = false;
+  }
+};
+
 const openAddressValidation = (waybill: Waybill) => {
   addressForm.waybillId = waybill.id;
   addressForm.waybillNo = waybill.waybillNo;
@@ -1432,6 +1572,7 @@ watch(
     if (!customsRulePacks.value.find((item) => item.id === customsForm.packId)) {
       customsForm.packId = customsRulePacks.value[0]?.id || "";
     }
+    await loadComplianceKBVersions();
   },
 );
 

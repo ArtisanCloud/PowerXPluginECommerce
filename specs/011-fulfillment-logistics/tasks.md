@@ -612,11 +612,11 @@
 
 ### User Story 45 - 跨境合规知识库联动（P3）
 
-- [ ] T276 [P] [US45] 增加跨境合规知识库模型（政策版本、国家规则映射、生效窗口）（`backend/internal/entity/models/logistics/compliance_kb*.go`）
-- [ ] T277 [US45] 实现合规联动服务（政策差异比对、规则更新建议、灰度生效）（`backend/internal/services/admin/logistics/compliance_kb_service.go`）
-- [ ] T278 [US45] 实现合规联动接口（政策同步、差异查看、规则发布）（`backend/internal/transport/http/admin/logistics/{compliance_kb_handler.go,routes.go,dto.go}`）
-- [ ] T279 [US45] 在运单页跨境区块新增“合规版本”视图（版本对比、生效状态、影响提示）（`web-admin/app/pages/shipping/waybills.vue`）
-- [ ] T280 [US45] 增加 US45 回归测试（版本差异准确性、灰度范围控制、回滚安全）（`backend/internal/services/admin/logistics/*_test.go`）
+- [X] T276 [P] [US45] 增加跨境合规知识库模型（政策版本、国家规则映射、生效窗口）（`backend/internal/entity/models/logistics/compliance_kb*.go`）
+- [X] T277 [US45] 实现合规联动服务（政策差异比对、规则更新建议、灰度生效）（`backend/internal/services/admin/logistics/compliance_kb_service.go`）
+- [X] T278 [US45] 实现合规联动接口（政策同步、差异查看、规则发布）（`backend/internal/transport/http/admin/logistics/{compliance_kb_handler.go,routes.go,dto.go}`）
+- [X] T279 [US45] 在运单页跨境区块新增“合规版本”视图（版本对比、生效状态、影响提示）（`web-admin/app/pages/shipping/waybills.vue`）
+- [X] T280 [US45] 增加 US45 回归测试（版本差异准确性、灰度范围控制、回滚安全）（`backend/internal/services/admin/logistics/*_test.go`）
 
 ### User Story 46 - 履约资金风险联动（P3）
 

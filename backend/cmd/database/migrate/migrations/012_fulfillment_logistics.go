@@ -57,6 +57,7 @@ var FulfillmentLogisticsTables = []interface{}{
 	&LogisticsModel.CrossborderTrackingMap{},
 	&LogisticsModel.CustomsRulePack{},
 	&LogisticsModel.CustomsRuleVersion{},
+	&LogisticsModel.ComplianceKBVersion{},
 	&LogisticsModel.SLOGuardPolicy{},
 	&LogisticsModel.SLOGuardState{},
 	&LogisticsModel.KPISnapshot{},

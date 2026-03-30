@@ -46,6 +46,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 		logisticssvc.NewLastmileRecoveryService(deps),
 		logisticssvc.NewCrossborderService(deps),
 		logisticssvc.NewCustomsRuleService(deps),
+		logisticssvc.NewComplianceKBService(deps),
 		logisticssvc.NewKPIDashboardService(deps),
 		logisticssvc.NewSLOGuardService(deps),
 		logisticssvc.NewCapacityForecastService(deps),
@@ -208,6 +209,10 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.GET("/customs/rule-packs/:id/versions", handler.ListCustomsRuleVersions)
 	rg.POST("/customs/rule-packs/:id/versions", handler.PublishCustomsRuleVersion)
 	rg.POST("/customs/precheck", handler.CustomsPrecheck)
+	rg.GET("/customs/compliance-kb/versions", handler.ListComplianceKBVersions)
+	rg.POST("/customs/compliance-kb/sync", handler.SyncComplianceKBPolicy)
+	rg.POST("/customs/compliance-kb/diff", handler.DiffComplianceKBPolicies)
+	rg.POST("/customs/compliance-kb/:id/publish", handler.PublishComplianceKBPolicy)
 	rg.GET("/kpi-dashboard/overview", handler.GetKPIDashboardOverview)
 	rg.GET("/kpi-dashboard/trends", handler.GetKPIDashboardTrends)
 	rg.GET("/kpi-dashboard/drilldown", handler.GetKPIDashboardDrilldown)

@@ -1122,6 +1122,34 @@ export type LogisticsCustomsRuleVersion = {
   updatedAt: string;
 };
 
+export type LogisticsComplianceKBVersion = {
+  id: string;
+  countryCode: string;
+  policyVersion: string;
+  sourcePackId: string;
+  sourceVersionId: string;
+  sourceVersionNo: number;
+  countryRuleMapping: Record<string, any>;
+  rolloutScope: Record<string, any>;
+  status: string;
+  notes: string;
+  publishedBy: string;
+  publishedAt: string;
+  effectiveFrom: string;
+  effectiveTo: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsComplianceKBDiff = {
+  basePolicyId: string;
+  targetPolicyId: string;
+  addedRuleCodes: string[];
+  removedRuleCodes: string[];
+  changedRuleCodes: string[];
+  unchangedRuleCount: number;
+};
+
 export type LogisticsCustomsPrecheckMatchedRule = {
   code: string;
   name: string;
@@ -2087,6 +2115,34 @@ const normalizeCustomsRuleVersion = (raw: RawRecord): LogisticsCustomsRuleVersio
   publishedAt: String(pick(raw, "publishedAt", "published_at") || ""),
   createdAt: String(pick(raw, "createdAt", "created_at") || ""),
   updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeComplianceKBVersion = (raw: RawRecord): LogisticsComplianceKBVersion => ({
+  id: String(pick(raw, "id", "id") || ""),
+  countryCode: String(pick(raw, "countryCode", "country_code") || ""),
+  policyVersion: String(pick(raw, "policyVersion", "policy_version") || ""),
+  sourcePackId: String(pick(raw, "sourcePackId", "source_pack_id") || ""),
+  sourceVersionId: String(pick(raw, "sourceVersionId", "source_version_id") || ""),
+  sourceVersionNo: Number(pick(raw, "sourceVersionNo", "source_version_no") || 0),
+  countryRuleMapping: (pick(raw, "countryRuleMapping", "country_rule_mapping") || {}) as Record<string, any>,
+  rolloutScope: (pick(raw, "rolloutScope", "rollout_scope") || {}) as Record<string, any>,
+  status: String(pick(raw, "status", "status") || "draft"),
+  notes: String(pick(raw, "notes", "notes") || ""),
+  publishedBy: String(pick(raw, "publishedBy", "published_by") || ""),
+  publishedAt: String(pick(raw, "publishedAt", "published_at") || ""),
+  effectiveFrom: String(pick(raw, "effectiveFrom", "effective_from") || ""),
+  effectiveTo: String(pick(raw, "effectiveTo", "effective_to") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeComplianceKBDiff = (raw: RawRecord): LogisticsComplianceKBDiff => ({
+  basePolicyId: String(pick(raw, "basePolicyID", "base_policy_id") || ""),
+  targetPolicyId: String(pick(raw, "targetPolicyID", "target_policy_id") || ""),
+  addedRuleCodes: asArray<string>(pick(raw, "addedRuleCodes", "added_rule_codes") || []),
+  removedRuleCodes: asArray<string>(pick(raw, "removedRuleCodes", "removed_rule_codes") || []),
+  changedRuleCodes: asArray<string>(pick(raw, "changedRuleCodes", "changed_rule_codes") || []),
+  unchangedRuleCount: Number(pick(raw, "unchangedRuleCode", "unchanged_rule_count") || 0),
 });
 
 const normalizeCustomsPrecheckMatchedRule = (raw: RawRecord): LogisticsCustomsPrecheckMatchedRule => ({
@@ -3635,6 +3691,34 @@ export function useLogisticsApi() {
     customsPrecheck: async (payload: Record<string, any>, init?: any): Promise<LogisticsCustomsPrecheckResult> => {
       const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/customs/precheck`, payload, init));
       return normalizeCustomsPrecheckResult((raw || {}) as RawRecord);
+    },
+
+    listComplianceKBVersions: async (
+      query?: { country_code?: string; status?: string; limit?: number },
+      init?: any,
+    ): Promise<LogisticsComplianceKBVersion[]> => {
+      const raw = await unwrap(
+        apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/customs/compliance-kb/versions`, query, init),
+      );
+      return asArray<RawRecord>(raw?.items).map(normalizeComplianceKBVersion);
+    },
+
+    syncComplianceKBPolicy: async (payload: Record<string, any>, init?: any): Promise<LogisticsComplianceKBVersion> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/customs/compliance-kb/sync`, payload, init));
+      return normalizeComplianceKBVersion((raw || {}) as RawRecord);
+    },
+
+    diffComplianceKBPolicies: async (
+      payload: { base_policy_id: string; target_policy_id: string },
+      init?: any,
+    ): Promise<LogisticsComplianceKBDiff> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/customs/compliance-kb/diff`, payload, init));
+      return normalizeComplianceKBDiff((raw || {}) as RawRecord);
+    },
+
+    publishComplianceKBPolicy: async (id: string, payload: Record<string, any>, init?: any): Promise<LogisticsComplianceKBVersion> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/customs/compliance-kb/${id}/publish`, payload, init));
+      return normalizeComplianceKBVersion((raw || {}) as RawRecord);
     },
   };
 }

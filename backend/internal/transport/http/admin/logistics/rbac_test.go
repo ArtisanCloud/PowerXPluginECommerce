@@ -372,6 +372,22 @@ func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 	if customsPerm.Resource != "com.powerx.plugins.ecommerce:logistics.customs_rule" {
 		t.Fatalf("unexpected resource %s", customsPerm.Resource)
 	}
+	complianceListKey := "GET:/api/v1/admin/logistics/customs/compliance-kb/versions"
+	complianceListPerm, ok := entries[complianceListKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", complianceListKey)
+	}
+	if complianceListPerm.Resource != "com.powerx.plugins.ecommerce:logistics.compliance_kb" {
+		t.Fatalf("unexpected resource %s", complianceListPerm.Resource)
+	}
+	compliancePublishKey := "POST:/api/v1/admin/logistics/customs/compliance-kb/:id/publish"
+	compliancePublishPerm, ok := entries[compliancePublishKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", compliancePublishKey)
+	}
+	if compliancePublishPerm.Action != "manage" {
+		t.Fatalf("expected manage action, got %s", compliancePublishPerm.Action)
+	}
 
 	kpiKey := "GET:/api/v1/admin/logistics/kpi-dashboard/overview"
 	kpiPerm, ok := entries[kpiKey]

@@ -345,6 +345,18 @@ func RBACEntries(prefix string) map[string]AuthX.Permission {
 		"POST:" + base + "/customs/precheck": {
 			Resource: res("logistics.customs_rule"), Action: "read",
 		},
+		"GET:" + base + "/customs/compliance-kb/versions": {
+			Resource: res("logistics.compliance_kb"), Action: "read",
+		},
+		"POST:" + base + "/customs/compliance-kb/sync": {
+			Resource: res("logistics.compliance_kb"), Action: "manage",
+		},
+		"POST:" + base + "/customs/compliance-kb/diff": {
+			Resource: res("logistics.compliance_kb"), Action: "read",
+		},
+		"POST:" + base + "/customs/compliance-kb/:id/publish": {
+			Resource: res("logistics.compliance_kb"), Action: "manage",
+		},
 		"GET:" + base + "/kpi-dashboard/overview": {
 			Resource: res("logistics.kpi_dashboard"), Action: "read",
 		},

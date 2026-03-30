@@ -42,6 +42,7 @@ type Handler struct {
 	lastmileSvc       *logisticssvc.LastmileRecoveryService
 	crossborderSvc    *logisticssvc.CrossborderService
 	customsSvc        *logisticssvc.CustomsRuleService
+	complianceKBSvc   *logisticssvc.ComplianceKBService
 	kpiSvc            *logisticssvc.KPIDashboardService
 	sloGuardSvc       *logisticssvc.SLOGuardService
 	forecastSvc       *logisticssvc.CapacityForecastService
@@ -83,6 +84,7 @@ func NewHandler(
 	lastmileSvc *logisticssvc.LastmileRecoveryService,
 	crossborderSvc *logisticssvc.CrossborderService,
 	customsSvc *logisticssvc.CustomsRuleService,
+	complianceKBSvc *logisticssvc.ComplianceKBService,
 	kpiSvc *logisticssvc.KPIDashboardService,
 	sloGuardSvc *logisticssvc.SLOGuardService,
 	forecastSvc *logisticssvc.CapacityForecastService,
@@ -123,6 +125,7 @@ func NewHandler(
 		lastmileSvc:       lastmileSvc,
 		crossborderSvc:    crossborderSvc,
 		customsSvc:        customsSvc,
+		complianceKBSvc:   complianceKBSvc,
 		kpiSvc:            kpiSvc,
 		sloGuardSvc:       sloGuardSvc,
 		forecastSvc:       forecastSvc,

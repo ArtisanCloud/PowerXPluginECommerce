@@ -135,3 +135,18 @@ func (r *CustomsRuleVersionRepository) GetLatestPublishedByPackID(ctx context.Co
 	}
 	return &row, nil
 }
+
+func (r *CustomsRuleVersionRepository) GetByID(ctx context.Context, id string) (*LogisticsModel.CustomsRuleVersion, error) {
+	tenantUUID, err := RequireTenantUUID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var row LogisticsModel.CustomsRuleVersion
+	err = r.DB.WithContext(ctx).
+		Where("tenant_uuid = ? AND id = ?", tenantUUID, strings.TrimSpace(id)).
+		First(&row).Error
+	if err != nil {
+		return nil, err
+	}
+	return &row, nil
+}

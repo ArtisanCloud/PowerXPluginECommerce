@@ -445,6 +445,30 @@ type customsPrecheckRequest struct {
 	Payload       map[string]any `json:"payload,omitempty"`
 }
 
+type syncComplianceKBPolicyRequest struct {
+	CountryCode     string `json:"country_code,omitempty"`
+	PackID          string `json:"pack_id,omitempty"`
+	SourceVersionID string `json:"source_version_id,omitempty"`
+	PolicyVersion   string `json:"policy_version,omitempty"`
+	EffectiveFrom   string `json:"effective_from,omitempty"`
+	EffectiveTo     string `json:"effective_to,omitempty"`
+	Notes           string `json:"notes,omitempty"`
+	OperatorID      string `json:"operator_id,omitempty"`
+}
+
+type diffComplianceKBPoliciesRequest struct {
+	BasePolicyID   string `json:"base_policy_id"`
+	TargetPolicyID string `json:"target_policy_id"`
+}
+
+type publishComplianceKBPolicyRequest struct {
+	RolloutPercent int      `json:"rollout_percent,omitempty"`
+	RolloutTenants []string `json:"rollout_tenants,omitempty"`
+	EffectiveFrom  string   `json:"effective_from,omitempty"`
+	EffectiveTo    string   `json:"effective_to,omitempty"`
+	OperatorID     string   `json:"operator_id,omitempty"`
+}
+
 type kpiDashboardQueryRequest struct {
 	WindowHours     int    `json:"window_hours,omitempty"`
 	Dimension       string `json:"dimension,omitempty"`
