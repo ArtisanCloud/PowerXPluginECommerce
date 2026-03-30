@@ -90,6 +90,22 @@ func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 	if financeRiskActionPerm.Action != "manage" {
 		t.Fatalf("expected manage action, got %s", financeRiskActionPerm.Action)
 	}
+	opsPolicyKey := "GET:/api/v1/admin/logistics/ops-automation/policies"
+	opsPolicyPerm, ok := entries[opsPolicyKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", opsPolicyKey)
+	}
+	if opsPolicyPerm.Resource != "com.powerx.plugins.ecommerce:logistics.ops_automation" {
+		t.Fatalf("unexpected resource %s", opsPolicyPerm.Resource)
+	}
+	opsTakeoverKey := "POST:/api/v1/admin/logistics/ops-automation/runs/:id/takeover"
+	opsTakeoverPerm, ok := entries[opsTakeoverKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", opsTakeoverKey)
+	}
+	if opsTakeoverPerm.Action != "manage" {
+		t.Fatalf("expected manage action, got %s", opsTakeoverPerm.Action)
+	}
 
 	notifyKey := "POST:/api/v1/admin/logistics/notifications/send"
 	notifyPerm, ok := entries[notifyKey]

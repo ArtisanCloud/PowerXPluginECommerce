@@ -246,6 +246,29 @@ type executeFinanceRiskActionRequest struct {
 	RequestKey string `json:"request_key,omitempty"`
 }
 
+type upsertOpsAutomationPolicyRequest struct {
+	ID                     string         `json:"id,omitempty"`
+	Name                   string         `json:"name"`
+	CarrierID              string         `json:"carrier_id,omitempty"`
+	RetryStrategy          map[string]any `json:"retry_strategy,omitempty"`
+	CircuitBreakerStrategy map[string]any `json:"circuit_breaker_strategy,omitempty"`
+	SuppressionRule        map[string]any `json:"suppression_rule,omitempty"`
+	EscalationChain        map[string]any `json:"escalation_chain,omitempty"`
+	Enabled                *bool          `json:"enabled,omitempty"`
+}
+
+type evaluateOpsAutomationRequest struct {
+	CarrierID     string `json:"carrier_id,omitempty"`
+	TriggerSource string `json:"trigger_source,omitempty"`
+	Limit         int    `json:"limit,omitempty"`
+}
+
+type takeoverOpsAutomationRunRequest struct {
+	Action     string `json:"action,omitempty"`
+	OperatorID string `json:"operator_id,omitempty"`
+	Reason     string `json:"reason,omitempty"`
+}
+
 type upsertNotificationTemplateRequest struct {
 	ID       string         `json:"id,omitempty"`
 	Name     string         `json:"name"`

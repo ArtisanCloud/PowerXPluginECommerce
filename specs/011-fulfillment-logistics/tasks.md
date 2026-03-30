@@ -628,11 +628,11 @@
 
 ### User Story 47 - 履约自动化运维中心（P2）
 
-- [ ] T286 [P] [US47] 增加运维自动化模型（重试策略、熔断策略、抑制规则、升级链路）（`backend/internal/entity/models/logistics/ops_automation*.go`）
-- [ ] T287 [US47] 实现运维自动化服务（告警抑制、自动恢复、值班升级）（`backend/internal/services/admin/logistics/ops_automation_service.go`）
-- [ ] T288 [US47] 实现运维自动化接口（规则管理、执行记录、手动接管）（`backend/internal/transport/http/admin/logistics/{ops_automation_handler.go,routes.go,dto.go}`）
-- [ ] T289 [US47] 在 SLA 页新增“运维中心”区块（告警态势、抑制命中、升级轨迹）（`web-admin/app/pages/shipping/sla.vue`）
-- [ ] T290 [US47] 增加 US47 回归测试（告警抑制准确性、自动恢复稳定性、接管权限控制）（`backend/internal/services/admin/logistics/*_test.go`）
+- [X] T286 [P] [US47] 增加运维自动化模型（重试策略、熔断策略、抑制规则、升级链路）（`backend/internal/entity/models/logistics/ops_automation*.go`）
+- [X] T287 [US47] 实现运维自动化服务（告警抑制、自动恢复、值班升级）（`backend/internal/services/admin/logistics/ops_automation_service.go`）
+- [X] T288 [US47] 实现运维自动化接口（规则管理、执行记录、手动接管）（`backend/internal/transport/http/admin/logistics/{ops_automation_handler.go,routes.go,dto.go}`）
+- [X] T289 [US47] 在 SLA 页新增“运维中心”区块（告警态势、抑制命中、升级轨迹）（`web-admin/app/pages/shipping/sla.vue`）
+- [X] T290 [US47] 增加 US47 回归测试（告警抑制准确性、自动恢复稳定性、接管权限控制）（`backend/internal/services/admin/logistics/*_test.go`）
 
 ### Iteration-13 Polish
 

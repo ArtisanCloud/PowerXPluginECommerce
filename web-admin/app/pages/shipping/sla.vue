@@ -262,6 +262,59 @@
 
     <UCard>
       <template #header>
+        <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <h3 class="text-lg font-semibold text-gray-900 dark:text-white">履约自动化运维中心</h3>
+          <div class="flex flex-wrap gap-2">
+            <UButton size="sm" color="warning" variant="soft" :loading="opsLoading" @click="evaluateOpsCenter">立即评估</UButton>
+            <UButton size="sm" color="neutral" variant="ghost" :loading="opsLoading" @click="loadSnapshot">刷新</UButton>
+          </div>
+        </div>
+      </template>
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+          <p class="text-xs text-gray-500">告警抑制命中</p>
+          <p class="mt-1 text-xl font-semibold">{{ opsSnapshot.suppressionHits }}</p>
+        </div>
+        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+          <p class="text-xs text-gray-500">自动恢复成功</p>
+          <p class="mt-1 text-xl font-semibold text-success-600">{{ opsSnapshot.autoRecovered }}</p>
+        </div>
+        <div class="rounded-lg border border-gray-200 p-4 dark:border-gray-800">
+          <p class="text-xs text-gray-500">升级链路触发</p>
+          <p class="mt-1 text-xl font-semibold text-warning-600">{{ opsSnapshot.escalated }}</p>
+        </div>
+      </div>
+      <div class="mt-3 grid grid-cols-1 gap-2 md:grid-cols-5">
+        <UInput v-model="opsForm.name" placeholder="策略名称" />
+        <UInput v-model="opsForm.carrierId" placeholder="承运商ID（可选）" />
+        <UInput v-model.number="opsForm.minFailedEvents" type="number" placeholder="抑制阈值" />
+        <UInput v-model.number="opsForm.maxAutoRecover" type="number" placeholder="自动恢复次数" />
+        <UInput v-model.number="opsForm.escalationThreshold" type="number" placeholder="升级阈值" />
+      </div>
+      <div class="mt-2">
+        <UButton size="sm" color="primary" :loading="opsLoading" @click="saveOpsPolicy">保存策略</UButton>
+      </div>
+      <UTable class="mt-3" :columns="opsPolicyColumns" :data="opsPolicies" />
+      <UTable class="mt-3" :columns="opsRunColumns" :data="opsRuns">
+        <template #suppressed-cell="{ getValue }">
+          <UBadge :color="getValue() ? 'info' : 'neutral'" variant="subtle">{{ getValue() ? "是" : "否" }}</UBadge>
+        </template>
+        <template #autoRecovered-cell="{ getValue }">
+          <UBadge :color="getValue() ? 'success' : 'neutral'" variant="subtle">{{ getValue() ? "是" : "否" }}</UBadge>
+        </template>
+        <template #escalated-cell="{ getValue }">
+          <UBadge :color="getValue() ? 'warning' : 'neutral'" variant="subtle">{{ getValue() ? "是" : "否" }}</UBadge>
+        </template>
+        <template #actions-cell="{ row }">
+          <UButton size="xs" variant="ghost" color="warning" :loading="opsLoading" @click="takeoverOpsRun(row.original.id)">
+            手动接管
+          </UButton>
+        </template>
+      </UTable>
+    </UCard>
+
+    <UCard>
+      <template #header>
         <h3 class="text-lg font-semibold text-gray-900 dark:text-white">总体指标</h3>
       </template>
       <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
@@ -309,6 +362,9 @@ import {
   useLogisticsApi,
   type LogisticsGatewayCostSnapshot,
   type LogisticsGatewayHealthSnapshot,
+  type LogisticsOpsAutomationPolicy,
+  type LogisticsOpsAutomationRun,
+  type LogisticsOpsAutomationSnapshot,
   type LogisticsTrackingRootCause,
   type LogisticsTrackingRootCauseSummary,
   type LogisticsSLOGuardPolicy,
@@ -329,10 +385,19 @@ const rows = ref<LogisticsSLASummaryItem[]>([]);
 const syncJobLoading = ref(false);
 const scheduleLoading = ref(false);
 const sloLoading = ref(false);
+const opsLoading = ref(false);
 const rootCauseLoading = ref(false);
 const rootCauseWindowHours = ref(24);
 const schedules = ref<LogisticsTrackingSyncSchedule[]>([]);
 const sloPolicies = ref<LogisticsSLOGuardPolicy[]>([]);
+const opsPolicies = ref<LogisticsOpsAutomationPolicy[]>([]);
+const opsRuns = ref<LogisticsOpsAutomationRun[]>([]);
+const opsSnapshot = ref<LogisticsOpsAutomationSnapshot>({
+  suppressionHits: 0,
+  autoRecovered: 0,
+  escalated: 0,
+  runs: [],
+});
 const rootCauseItems = ref<LogisticsTrackingRootCause[]>([]);
 const rootCauseSummary = ref<LogisticsTrackingRootCauseSummary>({
   windowHours: 24,
@@ -414,6 +479,13 @@ const sloForm = reactive({
   throttleRatio: 50,
   action: "throttle",
 });
+const opsForm = reactive({
+  name: "",
+  carrierId: "",
+  minFailedEvents: 2,
+  maxAutoRecover: 1,
+  escalationThreshold: 3,
+});
 const total = ref<LogisticsSLASummaryItem>({
   carrierId: "all",
   carrierName: "全部承运商",
@@ -450,6 +522,24 @@ const sloColumns = computed<TableColumn<LogisticsSLOGuardPolicy>[]>(() => [
   { accessorKey: "enabled", header: "启用" },
 ]);
 
+const opsPolicyColumns = computed<TableColumn<LogisticsOpsAutomationPolicy>[]>(() => [
+  { accessorKey: "name", header: "策略" },
+  { accessorKey: "carrierId", header: "承运商" },
+  { accessorKey: "lastEvaluatedAt", header: "最近评估" },
+  { accessorKey: "enabled", header: "启用" },
+]);
+
+const opsRunColumns = computed<TableColumn<LogisticsOpsAutomationRun>[]>(() => [
+  { accessorKey: "triggerSource", header: "触发源" },
+  { accessorKey: "status", header: "状态" },
+  { accessorKey: "suppressed", header: "抑制" },
+  { accessorKey: "autoRecovered", header: "自动恢复" },
+  { accessorKey: "escalated", header: "升级" },
+  { accessorKey: "takeoverBy", header: "接管人" },
+  { accessorKey: "createdAt", header: "时间" },
+  { id: "actions", header: "操作" },
+]);
+
 const rootCauseColumns = computed<TableColumn<LogisticsTrackingRootCause>[]>(() => [
   { accessorKey: "waybillNo", header: "运单号" },
   { accessorKey: "anomalyType", header: "异常类型" },
@@ -473,6 +563,14 @@ const loadSnapshot = async () => {
   schedules.value = await logisticsApi.listTrackingSyncSchedules({ limit: 20 });
   sloPolicies.value = await logisticsApi.listSLOGuardPolicies({ carrier_id: carrierId.value || undefined, limit: 20 });
   sloStatus.value = await logisticsApi.getSLOGuardStatus({ carrier_id: carrierId.value || undefined, window_hours: 24 });
+  opsPolicies.value = await logisticsApi.listOpsAutomationPolicies({ carrier_id: carrierId.value || undefined, limit: 20 });
+  opsRuns.value = await logisticsApi.listOpsAutomationRuns({ carrier_id: carrierId.value || undefined, limit: 20 });
+  opsSnapshot.value = {
+    suppressionHits: opsRuns.value.filter((item) => item.suppressed).length,
+    autoRecovered: opsRuns.value.filter((item) => item.autoRecovered).length,
+    escalated: opsRuns.value.filter((item) => item.escalated).length,
+    runs: opsRuns.value,
+  };
   rootCauseSummary.value = await logisticsApi.getTrackingRootCauseSummary({
     carrier_id: carrierId.value || undefined,
     window_hours: rootCauseWindowHours.value || 24,
@@ -614,6 +712,60 @@ const releaseSLOPolicy = async (policyId: string) => {
     await loadSnapshot();
   } finally {
     sloLoading.value = false;
+  }
+};
+
+const saveOpsPolicy = async () => {
+  opsLoading.value = true;
+  try {
+    await logisticsApi.upsertOpsAutomationPolicy({
+      name: opsForm.name || "默认运维策略",
+      carrier_id: opsForm.carrierId || undefined,
+      retry_strategy: {
+        enabled: true,
+        max_attempts: Number(opsForm.maxAutoRecover || 1),
+      },
+      suppression_rule: {
+        min_failed_events: Number(opsForm.minFailedEvents || 2),
+      },
+      escalation_chain: {
+        failed_event_threshold: Number(opsForm.escalationThreshold || 3),
+        slo_throttled_required: true,
+      },
+      enabled: true,
+    });
+    await loadSnapshot();
+  } finally {
+    opsLoading.value = false;
+  }
+};
+
+const evaluateOpsCenter = async () => {
+  opsLoading.value = true;
+  try {
+    opsSnapshot.value = await logisticsApi.evaluateOpsAutomation({
+      carrier_id: carrierId.value || undefined,
+      trigger_source: "manual_evaluate",
+      limit: 20,
+    });
+    opsRuns.value = opsSnapshot.value.runs;
+    await loadSnapshot();
+  } finally {
+    opsLoading.value = false;
+  }
+};
+
+const takeoverOpsRun = async (id: string) => {
+  opsLoading.value = true;
+  try {
+    await logisticsApi.takeoverOpsAutomationRun(id, {
+      action: "manual_takeover",
+      operator_id: "admin",
+      reason: "manual takeover from sla dashboard",
+    });
+    await loadSnapshot();
+  } finally {
+    opsLoading.value = false;
   }
 };
 

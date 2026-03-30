@@ -29,6 +29,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 		logisticssvc.NewBillingService(deps),
 		logisticssvc.NewBillingCaseService(deps),
 		logisticssvc.NewFulfillmentFinanceRiskService(deps),
+		logisticssvc.NewOpsAutomationService(deps),
 		logisticssvc.NewNotificationService(deps),
 		logisticssvc.NewSLAService(deps),
 		logisticssvc.NewLabelPrintService(deps),
@@ -112,6 +113,12 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.POST("/billing/finance-risks/evaluate", handler.EvaluateFinanceRisks)
 	rg.POST("/billing/finance-risks/:id/actions", handler.ExecuteFinanceRiskAction)
 	rg.GET("/billing/finance-risks/audits", handler.ListFinanceRiskAudits)
+	rg.GET("/ops-automation/policies", handler.ListOpsAutomationPolicies)
+	rg.POST("/ops-automation/policies", handler.UpsertOpsAutomationPolicy)
+	rg.PATCH("/ops-automation/policies/:id", handler.UpsertOpsAutomationPolicy)
+	rg.POST("/ops-automation/evaluate", handler.EvaluateOpsAutomation)
+	rg.GET("/ops-automation/runs", handler.ListOpsAutomationRuns)
+	rg.POST("/ops-automation/runs/:id/takeover", handler.TakeoverOpsAutomationRun)
 	rg.GET("/notifications/templates", handler.ListNotificationTemplates)
 	rg.POST("/notifications/templates", handler.UpsertNotificationTemplate)
 	rg.GET("/notifications/records", handler.ListNotificationRecords)

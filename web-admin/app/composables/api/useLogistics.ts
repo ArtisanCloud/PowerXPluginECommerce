@@ -454,6 +454,46 @@ export type LogisticsSLOGuardStatusSnapshot = {
   triggered: LogisticsSLOGuardTriggeredItem[];
 };
 
+export type LogisticsOpsAutomationPolicy = {
+  id: string;
+  name: string;
+  carrierId: string;
+  retryStrategy: Record<string, any>;
+  circuitBreakerStrategy: Record<string, any>;
+  suppressionRule: Record<string, any>;
+  escalationChain: Record<string, any>;
+  enabled: boolean;
+  lastEvaluatedAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsOpsAutomationRun = {
+  id: string;
+  policyID: string;
+  carrierID: string;
+  triggerSource: string;
+  triggerKey: string;
+  status: string;
+  suppressed: boolean;
+  autoRecovered: boolean;
+  escalated: boolean;
+  takeoverBy: string;
+  takeoverReason: string;
+  payload: Record<string, any>;
+  startedAt: string;
+  finishedAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsOpsAutomationSnapshot = {
+  suppressionHits: number;
+  autoRecovered: number;
+  escalated: number;
+  runs: LogisticsOpsAutomationRun[];
+};
+
 export type LogisticsGatewayCostSummary = {
   windowHours: number;
   totalRequests: number;
@@ -1454,6 +1494,46 @@ const normalizeSLOGuardStatus = (raw: RawRecord): LogisticsSLOGuardStatusSnapsho
   throttleRequired: Boolean(pick(raw, "throttleRequired", "throttle_required")),
   gateway: normalizeGatewayHealthSummary((pick(raw, "gateway", "gateway") || {}) as RawRecord),
   triggered: asArray<RawRecord>(pick(raw, "triggered", "triggered")).map(normalizeSLOGuardTriggered),
+});
+
+const normalizeOpsAutomationPolicy = (raw: RawRecord): LogisticsOpsAutomationPolicy => ({
+  id: String(pick(raw, "id", "id") || ""),
+  name: String(pick(raw, "name", "name") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  retryStrategy: (pick(raw, "retryStrategy", "retry_strategy") || {}) as Record<string, any>,
+  circuitBreakerStrategy: (pick(raw, "circuitBreakerStrategy", "circuit_breaker_strategy") || {}) as Record<string, any>,
+  suppressionRule: (pick(raw, "suppressionRule", "suppression_rule") || {}) as Record<string, any>,
+  escalationChain: (pick(raw, "escalationChain", "escalation_chain") || {}) as Record<string, any>,
+  enabled: Boolean(pick(raw, "enabled", "enabled")),
+  lastEvaluatedAt: String(pick(raw, "lastEvaluatedAt", "last_evaluated_at") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeOpsAutomationRun = (raw: RawRecord): LogisticsOpsAutomationRun => ({
+  id: String(pick(raw, "id", "id") || ""),
+  policyID: String(pick(raw, "policyID", "policy_id") || ""),
+  carrierID: String(pick(raw, "carrierID", "carrier_id") || ""),
+  triggerSource: String(pick(raw, "triggerSource", "trigger_source") || ""),
+  triggerKey: String(pick(raw, "triggerKey", "trigger_key") || ""),
+  status: String(pick(raw, "status", "status") || ""),
+  suppressed: Boolean(pick(raw, "suppressed", "suppressed")),
+  autoRecovered: Boolean(pick(raw, "autoRecovered", "auto_recovered")),
+  escalated: Boolean(pick(raw, "escalated", "escalated")),
+  takeoverBy: String(pick(raw, "takeoverBy", "takeover_by") || ""),
+  takeoverReason: String(pick(raw, "takeoverReason", "takeover_reason") || ""),
+  payload: (pick(raw, "payload", "payload") || {}) as Record<string, any>,
+  startedAt: String(pick(raw, "startedAt", "started_at") || ""),
+  finishedAt: String(pick(raw, "finishedAt", "finished_at") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeOpsAutomationSnapshot = (raw: RawRecord): LogisticsOpsAutomationSnapshot => ({
+  suppressionHits: Number(pick(raw, "suppressionHits", "suppression_hits") || 0),
+  autoRecovered: Number(pick(raw, "autoRecovered", "auto_recovered") || 0),
+  escalated: Number(pick(raw, "escalated", "escalated") || 0),
+  runs: asArray<RawRecord>(pick(raw, "runs", "runs")).map(normalizeOpsAutomationRun),
 });
 
 const normalizeGatewayCostSummary = (raw: RawRecord): LogisticsGatewayCostSummary => ({
@@ -2988,6 +3068,47 @@ export function useLogisticsApi() {
       init?: any,
     ): Promise<RawRecord> => {
       return await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/slo-guard/policies/${id}/release`, payload || {}, init));
+    },
+
+    listOpsAutomationPolicies: async (
+      query?: { carrier_id?: string; enabled?: boolean; limit?: number },
+      init?: any,
+    ): Promise<LogisticsOpsAutomationPolicy[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/ops-automation/policies`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeOpsAutomationPolicy);
+    },
+
+    upsertOpsAutomationPolicy: async (payload: Record<string, any>, init?: any): Promise<LogisticsOpsAutomationPolicy> => {
+      const id = String(payload.id || "").trim();
+      const path = id ? `${basePath}/ops-automation/policies/${id}` : `${basePath}/ops-automation/policies`;
+      const req = id ? apiPatch<ApiEnvelope<RawRecord>>(path, payload, init) : apiPost<ApiEnvelope<RawRecord>>(path, payload, init);
+      const raw = await unwrap(req);
+      return normalizeOpsAutomationPolicy((raw || {}) as RawRecord);
+    },
+
+    evaluateOpsAutomation: async (
+      payload?: { carrier_id?: string; trigger_source?: "manual_evaluate" | "schedule" | "alert"; limit?: number },
+      init?: any,
+    ): Promise<LogisticsOpsAutomationSnapshot> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/ops-automation/evaluate`, payload || {}, init));
+      return normalizeOpsAutomationSnapshot((raw || {}) as RawRecord);
+    },
+
+    listOpsAutomationRuns: async (
+      query?: { policy_id?: string; carrier_id?: string; status?: string; limit?: number },
+      init?: any,
+    ): Promise<LogisticsOpsAutomationRun[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/ops-automation/runs`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeOpsAutomationRun);
+    },
+
+    takeoverOpsAutomationRun: async (
+      id: string,
+      payload: { action?: string; operator_id: string; reason?: string },
+      init?: any,
+    ): Promise<LogisticsOpsAutomationRun> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/ops-automation/runs/${id}/takeover`, payload, init));
+      return normalizeOpsAutomationRun((raw || {}) as RawRecord);
     },
 
     listTrackingSyncJobs: async (

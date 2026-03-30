@@ -194,6 +194,8 @@ const (
 	TableLogisticsBillingCases                   = "logistics_billing_cases"
 	TableLogisticsFinanceRisks                   = "logistics_finance_risks"
 	TableLogisticsFinanceRiskAudits              = "logistics_finance_risk_audits"
+	TableLogisticsOpsAutomationPolicies          = "logistics_ops_automation_policies"
+	TableLogisticsOpsAutomationRuns              = "logistics_ops_automation_runs"
 	TableLogisticsSettlementBatches              = "logistics_settlement_batches"
 	TableLogisticsSettlementDiffs                = "logistics_settlement_diffs"
 	TableLogisticsReconciliationBatches          = "logistics_reconciliation_batches"
