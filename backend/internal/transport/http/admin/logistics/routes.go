@@ -48,6 +48,8 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 		logisticssvc.NewKPIDashboardService(deps),
 		logisticssvc.NewSLOGuardService(deps),
 		logisticssvc.NewCapacityForecastService(deps),
+		logisticssvc.NewFulfillmentSandboxService(deps),
+		logisticssvc.NewPolicyOrchestrationService(deps),
 		logisticssvc.NewTrackingRootCauseService(deps),
 		logisticssvc.NewInterwarehouseAllocationService(deps),
 		logisticssvc.NewQualityAuditReportService(deps),
@@ -156,6 +158,19 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.GET("/allocation/forecasts", handler.ListCapacityForecasts)
 	rg.POST("/allocation/forecasts/generate", handler.GenerateCapacityForecast)
 	rg.POST("/allocation/forecasts/:id/apply", handler.ApplyCapacityForecast)
+	rg.GET("/sandbox/scenarios", handler.ListSandboxScenarios)
+	rg.POST("/sandbox/scenarios", handler.UpsertSandboxScenario)
+	rg.PATCH("/sandbox/scenarios/:id", handler.UpsertSandboxScenario)
+	rg.GET("/sandbox/runs", handler.ListSandboxRuns)
+	rg.POST("/sandbox/run", handler.RunSandbox)
+	rg.POST("/sandbox/compare", handler.CompareSandboxRuns)
+	rg.GET("/policy-orchestration/flows", handler.ListPolicyOrchestrationFlows)
+	rg.POST("/policy-orchestration/flows", handler.UpsertPolicyOrchestrationFlow)
+	rg.PATCH("/policy-orchestration/flows/:id", handler.UpsertPolicyOrchestrationFlow)
+	rg.GET("/policy-orchestration/flows/:id/versions", handler.ListPolicyOrchestrationVersions)
+	rg.POST("/policy-orchestration/conflicts/preview", handler.PreviewPolicyOrchestrationConflicts)
+	rg.POST("/policy-orchestration/flows/:id/publish", handler.PublishPolicyOrchestrationFlow)
+	rg.POST("/policy-orchestration/flows/:id/rollback", handler.RollbackPolicyOrchestrationFlow)
 	rg.GET("/allocation/interwarehouse/candidates", handler.ListInterwarehouseAllocationCandidates)
 	rg.POST("/allocation/interwarehouse/suggest", handler.SuggestInterwarehouseAllocation)
 	rg.POST("/allocation/interwarehouse/confirm", handler.ConfirmInterwarehouseAllocation)

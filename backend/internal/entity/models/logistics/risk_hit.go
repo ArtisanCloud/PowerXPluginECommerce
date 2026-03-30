@@ -12,10 +12,10 @@ import (
 type RiskHit struct {
 	ID            string         `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
 	TenantUUID    string         `gorm:"column:tenant_uuid;type:uuid;not null;index" json:"tenant_uuid"`
-	WaybillID     string         `gorm:"column:waybill_id;type:uuid;not null;default:'';index" json:"waybill_id,omitempty"`
+	WaybillID     string         `gorm:"column:waybill_id;type:varchar(64);not null;default:'';index" json:"waybill_id,omitempty"`
 	WaybillNo     string         `gorm:"column:waybill_no;type:varchar(128);not null;default:'';index" json:"waybill_no,omitempty"`
-	RuleID        string         `gorm:"column:rule_id;type:uuid;not null;default:'';index" json:"rule_id,omitempty"`
-	BlacklistID   string         `gorm:"column:blacklist_id;type:uuid;not null;default:'';index" json:"blacklist_id,omitempty"`
+	RuleID        string         `gorm:"column:rule_id;type:varchar(64);not null;default:'';index" json:"rule_id,omitempty"`
+	BlacklistID   string         `gorm:"column:blacklist_id;type:varchar(64);not null;default:'';index" json:"blacklist_id,omitempty"`
 	Source        string         `gorm:"column:source;type:varchar(32);not null;default:'rule';index" json:"source"`
 	Decision      string         `gorm:"column:decision;type:varchar(32);not null;default:'review';index" json:"decision"`
 	RiskLevel     string         `gorm:"column:risk_level;type:varchar(16);not null;default:'medium'" json:"risk_level"`

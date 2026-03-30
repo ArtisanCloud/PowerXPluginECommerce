@@ -156,7 +156,7 @@ func MigratePluginModels(ctx context.Context, db *gorm.DB, includeIAM bool) erro
 func safeAutoMigrate(ctx context.Context, db *gorm.DB, tables []interface{}) error {
 	for _, tbl := range tables {
 		if err := migrateWithTolerance(ctx, db, tbl); err != nil {
-			return err
+			return fmt.Errorf("auto migrate table %T failed: %w", tbl, err)
 		}
 	}
 	return nil

@@ -824,6 +824,106 @@ export type LogisticsCapacityForecast = {
   updatedAt: string;
 };
 
+export type LogisticsFulfillmentSandboxScenario = {
+  id: string;
+  name: string;
+  carrierId: string;
+  warehouseId: string;
+  destinationZone: string;
+  baselineConfig: Record<string, any>;
+  strategyConfig: Record<string, any>;
+  status: string;
+  description: string;
+  createdBy: string;
+  updatedBy: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsFulfillmentSandboxRun = {
+  id: string;
+  scenarioId: string;
+  requestKey: string;
+  windowDays: number;
+  strategy: string;
+  timelinessRate: number;
+  costIndex: number;
+  exceptionRate: number;
+  recoveryHours: number;
+  score: number;
+  snapshot: Record<string, any>;
+  recommendation: string;
+  status: string;
+  createdBy: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsFulfillmentSandboxCompareResult = {
+  baselineRunId: string;
+  candidateRunId: string;
+  timelinessDelta: number;
+  costDelta: number;
+  exceptionDelta: number;
+  recoveryHourDelta: number;
+  scoreDelta: number;
+  recommendation: string;
+};
+
+export type LogisticsPolicyOrchestrationFlow = {
+  id: string;
+  name: string;
+  priority: number;
+  status: string;
+  flowDefinition: Record<string, any>;
+  conflictRelations: string[];
+  grayReleaseConfig: Record<string, any>;
+  publishedVersionId: string;
+  description: string;
+  createdBy: string;
+  updatedBy: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsPolicyOrchestrationVersion = {
+  id: string;
+  flowId: string;
+  versionNo: number;
+  requestKey: string;
+  status: string;
+  changeSummary: string;
+  snapshot: Record<string, any>;
+  conflictReport: Record<string, any>;
+  grayReleasePlan: Record<string, any>;
+  rolledBackFromId: string;
+  publishedAt: string;
+  createdBy: string;
+  updatedBy: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+export type LogisticsPolicyOrchestrationConflictItem = {
+  flowId: string;
+  flowName: string;
+  conflictKeys: string[];
+  conflictCount: number;
+  reason: string;
+};
+
+export type LogisticsPolicyOrchestrationConflictPreview = {
+  hasConflict: boolean;
+  items: LogisticsPolicyOrchestrationConflictItem[];
+};
+
+export type LogisticsPolicyOrchestrationPublishResult = {
+  flow: LogisticsPolicyOrchestrationFlow;
+  version: LogisticsPolicyOrchestrationVersion;
+  idempotencyStatus: string;
+  conflictPreview: LogisticsPolicyOrchestrationConflictPreview;
+};
+
 export type LogisticsTrackingRootCause = {
   id: string;
   waybillId: string;
@@ -1667,6 +1767,106 @@ const normalizeCapacityForecast = (raw: RawRecord): LogisticsCapacityForecast =>
   updatedBy: String(pick(raw, "updatedBy", "updated_by") || ""),
   createdAt: String(pick(raw, "createdAt", "created_at") || ""),
   updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeFulfillmentSandboxScenario = (raw: RawRecord): LogisticsFulfillmentSandboxScenario => ({
+  id: String(pick(raw, "id", "id") || ""),
+  name: String(pick(raw, "name", "name") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  warehouseId: String(pick(raw, "warehouseId", "warehouse_id") || ""),
+  destinationZone: String(pick(raw, "destinationZone", "destination_zone") || ""),
+  baselineConfig: (pick(raw, "baselineConfig", "baseline_config") || {}) as Record<string, any>,
+  strategyConfig: (pick(raw, "strategyConfig", "strategy_config") || {}) as Record<string, any>,
+  status: String(pick(raw, "status", "status") || "active"),
+  description: String(pick(raw, "description", "description") || ""),
+  createdBy: String(pick(raw, "createdBy", "created_by") || ""),
+  updatedBy: String(pick(raw, "updatedBy", "updated_by") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeFulfillmentSandboxRun = (raw: RawRecord): LogisticsFulfillmentSandboxRun => ({
+  id: String(pick(raw, "id", "id") || ""),
+  scenarioId: String(pick(raw, "scenarioId", "scenario_id") || ""),
+  requestKey: String(pick(raw, "requestKey", "request_key") || ""),
+  windowDays: Number(pick(raw, "windowDays", "window_days") || 7),
+  strategy: String(pick(raw, "strategy", "strategy") || "balanced"),
+  timelinessRate: Number(pick(raw, "timelinessRate", "timeliness_rate") || 0),
+  costIndex: Number(pick(raw, "costIndex", "cost_index") || 0),
+  exceptionRate: Number(pick(raw, "exceptionRate", "exception_rate") || 0),
+  recoveryHours: Number(pick(raw, "recoveryHours", "recovery_hours") || 0),
+  score: Number(pick(raw, "score", "score") || 0),
+  snapshot: (pick(raw, "snapshot", "snapshot") || {}) as Record<string, any>,
+  recommendation: String(pick(raw, "recommendation", "recommendation") || ""),
+  status: String(pick(raw, "status", "status") || "completed"),
+  createdBy: String(pick(raw, "createdBy", "created_by") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizeFulfillmentSandboxCompareResult = (raw: RawRecord): LogisticsFulfillmentSandboxCompareResult => ({
+  baselineRunId: String(pick(raw, "baselineRunId", "baseline_run_id") || ""),
+  candidateRunId: String(pick(raw, "candidateRunId", "candidate_run_id") || ""),
+  timelinessDelta: Number(pick(raw, "timelinessDelta", "timeliness_delta") || 0),
+  costDelta: Number(pick(raw, "costDelta", "cost_delta") || 0),
+  exceptionDelta: Number(pick(raw, "exceptionDelta", "exception_delta") || 0),
+  recoveryHourDelta: Number(pick(raw, "recoveryHourDelta", "recovery_hour_delta") || 0),
+  scoreDelta: Number(pick(raw, "scoreDelta", "score_delta") || 0),
+  recommendation: String(pick(raw, "recommendation", "recommendation") || ""),
+});
+
+const normalizePolicyOrchestrationFlow = (raw: RawRecord): LogisticsPolicyOrchestrationFlow => ({
+  id: String(pick(raw, "id", "id") || ""),
+  name: String(pick(raw, "name", "name") || ""),
+  priority: Number(pick(raw, "priority", "priority") || 100),
+  status: String(pick(raw, "status", "status") || "draft"),
+  flowDefinition: (pick(raw, "flowDefinition", "flow_definition") || {}) as Record<string, any>,
+  conflictRelations: asArray<string>(pick(raw, "conflictRelations", "conflict_relations") || []),
+  grayReleaseConfig: (pick(raw, "grayReleaseConfig", "gray_release_config") || {}) as Record<string, any>,
+  publishedVersionId: String(pick(raw, "publishedVersionId", "published_version_id") || ""),
+  description: String(pick(raw, "description", "description") || ""),
+  createdBy: String(pick(raw, "createdBy", "created_by") || ""),
+  updatedBy: String(pick(raw, "updatedBy", "updated_by") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizePolicyOrchestrationVersion = (raw: RawRecord): LogisticsPolicyOrchestrationVersion => ({
+  id: String(pick(raw, "id", "id") || ""),
+  flowId: String(pick(raw, "flowId", "flow_id") || ""),
+  versionNo: Number(pick(raw, "versionNo", "version_no") || 0),
+  requestKey: String(pick(raw, "requestKey", "request_key") || ""),
+  status: String(pick(raw, "status", "status") || ""),
+  changeSummary: String(pick(raw, "changeSummary", "change_summary") || ""),
+  snapshot: (pick(raw, "snapshot", "snapshot") || {}) as Record<string, any>,
+  conflictReport: (pick(raw, "conflictReport", "conflict_report") || {}) as Record<string, any>,
+  grayReleasePlan: (pick(raw, "grayReleasePlan", "gray_release_plan") || {}) as Record<string, any>,
+  rolledBackFromId: String(pick(raw, "rolledBackFromId", "rolled_back_from_id") || ""),
+  publishedAt: String(pick(raw, "publishedAt", "published_at") || ""),
+  createdBy: String(pick(raw, "createdBy", "created_by") || ""),
+  updatedBy: String(pick(raw, "updatedBy", "updated_by") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
+const normalizePolicyOrchestrationConflictItem = (raw: RawRecord): LogisticsPolicyOrchestrationConflictItem => ({
+  flowId: String(pick(raw, "flowId", "flow_id") || ""),
+  flowName: String(pick(raw, "flowName", "flow_name") || ""),
+  conflictKeys: asArray<string>(pick(raw, "conflictKeys", "conflict_keys") || []),
+  conflictCount: Number(pick(raw, "conflictCount", "conflict_count") || 0),
+  reason: String(pick(raw, "reason", "reason") || ""),
+});
+
+const normalizePolicyOrchestrationConflictPreview = (raw: RawRecord): LogisticsPolicyOrchestrationConflictPreview => ({
+  hasConflict: Boolean(pick(raw, "hasConflict", "has_conflict")),
+  items: asArray<RawRecord>(pick(raw, "items", "items") || []).map(normalizePolicyOrchestrationConflictItem),
+});
+
+const normalizePolicyOrchestrationPublishResult = (raw: RawRecord): LogisticsPolicyOrchestrationPublishResult => ({
+  flow: normalizePolicyOrchestrationFlow((pick(raw, "flow", "flow") || {}) as RawRecord),
+  version: normalizePolicyOrchestrationVersion((pick(raw, "version", "version") || {}) as RawRecord),
+  idempotencyStatus: String(pick(raw, "idempotencyStatus", "idempotency_status") || pick(raw, "idempotency", "idempotency") || ""),
+  conflictPreview: normalizePolicyOrchestrationConflictPreview((pick(raw, "conflictPreview", "conflict_preview") || {}) as RawRecord),
 });
 
 const normalizeTrackingRootCause = (raw: RawRecord): LogisticsTrackingRootCause => ({
@@ -3009,6 +3209,105 @@ export function useLogisticsApi() {
     ): Promise<LogisticsCapacityForecast> => {
       const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/allocation/forecasts/${id}/apply`, payload || {}, init));
       return normalizeCapacityForecast((raw || {}) as RawRecord);
+    },
+
+    listFulfillmentSandboxScenarios: async (
+      query?: { carrier_id?: string; warehouse_id?: string; destination_zone?: string; status?: string; limit?: number },
+      init?: any,
+    ): Promise<LogisticsFulfillmentSandboxScenario[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/sandbox/scenarios`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeFulfillmentSandboxScenario);
+    },
+
+    upsertFulfillmentSandboxScenario: async (
+      payload: Record<string, any>,
+      init?: any,
+    ): Promise<LogisticsFulfillmentSandboxScenario> => {
+      const id = String(payload.id || "").trim();
+      const path = id ? `${basePath}/sandbox/scenarios/${id}` : `${basePath}/sandbox/scenarios`;
+      const req = id ? apiPatch<ApiEnvelope<RawRecord>>(path, payload, init) : apiPost<ApiEnvelope<RawRecord>>(path, payload, init);
+      const raw = await unwrap(req);
+      return normalizeFulfillmentSandboxScenario((raw || {}) as RawRecord);
+    },
+
+    listFulfillmentSandboxRuns: async (
+      query?: { scenario_id?: string; strategy?: string; limit?: number },
+      init?: any,
+    ): Promise<LogisticsFulfillmentSandboxRun[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/sandbox/runs`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizeFulfillmentSandboxRun);
+    },
+
+    runFulfillmentSandbox: async (
+      payload: Record<string, any>,
+      init?: any,
+    ): Promise<LogisticsFulfillmentSandboxRun> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/sandbox/run`, payload, init));
+      return normalizeFulfillmentSandboxRun((raw || {}) as RawRecord);
+    },
+
+    compareFulfillmentSandboxRuns: async (
+      payload: { baseline_run_id: string; candidate_run_id: string },
+      init?: any,
+    ): Promise<LogisticsFulfillmentSandboxCompareResult> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/sandbox/compare`, payload, init));
+      return normalizeFulfillmentSandboxCompareResult((raw || {}) as RawRecord);
+    },
+
+    listPolicyOrchestrationFlows: async (
+      query?: { status?: string; limit?: number },
+      init?: any,
+    ): Promise<LogisticsPolicyOrchestrationFlow[]> => {
+      const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/policy-orchestration/flows`, query, init));
+      return asArray<RawRecord>(raw?.items).map(normalizePolicyOrchestrationFlow);
+    },
+
+    upsertPolicyOrchestrationFlow: async (
+      payload: Record<string, any>,
+      init?: any,
+    ): Promise<LogisticsPolicyOrchestrationFlow> => {
+      const id = String(payload.id || "").trim();
+      const path = id ? `${basePath}/policy-orchestration/flows/${id}` : `${basePath}/policy-orchestration/flows`;
+      const req = id ? apiPatch<ApiEnvelope<RawRecord>>(path, payload, init) : apiPost<ApiEnvelope<RawRecord>>(path, payload, init);
+      const raw = await unwrap(req);
+      return normalizePolicyOrchestrationFlow((raw || {}) as RawRecord);
+    },
+
+    listPolicyOrchestrationVersions: async (
+      flowId: string,
+      query?: { limit?: number },
+      init?: any,
+    ): Promise<LogisticsPolicyOrchestrationVersion[]> => {
+      const raw = await unwrap(
+        apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/policy-orchestration/flows/${flowId}/versions`, query, init),
+      );
+      return asArray<RawRecord>(raw?.items).map(normalizePolicyOrchestrationVersion);
+    },
+
+    previewPolicyOrchestrationConflicts: async (
+      payload: Record<string, any>,
+      init?: any,
+    ): Promise<LogisticsPolicyOrchestrationConflictPreview> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/policy-orchestration/conflicts/preview`, payload, init));
+      return normalizePolicyOrchestrationConflictPreview((raw || {}) as RawRecord);
+    },
+
+    publishPolicyOrchestrationFlow: async (
+      flowId: string,
+      payload: Record<string, any>,
+      init?: any,
+    ): Promise<LogisticsPolicyOrchestrationPublishResult> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/policy-orchestration/flows/${flowId}/publish`, payload, init));
+      return normalizePolicyOrchestrationPublishResult((raw || {}) as RawRecord);
+    },
+
+    rollbackPolicyOrchestrationFlow: async (
+      flowId: string,
+      payload: { target_version_id: string; reason?: string; operator_id?: string },
+      init?: any,
+    ): Promise<LogisticsPolicyOrchestrationPublishResult> => {
+      const raw = await unwrap(apiPost<ApiEnvelope<RawRecord>>(`${basePath}/policy-orchestration/flows/${flowId}/rollback`, payload, init));
+      return normalizePolicyOrchestrationPublishResult((raw || {}) as RawRecord);
     },
 
     getTrackingRootCauseSummary: async (

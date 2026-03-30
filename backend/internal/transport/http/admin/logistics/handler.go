@@ -44,6 +44,8 @@ type Handler struct {
 	kpiSvc            *logisticssvc.KPIDashboardService
 	sloGuardSvc       *logisticssvc.SLOGuardService
 	forecastSvc       *logisticssvc.CapacityForecastService
+	sandboxSvc        *logisticssvc.FulfillmentSandboxService
+	policyOrchesSvc   *logisticssvc.PolicyOrchestrationService
 	rootCauseSvc      *logisticssvc.TrackingRootCauseService
 	interwarehouseSvc *logisticssvc.InterwarehouseAllocationService
 	qualityAuditSvc   *logisticssvc.QualityAuditReportService
@@ -82,6 +84,8 @@ func NewHandler(
 	kpiSvc *logisticssvc.KPIDashboardService,
 	sloGuardSvc *logisticssvc.SLOGuardService,
 	forecastSvc *logisticssvc.CapacityForecastService,
+	sandboxSvc *logisticssvc.FulfillmentSandboxService,
+	policyOrchesSvc *logisticssvc.PolicyOrchestrationService,
 	rootCauseSvc *logisticssvc.TrackingRootCauseService,
 	interwarehouseSvc *logisticssvc.InterwarehouseAllocationService,
 	qualityAuditSvc *logisticssvc.QualityAuditReportService,
@@ -119,6 +123,8 @@ func NewHandler(
 		kpiSvc:            kpiSvc,
 		sloGuardSvc:       sloGuardSvc,
 		forecastSvc:       forecastSvc,
+		sandboxSvc:        sandboxSvc,
+		policyOrchesSvc:   policyOrchesSvc,
 		rootCauseSvc:      rootCauseSvc,
 		interwarehouseSvc: interwarehouseSvc,
 		qualityAuditSvc:   qualityAuditSvc,

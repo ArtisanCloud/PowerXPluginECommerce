@@ -582,6 +582,68 @@
 
 ---
 
+## Phase 19: Iteration-13 - 决策编排与运营韧性（Backlog）
+
+**Purpose**: 在 M12 预测与协同能力基础上，补齐“仿真 + 编排 + 画像 + 合规 + 资金风控 + 运维自治”，形成履约治理中台。
+
+### User Story 42 - 履约仿真沙盘（What-if）（P2）
+
+- [X] T261 [P] [US42] 增加履约仿真模型（场景参数、策略组合、仿真结果快照）（`backend/internal/entity/models/logistics/fulfillment_sandbox*.go`）
+- [X] T262 [US42] 实现履约仿真服务（时效/成本/异常率预测、策略对比）（`backend/internal/services/admin/logistics/fulfillment_sandbox_service.go`）
+- [X] T263 [US42] 实现履约仿真接口（场景保存、仿真执行、结果对比）（`backend/internal/transport/http/admin/logistics/{fulfillment_sandbox_handler.go,routes.go,dto.go}`）
+- [X] T264 [US42] 新增履约仿真页面（参数面板、对比图、推荐策略）（`web-admin/app/pages/shipping/sandbox.vue`）
+- [X] T265 [US42] 增加 US42 回归测试（仿真可重复性、策略差异可解释性、租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### User Story 43 - 履约策略编排中心（P2）
+
+- [X] T266 [P] [US43] 增加策略编排模型（规则流、优先级、冲突关系、版本）（`backend/internal/entity/models/logistics/policy_orchestration*.go`）
+- [X] T267 [US43] 实现策略编排服务（规则编排、冲突检测、灰度发布）（`backend/internal/services/admin/logistics/policy_orchestration_service.go`）
+- [X] T268 [US43] 实现策略编排接口（流程管理、冲突预检、发布回滚）（`backend/internal/transport/http/admin/logistics/{policy_orchestration_handler.go,routes.go,dto.go}`）
+- [X] T269 [US43] 新增策略编排页面（流程画布、冲突提示、发布面板）（`web-admin/app/pages/shipping/policy-orchestration.vue`）
+- [X] T270 [US43] 增加 US43 回归测试（冲突检测准确性、版本回滚、并发发布保护）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### User Story 44 - 承运商服务画像与淘汰机制（P2）
+
+- [ ] T271 [P] [US44] 增加承运商画像模型（稳定性得分、成本得分、服务评级、淘汰状态）（`backend/internal/entity/models/logistics/carrier_profile*.go`）
+- [ ] T272 [US44] 实现承运商画像服务（多维评分、趋势分析、淘汰建议）（`backend/internal/services/admin/logistics/carrier_profile_service.go`）
+- [ ] T273 [US44] 实现承运商画像接口（画像查询、评级确认、淘汰/恢复操作）（`backend/internal/transport/http/admin/logistics/{carrier_profile_handler.go,routes.go,dto.go}`）
+- [ ] T274 [US44] 在承运商页新增“服务画像”区块（评分雷达图、趋势、建议动作）（`web-admin/app/pages/shipping/carriers.vue`）
+- [ ] T275 [US44] 增加 US44 回归测试（评分稳定性、淘汰约束、跨租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### User Story 45 - 跨境合规知识库联动（P3）
+
+- [ ] T276 [P] [US45] 增加跨境合规知识库模型（政策版本、国家规则映射、生效窗口）（`backend/internal/entity/models/logistics/compliance_kb*.go`）
+- [ ] T277 [US45] 实现合规联动服务（政策差异比对、规则更新建议、灰度生效）（`backend/internal/services/admin/logistics/compliance_kb_service.go`）
+- [ ] T278 [US45] 实现合规联动接口（政策同步、差异查看、规则发布）（`backend/internal/transport/http/admin/logistics/{compliance_kb_handler.go,routes.go,dto.go}`）
+- [ ] T279 [US45] 在运单页跨境区块新增“合规版本”视图（版本对比、生效状态、影响提示）（`web-admin/app/pages/shipping/waybills.vue`）
+- [ ] T280 [US45] 增加 US45 回归测试（版本差异准确性、灰度范围控制、回滚安全）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### User Story 46 - 履约资金风险联动（P3）
+
+- [ ] T281 [P] [US46] 增加履约资金风险模型（赔付风险、拒付关联、止损动作、阈值）（`backend/internal/entity/models/logistics/fulfillment_finance_risk*.go`）
+- [ ] T282 [US46] 实现资金风险服务（风险评分、止损建议、处置闭环）（`backend/internal/services/admin/logistics/fulfillment_finance_risk_service.go`）
+- [ ] T283 [US46] 实现资金风险接口（风险查询、动作执行、处置审计）（`backend/internal/transport/http/admin/logistics/{fulfillment_finance_risk_handler.go,routes.go,dto.go}`）
+- [ ] T284 [US46] 在对账页新增“资金风险联动”区块（风险榜单、止损动作、处置记录）（`web-admin/app/pages/shipping/billing.vue`）
+- [ ] T285 [US46] 增加 US46 回归测试（风险评分边界、动作幂等、审计完整性）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### User Story 47 - 履约自动化运维中心（P2）
+
+- [ ] T286 [P] [US47] 增加运维自动化模型（重试策略、熔断策略、抑制规则、升级链路）（`backend/internal/entity/models/logistics/ops_automation*.go`）
+- [ ] T287 [US47] 实现运维自动化服务（告警抑制、自动恢复、值班升级）（`backend/internal/services/admin/logistics/ops_automation_service.go`）
+- [ ] T288 [US47] 实现运维自动化接口（规则管理、执行记录、手动接管）（`backend/internal/transport/http/admin/logistics/{ops_automation_handler.go,routes.go,dto.go}`）
+- [ ] T289 [US47] 在 SLA 页新增“运维中心”区块（告警态势、抑制命中、升级轨迹）（`web-admin/app/pages/shipping/sla.vue`）
+- [ ] T290 [US47] 增加 US47 回归测试（告警抑制准确性、自动恢复稳定性、接管权限控制）（`backend/internal/services/admin/logistics/*_test.go`）
+
+### Iteration-13 Polish
+
+- [ ] T291 [P] 更新 M13 quickstart 与执行记录模板（`specs/011-fulfillment-logistics/quickstart.md`）
+- [ ] T292 执行 M13 后端回归（`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment -count=1`）
+- [ ] T293 执行 M13 前端构建与页面回归（`make build-admin`）
+- [ ] T294 执行 M13 关键链路冒烟（US42/US43/US44 核心服务用例）（`go test ./internal/services/admin/logistics -run 'TestFulfillmentSandboxService_|TestPolicyOrchestrationService_|TestCarrierProfileService_' -count=1`）
+- [ ] T295 归档 M13 执行记录与验收结论（`specs/011-fulfillment-logistics/quickstart.md`）
+
+---
+
 ## Dependencies & Execution Order
 
 ### Phase Dependencies
@@ -610,6 +672,12 @@
 - **US39 (P2)**: 依赖 US31/US37 的异常与守卫能力，扩展为根因分析与处置建议
 - **US40 (P2)**: 依赖 US25/US30 的路由与仓配能力，扩展跨仓协同调拨
 - **US41 (P3)**: 依赖 US34-US40 的数据沉淀，扩展为质量审计与复盘报告
+- **US42 (P2)**: 依赖 US38-US41 的数据基座，扩展履约仿真与策略评估
+- **US43 (P2)**: 依赖 US37/US42 的策略与阈值能力，扩展统一编排中心
+- **US44 (P2)**: 依赖 US34/US39 的指标与异常数据，扩展承运商画像与淘汰机制
+- **US45 (P3)**: 依赖 US36 的清关规则能力，扩展跨境合规知识联动
+- **US46 (P3)**: 依赖 US35/US41 的对账与质量数据，扩展资金风险联动
+- **US47 (P2)**: 依赖 US37/US39 的稳定性与异常能力，扩展自动化运维中心
 
 ### Within Each User Story
 

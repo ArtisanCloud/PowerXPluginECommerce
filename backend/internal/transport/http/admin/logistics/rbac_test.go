@@ -239,6 +239,33 @@ func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 	if forecastPerm.Resource != "com.powerx.plugins.ecommerce:logistics.capacity_forecast" {
 		t.Fatalf("unexpected resource %s", forecastPerm.Resource)
 	}
+	sandboxKey := "GET:/api/v1/admin/logistics/sandbox/scenarios"
+	sandboxPerm, ok := entries[sandboxKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", sandboxKey)
+	}
+	if sandboxPerm.Resource != "com.powerx.plugins.ecommerce:logistics.fulfillment_sandbox" {
+		t.Fatalf("unexpected resource %s", sandboxPerm.Resource)
+	}
+	policyFlowListKey := "GET:/api/v1/admin/logistics/policy-orchestration/flows"
+	policyFlowListPerm, ok := entries[policyFlowListKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", policyFlowListKey)
+	}
+	if policyFlowListPerm.Action != "read" {
+		t.Fatalf("expected read action, got %s", policyFlowListPerm.Action)
+	}
+	if policyFlowListPerm.Resource != "com.powerx.plugins.ecommerce:logistics.policy_orchestration" {
+		t.Fatalf("unexpected resource %s", policyFlowListPerm.Resource)
+	}
+	policyPublishKey := "POST:/api/v1/admin/logistics/policy-orchestration/flows/:id/publish"
+	policyPublishPerm, ok := entries[policyPublishKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", policyPublishKey)
+	}
+	if policyPublishPerm.Action != "manage" {
+		t.Fatalf("expected manage action, got %s", policyPublishPerm.Action)
+	}
 	interCandidateKey := "GET:/api/v1/admin/logistics/allocation/interwarehouse/candidates"
 	interCandidatePerm, ok := entries[interCandidateKey]
 	if !ok {

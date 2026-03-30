@@ -470,6 +470,68 @@ type applyCapacityForecastRequest struct {
 	OperatorID string `json:"operator_id,omitempty"`
 }
 
+type upsertFulfillmentSandboxScenarioRequest struct {
+	ID              string         `json:"id,omitempty"`
+	Name            string         `json:"name"`
+	CarrierID       string         `json:"carrier_id,omitempty"`
+	WarehouseID     string         `json:"warehouse_id,omitempty"`
+	DestinationZone string         `json:"destination_zone,omitempty"`
+	BaselineConfig  map[string]any `json:"baseline_config,omitempty"`
+	StrategyConfig  map[string]any `json:"strategy_config,omitempty"`
+	Status          string         `json:"status,omitempty"`
+	Description     string         `json:"description,omitempty"`
+	OperatorID      string         `json:"operator_id,omitempty"`
+}
+
+type runFulfillmentSandboxRequest struct {
+	ScenarioID string `json:"scenario_id"`
+	WindowDays int    `json:"window_days,omitempty"`
+	Strategy   string `json:"strategy,omitempty"`
+	RequestKey string `json:"request_key,omitempty"`
+	OperatorID string `json:"operator_id,omitempty"`
+}
+
+type compareFulfillmentSandboxRequest struct {
+	BaselineRunID  string `json:"baseline_run_id"`
+	CandidateRunID string `json:"candidate_run_id"`
+}
+
+type upsertPolicyOrchestrationFlowRequest struct {
+	ID                string         `json:"id,omitempty"`
+	Name              string         `json:"name"`
+	Priority          int            `json:"priority,omitempty"`
+	Status            string         `json:"status,omitempty"`
+	FlowDefinition    map[string]any `json:"flow_definition,omitempty"`
+	ConflictRelations []string       `json:"conflict_relations,omitempty"`
+	GrayReleaseConfig map[string]any `json:"gray_release_config,omitempty"`
+	Description       string         `json:"description,omitempty"`
+	OperatorID        string         `json:"operator_id,omitempty"`
+}
+
+type previewPolicyOrchestrationConflictsRequest struct {
+	FlowID            string         `json:"flow_id,omitempty"`
+	Name              string         `json:"name,omitempty"`
+	ConflictRelations []string       `json:"conflict_relations,omitempty"`
+	FlowDefinition    map[string]any `json:"flow_definition,omitempty"`
+	GrayReleaseConfig map[string]any `json:"gray_release_config,omitempty"`
+}
+
+type publishPolicyOrchestrationFlowRequest struct {
+	FlowID          string         `json:"flow_id,omitempty"`
+	RequestKey      string         `json:"request_key,omitempty"`
+	Force           bool           `json:"force,omitempty"`
+	ChangeSummary   string         `json:"change_summary,omitempty"`
+	GrayReleasePlan map[string]any `json:"gray_release_plan,omitempty"`
+	OperatorID      string         `json:"operator_id,omitempty"`
+}
+
+type rollbackPolicyOrchestrationFlowRequest struct {
+	FlowID          string `json:"flow_id,omitempty"`
+	TargetVersionID string `json:"target_version_id"`
+	Reason          string `json:"reason,omitempty"`
+	OperatorID      string `json:"operator_id,omitempty"`
+}
+
 type generateQualityAuditReportRequest struct {
 	CarrierID        string `json:"carrier_id,omitempty"`
 	WarehouseID      string `json:"warehouse_id,omitempty"`

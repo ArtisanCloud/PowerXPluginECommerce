@@ -202,6 +202,45 @@ func RBACEntries(prefix string) map[string]AuthX.Permission {
 		"POST:" + base + "/allocation/forecasts/:id/apply": {
 			Resource: res("logistics.capacity_forecast"), Action: "manage",
 		},
+		"GET:" + base + "/sandbox/scenarios": {
+			Resource: res("logistics.fulfillment_sandbox"), Action: "read",
+		},
+		"POST:" + base + "/sandbox/scenarios": {
+			Resource: res("logistics.fulfillment_sandbox"), Action: "manage",
+		},
+		"PATCH:" + base + "/sandbox/scenarios/:id": {
+			Resource: res("logistics.fulfillment_sandbox"), Action: "manage",
+		},
+		"GET:" + base + "/sandbox/runs": {
+			Resource: res("logistics.fulfillment_sandbox"), Action: "read",
+		},
+		"POST:" + base + "/sandbox/run": {
+			Resource: res("logistics.fulfillment_sandbox"), Action: "manage",
+		},
+		"POST:" + base + "/sandbox/compare": {
+			Resource: res("logistics.fulfillment_sandbox"), Action: "read",
+		},
+		"GET:" + base + "/policy-orchestration/flows": {
+			Resource: res("logistics.policy_orchestration"), Action: "read",
+		},
+		"POST:" + base + "/policy-orchestration/flows": {
+			Resource: res("logistics.policy_orchestration"), Action: "manage",
+		},
+		"PATCH:" + base + "/policy-orchestration/flows/:id": {
+			Resource: res("logistics.policy_orchestration"), Action: "manage",
+		},
+		"GET:" + base + "/policy-orchestration/flows/:id/versions": {
+			Resource: res("logistics.policy_orchestration"), Action: "read",
+		},
+		"POST:" + base + "/policy-orchestration/conflicts/preview": {
+			Resource: res("logistics.policy_orchestration"), Action: "read",
+		},
+		"POST:" + base + "/policy-orchestration/flows/:id/publish": {
+			Resource: res("logistics.policy_orchestration"), Action: "manage",
+		},
+		"POST:" + base + "/policy-orchestration/flows/:id/rollback": {
+			Resource: res("logistics.policy_orchestration"), Action: "manage",
+		},
 		"GET:" + base + "/allocation/interwarehouse/candidates": {
 			Resource: res("logistics.interwarehouse"), Action: "read",
 		},
