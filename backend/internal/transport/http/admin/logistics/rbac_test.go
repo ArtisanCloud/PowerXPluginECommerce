@@ -108,6 +108,26 @@ func TestRBACEntries_LogisticsRoutes(t *testing.T) {
 		t.Fatalf("unexpected resource %s", syncTrackPerm.Resource)
 	}
 
+	profileListKey := "GET:/api/v1/admin/logistics/carriers/profiles"
+	profileListPerm, ok := entries[profileListKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", profileListKey)
+	}
+	if profileListPerm.Action != "read" {
+		t.Fatalf("expected read action, got %s", profileListPerm.Action)
+	}
+	if profileListPerm.Resource != "com.powerx.plugins.ecommerce:logistics.carrier_profile" {
+		t.Fatalf("unexpected resource %s", profileListPerm.Resource)
+	}
+	profileRetireKey := "POST:/api/v1/admin/logistics/carriers/profiles/:id/retire"
+	profileRetirePerm, ok := entries[profileRetireKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", profileRetireKey)
+	}
+	if profileRetirePerm.Action != "manage" {
+		t.Fatalf("expected manage action, got %s", profileRetirePerm.Action)
+	}
+
 	riskKey := "POST:/api/v1/admin/logistics/risk/hits/:id/release"
 	riskPerm, ok := entries[riskKey]
 	if !ok {

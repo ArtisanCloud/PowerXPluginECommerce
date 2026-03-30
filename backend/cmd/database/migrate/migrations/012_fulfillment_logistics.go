@@ -10,6 +10,7 @@ import (
 var FulfillmentLogisticsTables = []interface{}{
 	&LogisticsModel.Carrier{},
 	&LogisticsModel.CarrierService{},
+	&LogisticsModel.CarrierProfile{},
 	&LogisticsModel.RateTemplate{},
 	&LogisticsModel.RateZone{},
 	&LogisticsModel.RoutingRule{},

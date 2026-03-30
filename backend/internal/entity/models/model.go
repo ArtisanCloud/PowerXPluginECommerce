@@ -159,6 +159,7 @@ const (
 	// Fulfillment & Logistics
 	TableLogisticsCarriers                       = "logistics_carriers"
 	TableLogisticsCarrierServices                = "logistics_carrier_services"
+	TableLogisticsCarrierProfiles                = "logistics_carrier_profiles"
 	TableLogisticsRateTemplates                  = "logistics_rate_templates"
 	TableLogisticsRateZones                      = "logistics_rate_zones"
 	TableLogisticsRoutingRules                   = "logistics_routing_rules"

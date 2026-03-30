@@ -604,11 +604,11 @@
 
 ### User Story 44 - 承运商服务画像与淘汰机制（P2）
 
-- [ ] T271 [P] [US44] 增加承运商画像模型（稳定性得分、成本得分、服务评级、淘汰状态）（`backend/internal/entity/models/logistics/carrier_profile*.go`）
-- [ ] T272 [US44] 实现承运商画像服务（多维评分、趋势分析、淘汰建议）（`backend/internal/services/admin/logistics/carrier_profile_service.go`）
-- [ ] T273 [US44] 实现承运商画像接口（画像查询、评级确认、淘汰/恢复操作）（`backend/internal/transport/http/admin/logistics/{carrier_profile_handler.go,routes.go,dto.go}`）
-- [ ] T274 [US44] 在承运商页新增“服务画像”区块（评分雷达图、趋势、建议动作）（`web-admin/app/pages/shipping/carriers.vue`）
-- [ ] T275 [US44] 增加 US44 回归测试（评分稳定性、淘汰约束、跨租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
+- [X] T271 [P] [US44] 增加承运商画像模型（稳定性得分、成本得分、服务评级、淘汰状态）（`backend/internal/entity/models/logistics/carrier_profile*.go`）
+- [X] T272 [US44] 实现承运商画像服务（多维评分、趋势分析、淘汰建议）（`backend/internal/services/admin/logistics/carrier_profile_service.go`）
+- [X] T273 [US44] 实现承运商画像接口（画像查询、评级确认、淘汰/恢复操作）（`backend/internal/transport/http/admin/logistics/{carrier_profile_handler.go,routes.go,dto.go}`）
+- [X] T274 [US44] 在承运商页新增“服务画像”区块（评分雷达图、趋势、建议动作）（`web-admin/app/pages/shipping/carriers.vue`）
+- [X] T275 [US44] 增加 US44 回归测试（评分稳定性、淘汰约束、跨租户隔离）（`backend/internal/services/admin/logistics/*_test.go`）
 
 ### User Story 45 - 跨境合规知识库联动（P3）
 

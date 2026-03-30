@@ -58,6 +58,81 @@
 
     <UCard>
       <template #header>
+        <div class="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">服务画像</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400">稳定性/成本综合评分、趋势和淘汰建议。</p>
+          </div>
+          <UButton
+            size="sm"
+            color="primary"
+            icon="i-heroicons-arrow-path"
+            :loading="evaluatingProfiles"
+            @click="evaluateProfiles()"
+          >
+            重新评估
+          </UButton>
+        </div>
+      </template>
+      <div class="grid gap-3 md:grid-cols-3">
+        <div class="rounded border border-gray-200 p-3 dark:border-gray-800">
+          <p class="text-xs text-gray-500">画像总数</p>
+          <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ profileSummary.total }}</p>
+        </div>
+        <div class="rounded border border-gray-200 p-3 dark:border-gray-800">
+          <p class="text-xs text-gray-500">平均综合分</p>
+          <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ profileSummary.avgComposite }}</p>
+        </div>
+        <div class="rounded border border-gray-200 p-3 dark:border-gray-800">
+          <p class="text-xs text-gray-500">已淘汰承运商</p>
+          <p class="text-2xl font-semibold text-gray-900 dark:text-white">{{ profileSummary.retired }}</p>
+        </div>
+      </div>
+      <div class="mt-4 space-y-3">
+        <div
+          v-for="item in topCarrierProfiles"
+          :key="item.id"
+          class="rounded border border-gray-200 p-3 dark:border-gray-800"
+        >
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="text-sm font-medium text-gray-900 dark:text-white">
+              {{ item.carrierName }}
+            </div>
+            <div class="flex items-center gap-2">
+              <UBadge :color="profileRatingMeta(item.serviceRating).color" variant="soft">
+                评级 {{ item.serviceRating || "-" }}
+              </UBadge>
+              <UBadge :color="profileStatusMeta(item.status).color" variant="subtle">
+                {{ profileStatusMeta(item.status).label }}
+              </UBadge>
+            </div>
+          </div>
+          <div class="mt-2 grid gap-2 md:grid-cols-3">
+            <div>
+              <p class="text-xs text-gray-500">稳定性 {{ item.stabilityScore.toFixed(1) }}</p>
+              <UProgress :value="item.stabilityScore" size="xs" />
+            </div>
+            <div>
+              <p class="text-xs text-gray-500">成本得分 {{ item.costScore.toFixed(1) }}</p>
+              <UProgress :value="item.costScore" size="xs" />
+            </div>
+            <div>
+              <p class="text-xs text-gray-500">综合得分 {{ item.compositeScore.toFixed(1) }}</p>
+              <UProgress :value="item.compositeScore" size="xs" />
+            </div>
+          </div>
+          <p class="mt-2 text-xs text-gray-500">
+            趋势：{{ formatProfileTrend(item.scoreTrend) }}；建议：{{ item.suggestion || "-" }}
+          </p>
+        </div>
+        <div v-if="!topCarrierProfiles.length" class="text-sm text-gray-500">
+          暂无画像数据，请先执行“重新评估”。
+        </div>
+      </div>
+    </UCard>
+
+    <UCard>
+      <template #header>
         <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
             <h3 class="text-lg font-semibold text-gray-900 dark:text-white">承运商列表</h3>
@@ -105,6 +180,35 @@
         </template>
         <template #actions-cell="{ row }">
           <div class="flex gap-2">
+            <UButton
+              size="xs"
+              variant="ghost"
+              color="primary"
+              :loading="Boolean(profileActionLoading[row.original.id])"
+              @click="confirmCarrierProfile(row.original)"
+            >
+              确认评级
+            </UButton>
+            <UButton
+              v-if="getCarrierProfile(row.original.id)?.status !== 'retired'"
+              size="xs"
+              variant="ghost"
+              color="warning"
+              :loading="Boolean(profileActionLoading[row.original.id])"
+              @click="retireCarrierProfile(row.original)"
+            >
+              淘汰
+            </UButton>
+            <UButton
+              v-if="getCarrierProfile(row.original.id)?.status === 'retired'"
+              size="xs"
+              variant="ghost"
+              color="success"
+              :loading="Boolean(profileActionLoading[row.original.id])"
+              @click="restoreCarrierProfile(row.original)"
+            >
+              恢复
+            </UButton>
             <UButton size="xs" variant="ghost" color="neutral" @click="openRoutingPreview(row.original)">
               联合路由仿真
             </UButton>
@@ -153,6 +257,7 @@
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
 import { useLogisticsApi } from "~/composables/api";
+import type { LogisticsCarrierProfile } from "~/composables/api/useLogistics";
 
 definePageMeta({
   name: "shipping-carriers",
@@ -178,9 +283,13 @@ type Carrier = {
 };
 
 const logisticsApi = useLogisticsApi();
+const toast = useToast();
 const carriers = ref<Carrier[]>([]);
+const carrierProfiles = ref<LogisticsCarrierProfile[]>([]);
 const capacityPlans = ref<any[]>([]);
 const planSubmitting = ref(false);
+const evaluatingProfiles = ref(false);
+const profileActionLoading = ref<Record<string, boolean>>({});
 const routingPreviewOpen = ref(false);
 const routingPreviewLoading = ref(false);
 const routingPreviewResult = ref<any>(null);
@@ -237,6 +346,10 @@ const loadCarriers = async () => {
     };
   });
   capacityPlans.value = await logisticsApi.listAllocationPlans({ limit: 50 });
+  await loadCarrierProfiles();
+  if (!carrierProfiles.value.length && carriers.value.length) {
+    await evaluateProfiles(undefined, true);
+  }
 };
 
 onMounted(() => {
@@ -258,6 +371,117 @@ const createCapacityPlan = async () => {
   } finally {
     planSubmitting.value = false;
   }
+};
+
+const loadCarrierProfiles = async () => {
+  carrierProfiles.value = await logisticsApi.listCarrierProfiles({ limit: 200 });
+};
+
+const evaluateProfiles = async (carrierId?: string, silent = false) => {
+  evaluatingProfiles.value = true;
+  try {
+    carrierProfiles.value = await logisticsApi.evaluateCarrierProfiles({
+      carrier_id: carrierId || undefined,
+      operator_id: "admin",
+    });
+    if (!silent) {
+      toast.add({ title: "画像评估完成", color: "success" });
+    }
+  } catch (error: any) {
+    if (!silent) {
+      toast.add({ title: "画像评估失败", description: String(error?.message || error), color: "error" });
+    }
+  } finally {
+    evaluatingProfiles.value = false;
+  }
+};
+
+const getCarrierProfile = (carrierId: string) =>
+  carrierProfiles.value.find((item) => item.carrierId === carrierId);
+
+const withProfileAction = async (carrierId: string, cb: () => Promise<void>) => {
+  profileActionLoading.value = { ...profileActionLoading.value, [carrierId]: true };
+  try {
+    await cb();
+  } finally {
+    profileActionLoading.value = { ...profileActionLoading.value, [carrierId]: false };
+  }
+};
+
+const defaultRatingByCarrier = (carrier: Carrier): string => {
+  if (carrier.rating >= 4.5) return "A";
+  if (carrier.rating >= 4) return "B";
+  if (carrier.rating >= 3) return "C";
+  return "D";
+};
+
+const ensureCarrierProfile = async (carrier: Carrier): Promise<LogisticsCarrierProfile | null> => {
+  let profile = getCarrierProfile(carrier.id);
+  if (profile) return profile;
+  await evaluateProfiles(carrier.id, true);
+  profile = getCarrierProfile(carrier.id);
+  return profile || null;
+};
+
+const confirmCarrierProfile = async (carrier: Carrier) => {
+  await withProfileAction(carrier.id, async () => {
+    const profile = await ensureCarrierProfile(carrier);
+    if (!profile) {
+      toast.add({ title: "未找到画像", color: "warning" });
+      return;
+    }
+    await logisticsApi.confirmCarrierProfileRating(profile.id, {
+      rating: profile.serviceRating || defaultRatingByCarrier(carrier),
+      operator_id: "admin",
+    });
+    await loadCarrierProfiles();
+    toast.add({ title: "评级已确认", color: "success" });
+  });
+};
+
+const retireCarrierProfile = async (carrier: Carrier) => {
+  await withProfileAction(carrier.id, async () => {
+    const profile = await ensureCarrierProfile(carrier);
+    if (!profile) {
+      toast.add({ title: "未找到画像", color: "warning" });
+      return;
+    }
+    try {
+      await logisticsApi.retireCarrierProfile(profile.id, {
+        reason: "manual-retire",
+        operator_id: "admin",
+      });
+    } catch (error: any) {
+      if (String(error?.message || "").includes("without force")) {
+        await logisticsApi.retireCarrierProfile(profile.id, {
+          reason: "manual-retire-force",
+          force: true,
+          operator_id: "admin",
+        });
+      } else {
+        throw error;
+      }
+    }
+    await loadCarrierProfiles();
+    toast.add({ title: "已执行淘汰", color: "success" });
+  }).catch((error: any) => {
+    toast.add({ title: "淘汰失败", description: String(error?.message || error), color: "error" });
+  });
+};
+
+const restoreCarrierProfile = async (carrier: Carrier) => {
+  await withProfileAction(carrier.id, async () => {
+    const profile = await ensureCarrierProfile(carrier);
+    if (!profile) {
+      toast.add({ title: "未找到画像", color: "warning" });
+      return;
+    }
+    await logisticsApi.restoreCarrierProfile(profile.id, { operator_id: "admin" });
+    await loadCarrierProfiles();
+    toast.add({ title: "已恢复合作", color: "success" });
+  }).catch((error: any) => {
+    toast.add({ title: "恢复失败", description: String(error?.message || error), color: "error" });
+  });
 };
 
 const statusOptions = [
@@ -395,4 +619,49 @@ const summaryCards = computed(() => {
     },
   ];
 });
+
+const topCarrierProfiles = computed(() => {
+  const carrierNameMap = new Map(carriers.value.map((item) => [item.id, item.name]));
+  return [...carrierProfiles.value]
+    .sort((a, b) => b.compositeScore - a.compositeScore)
+    .slice(0, 6)
+    .map((item) => ({
+      ...item,
+      carrierName: carrierNameMap.get(item.carrierId) || item.carrierId,
+    }));
+});
+
+const profileSummary = computed(() => {
+  const total = carrierProfiles.value.length;
+  const avgComposite =
+    total > 0
+      ? (carrierProfiles.value.reduce((sum, item) => sum + Number(item.compositeScore || 0), 0) / total).toFixed(1)
+      : "0.0";
+  return {
+    total,
+    avgComposite,
+    retired: carrierProfiles.value.filter((item) => item.status === "retired").length,
+  };
+});
+
+const formatProfileTrend = (trend: number[]) => {
+  const data = Array.isArray(trend) ? trend.slice(-5) : [];
+  if (!data.length) return "-";
+  return data.map((v) => Number(v || 0).toFixed(1)).join(" → ");
+};
+
+const profileStatusMeta = (status: string) => {
+  const v = String(status || "").toLowerCase();
+  if (v === "retired") return { label: "已淘汰", color: "error" as const };
+  if (v === "monitor") return { label: "观察中", color: "warning" as const };
+  return { label: "合作中", color: "success" as const };
+};
+
+const profileRatingMeta = (rating: string) => {
+  const v = String(rating || "").toUpperCase();
+  if (v === "A") return { color: "success" as const };
+  if (v === "B") return { color: "primary" as const };
+  if (v === "C") return { color: "warning" as const };
+  return { color: "error" as const };
+};
 </script>

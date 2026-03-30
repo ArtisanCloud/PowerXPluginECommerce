@@ -12,6 +12,26 @@ type upsertCarrierRequest struct {
 	Config       map[string]any `json:"config,omitempty"`
 }
 
+type evaluateCarrierProfilesRequest struct {
+	CarrierID  string `json:"carrier_id,omitempty"`
+	OperatorID string `json:"operator_id,omitempty"`
+}
+
+type confirmCarrierProfileRatingRequest struct {
+	Rating     string `json:"rating"`
+	OperatorID string `json:"operator_id,omitempty"`
+}
+
+type retireCarrierProfileRequest struct {
+	Reason     string `json:"reason,omitempty"`
+	Force      bool   `json:"force,omitempty"`
+	OperatorID string `json:"operator_id,omitempty"`
+}
+
+type restoreCarrierProfileRequest struct {
+	OperatorID string `json:"operator_id,omitempty"`
+}
+
 type upsertRateTemplateRequest struct {
 	ID       string         `json:"id,omitempty"`
 	Name     string         `json:"name"`

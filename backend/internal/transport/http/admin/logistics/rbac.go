@@ -13,10 +13,21 @@ func RBACEntries(prefix string) map[string]AuthX.Permission {
 		return "com.powerx.plugins.ecommerce:" + suffix
 	}
 	return map[string]AuthX.Permission{
-		"GET:" + base + "/carriers":                      {Resource: res("logistics.carrier"), Action: "read"},
-		"POST:" + base + "/carriers":                     {Resource: res("logistics.carrier"), Action: "manage"},
-		"PATCH:" + base + "/carriers/:id":                {Resource: res("logistics.carrier"), Action: "manage"},
-		"POST:" + base + "/carriers/:id/test":            {Resource: res("logistics.carrier"), Action: "manage"},
+		"GET:" + base + "/carriers":                    {Resource: res("logistics.carrier"), Action: "read"},
+		"POST:" + base + "/carriers":                   {Resource: res("logistics.carrier"), Action: "manage"},
+		"PATCH:" + base + "/carriers/:id":              {Resource: res("logistics.carrier"), Action: "manage"},
+		"POST:" + base + "/carriers/:id/test":          {Resource: res("logistics.carrier"), Action: "manage"},
+		"GET:" + base + "/carriers/profiles":           {Resource: res("logistics.carrier_profile"), Action: "read"},
+		"POST:" + base + "/carriers/profiles/evaluate": {Resource: res("logistics.carrier_profile"), Action: "manage"},
+		"POST:" + base + "/carriers/profiles/:id/confirm-rating": {
+			Resource: res("logistics.carrier_profile"), Action: "manage",
+		},
+		"POST:" + base + "/carriers/profiles/:id/retire": {
+			Resource: res("logistics.carrier_profile"), Action: "manage",
+		},
+		"POST:" + base + "/carriers/profiles/:id/restore": {
+			Resource: res("logistics.carrier_profile"), Action: "manage",
+		},
 		"GET:" + base + "/templates":                     {Resource: res("logistics.template"), Action: "read"},
 		"POST:" + base + "/templates":                    {Resource: res("logistics.template"), Action: "manage"},
 		"PATCH:" + base + "/templates/:id":               {Resource: res("logistics.template"), Action: "manage"},

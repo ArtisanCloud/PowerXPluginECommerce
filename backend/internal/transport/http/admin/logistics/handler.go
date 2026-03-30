@@ -14,6 +14,7 @@ import (
 
 type Handler struct {
 	carrierSvc        *logisticssvc.CarrierService
+	carrierProfileSvc *logisticssvc.CarrierProfileService
 	rateSvc           *logisticssvc.RateTemplateService
 	quoteSvc          *logisticssvc.RateQuoteService
 	waybillSvc        *logisticssvc.WaybillService
@@ -54,6 +55,7 @@ type Handler struct {
 
 func NewHandler(
 	carrierSvc *logisticssvc.CarrierService,
+	carrierProfileSvc *logisticssvc.CarrierProfileService,
 	rateSvc *logisticssvc.RateTemplateService,
 	quoteSvc *logisticssvc.RateQuoteService,
 	waybillSvc *logisticssvc.WaybillService,
@@ -93,6 +95,7 @@ func NewHandler(
 ) *Handler {
 	return &Handler{
 		carrierSvc:        carrierSvc,
+		carrierProfileSvc: carrierProfileSvc,
 		rateSvc:           rateSvc,
 		quoteSvc:          quoteSvc,
 		waybillSvc:        waybillSvc,

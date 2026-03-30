@@ -35,6 +35,24 @@ export type LogisticsCarrier = {
   updatedAt: string;
 };
 
+export type LogisticsCarrierProfile = {
+  id: string;
+  carrierId: string;
+  stabilityScore: number;
+  costScore: number;
+  compositeScore: number;
+  serviceRating: string;
+  status: string;
+  retireReason: string;
+  scoreTrend: number[];
+  suggestion: string;
+  confirmedBy: string;
+  confirmedAt: string;
+  evaluatedAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export type LogisticsTemplate = {
   id: string;
   name: string;
@@ -1187,6 +1205,24 @@ const normalizeCarrier = (raw: RawRecord): LogisticsCarrier => ({
   updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
 });
 
+const normalizeCarrierProfile = (raw: RawRecord): LogisticsCarrierProfile => ({
+  id: String(pick(raw, "id", "id") || ""),
+  carrierId: String(pick(raw, "carrierId", "carrier_id") || ""),
+  stabilityScore: Number(pick(raw, "stabilityScore", "stability_score") || 0),
+  costScore: Number(pick(raw, "costScore", "cost_score") || 0),
+  compositeScore: Number(pick(raw, "compositeScore", "composite_score") || 0),
+  serviceRating: String(pick(raw, "serviceRating", "service_rating") || ""),
+  status: String(pick(raw, "status", "status") || "active"),
+  retireReason: String(pick(raw, "retireReason", "retire_reason") || ""),
+  scoreTrend: asArray<number>(pick(raw, "scoreTrend", "score_trend") || []),
+  suggestion: String(pick(raw, "suggestion", "suggestion") || ""),
+  confirmedBy: String(pick(raw, "confirmedBy", "confirmed_by") || ""),
+  confirmedAt: String(pick(raw, "confirmedAt", "confirmed_at") || ""),
+  evaluatedAt: String(pick(raw, "evaluatedAt", "evaluated_at") || ""),
+  createdAt: String(pick(raw, "createdAt", "created_at") || ""),
+  updatedAt: String(pick(raw, "updatedAt", "updated_at") || ""),
+});
+
 const normalizeTemplate = (raw: RawRecord): LogisticsTemplate => ({
   id: String(pick(raw, "id", "id") || ""),
   name: String(pick(raw, "name", "name") || ""),
@@ -2317,6 +2353,52 @@ export function useLogisticsApi() {
 
     testCarrier: (id: string, init?: any) =>
       unwrap(apiPost<ApiEnvelope<{ carrier_id: string; reachable: boolean; message: string }>>(`${basePath}/carriers/${id}/test`, {}, init)),
+
+    listCarrierProfiles: async (query?: { status?: string; limit?: number }, init?: any): Promise<LogisticsCarrierProfile[]> => {
+      const raw = await unwrap(
+        apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/carriers/profiles`, query, init),
+      );
+      return asArray<RawRecord>(raw?.items).map(normalizeCarrierProfile);
+    },
+
+    evaluateCarrierProfiles: async (
+      payload?: { carrier_id?: string; operator_id?: string },
+      init?: any,
+    ): Promise<LogisticsCarrierProfile[]> => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/carriers/profiles/evaluate`, payload || {}, init),
+      );
+      return asArray<RawRecord>(raw?.items).map(normalizeCarrierProfile);
+    },
+
+    confirmCarrierProfileRating: async (
+      id: string,
+      payload: { rating: string; operator_id?: string },
+      init?: any,
+    ): Promise<LogisticsCarrierProfile> => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<RawRecord>>(`${basePath}/carriers/profiles/${id}/confirm-rating`, payload, init),
+      );
+      return normalizeCarrierProfile((raw || {}) as RawRecord);
+    },
+
+    retireCarrierProfile: async (
+      id: string,
+      payload?: { reason?: string; force?: boolean; operator_id?: string },
+      init?: any,
+    ): Promise<LogisticsCarrierProfile> => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<RawRecord>>(`${basePath}/carriers/profiles/${id}/retire`, payload || {}, init),
+      );
+      return normalizeCarrierProfile((raw || {}) as RawRecord);
+    },
+
+    restoreCarrierProfile: async (id: string, payload?: { operator_id?: string }, init?: any): Promise<LogisticsCarrierProfile> => {
+      const raw = await unwrap(
+        apiPost<ApiEnvelope<RawRecord>>(`${basePath}/carriers/profiles/${id}/restore`, payload || {}, init),
+      );
+      return normalizeCarrierProfile((raw || {}) as RawRecord);
+    },
 
     listTemplates: async (init?: any) => {
       const raw = await unwrap(apiGet<ApiEnvelope<{ items: RawRecord[] }>>(`${basePath}/templates`, undefined, init));
