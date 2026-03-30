@@ -636,11 +636,11 @@
 
 ### Iteration-13 Polish
 
-- [ ] T291 [P] 更新 M13 quickstart 与执行记录模板（`specs/011-fulfillment-logistics/quickstart.md`）
-- [ ] T292 执行 M13 后端回归（`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment -count=1`）
-- [ ] T293 执行 M13 前端构建与页面回归（`make build-admin`）
-- [ ] T294 执行 M13 关键链路冒烟（US42/US43/US44 核心服务用例）（`go test ./internal/services/admin/logistics -run 'TestFulfillmentSandboxService_|TestPolicyOrchestrationService_|TestCarrierProfileService_' -count=1`）
-- [ ] T295 归档 M13 执行记录与验收结论（`specs/011-fulfillment-logistics/quickstart.md`）
+- [X] T291 [P] 更新 M13 quickstart 与执行记录模板（`specs/011-fulfillment-logistics/quickstart.md`）
+- [X] T292 执行 M13 后端回归（`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment -count=1`）
+- [X] T293 执行 M13 前端构建与页面回归（`make build-admin`）
+- [X] T294 执行 M13 关键链路冒烟（US42/US43/US44 核心服务用例）（`go test ./internal/services/admin/logistics -run 'TestFulfillmentSandboxService_|TestPolicyOrchestrationService_|TestCarrierProfileService_' -count=1`）
+- [X] T295 归档 M13 执行记录与验收结论（`specs/011-fulfillment-logistics/quickstart.md`）
 
 ---
 

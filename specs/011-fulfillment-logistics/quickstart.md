@@ -589,3 +589,73 @@
 ### 32.5 T260 M12 执行记录归档
 - 已将 T256-T259 的执行结果归档到本节。
 - 当前结论：M12 代码与构建层面回归通过，可进入联调环境执行真实数据抽样验收。
+
+## 33. M13 验证（资金风险联动 + 自动化运维中心）
+1. 打开 `shipping/billing` 页面，执行“资金风险联动”评估，确认风险榜单生成并展示风险等级/止损建议。
+2. 在风险榜单对高风险单执行“冻结结算/暂停赔付/人工复核/解除”，确认动作幂等与审计记录可查询。
+3. 打开 `shipping/sla` 页面，进入“履约自动化运维中心”，创建策略并执行评估。
+4. 校验运维评估结果中的抑制命中、自动恢复、升级链路统计与运行记录一致。
+5. 对运维运行记录执行“手动接管”，校验 `operator_id` 必填与接管留痕。
+6. 执行关键链路冒烟（US42/US43/US44）回归用例，确认沙盘、策略编排、承运商画像能力不回退。
+
+预期结果：
+- 资金风险联动形成“评估 → 止损动作 → 审计追踪”闭环。
+- 运维中心形成“策略管理 → 自动评估 → 手动接管”闭环。
+- US42/US43/US44 关键链路在新增能力后保持稳定。
+
+## 34. Iteration-13 执行记录模板（可直接复制）
+```md
+### 34.1 T291 M13 quickstart 与模板更新
+- 变更文件：`specs/011-fulfillment-logistics/quickstart.md`
+- 覆盖范围：US46-US47 验证步骤、M13 发布前检查项
+- 结果：通过/待补充
+
+### 34.2 T292 M13 后端回归
+- 执行命令：`go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment -count=1`
+- 结果：通过/失败（附失败包与错误）
+
+### 34.3 T293 M13 前端构建与页面回归
+- 执行命令：`make build-admin`
+- 结果：通过/失败
+- 页面回归：`shipping/billing`、`shipping/sla`
+
+### 34.4 T294 M13 关键链路冒烟
+- 执行命令：`go test ./internal/services/admin/logistics -run 'TestFulfillmentSandboxService_|TestPolicyOrchestrationService_|TestCarrierProfileService_' -count=1`
+- 场景：履约沙盘、策略编排、承运商画像
+- 结果：通过/失败（附失败用例与日志）
+
+### 34.5 T295 M13 执行记录归档
+- 变更文件：`specs/011-fulfillment-logistics/quickstart.md`
+- 归档范围：T291-T294 执行结果、页面回归范围、风险与后续动作
+- 结果：通过/待补充
+```
+
+## 35. Iteration-13 执行记录（2026-03-30）
+### 35.1 T291 M13 quickstart 与模板更新
+- 已补齐 M13 验证章节（第 33 节）与 Iteration-13 执行记录模板（第 34 节）。
+- 覆盖范围：US46-US47（资金风险联动、履约自动化运维中心）。
+
+### 35.2 T292 M13 后端回归
+- 执行命令：  
+  `cd backend && GOCACHE=$PWD/.gocache GOMODCACHE=$PWD/.gomodcache go test ./internal/services/admin/logistics ./internal/services/admin/fulfillment ./internal/transport/http/admin/logistics ./internal/transport/http/admin/fulfillment -count=1`
+- 结果：**通过**（4 个目标包全部通过）。
+
+### 35.3 T293 M13 前端构建与页面回归
+- 执行命令：`make build-admin`
+- 结果：**通过**（存在既有 Rollup circular/chunk warnings 与大 chunk 提示，不阻塞产物输出）。
+- 页面范围：
+  - `shipping/billing`（资金风险联动区块）
+  - `shipping/sla`（履约自动化运维中心区块）
+
+### 35.4 T294 M13 关键链路冒烟
+- 执行命令：  
+  `cd backend && GOCACHE=$PWD/.gocache GOMODCACHE=$PWD/.gomodcache go test ./internal/services/admin/logistics -run 'TestFulfillmentSandboxService_|TestPolicyOrchestrationService_|TestCarrierProfileService_' -count=1`
+- 场景覆盖：
+  - 履约沙盘（US42）关键服务链路
+  - 策略编排（US43）版本与发布链路
+  - 承运商画像（US44）评估与确认链路
+- 结果：**通过**。
+
+### 35.5 T295 M13 执行记录归档
+- 已将 T291-T294 的执行结果归档到本节。
+- 当前结论：M13 代码与构建层面回归通过，可进入联调环境做真实业务数据抽样验收。
