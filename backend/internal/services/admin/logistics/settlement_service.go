@@ -64,7 +64,7 @@ func (s *SettlementService) CreateBatch(ctx context.Context, tenantUUID string, 
 		return nil, errors.New("settlement service unavailable")
 	}
 	ctx = withTenantContext(ctx, tenantUUID)
-	filter, err := parseBillingFilter(BillingQuery{CarrierID: req.CarrierID, From: req.From, To: req.To})
+	filter, err := parseBillingFilter(BillingQuery(req))
 	if err != nil {
 		return nil, err
 	}

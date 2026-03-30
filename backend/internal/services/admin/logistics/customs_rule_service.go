@@ -199,7 +199,7 @@ func (s *CustomsRuleService) PublishVersion(ctx context.Context, tenantUUID stri
 		if strings.TrimSpace(req.Rules[i].Code) == "" {
 			req.Rules[i].Code = fmt.Sprintf("RULE-%d", i+1)
 		}
-		if req.Rules[i].Enabled == false {
+		if !req.Rules[i].Enabled {
 			continue
 		}
 		if strings.TrimSpace(req.Rules[i].Field) == "" || strings.TrimSpace(req.Rules[i].Operator) == "" {

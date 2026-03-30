@@ -1,6 +1,9 @@
 package bus
 
-import "testing"
+import (
+	"context"
+	"testing"
+)
 
 func TestAuthorizerRejectsUnregisteredTopic(t *testing.T) {
 	DefaultTopicRegistry = NewTopicRegistry()
@@ -8,7 +11,7 @@ func TestAuthorizerRejectsUnregisteredTopic(t *testing.T) {
 
 	a := NewDefaultAuthorizer()
 	client := &Client{TenantUUID: "tenant-a"}
-	if err := a.Authorize(nil, client, "_topic.demo.updated"); err == nil {
+	if err := a.Authorize(context.TODO(), client, "_topic.demo.updated"); err == nil {
 		t.Fatal("expected topic rejection")
 	}
 }
@@ -21,12 +24,12 @@ func TestAuthorizerRequiresSubscribeGrant(t *testing.T) {
 
 	a := NewDefaultAuthorizer()
 	client := &Client{TenantUUID: "tenant-a"}
-	if err := a.Authorize(nil, client, "_topic.demo.updated"); err == nil {
+	if err := a.Authorize(context.TODO(), client, "_topic.demo.updated"); err == nil {
 		t.Fatal("expected subscribe permission rejection")
 	}
 
 	DefaultACLRegistry.Grant("tenant-a", "_topic.demo.updated", []string{"subscribe"})
-	if err := a.Authorize(nil, client, "_topic.demo.updated"); err != nil {
+	if err := a.Authorize(context.TODO(), client, "_topic.demo.updated"); err != nil {
 		t.Fatalf("expected allow after subscribe grant, got %v", err)
 	}
 }

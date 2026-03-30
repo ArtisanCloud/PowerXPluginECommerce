@@ -1403,50 +1403,6 @@ func extractPriceFromDefaultValues(raw datatypes.JSON) (price float64, currency 
 	return 0, "", false
 }
 
-func extractStringList(meta map[string]any, keys ...string) []string {
-	if meta == nil || len(keys) == 0 {
-		return []string{}
-	}
-	for _, key := range keys {
-		raw, ok := meta[key]
-		if !ok || raw == nil {
-			continue
-		}
-		switch value := raw.(type) {
-		case []string:
-			out := make([]string, 0, len(value))
-			for _, v := range value {
-				if s := strings.TrimSpace(v); s != "" {
-					out = append(out, s)
-				}
-			}
-			return out
-		case []any:
-			out := make([]string, 0, len(value))
-			for _, item := range value {
-				if s := strings.TrimSpace(fmt.Sprint(item)); s != "" {
-					out = append(out, s)
-				}
-			}
-			return out
-		case string:
-			parts := strings.Split(value, ",")
-			out := make([]string, 0, len(parts))
-			for _, part := range parts {
-				if s := strings.TrimSpace(part); s != "" {
-					out = append(out, s)
-				}
-			}
-			return out
-		default:
-			if s := strings.TrimSpace(fmt.Sprint(value)); s != "" {
-				return []string{s}
-			}
-		}
-	}
-	return []string{}
-}
-
 func asString(v any) string {
 	switch t := v.(type) {
 	case string:

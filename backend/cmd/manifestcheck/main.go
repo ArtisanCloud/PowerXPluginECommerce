@@ -894,23 +894,6 @@ func writeYAMLFile(path string, data interface{}) error {
 	return os.WriteFile(path, buf.Bytes(), 0o644)
 }
 
-func firstAction(value interface{}) string {
-	switch actions := value.(type) {
-	case []interface{}:
-		for _, action := range actions {
-			raw := strings.TrimSpace(stringFromAny(action))
-			if raw != "" {
-				return raw
-			}
-		}
-	case string:
-		return strings.TrimSpace(actions)
-	default:
-		return strings.TrimSpace(stringFromAny(actions))
-	}
-	return ""
-}
-
 func actionListFromAny(value interface{}) []string {
 	switch actions := value.(type) {
 	case []interface{}:

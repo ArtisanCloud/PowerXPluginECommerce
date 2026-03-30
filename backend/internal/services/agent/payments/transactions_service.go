@@ -341,18 +341,6 @@ func (s *TransactionService) loadProviderBySelector(ctx context.Context, tx *gor
 	return &row, nil
 }
 
-func (s *TransactionService) findActiveTransaction(ctx context.Context, tx *gorm.DB, tenantUUID, orderID string) (*pxmodels.PaymentTransaction, error) {
-	var row pxmodels.PaymentTransaction
-	err := tx.WithContext(ctx).
-		Where("tenant_uuid = ? AND order_id = ? AND status IN ?", tenantUUID, orderID, []string{"pending_payment", "paying"}).
-		Order("created_at DESC").
-		First(&row).Error
-	if err != nil {
-		return nil, err
-	}
-	return &row, nil
-}
-
 func (s *TransactionService) resolveProvider(ctx context.Context, tx *gorm.DB, tenantUUID, payMethod string, providerID uint64, providerType, mchID, appID string) (*pxmodels.PaymentProvider, error) {
 	requestedType := strings.TrimSpace(providerType)
 	if requestedType == "" {

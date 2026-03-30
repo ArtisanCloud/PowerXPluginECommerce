@@ -163,17 +163,6 @@ func gatewayAuthSource(auth wsBusGatewayAuthDecision) string {
 	return auth.Source
 }
 
-func bearerToken(raw string) string {
-	raw = strings.TrimSpace(raw)
-	if len(raw) < 7 {
-		return ""
-	}
-	if !strings.EqualFold(raw[:7], "bearer ") {
-		return ""
-	}
-	return strings.TrimSpace(raw[7:])
-}
-
 func envTruthyValue(value string) bool {
 	switch strings.ToLower(strings.TrimSpace(value)) {
 	case "1", "true", "yes", "on":

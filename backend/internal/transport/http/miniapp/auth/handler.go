@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
-	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -635,18 +634,6 @@ func credentialString(payload map[string]interface{}, keys ...string) string {
 		}
 	}
 	return ""
-}
-
-func keysOfCredentials(payload map[string]interface{}) []string {
-	if payload == nil {
-		return nil
-	}
-	keys := make([]string, 0, len(payload))
-	for k := range payload {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-	return keys
 }
 
 func credentialBool(payload map[string]interface{}, keys ...string) (bool, bool) {

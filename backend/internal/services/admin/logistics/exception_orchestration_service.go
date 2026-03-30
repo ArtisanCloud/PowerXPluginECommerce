@@ -146,7 +146,7 @@ func (s *ExceptionOrchestrationService) Execute(ctx context.Context, tenantUUID 
 		trigger = rule.TriggerEvent
 	}
 	result := "success"
-	message := "orchestrated"
+	var message string
 	switch strings.ToLower(strings.TrimSpace(rule.Action)) {
 	case "auto_compensate":
 		message = "triggered auto compensation"

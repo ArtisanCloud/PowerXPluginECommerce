@@ -73,13 +73,6 @@ type updateWaybillCostRequest struct {
 	ActualFeeAmount float64 `json:"actual_fee_amount"`
 }
 
-type etaQueryRequest struct {
-	WaybillIDs      []string `json:"waybill_ids,omitempty"`
-	DestinationZone string   `json:"destination_zone,omitempty"`
-	Timezone        string   `json:"timezone,omitempty"`
-	ForceRecompute  bool     `json:"force_recompute,omitempty"`
-}
-
 type upsertRoutingRuleRequest struct {
 	ID              string         `json:"id,omitempty"`
 	Name            string         `json:"name"`
@@ -502,15 +495,6 @@ type publishComplianceKBPolicyRequest struct {
 	EffectiveFrom  string   `json:"effective_from,omitempty"`
 	EffectiveTo    string   `json:"effective_to,omitempty"`
 	OperatorID     string   `json:"operator_id,omitempty"`
-}
-
-type kpiDashboardQueryRequest struct {
-	WindowHours     int    `json:"window_hours,omitempty"`
-	Dimension       string `json:"dimension,omitempty"`
-	CarrierID       string `json:"carrier_id,omitempty"`
-	WarehouseID     string `json:"warehouse_id,omitempty"`
-	DestinationZone string `json:"destination_zone,omitempty"`
-	Limit           int    `json:"limit,omitempty"`
 }
 
 type upsertSLOGuardPolicyRequest struct {
