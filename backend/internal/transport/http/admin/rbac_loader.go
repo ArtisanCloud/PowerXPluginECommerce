@@ -210,7 +210,7 @@ func defaultRBACInfo() *contracts.RBACInfo {
 func defaultRBACResources() []contracts.Resource {
 	return []contracts.Resource{
 		{
-			Name:        "com.powerx.plugin.ecommerce:product.category",
+			Name:        "com.powerx.plugins.ecommerce:product.category",
 			Description: "商品类目树管理与前台展示数据",
 			Actions: []contracts.Action{
 				{Name: "read", Description: "查看类目树、类目列表与审计记录"},
@@ -218,7 +218,7 @@ func defaultRBACResources() []contracts.Resource {
 			},
 		},
 		{
-			Name:        "com.powerx.plugin.ecommerce:product.category.template",
+			Name:        "com.powerx.plugins.ecommerce:product.category.template",
 			Description: "类目模板配置与版本管理",
 			Actions: []contracts.Action{
 				{Name: "read", Description: "查看模板、预览与历史版本"},
@@ -226,7 +226,7 @@ func defaultRBACResources() []contracts.Resource {
 			},
 		},
 		{
-			Name:        "com.powerx.plugin.ecommerce:product.category.mapping",
+			Name:        "com.powerx.plugins.ecommerce:product.category.mapping",
 			Description: "渠道类目映射维护",
 			Actions: []contracts.Action{
 				{Name: "read", Description: "查看渠道类目映射"},
@@ -234,7 +234,7 @@ func defaultRBACResources() []contracts.Resource {
 			},
 		},
 		{
-			Name:        "com.powerx.plugin.ecommerce:product.category.import",
+			Name:        "com.powerx.plugins.ecommerce:product.category.import",
 			Description: "类目/映射批量导入导出",
 			Actions: []contracts.Action{
 				{Name: "read", Description: "导出 CSV 与查看导出结果"},
@@ -242,7 +242,7 @@ func defaultRBACResources() []contracts.Resource {
 			},
 		},
 		{
-			Name:        "com.powerx.plugin.ecommerce:product.sku",
+			Name:        "com.powerx.plugins.ecommerce:product.sku",
 			Description: "SKU 生成与基础信息管理",
 			Actions: []contracts.Action{
 				{Name: "read", Description: "查看 SKU 列表、生成器预览与详情"},
@@ -250,7 +250,7 @@ func defaultRBACResources() []contracts.Resource {
 			},
 		},
 		{
-			Name:        "com.powerx.plugin.ecommerce:product.sku.bulk",
+			Name:        "com.powerx.plugins.ecommerce:product.sku.bulk",
 			Description: "批量调价、库存和导入导出任务",
 			Actions: []contracts.Action{
 				{Name: "read", Description: "查看批量任务列表、任务状态与日志"},
@@ -258,7 +258,7 @@ func defaultRBACResources() []contracts.Resource {
 			},
 		},
 		{
-			Name:        "com.powerx.plugin.ecommerce:product.sku.channel",
+			Name:        "com.powerx.plugins.ecommerce:product.sku.channel",
 			Description: "渠道映射与发布",
 			Actions: []contracts.Action{
 				{Name: "read", Description: "查看渠道映射、发布日志"},
@@ -266,7 +266,7 @@ func defaultRBACResources() []contracts.Resource {
 			},
 		},
 		{
-			Name:        "com.powerx.plugin.ecommerce:product.sku.inventory",
+			Name:        "com.powerx.plugins.ecommerce:product.sku.inventory",
 			Description: "库存与 SLA 监控",
 			Actions: []contracts.Action{
 				{Name: "read", Description: "查看库存快照、预警与同步时间"},
@@ -274,7 +274,7 @@ func defaultRBACResources() []contracts.Resource {
 			},
 		},
 		{
-			Name:        "com.powerx.plugin.ecommerce:order",
+			Name:        "com.powerx.plugins.ecommerce:order",
 			Description: "自营订单（小程序下单 / 后台代客下单）与后台订单管理",
 			Actions: []contracts.Action{
 				{Name: "read", Description: "查看订单列表、详情与审计事件"},
@@ -283,7 +283,7 @@ func defaultRBACResources() []contracts.Resource {
 			},
 		},
 		{
-			Name:        "com.powerx.plugin.ecommerce:product.sku.serial",
+			Name:        "com.powerx.plugins.ecommerce:product.sku.serial",
 			Description: "序列号与批次记录",
 			Actions: []contracts.Action{
 				{Name: "read", Description: "查看序列号/批次记录"},
@@ -291,7 +291,7 @@ func defaultRBACResources() []contracts.Resource {
 			},
 		},
 		{
-			Name:        "com.powerx.plugin.ecommerce:product.sku.barcode",
+			Name:        "com.powerx.plugins.ecommerce:product.sku.barcode",
 			Description: "条码校验与打印",
 			Actions: []contracts.Action{
 				{Name: "read", Description: "查看条码记录"},
@@ -299,7 +299,7 @@ func defaultRBACResources() []contracts.Resource {
 			},
 		},
 		{
-			Name:        "com.powerx.plugin.ecommerce:channel.master",
+			Name:        "com.powerx.plugins.ecommerce:channel.master",
 			Description: "渠道主数据与审批",
 			Actions: []contracts.Action{
 				{Name: "read", Description: "查看渠道配置"},
@@ -309,7 +309,7 @@ func defaultRBACResources() []contracts.Resource {
 			},
 		},
 		{
-			Name:        "com.powerx.plugin.ecommerce:channel.credential",
+			Name:        "com.powerx.plugins.ecommerce:channel.credential",
 			Description: "渠道凭证",
 			Actions: []contracts.Action{
 				{Name: "read", Description: "查看凭证"},
@@ -317,7 +317,7 @@ func defaultRBACResources() []contracts.Resource {
 			},
 		},
 		{
-			Name:        "com.powerx.plugin.ecommerce:channel.alert",
+			Name:        "com.powerx.plugins.ecommerce:channel.alert",
 			Description: "渠道告警",
 			Actions: []contracts.Action{
 				{Name: "read", Description: "查看渠道告警"},
@@ -325,7 +325,7 @@ func defaultRBACResources() []contracts.Resource {
 			},
 		},
 		{
-			Name:        "com.powerx.plugin.ecommerce:channel.strategy",
+			Name:        "com.powerx.plugins.ecommerce:channel.strategy",
 			Description: "渠道策略配置",
 			Actions: []contracts.Action{
 				{Name: "read", Description: "查看策略"},
@@ -333,7 +333,7 @@ func defaultRBACResources() []contracts.Resource {
 			},
 		},
 		{
-			Name:        "com.powerx.plugin.ecommerce:channel.sync",
+			Name:        "com.powerx.plugins.ecommerce:channel.sync",
 			Description: "渠道同步与巡检",
 			Actions: []contracts.Action{
 				{Name: "read", Description: "查看同步历史"},
@@ -341,7 +341,7 @@ func defaultRBACResources() []contracts.Resource {
 			},
 		},
 		{
-			Name:        "com.powerx.plugin.ecommerce:channel.task",
+			Name:        "com.powerx.plugins.ecommerce:channel.task",
 			Description: "渠道任务看板",
 			Actions: []contracts.Action{
 				{Name: "read", Description: "查看任务列表与详情"},
@@ -349,7 +349,7 @@ func defaultRBACResources() []contracts.Resource {
 			},
 		},
 		{
-			Name:        "com.powerx.plugin.ecommerce:channel.note",
+			Name:        "com.powerx.plugins.ecommerce:channel.note",
 			Description: "渠道备注",
 			Actions: []contracts.Action{
 				{Name: "read", Description: "查看备注"},
@@ -365,72 +365,72 @@ func defaultRoles() []contracts.Role {
 			Name:        "product_category.viewer",
 			Description: "查看类目树、模板与渠道映射",
 			Permissions: []string{
-				"com.powerx.plugin.ecommerce:product.category:read",
-				"com.powerx.plugin.ecommerce:product.category.template:read",
-				"com.powerx.plugin.ecommerce:product.category.mapping:read",
-				"com.powerx.plugin.ecommerce:product.category.import:read",
+				"com.powerx.plugins.ecommerce:product.category:read",
+				"com.powerx.plugins.ecommerce:product.category.template:read",
+				"com.powerx.plugins.ecommerce:product.category.mapping:read",
+				"com.powerx.plugins.ecommerce:product.category.import:read",
 			},
 		},
 		{
 			Name:        "product_category.operator",
 			Description: "维护类目树、模板与渠道映射，并执行导入导出",
 			Permissions: []string{
-				"com.powerx.plugin.ecommerce:product.category:manage",
-				"com.powerx.plugin.ecommerce:product.category.template:manage",
-				"com.powerx.plugin.ecommerce:product.category.mapping:manage",
-				"com.powerx.plugin.ecommerce:product.category.import:manage",
+				"com.powerx.plugins.ecommerce:product.category:manage",
+				"com.powerx.plugins.ecommerce:product.category.template:manage",
+				"com.powerx.plugins.ecommerce:product.category.mapping:manage",
+				"com.powerx.plugins.ecommerce:product.category.import:manage",
 			},
 		},
 		{
 			Name:        "product_sku.viewer",
 			Description: "查看 SKU、库存、渠道映射与日志",
 			Permissions: []string{
-				"com.powerx.plugin.ecommerce:product.sku:read",
-				"com.powerx.plugin.ecommerce:product.sku.bulk:read",
-				"com.powerx.plugin.ecommerce:product.sku.channel:read",
-				"com.powerx.plugin.ecommerce:product.sku.inventory:read",
-				"com.powerx.plugin.ecommerce:product.sku.serial:read",
-				"com.powerx.plugin.ecommerce:product.sku.barcode:read",
+				"com.powerx.plugins.ecommerce:product.sku:read",
+				"com.powerx.plugins.ecommerce:product.sku.bulk:read",
+				"com.powerx.plugins.ecommerce:product.sku.channel:read",
+				"com.powerx.plugins.ecommerce:product.sku.inventory:read",
+				"com.powerx.plugins.ecommerce:product.sku.serial:read",
+				"com.powerx.plugins.ecommerce:product.sku.barcode:read",
 			},
 		},
 		{
 			Name:        "product_sku.operator",
 			Description: "运营可生成 SKU、执行批量任务并维护渠道映射/条码/序列号",
 			Permissions: []string{
-				"com.powerx.plugin.ecommerce:product.sku:manage",
-				"com.powerx.plugin.ecommerce:product.sku.bulk:manage",
-				"com.powerx.plugin.ecommerce:product.sku.channel:manage",
-				"com.powerx.plugin.ecommerce:product.sku.inventory:manage",
-				"com.powerx.plugin.ecommerce:product.sku.serial:manage",
-				"com.powerx.plugin.ecommerce:product.sku.barcode:manage",
+				"com.powerx.plugins.ecommerce:product.sku:manage",
+				"com.powerx.plugins.ecommerce:product.sku.bulk:manage",
+				"com.powerx.plugins.ecommerce:product.sku.channel:manage",
+				"com.powerx.plugins.ecommerce:product.sku.inventory:manage",
+				"com.powerx.plugins.ecommerce:product.sku.serial:manage",
+				"com.powerx.plugins.ecommerce:product.sku.barcode:manage",
 			},
 		},
 		{
 			Name:        "channel_center.viewer",
 			Description: "查看渠道主数据、凭证、同步历史与任务",
 			Permissions: []string{
-				"com.powerx.plugin.ecommerce:channel.master:read",
-				"com.powerx.plugin.ecommerce:channel.credential:read",
-				"com.powerx.plugin.ecommerce:channel.alert:read",
-				"com.powerx.plugin.ecommerce:channel.strategy:read",
-				"com.powerx.plugin.ecommerce:channel.sync:read",
-				"com.powerx.plugin.ecommerce:channel.task:read",
-				"com.powerx.plugin.ecommerce:channel.note:read",
+				"com.powerx.plugins.ecommerce:channel.master:read",
+				"com.powerx.plugins.ecommerce:channel.credential:read",
+				"com.powerx.plugins.ecommerce:channel.alert:read",
+				"com.powerx.plugins.ecommerce:channel.strategy:read",
+				"com.powerx.plugins.ecommerce:channel.sync:read",
+				"com.powerx.plugins.ecommerce:channel.task:read",
+				"com.powerx.plugins.ecommerce:channel.note:read",
 			},
 		},
 		{
 			Name:        "channel_center.operator",
 			Description: "渠道运营，可创建/审批渠道并维护凭证、策略与任务",
 			Permissions: []string{
-				"com.powerx.plugin.ecommerce:channel.master:create",
-				"com.powerx.plugin.ecommerce:channel.master:update",
-				"com.powerx.plugin.ecommerce:channel.master:approve",
-				"com.powerx.plugin.ecommerce:channel.credential:manage",
-				"com.powerx.plugin.ecommerce:channel.alert:manage",
-				"com.powerx.plugin.ecommerce:channel.strategy:manage",
-				"com.powerx.plugin.ecommerce:channel.sync:trigger",
-				"com.powerx.plugin.ecommerce:channel.task:manage",
-				"com.powerx.plugin.ecommerce:channel.note:create",
+				"com.powerx.plugins.ecommerce:channel.master:create",
+				"com.powerx.plugins.ecommerce:channel.master:update",
+				"com.powerx.plugins.ecommerce:channel.master:approve",
+				"com.powerx.plugins.ecommerce:channel.credential:manage",
+				"com.powerx.plugins.ecommerce:channel.alert:manage",
+				"com.powerx.plugins.ecommerce:channel.strategy:manage",
+				"com.powerx.plugins.ecommerce:channel.sync:trigger",
+				"com.powerx.plugins.ecommerce:channel.task:manage",
+				"com.powerx.plugins.ecommerce:channel.note:create",
 			},
 		},
 	}

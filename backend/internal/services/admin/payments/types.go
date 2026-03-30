@@ -85,6 +85,8 @@ type TransactionDTO struct {
 type TransactionListFilter struct {
 	Status     string
 	ProviderID uint64
+	OrderID    string
+	OrderNo    string
 	From       *time.Time
 	To         *time.Time
 }

@@ -8,7 +8,16 @@
         </p>
       </div>
       <div class="flex gap-2">
-        <UButton color="neutral" variant="ghost" icon="i-heroicons-arrow-path">
+        <UButton color="info" variant="soft" icon="i-heroicons-bolt" :loading="syncJobCreating" @click="openSyncJobModal">
+          批量同步任务
+        </UButton>
+        <UButton
+          color="neutral"
+          variant="ghost"
+          icon="i-heroicons-arrow-path"
+          :loading="syncingAll"
+          @click="refreshTracking"
+        >
           刷新轨迹
         </UButton>
         <UButton color="primary" icon="i-heroicons-plus">录入运单</UButton>
@@ -38,6 +47,26 @@
       </template>
 
       <UTable :columns="columns" :data="filteredWaybills">
+        <template #orderNo-cell="{ row }">
+          <div class="space-y-1">
+            <p class="font-medium text-gray-900 dark:text-white">{{ row.original.orderNo }}</p>
+            <p class="text-xs text-gray-500 dark:text-gray-400">
+              {{ orderSummary(row.original).packageCount }} 包裹 ·
+              {{ orderStatusMeta(orderSummary(row.original).aggregateStatus).label }}
+            </p>
+          </div>
+        </template>
+        <template #packageNo-cell="{ row }">
+          <div class="flex items-center gap-2">
+            <UBadge color="neutral" variant="soft">包裹 #{{ row.original.packageNo }}</UBadge>
+            <span class="text-xs text-gray-500">{{ row.original.packageKey || "-" }}</span>
+          </div>
+        </template>
+        <template #orderFulfillmentStatus-cell="{ getValue }">
+          <UBadge :color="orderStatusMeta(getValue()).color" variant="subtle">
+            {{ orderStatusMeta(getValue()).label }}
+          </UBadge>
+        </template>
         <template #status-cell="{ getValue }">
           <UBadge :color="statusMeta(getValue()).color" variant="subtle">
             {{ statusMeta(getValue()).label }}
@@ -49,8 +78,50 @@
             <span class="text-xs text-gray-500">{{ getValue() }}%</span>
           </div>
         </template>
+        <template #eta-cell="{ row }">
+          <div class="space-y-0.5 text-xs">
+            <p class="text-gray-900 dark:text-white">承诺达：{{ formatEta(row.original.promisedAt) }}</p>
+            <p class="text-gray-500 dark:text-gray-400">预计达：{{ formatEta(row.original.estimatedAt) }}</p>
+          </div>
+        </template>
         <template #actions-cell="{ row }">
           <div class="flex gap-2">
+            <UButton size="xs" variant="ghost" color="primary" @click="openAllocation(row.original)">
+              智能分单
+            </UButton>
+            <UButton size="xs" variant="ghost" color="info" @click="openInterwarehouse(row.original)">
+              跨仓协同
+            </UButton>
+            <UButton size="xs" variant="ghost" color="neutral" @click="openRoutingPreview(row.original)">
+              联合路由仿真
+            </UButton>
+            <UButton size="xs" variant="ghost" color="warning" @click="openRedelivery(row.original)">
+              失败重派
+            </UButton>
+            <UButton size="xs" variant="ghost" color="error" @click="openFailureCompensation(row.original)">
+              失败补偿
+            </UButton>
+            <UButton size="xs" variant="ghost" color="warning" @click="openOrchestration(row.original)">
+              异常编排
+            </UButton>
+            <UButton size="xs" variant="ghost" color="warning" @click="openLastmileRecovery(row.original)">
+              末端自愈
+            </UButton>
+            <UButton size="xs" variant="ghost" color="success" @click="openCrossborder(row.original)">
+              跨境履约
+            </UButton>
+            <UButton size="xs" variant="ghost" color="info" @click="openAddressValidation(row.original)">
+              地址校验
+            </UButton>
+            <UButton
+              size="xs"
+              variant="ghost"
+              color="info"
+              :loading="Boolean(syncingWaybillIDs[row.original.id])"
+              @click="syncTracking(row.original)"
+            >
+              同步轨迹
+            </UButton>
             <UButton size="xs" variant="ghost" @click="selectWaybill(row.original)">
               查看轨迹
             </UButton>
@@ -97,11 +168,454 @@
         </li>
       </ol>
     </UCard>
+
+    <UModal v-model:open="routingPreviewOpen" title="联合路由仿真">
+      <template #body>
+        <div class="space-y-3">
+          <div class="grid gap-2 sm:grid-cols-2">
+            <UInput v-model="routingForm.warehouseId" placeholder="仓库ID（可选）" />
+            <UInput v-model="routingForm.destinationZone" placeholder="目的区域（如 CN-EAST）" />
+            <UInput v-model="routingForm.serviceCode" placeholder="服务编码（默认 std）" />
+            <UInput v-model.number="routingForm.weight" type="number" step="0.1" placeholder="重量(kg)" />
+          </div>
+          <div class="text-xs text-gray-500">
+            运单：{{ routingForm.waybillNo || "-" }}，偏好承运商：{{ routingForm.preferredCarrierName || "未指定" }}
+          </div>
+          <UButton color="primary" :loading="routingPreviewLoading" @click="previewRouting">
+            执行仿真
+          </UButton>
+          <UCard v-if="routingPreviewResult">
+            <p class="text-sm">策略：{{ routingPreviewResult.strategy }}（{{ routingPreviewResult.reason }}）</p>
+            <p class="text-sm">结果承运商：{{ routingPreviewResult.carrierName }}</p>
+            <p class="text-xs text-gray-500">{{ routingPreviewResult.explain || "-" }}</p>
+            <ul class="mt-2 space-y-1 text-xs">
+              <li v-for="item in routingPreviewResult.candidates || []" :key="item.carrierId">
+                {{ item.carrierName }} · score={{ Number(item.finalScore || 0).toFixed(2) }}
+              </li>
+            </ul>
+          </UCard>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="allocationOpen" title="智能分单与手工改派">
+      <template #body>
+        <div class="space-y-3">
+          <p class="text-xs text-gray-500">
+            运单：{{ allocationForm.waybillNo || "-" }} / 订单：{{ allocationForm.orderId || "-" }}
+          </p>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <UInput v-model="allocationForm.warehouseId" placeholder="仓库ID（可选）" />
+            <UInput v-model="allocationForm.destinationZone" placeholder="目的区域（可选）" />
+            <UInput v-model="allocationForm.preferredCarrier" placeholder="偏好承运商（可选）" />
+            <UInput v-model="allocationForm.overrideCarrierId" placeholder="手工改派承运商ID" />
+          </div>
+          <div class="flex gap-2">
+            <UButton color="primary" :loading="allocationLoading" @click="runAllocation">自动分单</UButton>
+            <UButton color="warning" :loading="allocationLoading" :disabled="!allocationResult" @click="runOverrideAllocation">
+              手工改派
+            </UButton>
+          </div>
+          <UCard v-if="allocationResult">
+            <p class="text-sm">策略：{{ allocationResult.strategy }}</p>
+            <p class="text-sm">结果：{{ allocationResult.carrierName || allocationResult.carrierId }}</p>
+            <p class="text-xs text-gray-500">{{ allocationResult.reason }}</p>
+            <ul class="mt-2 space-y-1 text-xs">
+              <li v-for="item in allocationResult.candidates || []" :key="item.carrierId">
+                {{ item.carrierName }} · available={{ item.available }} · score={{ item.finalScore.toFixed(2) }}
+              </li>
+            </ul>
+          </UCard>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="interwarehouseOpen" title="跨仓协同与调拨履约">
+      <template #body>
+        <div class="space-y-3">
+          <p class="text-xs text-gray-500">
+            运单：{{ interwarehouseForm.waybillNo || "-" }} / 订单：{{ interwarehouseForm.orderId || "-" }}
+          </p>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <UInput v-model="interwarehouseForm.sourceWarehouseId" placeholder="源仓ID（缺货仓）" />
+            <UInput v-model="interwarehouseForm.destinationZone" placeholder="目的区域（可选）" />
+            <UInput v-model.number="interwarehouseForm.requiredQty" type="number" placeholder="缺口件数（默认 1）" />
+            <UInput v-model="interwarehouseForm.requestKey" placeholder="请求幂等键（可选）" />
+          </div>
+          <div class="flex gap-2">
+            <UButton color="primary" :loading="interwarehouseLoading" @click="suggestInterwarehouseCandidates">
+              生成候选
+            </UButton>
+            <UButton color="neutral" :loading="interwarehouseLoading" @click="loadInterwarehouseCandidates">
+              刷新候选
+            </UButton>
+          </div>
+          <UCard>
+            <template #header>
+              <div class="text-sm font-medium">候选仓对比（按评分排序）</div>
+            </template>
+            <ul class="space-y-2 text-xs">
+              <li
+                v-for="item in interwarehouseCandidates"
+                :key="item.id"
+                class="rounded border border-gray-200 p-2 dark:border-gray-800"
+              >
+                <div class="flex items-center justify-between gap-3">
+                  <span>
+                    {{ item.sourceWarehouseID }} → {{ item.targetWarehouseID }} · qty={{ item.transferQty }} · score={{ item.score.toFixed(4) }}
+                  </span>
+                  <UButton
+                    size="xs"
+                    color="success"
+                    :loading="interwarehouseConfirmingId === item.id"
+                    @click="confirmInterwarehouseCandidate(item.id)"
+                  >
+                    确认调拨
+                  </UButton>
+                </div>
+                <p class="mt-1 text-gray-500">
+                  成本 {{ item.transferCost.toFixed(2) }} / 时效影响 {{ item.etaImpactHours.toFixed(2) }}h / 状态 {{ item.status }}
+                </p>
+              </li>
+              <li v-if="!interwarehouseCandidates.length" class="text-gray-500">暂无候选仓</li>
+            </ul>
+          </UCard>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="syncJobOpen" title="创建批量轨迹同步任务">
+      <template #body>
+        <div class="space-y-3">
+          <div class="grid gap-2 sm:grid-cols-2">
+            <UInput v-model="syncJobForm.carrierId" placeholder="承运商ID（可选）" />
+            <USelect v-model="syncJobForm.waybillStatus" :options="syncJobStatusOptions" />
+            <UInput v-model.number="syncJobForm.batchLimit" type="number" placeholder="运单批次大小（默认20）" />
+            <UInput v-model.number="syncJobForm.eventLimit" type="number" placeholder="单运单拉取条数（默认20）" />
+          </div>
+          <UButton color="primary" :loading="syncJobCreating" @click="createSyncJob">
+            创建并执行
+          </UButton>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="failureCompensationOpen" title="网关失败补偿">
+      <template #body>
+        <div class="space-y-3">
+          <p class="text-xs text-gray-500">
+            运单：{{ failureWaybillNo || "-" }}
+          </p>
+          <div class="flex gap-2">
+            <UButton size="xs" color="neutral" :loading="failureLoading" @click="loadGatewayFailures">刷新失败列表</UButton>
+            <UButton size="xs" color="warning" :loading="failureLoading" @click="ingestGatewayFailures">拉取失败样本</UButton>
+          </div>
+          <ul class="space-y-2 text-xs">
+            <li
+              v-for="item in gatewayFailures"
+              :key="item.id"
+              class="rounded border border-gray-200 p-2 dark:border-gray-800"
+            >
+              <div class="flex items-center justify-between gap-2">
+                <span>{{ item.errorClass }} · {{ item.errorCode }} · retry={{ item.retryCount }}</span>
+                <UButton size="xs" color="primary" :loading="failureLoading" @click="compensateFailure(item.id)">
+                  补偿重试
+                </UButton>
+              </div>
+              <p class="mt-1 text-gray-500">{{ item.errorMessage || "-" }}</p>
+            </li>
+            <li v-if="!gatewayFailures.length" class="text-gray-500">暂无失败记录</li>
+          </ul>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="redeliveryOpen" title="妥投失败二次派送">
+      <template #body>
+        <div class="space-y-3">
+          <p class="text-xs text-gray-500">运单 {{ redeliveryForm.waybillNo || "-" }} 的失败重派闭环。</p>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <UInput v-model="redeliveryForm.reason" placeholder="原因（failed_delivery）" />
+            <UInput v-model="redeliveryForm.operatorId" placeholder="操作人" />
+            <UInput v-model="redeliveryForm.requestKey" placeholder="请求幂等键（可选）" />
+            <UInput v-model="redeliveryForm.addressLine" placeholder="改址内容（可选）" />
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <UButton color="warning" :loading="redeliveryLoading" @click="initiateRedelivery">发起</UButton>
+            <UButton color="neutral" :loading="redeliveryLoading" :disabled="!redeliveryForm.taskId" @click="updateRedeliveryAddress">
+              改址
+            </UButton>
+            <UButton color="primary" :loading="redeliveryLoading" :disabled="!redeliveryForm.taskId" @click="redispatchRedelivery">
+              重派
+            </UButton>
+            <UButton color="success" :loading="redeliveryLoading" :disabled="!redeliveryForm.taskId" @click="closeRedelivery">
+              关闭
+            </UButton>
+          </div>
+          <UCard>
+            <template #header>
+              <div class="text-sm font-medium">最近任务</div>
+            </template>
+            <ul class="space-y-1 text-xs">
+              <li v-for="task in redeliveryTasks" :key="task.id" class="flex items-center justify-between">
+                <span>{{ task.status }} · attempt={{ task.attemptNo }} · {{ task.lastReason || "-" }}</span>
+                <UButton size="xs" variant="ghost" @click="selectRedeliveryTask(task)">选择</UButton>
+              </li>
+              <li v-if="!redeliveryTasks.length" class="text-gray-500">暂无任务</li>
+            </ul>
+          </UCard>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="orchestrationOpen" title="异常自动编排">
+      <template #body>
+        <div class="space-y-3">
+          <div class="grid gap-2 sm:grid-cols-2">
+            <UInput v-model="orchestrationForm.ruleName" placeholder="规则名称" />
+            <USelect v-model="orchestrationForm.triggerEvent" :options="orchestrationTriggerOptions" />
+            <USelect v-model="orchestrationForm.action" :options="orchestrationActionOptions" />
+            <UInput v-model.number="orchestrationForm.priority" type="number" placeholder="优先级" />
+          </div>
+          <div class="flex gap-2">
+            <UButton size="xs" color="primary" :loading="orchestrationLoading" @click="createOrchestrationRule">创建规则</UButton>
+            <UButton size="xs" color="warning" :loading="orchestrationLoading" @click="executeOrchestration">执行编排</UButton>
+          </div>
+          <ul class="space-y-2 text-xs">
+            <li v-for="item in orchestrationRuns" :key="item.id" class="rounded border border-gray-200 p-2 dark:border-gray-800">
+              {{ item.trigger }} · {{ item.result }} · {{ item.message }}
+            </li>
+            <li v-if="!orchestrationRuns.length" class="text-gray-500">暂无执行记录</li>
+          </ul>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="addressValidationOpen" title="地址智能校验">
+      <template #body>
+        <div class="space-y-3">
+          <UInput v-model="addressForm.address" placeholder="输入收货地址" />
+          <UButton size="xs" color="primary" :loading="addressLoading" @click="checkAddressValidation">立即校验</UButton>
+          <UCard v-if="latestAddressValidation">
+            <p class="text-xs">标准化：{{ latestAddressValidation.normalized || "-" }}</p>
+            <p class="text-xs">可达性：{{ latestAddressValidation.reachable ? "可达" : "不可达" }}</p>
+            <p class="text-xs">风险：{{ latestAddressValidation.riskLevel }}</p>
+            <p class="text-xs">建议：{{ latestAddressValidation.suggestion || "-" }}</p>
+          </UCard>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="lastmileRecoveryOpen" title="末端异常自愈中心">
+      <template #body>
+        <div class="space-y-3">
+          <p class="text-xs text-gray-500">运单：{{ lastmileForm.waybillNo || "-" }}</p>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <UInput v-model="lastmileForm.ruleName" placeholder="规则名称" />
+            <USelect v-model="lastmileForm.triggerEvent" :options="lastmileTriggerOptions" />
+            <USelect v-model="lastmileForm.action" :options="lastmileActionOptions" />
+            <UInput v-model.number="lastmileForm.maxRetries" type="number" placeholder="最大重试次数" />
+          </div>
+          <div class="flex gap-2">
+            <UButton size="xs" color="primary" :loading="lastmileLoading" @click="createLastmileRule">创建规则</UButton>
+            <UButton size="xs" color="warning" :loading="lastmileLoading" @click="executeLastmile">执行自愈</UButton>
+          </div>
+          <ul class="space-y-2 text-xs">
+            <li v-for="item in lastmileRuns" :key="item.id" class="rounded border border-gray-200 p-2 dark:border-gray-800">
+              <div class="flex items-center justify-between gap-2">
+                <span>{{ item.triggerEvent }} · {{ item.action }} · {{ item.status }} · retry {{ item.retryCount }}/{{ item.maxRetries }}</span>
+                <UButton size="xs" variant="ghost" :loading="lastmileLoading" @click="takeoverLastmile(item.id)">
+                  人工接管
+                </UButton>
+              </div>
+              <p class="mt-1 text-gray-500">{{ item.message || "-" }}</p>
+            </li>
+            <li v-if="!lastmileRuns.length" class="text-gray-500">暂无自愈记录</li>
+          </ul>
+        </div>
+      </template>
+    </UModal>
+
+    <UModal v-model:open="crossborderOpen" title="跨境履约">
+      <template #body>
+        <div class="space-y-3">
+          <p class="text-xs text-gray-500">运单：{{ crossborderForm.waybillNo || "-" }}</p>
+          <div class="grid gap-2 sm:grid-cols-2">
+            <USelect v-model="crossborderForm.docType" :options="crossborderDocTypeOptions" />
+            <UInput v-model="crossborderForm.docNo" placeholder="单据号" />
+            <UInput v-model="crossborderForm.countryFrom" placeholder="起运国家（CN）" />
+            <UInput v-model="crossborderForm.countryTo" placeholder="目的国家（US）" />
+          </div>
+          <div class="flex gap-2">
+            <UButton size="xs" color="primary" :loading="crossborderLoading" @click="saveCrossborderDoc">保存资料</UButton>
+            <UButton size="xs" color="warning" :loading="crossborderLoading" @click="quoteCrossborderTax">税费预估</UButton>
+            <UButton size="xs" color="info" :loading="crossborderLoading" @click="normalizeCrossborderStatus">轨迹映射</UButton>
+          </div>
+          <UCard v-if="crossborderQuote">
+            <p class="text-xs">
+              税费：duty={{ crossborderQuote.dutyAmount.toFixed(2) }} + vat={{ crossborderQuote.vatAmount.toFixed(2) }} =
+              {{ crossborderQuote.totalTaxAmount.toFixed(2) }} {{ crossborderQuote.currency }}
+            </p>
+            <p class="text-xs text-gray-500">
+              目的地={{ crossborderQuote.destinationCountry }}，税率 duty={{ crossborderQuote.dutyRate }}，vat={{ crossborderQuote.vatRate }}
+            </p>
+          </UCard>
+          <UCard>
+            <template #header>
+              <div class="text-sm font-medium">跨境资料</div>
+            </template>
+            <ul class="space-y-1 text-xs">
+              <li v-for="item in crossborderDocuments" :key="item.id">
+                {{ item.docType }} · {{ item.docNo }} · {{ item.status }} · {{ item.countryFrom }}→{{ item.countryTo }}
+              </li>
+              <li v-if="!crossborderDocuments.length" class="text-gray-500">暂无资料</li>
+            </ul>
+          </UCard>
+          <UCard>
+            <template #header>
+              <div class="text-sm font-medium">轨迹映射</div>
+            </template>
+            <div class="grid gap-2 sm:grid-cols-2">
+              <UInput v-model="crossborderForm.provider" placeholder="provider (dhl)" />
+              <UInput v-model="crossborderForm.providerStatus" placeholder="provider_status (customs_hold)" />
+              <USelect v-model="crossborderForm.normalizedStatus" :options="crossborderNormalizedStatusOptions" />
+            </div>
+            <p class="text-xs text-gray-500 mt-2">
+              当前归一化：{{ crossborderNormalizedResult || "-" }}（source={{ crossborderNormalizedSource || "-" }}）
+            </p>
+            <ul class="space-y-1 text-xs mt-2">
+              <li v-for="item in crossborderTrackingMaps" :key="item.id">
+                {{ item.provider }} / {{ item.providerStatus }} -> {{ item.normalizedStatus }}
+              </li>
+              <li v-if="!crossborderTrackingMaps.length" class="text-gray-500">暂无映射</li>
+            </ul>
+          </UCard>
+          <UCard>
+            <template #header>
+              <div class="text-sm font-medium">清关预检</div>
+            </template>
+            <div class="grid gap-2 sm:grid-cols-2">
+              <USelect
+                v-model="customsForm.packId"
+                :options="customsPackOptions"
+                placeholder="选择规则包（可选）"
+              />
+              <UInput v-model="customsForm.countryCode" placeholder="国家代码（US）" />
+              <UInput v-model.number="customsForm.declaredValue" type="number" step="0.01" placeholder="申报价值" />
+              <UInput v-model="customsForm.taxNo" placeholder="税号（可选）" />
+              <UInput v-model="customsForm.hsCode" placeholder="HS CODE（可选）" />
+              <USelect v-model="customsForm.documentType" :options="customsDocumentTypeOptions" />
+              <UInput v-model.number="customsForm.documentCount" type="number" placeholder="单据数量" />
+            </div>
+            <div class="mt-2 flex gap-2">
+              <UButton size="xs" color="warning" :loading="customsLoading" @click="runCustomsPrecheck">执行预检</UButton>
+              <UButton
+                size="xs"
+                color="success"
+                variant="soft"
+                :loading="customsLoading"
+                :disabled="!customsPrecheckResult || customsPrecheckResult.decision !== 'block'"
+                @click="manualReleaseCustoms"
+              >
+                人工确认放行
+              </UButton>
+            </div>
+            <UCard v-if="customsPrecheckResult" class="mt-2">
+              <p class="text-xs">
+                结论：{{ customsPrecheckResult.decision }} · 风险：{{ customsPrecheckResult.riskLevel }} · 建议：{{ customsPrecheckResult.suggestion }}
+              </p>
+              <p class="text-xs text-gray-500">
+                规则包={{ customsPrecheckResult.packId }}，版本={{ customsPrecheckResult.versionNo }}
+              </p>
+              <ul class="space-y-1 text-xs mt-2">
+                <li v-for="item in customsPrecheckResult.matchedRules" :key="`${item.code}-${item.reason}`">
+                  {{ item.code }} / {{ item.riskLevel }} / {{ item.suggestion }} · {{ item.reason }}
+                </li>
+                <li v-if="!customsPrecheckResult.matchedRules.length" class="text-gray-500">未命中规则</li>
+              </ul>
+            </UCard>
+            <p class="text-xs text-gray-500 mt-2" v-if="customsRuleVersions.length">
+              最新版本：v{{ customsRuleVersions[0]?.versionNo }}（{{ customsRuleVersions[0]?.status }}）
+            </p>
+          </UCard>
+          <UCard>
+            <template #header>
+              <div class="text-sm font-medium">合规版本联动</div>
+            </template>
+            <div class="grid gap-2 sm:grid-cols-2">
+              <USelect
+                v-model="complianceKBForm.basePolicyId"
+                :options="complianceKBOptions"
+                placeholder="基线版本"
+              />
+              <USelect
+                v-model="complianceKBForm.targetPolicyId"
+                :options="complianceKBOptions"
+                placeholder="目标版本"
+              />
+              <UInput
+                v-model.number="complianceKBForm.rolloutPercent"
+                type="number"
+                min="1"
+                max="100"
+                placeholder="灰度比例(1-100)"
+              />
+              <UInput v-model="complianceKBForm.effectiveFrom" placeholder="生效开始 RFC3339（可选）" />
+              <UInput v-model="complianceKBForm.effectiveTo" placeholder="生效结束 RFC3339（可选）" />
+            </div>
+            <div class="mt-2 flex gap-2">
+              <UButton size="xs" color="primary" :loading="complianceKBLoading" @click="syncComplianceKBPolicy">政策同步</UButton>
+              <UButton size="xs" color="info" :loading="complianceKBLoading" @click="diffComplianceKBPolicies">版本比对</UButton>
+              <UButton size="xs" color="success" :loading="complianceKBLoading" @click="publishComplianceKBPolicy">规则发布</UButton>
+            </div>
+            <UCard v-if="complianceKBDiff" class="mt-2">
+              <p class="text-xs">
+                新增 {{ complianceKBDiff.addedRuleCodes.length }}，移除 {{ complianceKBDiff.removedRuleCodes.length }}，
+                变更 {{ complianceKBDiff.changedRuleCodes.length }}，未变更 {{ complianceKBDiff.unchangedRuleCount }}
+              </p>
+              <p class="text-xs text-gray-500">
+                base={{ complianceKBDiff.basePolicyId }} -> target={{ complianceKBDiff.targetPolicyId }}
+              </p>
+            </UCard>
+            <ul class="space-y-1 text-xs mt-2">
+              <li v-for="item in complianceKBVersions" :key="item.id">
+                {{ item.policyVersion }} · {{ item.status }} · source v{{ item.sourceVersionNo }}
+                <span v-if="item.effectiveFrom || item.effectiveTo">
+                  · 生效窗 {{ item.effectiveFrom || "-" }} ~ {{ item.effectiveTo || "-" }}
+                </span>
+              </li>
+              <li v-if="!complianceKBVersions.length" class="text-gray-500">暂无合规版本</li>
+            </ul>
+          </UCard>
+        </div>
+      </template>
+    </UModal>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
+import type {
+  LogisticsAddressValidation,
+  LogisticsAllocationResult,
+  LogisticsInterwarehouseAllocationCandidate,
+  LogisticsCrossborderDocument,
+  LogisticsComplianceKBDiff,
+  LogisticsComplianceKBVersion,
+  LogisticsCustomsPrecheckResult,
+  LogisticsCustomsRulePack,
+  LogisticsCustomsRuleVersion,
+  LogisticsCrossborderTaxQuote,
+  LogisticsCrossborderTrackingMap,
+  LogisticsExceptionOrchestrationRun,
+  LogisticsExceptionOrchestrationRule,
+  LogisticsGatewayFailureEvent,
+  LogisticsLastmileRecoveryRule,
+  LogisticsLastmileRecoveryRun,
+  LogisticsRedeliveryTask,
+  LogisticsWaybillETA,
+} from "~/composables/api/useLogistics";
+import { useLogisticsApi } from "~/composables/api";
 
 definePageMeta({
   name: "shipping-waybills",
@@ -118,85 +632,317 @@ type TimelineNode = {
 };
 
 type Waybill = {
+  id: string;
   orderNo: string;
+  carrierId: string;
   waybillNo: string;
+  packageNo: number;
+  packageKey: string;
+  orderFulfillmentStatus: "partial_shipped" | "fully_shipped";
+  shipmentItems: string[];
   carrier: string;
   channel: string;
   status: WaybillStatus;
   progress: number;
   eta: string;
+  promisedAt: string;
+  estimatedAt: string;
+  timezone: string;
   timeline: TimelineNode[];
 };
 
-const waybills = ref<Waybill[]>([
-  {
-    orderNo: "SO2024021001",
-    waybillNo: "SF123456789",
-    carrier: "顺丰速运",
-    channel: "自营商城",
-    status: "in-transit",
-    progress: 60,
-    eta: "2 月 12 日",
-    timeline: [
-      { time: "02-10 09:30", city: "上海", status: "已揽收", message: "顺丰快递员已揽收包裹" },
-      { time: "02-10 18:10", city: "上海转运中心", status: "出发", message: "包裹已发往北京集散中心" },
-      {
-        time: "02-11 08:20",
-        city: "北京集散中心",
-        status: "到达",
-        message: "包裹到达目的地集散中心",
-      },
-    ],
-  },
-  {
-    orderNo: "SO2024020908",
-    waybillNo: "JD987654321",
-    carrier: "京东物流",
-    channel: "京东自营",
-    status: "delivered",
-    progress: 100,
-    eta: "已签收",
-    timeline: [
-      {
-        time: "02-08 10:05",
-        city: "广州",
-        status: "已揽收",
-        message: "京东快递揽收完成",
-      },
-      {
-        time: "02-09 14:22",
-        city: "武汉",
-        status: "派送中",
-        message: "派送员正在派送",
-      },
-      {
-        time: "02-09 18:40",
-        city: "武汉",
-        status: "已签收",
-        message: "客户签收完成",
-      },
-    ],
-  },
-  {
-    orderNo: "SO2024020703",
-    waybillNo: "YT246801357",
-    carrier: "圆通速递",
-    channel: "天猫旗舰店",
-    status: "delay",
-    progress: 42,
-    eta: "待定",
-    timeline: [
-      { time: "02-07 11:05", city: "深圳", status: "已揽收", message: "包裹入仓" },
-      {
-        time: "02-08 19:40",
-        city: "长沙转运中心",
-        status: "异常",
-        message: "天气原因导致航班延误",
-        exception: "延误预警",
-      },
-    ],
-  },
-]);
+const logisticsApi = useLogisticsApi();
+const toast = useToast();
+const waybills = ref<Waybill[]>([]);
+const carrierMap = ref<Record<string, string>>({});
+const syncingAll = ref(false);
+const syncingWaybillIDs = ref<Record<string, boolean>>({});
+const syncJobOpen = ref(false);
+const syncJobCreating = ref(false);
+const failureCompensationOpen = ref(false);
+const failureLoading = ref(false);
+const failureWaybillNo = ref("");
+const gatewayFailures = ref<LogisticsGatewayFailureEvent[]>([]);
+const routingPreviewOpen = ref(false);
+const routingPreviewLoading = ref(false);
+const routingPreviewResult = ref<any>(null);
+const allocationOpen = ref(false);
+const allocationLoading = ref(false);
+const allocationResult = ref<LogisticsAllocationResult | null>(null);
+const interwarehouseOpen = ref(false);
+const interwarehouseLoading = ref(false);
+const interwarehouseConfirmingId = ref("");
+const interwarehouseCandidates = ref<LogisticsInterwarehouseAllocationCandidate[]>([]);
+const redeliveryOpen = ref(false);
+const redeliveryLoading = ref(false);
+const redeliveryTasks = ref<LogisticsRedeliveryTask[]>([]);
+const orchestrationOpen = ref(false);
+const orchestrationLoading = ref(false);
+const orchestrationRules = ref<LogisticsExceptionOrchestrationRule[]>([]);
+const orchestrationRuns = ref<LogisticsExceptionOrchestrationRun[]>([]);
+const addressValidationOpen = ref(false);
+const addressLoading = ref(false);
+const latestAddressValidation = ref<LogisticsAddressValidation | null>(null);
+const lastmileRecoveryOpen = ref(false);
+const lastmileLoading = ref(false);
+const lastmileRules = ref<LogisticsLastmileRecoveryRule[]>([]);
+const lastmileRuns = ref<LogisticsLastmileRecoveryRun[]>([]);
+const crossborderOpen = ref(false);
+const crossborderLoading = ref(false);
+const crossborderDocuments = ref<LogisticsCrossborderDocument[]>([]);
+const crossborderTrackingMaps = ref<LogisticsCrossborderTrackingMap[]>([]);
+const crossborderQuote = ref<LogisticsCrossborderTaxQuote | null>(null);
+const crossborderNormalizedResult = ref("");
+const crossborderNormalizedSource = ref("");
+const customsLoading = ref(false);
+const customsRulePacks = ref<LogisticsCustomsRulePack[]>([]);
+const customsRuleVersions = ref<LogisticsCustomsRuleVersion[]>([]);
+const customsPrecheckResult = ref<LogisticsCustomsPrecheckResult | null>(null);
+const complianceKBLoading = ref(false);
+const complianceKBVersions = ref<LogisticsComplianceKBVersion[]>([]);
+const complianceKBDiff = ref<LogisticsComplianceKBDiff | null>(null);
+const routingForm = reactive({
+  waybillNo: "",
+  warehouseId: "",
+  destinationZone: "GLOBAL",
+  serviceCode: "std",
+  weight: 1,
+  preferredCarrierId: "",
+  preferredCarrierName: "",
+});
+const allocationForm = reactive({
+  waybillId: "",
+  waybillNo: "",
+  orderId: "",
+  warehouseId: "",
+  destinationZone: "",
+  preferredCarrier: "",
+  overrideCarrierId: "",
+});
+const interwarehouseForm = reactive({
+  waybillId: "",
+  waybillNo: "",
+  orderId: "",
+  carrierId: "",
+  sourceWarehouseId: "",
+  destinationZone: "",
+  requiredQty: 1,
+  requestKey: "",
+});
+const redeliveryForm = reactive({
+  taskId: "",
+  waybillId: "",
+  waybillNo: "",
+  reason: "failed_delivery",
+  operatorId: "admin",
+  requestKey: "",
+  addressLine: "",
+});
+const orchestrationForm = reactive({
+  waybillId: "",
+  waybillNo: "",
+  ruleName: "延误自动补偿",
+  triggerEvent: "delay",
+  action: "auto_compensate",
+  priority: 100,
+});
+const addressForm = reactive({
+  waybillId: "",
+  waybillNo: "",
+  address: "",
+});
+const lastmileForm = reactive({
+  waybillId: "",
+  waybillNo: "",
+  ruleName: "末端异常自愈规则",
+  triggerEvent: "delay",
+  action: "redispatch",
+  maxRetries: 3,
+});
+const crossborderForm = reactive({
+  waybillId: "",
+  waybillNo: "",
+  docType: "invoice",
+  docNo: "",
+  countryFrom: "CN",
+  countryTo: "US",
+  provider: "dhl",
+  providerStatus: "customs_hold",
+  normalizedStatus: "exception",
+});
+const customsForm = reactive({
+  packId: "",
+  countryCode: "US",
+  declaredValue: 0,
+  taxNo: "",
+  hsCode: "",
+  documentType: "invoice",
+  documentCount: 1,
+});
+const complianceKBForm = reactive({
+  basePolicyId: "",
+  targetPolicyId: "",
+  rolloutPercent: 100,
+  effectiveFrom: "",
+  effectiveTo: "",
+});
+const orchestrationTriggerOptions = [
+  { label: "延误", value: "delay" },
+  { label: "拒收", value: "rejected" },
+  { label: "丢件", value: "lost" },
+];
+const orchestrationActionOptions = [
+  { label: "自动补偿", value: "auto_compensate" },
+  { label: "创建工单", value: "create_ticket" },
+  { label: "SLA升级", value: "escalate" },
+];
+const lastmileTriggerOptions = [
+  { label: "延误", value: "delay" },
+  { label: "拒收", value: "rejected" },
+  { label: "丢件", value: "lost" },
+  { label: "超时", value: "timeout" },
+];
+const lastmileActionOptions = [
+  { label: "改派", value: "redispatch" },
+  { label: "补发", value: "reship" },
+  { label: "退款", value: "refund" },
+  { label: "人工复核", value: "manual_review" },
+];
+const crossborderDocTypeOptions = [
+  { label: "商业发票", value: "invoice" },
+  { label: "报关单", value: "customs_form" },
+  { label: "装箱单", value: "packing_list" },
+  { label: "资质证明", value: "certificate" },
+];
+const crossborderNormalizedStatusOptions = [
+  { label: "待揽收", value: "created" },
+  { label: "运输中", value: "in_transit" },
+  { label: "异常", value: "exception" },
+  { label: "已签收", value: "delivered" },
+];
+const customsDocumentTypeOptions = [
+  { label: "商业发票", value: "invoice" },
+  { label: "报关单", value: "customs_form" },
+  { label: "装箱单", value: "packing_list" },
+];
+const syncJobForm = reactive({
+  carrierId: "",
+  waybillStatus: "",
+  batchLimit: 20,
+  eventLimit: 20,
+});
+
+const normalizeStatus = (status: string): WaybillStatus => {
+  const v = String(status || "").toLowerCase();
+  if (v === "delivered" || v === "signed") return "delivered";
+  if (v === "delay" || v === "exception") return "delay";
+  if (v === "in_transit" || v === "in-transit" || v === "shipping") return "in-transit";
+  return "created";
+};
+
+const progressByStatus = (status: WaybillStatus): number => {
+  switch (status) {
+    case "delivered":
+      return 100;
+    case "delay":
+      return 45;
+    case "in-transit":
+      return 60;
+    default:
+      return 15;
+  }
+};
+
+const loadWaybills = async () => {
+  const [carriers, rows] = await Promise.all([
+    logisticsApi.listCarriers(),
+    logisticsApi.listWaybills(),
+  ]);
+  carrierMap.value = Object.fromEntries(carriers.map((item) => [item.id, item.name]));
+  waybills.value = rows.map((row) => {
+    const status = normalizeStatus(row.status);
+    return {
+      id: row.id,
+      orderNo: row.orderId,
+      carrierId: row.carrierId,
+      waybillNo: row.waybillNo,
+      packageNo: row.packageNo || 1,
+      packageKey: row.packageKey || "",
+      orderFulfillmentStatus:
+        row.orderFulfillmentStatus === "fully_shipped" ? "fully_shipped" : "partial_shipped",
+      shipmentItems: row.shipmentItems || [],
+      carrier: carrierMap.value[row.carrierId] || row.carrierId,
+      channel: row.serviceCode || "标准",
+      status,
+      progress: progressByStatus(status),
+      eta: status === "delivered" ? "已签收" : "待更新",
+      promisedAt: "",
+      estimatedAt: "",
+      timezone: "UTC",
+      timeline: [],
+    };
+  });
+};
+
+const formatEta = (value?: string) => {
+  const raw = String(value || "").trim();
+  if (!raw) return "-";
+  const d = new Date(raw);
+  if (Number.isNaN(d.getTime())) return raw;
+  return d.toLocaleString("zh-CN", {
+    hour12: false,
+    month: "2-digit",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+};
+
+const loadWaybillETA = async () => {
+  if (!waybills.value.length) return;
+  const rows = await logisticsApi.listWaybillETA({
+    waybill_ids: waybills.value.map((item) => item.id),
+  });
+  const etaMap: Record<string, LogisticsWaybillETA> = Object.fromEntries(
+    rows.map((item) => [item.waybillId, item]),
+  );
+  waybills.value = waybills.value.map((item) => {
+    const eta = etaMap[item.id];
+    if (!eta) return item;
+    const next: Waybill = {
+      ...item,
+      promisedAt: eta.promisedAt || "",
+      estimatedAt: eta.estimatedAt || "",
+      timezone: eta.timezone || "UTC",
+      eta: eta.estimatedAt ? formatEta(eta.estimatedAt) : item.eta,
+    };
+    if (eta.delayed && next.status !== "delivered") {
+      next.status = "delay";
+      next.progress = progressByStatus("delay");
+    }
+    return next;
+  });
+};
+
+const loadWaybillDetail = async (waybill: Waybill) => {
+  const detail = await logisticsApi.getWaybillDetail(waybill.id);
+  const timeline: TimelineNode[] = detail.tracking.map((node) => ({
+    time: node.occurredAt ? node.occurredAt.replace("T", " ").slice(0, 16) : "-",
+    city: String(node.payload?.city || "-"),
+    status: node.status,
+    message: node.description || "-",
+    exception: node.status === "exception" ? "异常" : undefined,
+  }));
+  waybill.timeline = timeline;
+};
+
+const resolveErrorMessage = (error: any): string => {
+  const dataMessage =
+    error?.data?.error?.message || error?.data?.message || error?.response?._data?.error?.message;
+  if (typeof dataMessage === "string" && dataMessage.trim()) return dataMessage;
+  if (typeof error?.message === "string" && error.message.trim()) return error.message;
+  return "请求失败，请稍后重试";
+};
 
 const keyword = ref("");
 const carrierFilter = ref("");
@@ -212,6 +958,20 @@ const carrierOptions = computed(() =>
   ),
 );
 
+const customsPackOptions = computed(() =>
+  customsRulePacks.value.map((item) => ({
+    label: `${item.name} (${item.countryCode})`,
+    value: item.id,
+  })),
+);
+
+const complianceKBOptions = computed(() =>
+  complianceKBVersions.value.map((item) => ({
+    label: `${item.policyVersion} (${item.status})`,
+    value: item.id,
+  })),
+);
+
 const statusOptions = [
   { label: "全部状态", value: "" },
   { label: "待揽收", value: "created" },
@@ -220,19 +980,35 @@ const statusOptions = [
   { label: "已签收", value: "delivered" },
 ];
 
+const syncJobStatusOptions = [
+  { label: "全部状态", value: "" },
+  { label: "待揽收", value: "created" },
+  { label: "运输中", value: "in_transit" },
+  { label: "延误", value: "delay" },
+];
+
 const columns = computed<TableColumn<Waybill>[]>(() => [
   { accessorKey: "orderNo", header: "订单号" },
   { accessorKey: "waybillNo", header: "运单号" },
+  { accessorKey: "packageNo", header: "包裹" },
   { accessorKey: "carrier", header: "承运商" },
   { accessorKey: "channel", header: "渠道" },
+  { accessorKey: "orderFulfillmentStatus", header: "订单履约" },
   { accessorKey: "status", header: "状态" },
   { accessorKey: "progress", header: "进度" },
-  { accessorKey: "eta", header: "预计到达" },
+  { accessorKey: "eta", header: "承诺达 / 预计达" },
   { id: "actions", header: "操作" },
 ]);
 
+const groupedWaybills = computed(() =>
+  [...waybills.value].sort((a, b) => {
+    if (a.orderNo === b.orderNo) return a.packageNo - b.packageNo;
+    return a.orderNo.localeCompare(b.orderNo);
+  }),
+);
+
 const filteredWaybills = computed(() =>
-  waybills.value.filter((waybill) => {
+  groupedWaybills.value.filter((waybill) => {
     const matchesKeyword =
       !keyword.value ||
       waybill.orderNo.includes(keyword.value) ||
@@ -245,21 +1021,786 @@ const filteredWaybills = computed(() =>
 
 watch(
   filteredWaybills,
-  (list) => {
+  async (list) => {
     if (!selectedWaybill.value && list.length) {
       selectedWaybill.value = list[0];
-    } else if (
+      await loadWaybillDetail(list[0]);
+      return;
+    }
+    if (
       selectedWaybill.value &&
       !list.some((waybill) => waybill.waybillNo === selectedWaybill.value?.waybillNo)
     ) {
       selectedWaybill.value = list[0] ?? null;
+      if (list[0]) {
+        await loadWaybillDetail(list[0]);
+      }
     }
   },
   { immediate: true },
 );
 
-const selectWaybill = (waybill: Waybill) => {
+const selectWaybill = async (waybill: Waybill) => {
   selectedWaybill.value = waybill;
+  await loadWaybillDetail(waybill);
+};
+
+const updateWaybillStatus = (waybillID: string, nextStatus: string) => {
+  const normalized = normalizeStatus(nextStatus);
+  waybills.value = waybills.value.map((item) =>
+    item.id === waybillID
+      ? {
+          ...item,
+          status: normalized,
+          progress: progressByStatus(normalized),
+        }
+      : item,
+  );
+  if (selectedWaybill.value?.id === waybillID) {
+    selectedWaybill.value = {
+      ...selectedWaybill.value,
+      status: normalized,
+      progress: progressByStatus(normalized),
+    };
+  }
+};
+
+const syncTracking = async (waybill: Waybill) => {
+  syncingWaybillIDs.value = {
+    ...syncingWaybillIDs.value,
+    [waybill.id]: true,
+  };
+  try {
+    const result = await logisticsApi.syncWaybillTracking(waybill.id, { limit: 20 });
+    updateWaybillStatus(waybill.id, result.currentStatus || waybill.status);
+    if (selectedWaybill.value?.id === waybill.id) {
+      await loadWaybillDetail(selectedWaybill.value);
+    }
+    toast.add({
+      title: `轨迹同步完成 · ${waybill.waybillNo}`,
+      description: `新增 ${result.appended} 条，重放 ${result.replayed} 条，当前状态 ${result.currentStatus || "-"}`,
+      color: "success",
+    });
+  } catch (error: any) {
+    toast.add({
+      title: `轨迹同步失败 · ${waybill.waybillNo}`,
+      description: resolveErrorMessage(error),
+      color: "error",
+    });
+  } finally {
+    syncingWaybillIDs.value = {
+      ...syncingWaybillIDs.value,
+      [waybill.id]: false,
+    };
+  }
+};
+
+const refreshTracking = async () => {
+  const target = selectedWaybill.value || filteredWaybills.value[0];
+  if (!target) return;
+  syncingAll.value = true;
+  try {
+    await syncTracking(target);
+  } finally {
+    syncingAll.value = false;
+  }
+};
+
+const openSyncJobModal = () => {
+  syncJobOpen.value = true;
+};
+
+const createSyncJob = async () => {
+  syncJobCreating.value = true;
+  try {
+    const job = await logisticsApi.createTrackingSyncJob({
+      carrier_id: syncJobForm.carrierId || undefined,
+      waybill_status: syncJobForm.waybillStatus || undefined,
+      batch_limit: Number(syncJobForm.batchLimit || 20),
+      event_limit: Number(syncJobForm.eventLimit || 20),
+    });
+    syncJobOpen.value = false;
+    await loadWaybills();
+    toast.add({
+      title: "批量同步任务已执行",
+      description: `状态 ${job.status}，成功 ${job.successCount}，失败 ${job.failedCount}`,
+      color: job.failedCount > 0 ? "warning" : "success",
+    });
+  } catch (error: any) {
+    toast.add({
+      title: "批量同步任务失败",
+      description: resolveErrorMessage(error),
+      color: "error",
+    });
+  } finally {
+    syncJobCreating.value = false;
+  }
+};
+
+const openFailureCompensation = async (waybill: Waybill) => {
+  failureWaybillNo.value = waybill.waybillNo;
+  failureCompensationOpen.value = true;
+  await loadGatewayFailures();
+};
+
+const loadGatewayFailures = async () => {
+  failureLoading.value = true;
+  try {
+    gatewayFailures.value = await logisticsApi.listGatewayFailures({
+      waybill_no: failureWaybillNo.value || undefined,
+      limit: 20,
+    });
+  } finally {
+    failureLoading.value = false;
+  }
+};
+
+const ingestGatewayFailures = async () => {
+  failureLoading.value = true;
+  try {
+    await logisticsApi.ingestGatewayFailures({ hours: 24 });
+    await loadGatewayFailures();
+  } finally {
+    failureLoading.value = false;
+  }
+};
+
+const compensateFailure = async (id: string) => {
+  failureLoading.value = true;
+  try {
+    await logisticsApi.compensateGatewayFailure(id);
+    await loadGatewayFailures();
+    await loadWaybills();
+    if (selectedWaybill.value) {
+      await loadWaybillDetail(selectedWaybill.value);
+    }
+  } finally {
+    failureLoading.value = false;
+  }
+};
+
+const openOrchestration = async (waybill: Waybill) => {
+  orchestrationForm.waybillId = waybill.id;
+  orchestrationForm.waybillNo = waybill.waybillNo;
+  orchestrationOpen.value = true;
+  orchestrationLoading.value = true;
+  try {
+    orchestrationRules.value = await logisticsApi.listExceptionOrchestrationRules({ enabled: true });
+    orchestrationRuns.value = await logisticsApi.listExceptionOrchestrationRuns({
+      waybill_no: waybill.waybillNo,
+      limit: 20,
+    });
+  } finally {
+    orchestrationLoading.value = false;
+  }
+};
+
+const createOrchestrationRule = async () => {
+  orchestrationLoading.value = true;
+  try {
+    const row = await logisticsApi.upsertExceptionOrchestrationRule({
+      name: orchestrationForm.ruleName || "自动编排规则",
+      trigger_event: orchestrationForm.triggerEvent || "delay",
+      action: orchestrationForm.action || "auto_compensate",
+      priority: Number(orchestrationForm.priority || 100),
+      enabled: true,
+    });
+    orchestrationRules.value = [row, ...orchestrationRules.value.filter((item) => item.id !== row.id)];
+  } finally {
+    orchestrationLoading.value = false;
+  }
+};
+
+const executeOrchestration = async () => {
+  const rule = orchestrationRules.value[0];
+  if (!rule) return;
+  orchestrationLoading.value = true;
+  try {
+    await logisticsApi.executeExceptionOrchestration({
+      rule_id: rule.id,
+      waybill_id: orchestrationForm.waybillId || undefined,
+      waybill_no: orchestrationForm.waybillNo || undefined,
+      trigger: orchestrationForm.triggerEvent || undefined,
+    });
+    orchestrationRuns.value = await logisticsApi.listExceptionOrchestrationRuns({
+      waybill_no: orchestrationForm.waybillNo,
+      limit: 20,
+    });
+  } finally {
+    orchestrationLoading.value = false;
+  }
+};
+
+const openLastmileRecovery = async (waybill: Waybill) => {
+  lastmileForm.waybillId = waybill.id;
+  lastmileForm.waybillNo = waybill.waybillNo;
+  lastmileRecoveryOpen.value = true;
+  lastmileLoading.value = true;
+  try {
+    lastmileRules.value = await logisticsApi.listLastmileRecoveryRules({ enabled: true });
+    lastmileRuns.value = await logisticsApi.listLastmileRecoveryRuns({
+      waybill_no: waybill.waybillNo,
+      limit: 20,
+    });
+  } finally {
+    lastmileLoading.value = false;
+  }
+};
+
+const createLastmileRule = async () => {
+  lastmileLoading.value = true;
+  try {
+    const row = await logisticsApi.upsertLastmileRecoveryRule({
+      name: lastmileForm.ruleName || "末端异常自愈规则",
+      trigger_event: lastmileForm.triggerEvent || "delay",
+      action: lastmileForm.action || "redispatch",
+      priority: 100,
+      max_retries: Number(lastmileForm.maxRetries || 3),
+      enabled: true,
+    });
+    lastmileRules.value = [row, ...lastmileRules.value.filter((item) => item.id !== row.id)];
+  } finally {
+    lastmileLoading.value = false;
+  }
+};
+
+const executeLastmile = async () => {
+  const rule = lastmileRules.value[0];
+  lastmileLoading.value = true;
+  try {
+    await logisticsApi.executeLastmileRecovery({
+      request_key: `lastmile#${lastmileForm.waybillId}#${Date.now()}`,
+      rule_id: rule?.id,
+      waybill_id: lastmileForm.waybillId || undefined,
+      waybill_no: lastmileForm.waybillNo || undefined,
+      trigger_event: lastmileForm.triggerEvent || undefined,
+    });
+    lastmileRuns.value = await logisticsApi.listLastmileRecoveryRuns({
+      waybill_no: lastmileForm.waybillNo,
+      limit: 20,
+    });
+  } finally {
+    lastmileLoading.value = false;
+  }
+};
+
+const takeoverLastmile = async (id: string) => {
+  lastmileLoading.value = true;
+  try {
+    await logisticsApi.takeoverLastmileRecovery(id, {
+      action: "takeover",
+      operator_id: "admin",
+      reason: "manual intervention",
+    });
+    lastmileRuns.value = await logisticsApi.listLastmileRecoveryRuns({
+      waybill_no: lastmileForm.waybillNo,
+      limit: 20,
+    });
+  } finally {
+    lastmileLoading.value = false;
+  }
+};
+
+const openCrossborder = async (waybill: Waybill) => {
+  crossborderForm.waybillId = waybill.id;
+  crossborderForm.waybillNo = waybill.waybillNo;
+  crossborderForm.docNo = "";
+  crossborderQuote.value = null;
+  crossborderNormalizedResult.value = "";
+  crossborderNormalizedSource.value = "";
+  customsPrecheckResult.value = null;
+  customsForm.packId = "";
+  customsForm.countryCode = (crossborderForm.countryTo || "US").toUpperCase();
+  customsForm.declaredValue = 0;
+  customsForm.taxNo = "";
+  customsForm.hsCode = "";
+  customsForm.documentType = "invoice";
+  customsForm.documentCount = 1;
+  complianceKBDiff.value = null;
+  complianceKBForm.basePolicyId = "";
+  complianceKBForm.targetPolicyId = "";
+  complianceKBForm.rolloutPercent = 100;
+  complianceKBForm.effectiveFrom = "";
+  complianceKBForm.effectiveTo = "";
+  crossborderOpen.value = true;
+  crossborderLoading.value = true;
+  try {
+    crossborderDocuments.value = await logisticsApi.listCrossborderDocuments({
+      waybill_no: waybill.waybillNo,
+      limit: 20,
+    });
+    crossborderTrackingMaps.value = await logisticsApi.listCrossborderTrackingMaps({
+      provider: crossborderForm.provider || undefined,
+      enabled: true,
+      limit: 20,
+    });
+    customsRulePacks.value = await logisticsApi.listCustomsRulePacks({
+      country_code: customsForm.countryCode || undefined,
+      status: "active",
+      limit: 20,
+    });
+    if (customsRulePacks.value.length > 0) {
+      customsForm.packId = customsRulePacks.value[0].id;
+      customsRuleVersions.value = await logisticsApi.listCustomsRuleVersions(customsForm.packId, { limit: 10 });
+    } else {
+      customsRuleVersions.value = [];
+    }
+    await loadComplianceKBVersions();
+  } finally {
+    crossborderLoading.value = false;
+  }
+};
+
+const loadComplianceKBVersions = async () => {
+  complianceKBVersions.value = await logisticsApi.listComplianceKBVersions({
+    country_code: customsForm.countryCode || undefined,
+    limit: 30,
+  });
+  complianceKBForm.targetPolicyId = complianceKBVersions.value[0]?.id || "";
+  complianceKBForm.basePolicyId = complianceKBVersions.value[1]?.id || complianceKBVersions.value[0]?.id || "";
+};
+
+const saveCrossborderDoc = async () => {
+  if (!crossborderForm.waybillNo || !crossborderForm.docType || !crossborderForm.docNo) return;
+  crossborderLoading.value = true;
+  try {
+    const row = await logisticsApi.upsertCrossborderDocument({
+      waybill_id: crossborderForm.waybillId || undefined,
+      waybill_no: crossborderForm.waybillNo,
+      doc_type: crossborderForm.docType,
+      doc_no: crossborderForm.docNo,
+      country_from: crossborderForm.countryFrom || undefined,
+      country_to: crossborderForm.countryTo || undefined,
+      status: "validated",
+    });
+    crossborderDocuments.value = [row, ...crossborderDocuments.value.filter((item) => item.id !== row.id)];
+  } finally {
+    crossborderLoading.value = false;
+  }
+};
+
+const quoteCrossborderTax = async () => {
+  if (!crossborderForm.countryTo) return;
+  crossborderLoading.value = true;
+  try {
+    const resp = await logisticsApi.quoteCrossborderTax({
+      request_key: `crossborder-tax#${crossborderForm.waybillNo}#${Date.now()}`,
+      waybill_id: crossborderForm.waybillId || undefined,
+      waybill_no: crossborderForm.waybillNo || undefined,
+      destination_country: crossborderForm.countryTo,
+      currency: "USD",
+      declared_value: 120,
+      shipping_fee: 12,
+      insurance_fee: 3,
+    });
+    crossborderQuote.value = resp.quote;
+  } finally {
+    crossborderLoading.value = false;
+  }
+};
+
+const normalizeCrossborderStatus = async () => {
+  if (!crossborderForm.provider || !crossborderForm.providerStatus) return;
+  crossborderLoading.value = true;
+  try {
+    await logisticsApi.upsertCrossborderTrackingMap({
+      provider: crossborderForm.provider,
+      provider_status: crossborderForm.providerStatus,
+      normalized_status: crossborderForm.normalizedStatus,
+      priority: 100,
+      enabled: true,
+    });
+    const result = await logisticsApi.normalizeCrossborderTracking({
+      provider: crossborderForm.provider,
+      provider_status: crossborderForm.providerStatus,
+    });
+    crossborderNormalizedResult.value = result.normalizedStatus;
+    crossborderNormalizedSource.value = result.source;
+    crossborderTrackingMaps.value = await logisticsApi.listCrossborderTrackingMaps({
+      provider: crossborderForm.provider,
+      enabled: true,
+      limit: 20,
+    });
+  } finally {
+    crossborderLoading.value = false;
+  }
+};
+
+const runCustomsPrecheck = async () => {
+  customsLoading.value = true;
+  try {
+    customsPrecheckResult.value = await logisticsApi.customsPrecheck({
+      pack_id: customsForm.packId || undefined,
+      country_code: customsForm.countryCode || undefined,
+      waybill_no: crossborderForm.waybillNo || undefined,
+      declared_value: Number(customsForm.declaredValue || 0),
+      tax_no: customsForm.taxNo || undefined,
+      hs_code: customsForm.hsCode || undefined,
+      document_type: customsForm.documentType || undefined,
+      document_count: Number(customsForm.documentCount || 0),
+      payload: {
+        country_code: customsForm.countryCode || undefined,
+      },
+    });
+  } finally {
+    customsLoading.value = false;
+  }
+};
+
+const manualReleaseCustoms = async () => {
+  customsLoading.value = true;
+  try {
+    customsPrecheckResult.value = await logisticsApi.customsPrecheck({
+      pack_id: customsForm.packId || undefined,
+      country_code: customsForm.countryCode || undefined,
+      waybill_no: crossborderForm.waybillNo || undefined,
+      declared_value: Number(customsForm.declaredValue || 0),
+      tax_no: customsForm.taxNo || undefined,
+      hs_code: customsForm.hsCode || undefined,
+      document_type: customsForm.documentType || undefined,
+      document_count: Number(customsForm.documentCount || 0),
+      manual_release: true,
+      payload: {
+        country_code: customsForm.countryCode || undefined,
+      },
+    });
+    toast.add({ title: "已人工确认放行", color: "success" });
+  } finally {
+    customsLoading.value = false;
+  }
+};
+
+const syncComplianceKBPolicy = async () => {
+  complianceKBLoading.value = true;
+  try {
+    await logisticsApi.syncComplianceKBPolicy({
+      country_code: customsForm.countryCode || undefined,
+      pack_id: customsForm.packId || undefined,
+      source_version_id: customsRuleVersions.value[0]?.id || undefined,
+      effective_from: complianceKBForm.effectiveFrom || undefined,
+      effective_to: complianceKBForm.effectiveTo || undefined,
+      notes: `sync by waybill ${crossborderForm.waybillNo || "-"}`,
+      operator_id: "admin",
+    });
+    await loadComplianceKBVersions();
+    toast.add({ title: "合规版本同步成功", color: "success" });
+  } catch (error: any) {
+    toast.add({ title: "合规版本同步失败", description: resolveErrorMessage(error), color: "error" });
+  } finally {
+    complianceKBLoading.value = false;
+  }
+};
+
+const diffComplianceKBPolicies = async () => {
+  if (!complianceKBForm.basePolicyId || !complianceKBForm.targetPolicyId) return;
+  complianceKBLoading.value = true;
+  try {
+    complianceKBDiff.value = await logisticsApi.diffComplianceKBPolicies({
+      base_policy_id: complianceKBForm.basePolicyId,
+      target_policy_id: complianceKBForm.targetPolicyId,
+    });
+  } catch (error: any) {
+    toast.add({ title: "版本比对失败", description: resolveErrorMessage(error), color: "error" });
+  } finally {
+    complianceKBLoading.value = false;
+  }
+};
+
+const publishComplianceKBPolicy = async () => {
+  if (!complianceKBForm.targetPolicyId) return;
+  complianceKBLoading.value = true;
+  try {
+    await logisticsApi.publishComplianceKBPolicy(complianceKBForm.targetPolicyId, {
+      rollout_percent: Number(complianceKBForm.rolloutPercent || 100),
+      rollout_tenants: [],
+      effective_from: complianceKBForm.effectiveFrom || undefined,
+      effective_to: complianceKBForm.effectiveTo || undefined,
+      operator_id: "admin",
+    });
+    await loadComplianceKBVersions();
+    toast.add({ title: "合规版本已发布", color: "success" });
+  } catch (error: any) {
+    toast.add({ title: "发布失败", description: resolveErrorMessage(error), color: "error" });
+  } finally {
+    complianceKBLoading.value = false;
+  }
+};
+
+const openAddressValidation = (waybill: Waybill) => {
+  addressForm.waybillId = waybill.id;
+  addressForm.waybillNo = waybill.waybillNo;
+  addressForm.address = "";
+  latestAddressValidation.value = null;
+  addressValidationOpen.value = true;
+};
+
+const checkAddressValidation = async () => {
+  if (!addressForm.address) return;
+  addressLoading.value = true;
+  try {
+    latestAddressValidation.value = await logisticsApi.checkAddressValidation({
+      request_key: `${addressForm.waybillNo || "manual"}#${Date.now()}`,
+      waybill_id: addressForm.waybillId || undefined,
+      waybill_no: addressForm.waybillNo || undefined,
+      address: addressForm.address,
+    });
+  } finally {
+    addressLoading.value = false;
+  }
+};
+
+watch(
+  () => customsForm.packId,
+  async (value) => {
+    if (!value) {
+      customsRuleVersions.value = [];
+      return;
+    }
+    customsRuleVersions.value = await logisticsApi.listCustomsRuleVersions(value, { limit: 10 });
+  },
+);
+
+watch(
+  () => customsForm.countryCode,
+  async (value) => {
+    if (!crossborderOpen.value) return;
+    customsRulePacks.value = await logisticsApi.listCustomsRulePacks({
+      country_code: (value || "").trim() || undefined,
+      status: "active",
+      limit: 20,
+    });
+    if (!customsRulePacks.value.find((item) => item.id === customsForm.packId)) {
+      customsForm.packId = customsRulePacks.value[0]?.id || "";
+    }
+    await loadComplianceKBVersions();
+  },
+);
+
+onMounted(async () => {
+  await loadWaybills();
+  await loadWaybillETA();
+});
+
+const openRoutingPreview = (waybill: Waybill) => {
+  routingForm.waybillNo = waybill.waybillNo;
+  routingForm.serviceCode = waybill.channel || "std";
+  routingForm.preferredCarrierId = waybill.carrierId;
+  routingForm.preferredCarrierName = waybill.carrier;
+  routingPreviewResult.value = null;
+  routingPreviewOpen.value = true;
+};
+
+const openAllocation = (waybill: Waybill) => {
+  allocationForm.waybillId = waybill.id;
+  allocationForm.waybillNo = waybill.waybillNo;
+  allocationForm.orderId = waybill.orderNo;
+  allocationForm.preferredCarrier = waybill.carrierId || "";
+  allocationForm.overrideCarrierId = "";
+  allocationResult.value = null;
+  allocationOpen.value = true;
+};
+
+const loadInterwarehouseCandidates = async () => {
+  if (!interwarehouseForm.requestKey) return;
+  interwarehouseLoading.value = true;
+  try {
+    interwarehouseCandidates.value = await logisticsApi.listInterwarehouseAllocationCandidates({
+      request_key: interwarehouseForm.requestKey,
+      carrier_id: interwarehouseForm.carrierId || undefined,
+      source_warehouse_id: interwarehouseForm.sourceWarehouseId || undefined,
+      limit: 20,
+    });
+  } finally {
+    interwarehouseLoading.value = false;
+  }
+};
+
+const suggestInterwarehouseCandidates = async () => {
+  interwarehouseLoading.value = true;
+  try {
+    const requestKey =
+      interwarehouseForm.requestKey ||
+      `interwarehouse#${interwarehouseForm.waybillId || interwarehouseForm.orderId || "manual"}#${Date.now()}`;
+    interwarehouseForm.requestKey = requestKey;
+    interwarehouseCandidates.value = await logisticsApi.suggestInterwarehouseAllocation({
+      request_key: requestKey,
+      waybill_id: interwarehouseForm.waybillId || undefined,
+      order_id: interwarehouseForm.orderId || undefined,
+      carrier_id: interwarehouseForm.carrierId || undefined,
+      source_warehouse_id: interwarehouseForm.sourceWarehouseId || undefined,
+      destination_zone: interwarehouseForm.destinationZone || undefined,
+      required_qty: Number(interwarehouseForm.requiredQty || 1),
+      operator_id: "admin",
+    });
+  } finally {
+    interwarehouseLoading.value = false;
+  }
+};
+
+const confirmInterwarehouseCandidate = async (candidateId: string) => {
+  if (!candidateId) return;
+  interwarehouseConfirmingId.value = candidateId;
+  try {
+    const result = await logisticsApi.confirmInterwarehouseAllocation({
+      candidate_id: candidateId,
+      operator_id: "admin",
+    });
+    interwarehouseCandidates.value = result.items || [];
+    toast.add({
+      color: "success",
+      title: "调拨已确认",
+      description: `${result.selected.sourceWarehouseID} → ${result.selected.targetWarehouseID}，数量 ${result.selected.transferQty}`,
+    });
+  } finally {
+    interwarehouseConfirmingId.value = "";
+  }
+};
+
+const openInterwarehouse = (waybill: Waybill) => {
+  interwarehouseForm.waybillId = waybill.id;
+  interwarehouseForm.waybillNo = waybill.waybillNo;
+  interwarehouseForm.orderId = waybill.orderNo;
+  interwarehouseForm.carrierId = waybill.carrierId || "";
+  interwarehouseForm.sourceWarehouseId = "";
+  interwarehouseForm.destinationZone = "";
+  interwarehouseForm.requiredQty = 1;
+  interwarehouseForm.requestKey = "";
+  interwarehouseCandidates.value = [];
+  interwarehouseOpen.value = true;
+};
+
+const runAllocation = async () => {
+  allocationLoading.value = true;
+  try {
+    allocationResult.value = await logisticsApi.allocateCarrier({
+      request_key: `waybill-alloc#${allocationForm.waybillId}#${Date.now()}`,
+      waybill_id: allocationForm.waybillId || undefined,
+      order_id: allocationForm.orderId || undefined,
+      warehouse_id: allocationForm.warehouseId || undefined,
+      destination_zone: allocationForm.destinationZone || undefined,
+      preferred_carrier: allocationForm.preferredCarrier || undefined,
+      strategy: "capacity_first",
+      operator_id: "admin",
+    });
+  } finally {
+    allocationLoading.value = false;
+  }
+};
+
+const runOverrideAllocation = async () => {
+  if (!allocationResult.value) return;
+  allocationLoading.value = true;
+  try {
+    allocationResult.value = await logisticsApi.overrideAllocation({
+      decision_id: allocationResult.value.decisionID,
+      carrier_id: allocationForm.overrideCarrierId || allocationForm.preferredCarrier,
+      reason: "manual reassignment",
+      operator_id: "admin",
+    });
+  } finally {
+    allocationLoading.value = false;
+  }
+};
+
+const previewRouting = async () => {
+  routingPreviewLoading.value = true;
+  try {
+    routingPreviewResult.value = await logisticsApi.simulateRoutingOptimizer({
+      request_key: `waybill-sim#${Date.now()}`,
+      warehouse_id: routingForm.warehouseId || undefined,
+      destination_zone: routingForm.destinationZone || undefined,
+      weight: Number(routingForm.weight || 0),
+      preferred_carrier_id: routingForm.preferredCarrierId || undefined,
+    });
+  } finally {
+    routingPreviewLoading.value = false;
+  }
+};
+
+const loadRedeliveryTasks = async (waybillId: string) => {
+  redeliveryTasks.value = await logisticsApi.listRedeliveryTasks({ waybill_id: waybillId });
+  if (redeliveryTasks.value.length && !redeliveryForm.taskId) {
+    redeliveryForm.taskId = redeliveryTasks.value[0].id;
+  }
+};
+
+const openRedelivery = async (waybill: Waybill) => {
+  redeliveryForm.taskId = "";
+  redeliveryForm.waybillId = waybill.id;
+  redeliveryForm.waybillNo = waybill.waybillNo;
+  redeliveryForm.reason = "failed_delivery";
+  redeliveryForm.operatorId = "admin";
+  redeliveryForm.requestKey = "";
+  redeliveryForm.addressLine = "";
+  redeliveryOpen.value = true;
+  await loadRedeliveryTasks(waybill.id);
+};
+
+const selectRedeliveryTask = (task: LogisticsRedeliveryTask) => {
+  redeliveryForm.taskId = task.id;
+  redeliveryForm.reason = task.lastReason || redeliveryForm.reason;
+};
+
+const initiateRedelivery = async () => {
+  if (!redeliveryForm.waybillId) return;
+  redeliveryLoading.value = true;
+  try {
+    const resp = await logisticsApi.initiateRedeliveryTask({
+      waybill_id: redeliveryForm.waybillId,
+      request_key: redeliveryForm.requestKey || undefined,
+      reason: redeliveryForm.reason || undefined,
+      operator_id: redeliveryForm.operatorId || undefined,
+      address: redeliveryForm.addressLine ? { line1: redeliveryForm.addressLine } : undefined,
+    });
+    redeliveryForm.taskId = resp.task.id;
+    await loadRedeliveryTasks(redeliveryForm.waybillId);
+  } finally {
+    redeliveryLoading.value = false;
+  }
+};
+
+const updateRedeliveryAddress = async () => {
+  if (!redeliveryForm.taskId) return;
+  redeliveryLoading.value = true;
+  try {
+    await logisticsApi.updateRedeliveryAddress(redeliveryForm.taskId, {
+      address: { line1: redeliveryForm.addressLine || "updated" },
+      operator_id: redeliveryForm.operatorId || undefined,
+      reason: redeliveryForm.reason || undefined,
+    });
+    await loadRedeliveryTasks(redeliveryForm.waybillId);
+  } finally {
+    redeliveryLoading.value = false;
+  }
+};
+
+const redispatchRedelivery = async () => {
+  if (!redeliveryForm.taskId) return;
+  redeliveryLoading.value = true;
+  try {
+    await logisticsApi.redispatchRedeliveryTask(redeliveryForm.taskId, {
+      request_key: redeliveryForm.requestKey || undefined,
+      operator_id: redeliveryForm.operatorId || undefined,
+      reason: redeliveryForm.reason || undefined,
+    });
+    await loadRedeliveryTasks(redeliveryForm.waybillId);
+  } finally {
+    redeliveryLoading.value = false;
+  }
+};
+
+const closeRedelivery = async () => {
+  if (!redeliveryForm.taskId) return;
+  redeliveryLoading.value = true;
+  try {
+    await logisticsApi.closeRedeliveryTask(redeliveryForm.taskId, {
+      operator_id: redeliveryForm.operatorId || undefined,
+      reason: redeliveryForm.reason || undefined,
+    });
+    await loadRedeliveryTasks(redeliveryForm.waybillId);
+  } finally {
+    redeliveryLoading.value = false;
+  }
 };
 
 const statusMeta = (status: WaybillStatus | "") => {
@@ -275,5 +1816,23 @@ const statusMeta = (status: WaybillStatus | "") => {
     default:
       return { label: "未知", color: "neutral" as const };
   }
+};
+
+const orderSummary = (waybill: Waybill) => {
+  const siblings = waybills.value.filter((row) => row.orderNo === waybill.orderNo);
+  const aggregateStatus = siblings.some((row) => row.orderFulfillmentStatus === "fully_shipped")
+    ? "fully_shipped"
+    : "partial_shipped";
+  return {
+    packageCount: siblings.length,
+    aggregateStatus,
+  };
+};
+
+const orderStatusMeta = (status: string) => {
+  if (status === "fully_shipped") {
+    return { label: "全部发货", color: "success" as const };
+  }
+  return { label: "部分发货", color: "warning" as const };
 };
 </script>

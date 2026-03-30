@@ -10,6 +10,7 @@
 
 - `README.md`（本文）：约定文档格式及维护指引。
 - `inventory/sku_stock_mvp.md`：SKU 可用库存闭环与上架/发布库存门禁（MVP）。
+- `membership/membership_entitlements_onboarding.md`：订阅支付后会籍/权益/代币发放与幂等验证用例。
 - `product/subscription_onboarding.md`：订阅型商品上架 & 下单准备的完整用例。
 - `product/standard_onboarding.md`：常规一次性商品上架与库存准备用例。
 - `product/category_management.md`：商品类目使用指导（类目树 / 模板 / 渠道映射 / CSV）。

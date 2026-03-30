@@ -47,18 +47,40 @@ func NewSyncJob(cfg *config.Config, repo *mrepo.ListingRepository, provider Metr
 	}
 }
 
+// Name returns scheduler worker name.
+func (j *SyncJob) Name() string {
+	return "marketplace.recommendation.sync"
+}
+
+// Interval returns scheduler interval.
+func (j *SyncJob) Interval() time.Duration {
+	if j == nil || j.interval <= 0 {
+		return time.Hour
+	}
+	return j.interval
+}
+
+// RunOnce executes one recommendation sync cycle.
+func (j *SyncJob) RunOnce(ctx context.Context) error {
+	if j == nil {
+		return nil
+	}
+	j.execute(ctx)
+	return nil
+}
+
 // Run starts the background synchronization loop until the context is canceled.
 func (j *SyncJob) Run(ctx context.Context) {
-	ticker := time.NewTicker(j.interval)
+	ticker := time.NewTicker(j.Interval())
 	defer ticker.Stop()
 
-	j.execute(ctx)
+	_ = j.RunOnce(ctx)
 	for {
 		select {
 		case <-ctx.Done():
 			return
 		case <-ticker.C:
-			j.execute(ctx)
+			_ = j.RunOnce(ctx)
 		}
 	}
 }

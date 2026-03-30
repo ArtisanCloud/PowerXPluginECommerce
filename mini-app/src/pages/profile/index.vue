@@ -15,15 +15,15 @@
     </view>
 
     <view class="px-4">
-      <view class="relative rounded-3xl bg-white p-4 shadow-sm overflow-hidden">
+      <view class="relative rounded-3xl bg-white p-4 shadow-sm overflow-hidden" hover-class="opacity-90" @tap="toMembershipUpgrade">
         <view class="absolute -top-8 -right-12 h-40 w-40 rounded-full" style="background: rgba(79, 138, 126, 0.12);"></view>
         <view class="absolute top-14 -right-6 h-28 w-28 rounded-full" style="background: rgba(79, 138, 126, 0.10);"></view>
 
         <view v-if="loggedIn" class="relative flex items-center gap-4">
-          <view class="relative">
+          <view class="relative flex flex-col items-center gap-2">
             <image class="h-20 w-20 rounded-full bg-gray-100" mode="aspectFill" :src="avatarUrl" />
-            <view class="absolute bottom-0 right-0 rounded-full border border-white px-2 py-1" style="background: #4F8A7E;">
-              <text class="font-extrabold text-white" style="font-size: 10px;">LV.5</text>
+            <view class="rounded-full border border-white px-2 py-1" style="background: #4F8A7E;">
+              <text class="font-extrabold text-white" style="font-size: 10px;">{{ membershipLevelText }}</text>
             </view>
           </view>
           <view class="flex-1 min-w-0">
@@ -31,7 +31,7 @@
               <text class="truncate text-xl font-extrabold">{{ displayName }}</text>
               <text class="text-sm text-muted" @tap="noop">✎</text>
             </view>
-            <view class="mt-1 text-sm text-muted">Gold Member Distributor</view>
+            <view class="mt-1 text-sm text-muted">{{ membershipTitle }}</view>
           </view>
         </view>
 
@@ -49,23 +49,24 @@
         </view>
       </view>
 
-      <view class="mt-3 rounded-3xl bg-white p-4 shadow-sm">
+      <view class="mt-3 rounded-3xl bg-white p-4 shadow-sm" hover-class="opacity-90" @tap="toBenefitsDetail">
         <view class="flex justify-between gap-3">
           <view class="flex flex-1 flex-col items-center">
-            <view class="text-xl font-extrabold">¥2,450</view>
-            <view class="mt-1 text-xs text-muted">余额</view>
+            <view class="text-xl font-extrabold">{{ tokenBalanceText }}</view>
+            <view class="mt-1 text-xs text-muted">代币</view>
           </view>
           <view class="my-auto h-8 w-px bg-gray-100"></view>
           <view class="flex flex-1 flex-col items-center">
-            <view class="text-xl font-extrabold">1,204</view>
-            <view class="mt-1 text-xs text-muted">积分</view>
+            <view class="text-xl font-extrabold">{{ entitlementsCount }}</view>
+            <view class="mt-1 text-xs text-muted">权益</view>
           </view>
           <view class="my-auto h-8 w-px bg-gray-100"></view>
           <view class="flex flex-1 flex-col items-center">
-            <view class="text-xl font-extrabold">5</view>
-            <view class="mt-1 text-xs text-muted">优惠券</view>
+            <view class="text-xl font-extrabold">{{ tokenTypeCount }}</view>
+            <view class="mt-1 text-xs text-muted">代币种类</view>
           </view>
         </view>
+        <view class="mt-3 flex items-center justify-center text-xs text-primary font-semibold">查看权益详情 ›</view>
       </view>
 
       <view class="mt-3 rounded-3xl bg-white p-4 shadow-sm">
@@ -167,13 +168,37 @@ import { onShow } from "@dcloudio/uni-app";
 import { syncTabBarSelected } from "@/utils/tabbar";
 import { clearSession, getCustomerIdentifier, getCustomerName, isLoggedIn } from "@/services/session";
 import { miniAppListMyOrders } from "@/services/miniapp-order";
+import { miniAppGetEntitlements, miniAppGetMembershipProfile, miniAppGetTokenBalances } from "@/services/miniapp-membership";
 
 const topInset = ref<number>(40);
 
 const loggedIn = computed(() => isLoggedIn());
-const displayName = computed(() => getCustomerName() || getCustomerIdentifier() || "用户");
-const avatarUrl = "/static/icons/image-placeholder.svg";
+const profileName = ref<string>("");
+const profileTier = ref<string>("");
+const profileTierName = ref<string>("");
+const profileAvatar = ref<string>("");
+const displayName = computed(() => profileName.value || getCustomerName() || getCustomerIdentifier() || "用户");
+const avatarUrl = computed(() => profileAvatar.value || "/static/icons/image-placeholder.svg");
+const membershipTitle = computed(() => {
+  const tierName = String(profileTierName.value || "").trim();
+  if (tierName) return tierName;
+  const code = String(profileTier.value || "").trim();
+  if (!code) return "普通会员";
+  return code
+    .replace(/[_-]+/g, " ")
+    .replace(/\b\w/g, (m) => m.toUpperCase());
+});
+const membershipLevelText = computed(() => {
+  const raw = `${profileTierName.value || ""} ${profileTier.value || ""}`.trim();
+  const match = raw.match(/(\d{1,3})/);
+  const level = match ? match[1] : "0";
+  return `LV.${level}`;
+});
 const orderBadges = ref({ pendingPayment: false, shippedCount: 0 });
+const entitlementsCount = ref(0);
+const tokenTypeCount = ref(0);
+const tokenBalance = ref(0);
+const tokenBalanceText = computed(() => (tokenBalance.value > 0 ? String(tokenBalance.value) : "0"));
 
 function goLogin() {
   uni.setStorageSync("miniapp.auth.redirect", "/pages/profile/index");
@@ -195,6 +220,16 @@ function toAddress() {
   uni.navigateTo({ url: "/pages/address/index" });
 }
 
+function toBenefitsDetail() {
+  if (!loggedIn.value) return goLogin();
+  uni.navigateTo({ url: "/pages/membership/benefits" });
+}
+
+function toMembershipUpgrade() {
+  if (!loggedIn.value) return goLogin();
+  uni.navigateTo({ url: "/pages/membership/upgrade" });
+}
+
 async function refreshOrderBadges() {
   if (!loggedIn.value) {
     orderBadges.value = { pendingPayment: false, shippedCount: 0 };
@@ -206,6 +241,37 @@ async function refreshOrderBadges() {
     const pending = items.filter((x) => String((x as any)?.status || "").trim() === "pending_payment").length;
     const shipped = items.filter((x) => String((x as any)?.status || "").trim() === "shipped").length;
     orderBadges.value = { pendingPayment: pending > 0, shippedCount: shipped };
+  } catch {
+    // ignore
+  }
+}
+
+async function refreshMembershipSummary() {
+  if (!loggedIn.value) {
+    entitlementsCount.value = 0;
+    tokenTypeCount.value = 0;
+    tokenBalance.value = 0;
+    profileName.value = "";
+    profileTier.value = "";
+    profileTierName.value = "";
+    profileAvatar.value = "";
+    return;
+  }
+  try {
+    const [entRes, tokenRes, profileRes] = await Promise.all([
+      miniAppGetEntitlements(),
+      miniAppGetTokenBalances(),
+      miniAppGetMembershipProfile(),
+    ]);
+    const entItems = Array.isArray(entRes?.items) ? entRes.items : [];
+    const tokenItems = Array.isArray(tokenRes?.items) ? tokenRes.items : [];
+    entitlementsCount.value = entItems.length;
+    tokenTypeCount.value = tokenItems.length;
+    tokenBalance.value = tokenItems.reduce((sum, item) => sum + Number(item?.balance || 0), 0);
+    profileName.value = String(profileRes?.customerName || "").trim();
+    profileTier.value = String(profileRes?.membershipTier || "").trim();
+    profileTierName.value = String(profileRes?.tierName || "").trim();
+    profileAvatar.value = String(profileRes?.avatarUrl || "").trim();
   } catch {
     // ignore
   }
@@ -249,6 +315,7 @@ onMounted(() => {
 onShow(() => {
   syncTabBarSelected("pages/profile/index");
   void refreshOrderBadges();
+  void refreshMembershipSummary();
   if (!loggedIn.value) {
     goLogin();
   }

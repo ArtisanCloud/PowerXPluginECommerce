@@ -54,9 +54,9 @@
     "logout": "Logout"
   },
   "menus": {
-    "menu.com.powerx.plugin.ecommerce.channels": "Channel Center",
-    "menu.com.powerx.plugin.ecommerce.channels.list": "Channels",
-    "menu.com.powerx.plugin.ecommerce.channels.approval": "Channel Approvals"
+    "menu.com.powerx.plugins.ecommerce.channels": "Channel Center",
+    "menu.com.powerx.plugins.ecommerce.channels.list": "Channels",
+    "menu.com.powerx.plugins.ecommerce.channels.approval": "Channel Approvals"
   },
   "theme": {
     "light": "Light Theme",
@@ -281,7 +281,7 @@
       "createDescription": "Fill in the basic information to create a SKU record.",
       "detail": "SKU Detail",
       "search": "Search SKU, code or spec",
-    "status": "Status",
+      "status": "Status",
       "category": "Category",
       "brand": "Brand",
       "skuCode": "SKU Code",
@@ -706,8 +706,20 @@
           "orders": "Orders",
           "afterSales": "After-sales",
           "points": "Points & Growth",
+          "entitlements": "Entitlements",
           "notes": "Notes",
           "audit": "Audit"
+        },
+        "entitlements": {
+          "loadError": "Failed to load entitlements or tokens",
+          "tokens": "Token balances",
+          "tokenTypes": "{count} token types",
+          "entitlements": "Available entitlements",
+          "emptyTokens": "No token balances yet",
+          "emptyEntitlements": "No entitlements yet",
+          "unlimited": "Unlimited",
+          "noExpiry": "No expiry",
+          "validityRange": "Validity: {from} - {to}"
         },
         "empty": "Select a customer to view details",
         "lastOrder": "Last order time",

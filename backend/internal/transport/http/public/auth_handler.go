@@ -221,7 +221,7 @@ func (h *AuthHandler) handleDelegatedMeContext(c *gin.Context) {
 		h.handleProxyErr(c, err)
 		return
 	}
-	contracts.ResponseSuccess(c, ctx)
+	contracts.ResponseSuccess(c, mapDelegatedContext(ctx))
 }
 
 func (h *AuthHandler) handleLocalLogin(c *gin.Context) {
@@ -316,6 +316,10 @@ func mapUserContext(uc *iamservice.UserContext) gin.H {
 	if uc == nil {
 		return gin.H{}
 	}
+	roles := normalizeStringList(uc.Roles)
+	permissions := normalizeStringList(uc.Permissions)
+	isRoot := hasAnyRole(roles, "system.admin", "superadmin", "root")
+	canManageTemplates := isRoot || hasAnyRole(roles, "admin", "tenant.admin", "template.admin") || hasPermission(permissions, "base.templates.manage")
 	tenantUUID := strings.TrimSpace(uc.TenantUUID)
 	tenant := gin.H{
 		"uuid": tenantUUID,
@@ -328,16 +332,131 @@ func mapUserContext(uc *iamservice.UserContext) gin.H {
 		}
 	}
 	return gin.H{
-		"tenant": tenant,
+		"is_root":             isRoot,
+		"current_tenant_uuid": tenantUUID,
+		"current_member_id":   uc.MemberID,
+		"tenant":              tenant,
 		"user": gin.H{
 			"id":           uc.UserID,
 			"username":     uc.Username,
 			"email":        uc.Email,
 			"display_name": uc.DisplayName,
 		},
-		"roles":       uc.Roles,
-		"permissions": uc.Permissions,
+		"members": []gin.H{
+			{
+				"tenant_uuid": tenantUUID,
+				"tenant_name": uc.TenantName,
+				"member_id":   uc.MemberID,
+				"is_admin":    canManageTemplates,
+			},
+		},
+		"roles":       roles,
+		"permissions": permissions,
+		"capabilities": gin.H{
+			"templates": gin.H{
+				"can_create": canManageTemplates,
+				"can_update": canManageTemplates,
+				"can_delete": canManageTemplates,
+			},
+		},
 	}
+}
+
+func mapDelegatedContext(mc *authproxy.MeContext) gin.H {
+	if mc == nil {
+		return gin.H{}
+	}
+	roles := normalizeStringList(mc.Roles)
+	permissions := normalizeStringList(mc.Permissions)
+	currentTenantUUID := strings.TrimSpace(mc.CurrentTenantUUID)
+	currentMemberAdmin := false
+	for _, member := range mc.Members {
+		if strings.TrimSpace(member.TenantUUID) == currentTenantUUID && member.IsAdmin {
+			currentMemberAdmin = true
+			break
+		}
+	}
+	canManageTemplates := mc.IsRoot || currentMemberAdmin || hasPermission(permissions, "base.templates.manage")
+	canCreate := canManageTemplates
+	canUpdate := canManageTemplates
+	canDelete := canManageTemplates
+	if mc.Capabilities != nil && mc.Capabilities.Templates != nil {
+		canCreate = mc.Capabilities.Templates.CanCreate || canManageTemplates
+		canUpdate = mc.Capabilities.Templates.CanUpdate || canManageTemplates
+		canDelete = mc.Capabilities.Templates.CanDelete || canManageTemplates
+	}
+
+	return gin.H{
+		"is_root":             mc.IsRoot,
+		"current_tenant_uuid": currentTenantUUID,
+		"current_member_id":   mc.CurrentMemberID,
+		"user":                mc.User,
+		"members":             mc.Members,
+		"roles":               roles,
+		"permissions":         permissions,
+		"capabilities": gin.H{
+			"templates": gin.H{
+				"can_create": canCreate,
+				"can_update": canUpdate,
+				"can_delete": canDelete,
+			},
+		},
+	}
+}
+
+func normalizeStringList(input []string) []string {
+	if len(input) == 0 {
+		return []string{}
+	}
+	seen := make(map[string]struct{}, len(input))
+	out := make([]string, 0, len(input))
+	for _, item := range input {
+		val := strings.TrimSpace(item)
+		if val == "" {
+			continue
+		}
+		if _, ok := seen[val]; ok {
+			continue
+		}
+		seen[val] = struct{}{}
+		out = append(out, val)
+	}
+	return out
+}
+
+func hasAnyRole(roles []string, candidates ...string) bool {
+	if len(roles) == 0 || len(candidates) == 0 {
+		return false
+	}
+	roleSet := make(map[string]struct{}, len(roles))
+	for _, role := range roles {
+		roleSet[strings.ToLower(strings.TrimSpace(role))] = struct{}{}
+	}
+	for _, candidate := range candidates {
+		key := strings.ToLower(strings.TrimSpace(candidate))
+		if key == "" {
+			continue
+		}
+		if _, ok := roleSet[key]; ok {
+			return true
+		}
+	}
+	return false
+}
+
+func hasPermission(permissions []string, target string) bool {
+	target = strings.TrimSpace(target)
+	if target == "" || len(permissions) == 0 {
+		return false
+	}
+	targetLower := strings.ToLower(target)
+	for _, permission := range permissions {
+		key := strings.ToLower(strings.TrimSpace(permission))
+		if key == targetLower {
+			return true
+		}
+	}
+	return false
 }
 
 func mapTokens(tokens *iamservice.AuthTokens) gin.H {

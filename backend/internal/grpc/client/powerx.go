@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -31,6 +32,57 @@ import (
 	commonv1 "github.com/ArtisanCloud/PowerX/api/grpc/gen/go/common/v1"
 	stsv1 "github.com/ArtisanCloud/PowerX/api/grpc/gen/go/powerx/auth/sts/v1"
 )
+
+func resolveUpstreamToken(cfg *cfgpkg.GRPCUpstream) string {
+	if cfg == nil {
+		return ""
+	}
+	if v := strings.TrimSpace(os.Getenv("PX_TOOL_TOKEN")); v != "" {
+		return v
+	}
+	if v := strings.TrimSpace(os.Getenv("PX_PLUGIN_TOOL_TOKEN")); v != "" {
+		return v
+	}
+	if v := strings.TrimSpace(cfg.Token); v != "" {
+		return v
+	}
+	return strings.TrimSpace(os.Getenv("POWERX_AUTH_TOKEN"))
+}
+
+func resolveUpstreamTenant(cfg *cfgpkg.GRPCUpstream, token string) string {
+	if tid, ok := parseTenantIDFromJWT(token); ok {
+		return tid
+	}
+	if cfg == nil {
+		return ""
+	}
+	return strings.TrimSpace(strings.ToLower(cfg.TenantUUID))
+}
+
+func parseTenantIDFromJWT(raw string) (string, bool) {
+	raw = strings.TrimSpace(raw)
+	if raw == "" {
+		return "", false
+	}
+	parts := strings.Split(raw, ".")
+	if len(parts) < 2 {
+		return "", false
+	}
+	payload, err := base64.RawURLEncoding.DecodeString(parts[1])
+	if err != nil {
+		return "", false
+	}
+	claims := map[string]any{}
+	if err := json.Unmarshal(payload, &claims); err != nil {
+		return "", false
+	}
+	tid, _ := claims["tid"].(string)
+	tid = strings.TrimSpace(strings.ToLower(tid))
+	if tid == "" {
+		return "", false
+	}
+	return tid, true
+}
 
 // 通用请求和响应结构（与 PowerX proto 兼容）
 type RequestContext struct {
@@ -62,10 +114,11 @@ func NewPowerXServiceClient(ctx context.Context, c *cfgpkg.GRPCUpstream) (*Power
 		return nil, fmt.Errorf("grpc upstream address is required")
 	}
 
-	tenantUUID := strings.TrimSpace(strings.ToLower(c.TenantUUID))
+	token := resolveUpstreamToken(c)
+	tenantUUID := resolveUpstreamTenant(c, token)
 	p := &PowerXServiceClient{
 		conn:           nil,
-		token:          c.Token,
+		token:          token,
 		tenantUUID:     tenantUUID,
 		tenantLegacyID: parseLegacyTenantUuid(tenantUUID),
 		cfg:            c,
@@ -223,9 +276,6 @@ func (p *PowerXServiceClient) Outgoing(ctx context.Context) context.Context {
 		md.Set("authorization", "Bearer "+bearer)
 	}
 
-	if p.tenantUUID != "" {
-		md.Set("x-powerx-tenant-uuid", p.tenantUUID)
-	}
 	return metadata.NewOutgoingContext(ctx, md)
 }
 

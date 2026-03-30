@@ -24,7 +24,7 @@
 ## Runtime Config & Tenant Context
 
 - **API Base**：`web-admin/nuxt.config.ts` 已将 `runtimeConfig.public.apiBaseUrl` 指向宿主代理（`/_p/<plugin-id>/api/v1`）或 standalone `http://localhost:8078/api/v1`。页面/composable 统一通过 `const apiBase = useRuntimeConfig().public.apiBaseUrl;` 获取，不再手动拼接。
-- **Tenant UUID**：宿主脚手架在登录后写入 `tenant_uuid` Cookie 并将 tid/tenant_uuid 编码进 access token，`useAuth`/`getTenantUuid()` 已封装读取逻辑。后续客户域 API 只需依赖 API 客户端自动注入 `X-Tenant-UUID` 头或显式读取 cookie 即可。
+- **Tenant UUID**：宿主脚手架在登录后写入 `tenant_uuid` Cookie 并将 tid/tenant_uuid 编码进 access token，`useAuth`/`getTenantUuid()` 已封装读取逻辑。后续客户域 API 只需依赖 API 客户端读取 cookie / token 上下文或显式携带 query `tenant_uuid` 即可。
 - **审计记录**：批量操作/导入导出结果依旧由宿主任务中心写入审计，但本插件不再附加额外自定义头部，仅依赖宿主已有上下文。
 
 ## Constitution Check

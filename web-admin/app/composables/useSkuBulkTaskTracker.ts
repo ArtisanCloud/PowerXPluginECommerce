@@ -1,44 +1,76 @@
-import { computed, onBeforeUnmount, watch } from 'vue'
-import { useIntervalFn } from '@vueuse/core'
+import { computed, onBeforeUnmount, onMounted } from 'vue'
 import { useProductSkuStore } from '~/stores/productSku'
 import type { SkuBulkTask } from '~/types/product/sku'
+import { useWsBusClient, type WsBusEvent } from '~/composables/useWsBusClient'
 
 const ACTIVE_STATUSES = new Set(['pending', 'approved', 'running'])
+const TASK_PROGRESS_TOPICS = [
+  'task.progress',
+  'powerx.task.progress.v1',
+  'worker.task.updated',
+  'sku.bulk.progress',
+  'product.sku.bulk.progress.v1',
+] as const
+
+const wsBindingState: {
+  refs: number
+  handler: ((event: WsBusEvent) => void) | null
+} = {
+  refs: 0,
+  handler: null,
+}
 
 export function useSkuBulkTaskTracker() {
-	const store = useProductSkuStore()
-	const tasks = computed<SkuBulkTask[]>(() => {
-		return Object.values(store.bulkTasks || {}).sort((a, b) => {
-			const left = a.updatedAt ?? a.createdAt ?? ''
-			const right = b.updatedAt ?? b.createdAt ?? ''
-			return right.localeCompare(left)
-		})
-	})
-	const activeTasks = computed(() => tasks.value.filter((task) => ACTIVE_STATUSES.has(task.status)))
+  const store = useProductSkuStore()
+  const ws = useWsBusClient()
 
-	const refresh = async () => {
-		await store.refreshActiveBulkTasks()
-	}
+  const tasks = computed<SkuBulkTask[]>(() => {
+    return Object.values(store.bulkTasks || {}).sort((a, b) => {
+      const left = a.updatedAt ?? a.createdAt ?? ''
+      const right = b.updatedAt ?? b.createdAt ?? ''
+      return right.localeCompare(left)
+    })
+  })
 
-	const { pause, resume } = useIntervalFn(refresh, 8000, { immediate: false })
+  const activeTasks = computed(() => tasks.value.filter((task) => ACTIVE_STATUSES.has(task.status)))
 
-	watch(
-		() => activeTasks.value.length,
-		(count) => {
-			if (count > 0) {
-				resume()
-			} else {
-				pause()
-			}
-		},
-		{ immediate: true },
-	)
+  const bindStream = () => {
+    if (wsBindingState.handler) {
+      return
+    }
+    const handler = (event: WsBusEvent) => {
+      store.applyBulkTaskEvent(event)
+    }
+    TASK_PROGRESS_TOPICS.forEach((topic) => ws.subscribe(topic, handler))
+    ws.connect()
+    wsBindingState.handler = handler
+  }
 
-	onBeforeUnmount(() => pause())
+  const unbindStream = () => {
+    if (!wsBindingState.handler || wsBindingState.refs > 0) {
+      return
+    }
+    TASK_PROGRESS_TOPICS.forEach((topic) => ws.unsubscribe(topic, wsBindingState.handler!))
+    wsBindingState.handler = null
+  }
 
-	return {
-		tasks,
-		activeTasks,
-		refresh,
-	}
+  const refresh = async () => {
+    await store.refreshActiveBulkTasks()
+  }
+
+  onMounted(() => {
+    wsBindingState.refs += 1
+    bindStream()
+  })
+
+  onBeforeUnmount(() => {
+    wsBindingState.refs = Math.max(0, wsBindingState.refs - 1)
+    unbindStream()
+  })
+
+  return {
+    tasks,
+    activeTasks,
+    refresh,
+  }
 }

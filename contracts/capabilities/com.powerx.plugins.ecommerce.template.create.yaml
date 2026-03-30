@@ -1,0 +1,19 @@
+id: com.powerx.plugins.ecommerce.template.create
+type: API
+version: 1.0.0
+status: active
+description: 创建示例模板能力
+rbac:
+  resource: com.powerx.plugins.ecommerce:template
+  actions: [read, manage]
+provides:
+  - id: schema/output/com.powerx.plugins.ecommerce.template.create.json
+    path: schema/output/com.powerx.plugins.ecommerce.template.create.json
+consumes:
+  - id: schema/input/com.powerx.plugins.ecommerce.template.create.json
+    path: schema/input/com.powerx.plugins.ecommerce.template.create.json
+metadata:
+  protocols:
+    rest:
+      method: POST
+      path: /resources

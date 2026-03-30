@@ -203,6 +203,33 @@ export async function miniAppGetProductDetailWithSpec(id: string) {
   });
 }
 
+export type MiniAppSubscriptionPlan = {
+  id: string;
+  skuId?: string;
+  benefitIds?: string[];
+  planCode?: string;
+  name?: string;
+  billingCycle?: string;
+  billingValue?: number;
+  price?: number;
+  currency?: string;
+  trialDays?: number;
+  autoRenew?: boolean;
+  cancelPolicy?: string;
+  status?: string;
+};
+
+export type MiniAppSubscriptionPlanListResponse = {
+  items: MiniAppSubscriptionPlan[];
+};
+
+export async function miniAppListSubscriptionPlans(spuId: string) {
+  return await miniAppRequest<MiniAppSubscriptionPlanListResponse>({
+    method: "GET",
+    path: `/products/${encodeURIComponent(String(spuId))}/plans`,
+  });
+}
+
 export async function miniAppListSkus(spuId: string, page = 1, pageSize = 50) {
   const query = buildQuery({ page, pageSize });
   return await miniAppRequest<MiniAppSkuListResponse>({
@@ -238,31 +265,5 @@ export async function miniAppGetSellability(spuId: string, params: { channel: st
   return await miniAppRequest<MiniAppSellabilityResponse>({
     method: "GET",
     path: `/products/${encodeURIComponent(String(spuId))}/sellability${query}`,
-  });
-}
-
-export type MiniAppSubscriptionPlan = {
-  id: string;
-  skuId?: string;
-  planCode: string;
-  name: string;
-  billingCycle: string;
-  billingValue?: number;
-  price: number;
-  currency: string;
-  trialDays?: number;
-  autoRenew?: boolean;
-  cancelPolicy?: string;
-  status?: string;
-};
-
-export type MiniAppSubscriptionPlanListResponse = {
-  items: MiniAppSubscriptionPlan[];
-};
-
-export async function miniAppListSubscriptionPlans(spuId: string) {
-  return await miniAppRequest<MiniAppSubscriptionPlanListResponse>({
-    method: "GET",
-    path: `/products/${encodeURIComponent(String(spuId))}/plans`,
   });
 }

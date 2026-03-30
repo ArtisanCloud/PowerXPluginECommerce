@@ -1,17 +1,53 @@
 PLUGIN_FILE ?= plugin.yaml
+ifneq ($(wildcard docs/lifecycle/examples/manifest.yaml),)
 MANIFEST_FILE ?= docs/lifecycle/examples/manifest.yaml
+else ifneq ($(wildcard ../docs/standards/powerx-plugin/lifecycle/examples/manifest.yaml),)
+MANIFEST_FILE ?= ../docs/standards/powerx-plugin/lifecycle/examples/manifest.yaml
+else
+MANIFEST_FILE ?= docs/contracts/manifest.yaml
+endif
+ifneq ($(wildcard docs/lifecycle/contracts/manifest.schema.json),)
 MANIFEST_SCHEMA ?= docs/lifecycle/contracts/manifest.schema.json
+else ifneq ($(wildcard ../docs/standards/powerx-plugin/lifecycle/contracts/manifest.schema.json),)
+MANIFEST_SCHEMA ?= ../docs/standards/powerx-plugin/lifecycle/contracts/manifest.schema.json
+else
+MANIFEST_SCHEMA ?= ../specs/001-powerxplugin-foundation/contracts/manifest.schema.json
+endif
 
 ABS_PLUGIN_FILE := $(abspath $(PLUGIN_FILE))
 ABS_MANIFEST_FILE := $(abspath $(MANIFEST_FILE))
 ABS_MANIFEST_SCHEMA := $(abspath $(MANIFEST_SCHEMA))
-BACKEND_GOCACHE := $(abspath backend/.cache/go-build)
+EVENT_FABRIC_FILE ?= config/event_fabric.yaml
+ABS_EVENT_FABRIC_FILE := $(abspath $(EVENT_FABRIC_FILE))
+MANIFESTCHECK_DIR := $(BACKEND_DIR)/cmd/manifestcheck
+BACKEND_GOCACHE := $(abspath $(BACKEND_DIR)/.cache/go-build)
+MANIFEST_ALIGN_SKILL_DIR ?= .codex/skills/ci/manifest-align
+MANIFEST_ALIGN_SCRIPT := $(MANIFEST_ALIGN_SKILL_DIR)/scripts/manifest-align-check.mjs
+
+.PHONY: plugin-yaml-sync
+plugin-yaml-sync: ## 根据 contracts/capabilities 自动同步 plugin.d/capabilities.yaml 与 exposure.yaml
+	@echo "[manifest] syncing plugin catalogs from contracts/capabilities"
+	@if [ ! -d "$(MANIFESTCHECK_DIR)" ]; then \
+		echo "❌ 未找到 $(MANIFESTCHECK_DIR)，无法执行 plugin catalog 同步"; \
+		echo "   当前 BACKEND_DIR=$(BACKEND_DIR)"; \
+		exit 1; \
+	fi
+	@mkdir -p $(BACKEND_GOCACHE)
+	@cd $(BACKEND_DIR) && GOCACHE=$(BACKEND_GOCACHE) go run ./cmd/manifestcheck \
+		--plugin "$(ABS_PLUGIN_FILE)" \
+		--sync-catalogs \
+		--sync-only
 
 .PHONY: verify-manifest
 verify-manifest:
 	@echo "[manifest] Validating $(PLUGIN_FILE) against $(MANIFEST_FILE)"
+	@if [ ! -d "$(MANIFESTCHECK_DIR)" ]; then \
+		echo "❌ 未找到 $(MANIFESTCHECK_DIR)，无法执行 manifest 校验"; \
+		echo "   当前 BACKEND_DIR=$(BACKEND_DIR)"; \
+		exit 1; \
+	fi
 	@mkdir -p $(BACKEND_GOCACHE)
-	@cd backend && GOCACHE=$(BACKEND_GOCACHE) go run ./cmd/manifestcheck \
+	@cd $(BACKEND_DIR) && GOCACHE=$(BACKEND_GOCACHE) go run ./cmd/manifestcheck \
 		--plugin "$(ABS_PLUGIN_FILE)" \
 		--manifest "$(ABS_MANIFEST_FILE)" \
 		--schema "$(ABS_MANIFEST_SCHEMA)"
@@ -19,9 +55,90 @@ verify-manifest:
 .PHONY: check-capability
 check-capability:
 	@echo "[manifest] Running capability validation against $(PLUGIN_FILE)"
+	@if [ ! -d "$(MANIFESTCHECK_DIR)" ]; then \
+		echo "❌ 未找到 $(MANIFESTCHECK_DIR)，无法执行 capability 校验"; \
+		echo "   当前 BACKEND_DIR=$(BACKEND_DIR)"; \
+		exit 1; \
+	fi
 	@mkdir -p $(BACKEND_GOCACHE)
-	@cd backend && GOCACHE=$(BACKEND_GOCACHE) go run ./cmd/manifestcheck \
+	@cd $(BACKEND_DIR) && GOCACHE=$(BACKEND_GOCACHE) go run ./cmd/manifestcheck \
 		--plugin "$(ABS_PLUGIN_FILE)" \
 		--manifest "$(ABS_MANIFEST_FILE)" \
 		--schema "$(ABS_MANIFEST_SCHEMA)" \
 		--capabilities-only
+
+.PHONY: plugin-yaml-check
+plugin-yaml-check: plugin-yaml-sync plugin-id-check plugin-source-of-truth-check ## 一条命令校验 plugin.yaml（ID/能力/事件）
+	@echo "[manifest] running one-shot plugin.yaml checks (id + capabilities + events)"
+	@if [ ! -d "$(MANIFESTCHECK_DIR)" ]; then \
+		echo "❌ 未找到 $(MANIFESTCHECK_DIR)，无法执行 plugin.yaml 校验"; \
+		echo "   当前 BACKEND_DIR=$(BACKEND_DIR)"; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(EVENT_FABRIC_FILE)" ]; then \
+		echo "❌ 未找到 $(EVENT_FABRIC_FILE)，无法执行 events topic 对齐校验"; \
+		exit 1; \
+	fi
+	@mkdir -p $(BACKEND_GOCACHE)
+	@cd $(BACKEND_DIR) && GOCACHE=$(BACKEND_GOCACHE) go run ./cmd/manifestcheck \
+		--plugin "$(ABS_PLUGIN_FILE)" \
+		--manifest "" \
+		--schema "$(ABS_MANIFEST_SCHEMA)" \
+		--capabilities-only \
+		--plugin-only \
+		--event-fabric "$(ABS_EVENT_FABRIC_FILE)"
+	@echo "✅ plugin.yaml checks passed"
+
+.PHONY: plugin-source-of-truth-check
+plugin-source-of-truth-check: ## 检查 capabilities 事实源与 plugin.d 产物约束
+	@echo "[manifest] checking source-of-truth constraints"
+	@HAS_TOP_CAP=$$(awk '/^[[:space:]]*capabilities:[[:space:]]*$$/{print "yes"; exit}' $(PLUGIN_FILE)); \
+	HAS_CATALOG_CAP=$$(awk '/^[[:space:]]*catalogs:[[:space:]]*$$/{in_catalogs=1; next} in_catalogs && /^[^[:space:]]/ {in_catalogs=0} in_catalogs && /^[[:space:]]*capabilities:[[:space:]]*/ {print "yes"; exit}' $(PLUGIN_FILE)); \
+	if [ "$$HAS_TOP_CAP" = "yes" ] && [ "$$HAS_CATALOG_CAP" = "yes" ]; then \
+		echo "❌ plugin.yaml 同时存在顶层 capabilities 与 catalogs.capabilities（事实源冲突）"; \
+		echo "   建议保留 catalogs.capabilities + plugin.d/capabilities.yaml，移除顶层 capabilities"; \
+		exit 1; \
+	fi
+	@for f in plugin.d/capabilities.yaml plugin.d/exposure.yaml plugin.d/rbac.yaml; do \
+		if [ ! -f "$$f" ]; then \
+			echo "❌ 缺少 $$f（plugin.d 是运行时清单产物）"; \
+			exit 1; \
+		fi; \
+	done
+	@echo "✅ source-of-truth constraints passed"
+
+.PHONY: plugin-id-check
+plugin-id-check: ## 检查插件 ID 命名是否符合 com.powerx.plugins.*
+	@echo "[manifest] checking plugin id naming convention"
+	@PLUGIN_ID_VAL=$$(awk -F': *' '/^id:/ {print $$2; exit}' $(PLUGIN_FILE)); \
+	if [ -z "$$PLUGIN_ID_VAL" ]; then \
+		echo "❌ plugin.yaml 缺少 id"; \
+		exit 1; \
+	fi; \
+	case "$$PLUGIN_ID_VAL" in \
+		com.powerx.plugins.*) ;; \
+		*) echo "❌ plugin id 不符合规范: $$PLUGIN_ID_VAL（应以 com.powerx.plugins. 开头）"; exit 1;; \
+	esac
+	@LEGACY_MATCH=$$(rg -n "com\\.powerx\\.plugin\\." web-admin backend make-files plugin.yaml -g '!make-files/manifest.mk' 2>/dev/null || true); \
+	if [ -n "$$LEGACY_MATCH" ]; then \
+		echo "❌ 发现旧命名 com.powerx.plugin.* 残留:"; \
+		echo "$$LEGACY_MATCH"; \
+		exit 1; \
+	fi; \
+	echo "✅ plugin id naming check passed"
+
+.PHONY: manifest-align-check
+manifest-align-check: ## 严格检查 plugin.d 漂移与映射（CI gate）
+	@if [ ! -f "$(MANIFEST_ALIGN_SCRIPT)" ]; then \
+		echo "❌ 未找到对齐脚本: $(MANIFEST_ALIGN_SCRIPT)"; \
+		exit 1; \
+	fi
+	@node "$(MANIFEST_ALIGN_SCRIPT)"
+
+.PHONY: manifest-align-fix
+manifest-align-fix: ## 自动同步 plugin.d 并校验 capability -> exposure/rbac 映射
+	@if [ ! -f "$(MANIFEST_ALIGN_SCRIPT)" ]; then \
+		echo "❌ 未找到对齐脚本: $(MANIFEST_ALIGN_SCRIPT)"; \
+		exit 1; \
+	fi
+	@node "$(MANIFEST_ALIGN_SCRIPT)" --fix

@@ -1,54 +1,27 @@
-# 逆向物流 PRD
+# 逆向物流 PRD（可开发版）
 
-> 与 `docs/plan/customer/returns-portal.md`（售后）和 `docs/plan/marketing/payments/README.md`（退款）联动，负责退货、换货、补发的物流执行：逆向运单、轨迹、入库、报损、退款结算。
+> 与 `docs/plan/customer/returns-portal.md`（售后）和支付退款联动，负责退货、换货、补发的物流执行：逆向运单、轨迹、入库、报损、退款结算。
 
-## 1. 背景
-- 售后模块负责申请/审批，但逆向物流（取件、退货运单、入库、补偿）需在履约域统一管理，追踪生命周期并连接库存/财务。
+## 1. 目标
+1. 为退货/换货/补发生成逆向运单并跟踪轨迹。
+2. 支持退货入库质检与库存回写。
+3. 联动退款/补发/补偿流程。
 
-## 2. 目标
-1. 为退货/换货/补发生成逆向运单、跟踪、异常处理。
-2. 入库/报损：退货到仓后处理（重新入库、报损、翻新）。
-3. 与退款/补发/积分/礼品卡补偿联动，记录闭环。
+## 2. 流程
+1) 售后审批通过 → 生成逆向运单
+2) 客户寄回/上门取件 → 轨迹同步
+3) 到仓质检 → 入库/报损
+4) 触发退款/补偿 → 结束
 
-## 3. 角色
-| 角色 | 诉求 |
-| --- | --- |
-| 客服/售后 | 查询逆向物流状态、处理异常 |
-| 仓库 | 接收退货、检查、入库、报损 |
-| 财务 | 了解退款、补偿状态 |
-| 渠道运营 | 知道渠道退货情况、调整策略 |
+## 3. 数据 & API
+- 表：`reverse_waybills`、`reverse_tasks`、`reverse_logs`、`reverse_compensations`
+- API：
+  - `POST /api/v1/admin/reverse/waybills`
+  - `GET /api/v1/admin/reverse/waybills/{id}`
+  - `POST /api/v1/admin/reverse/waybills/{id}/track`
+  - `POST /api/v1/admin/reverse/tasks/{id}/complete`
 
-## 4. 信息架构
-1. **逆向运单列表**：退货单号、关联订单/售后、渠道、承运商、状态（待取件/运输/入库/完成/异常）、费用。
-2. **逆向运单详情**：物流节点、照片、检查结果、入库/报损记录、补偿方案、退款单。
-3. **入库任务**：退货到仓 → QC → 分类（可售、次品、报废）→ 更新库存。
+## 4. 权限 & KPI
+- 权限：`reverse.read`、`reverse.manage`、`reverse.compensation`
+- KPI：退货处理周期、逆向异常率、可再售率
 
-## 5. 功能
-| 功能 | 描述 |
-| --- | --- |
-| 逆向运单生成 | 从售后流程生成运单（客户寄回/上门取件/门店退货），选择承运商、模板 |
-| 轨迹同步 | 获取承运商/自营物流状态，通知客户/客服 |
-| 入库处理 | 到仓后扫描、检验、更新库存/报损、生成任务 |
-| 补偿联动 | 根据检验结果触发退款、补发、积分、礼品卡 |
-| KPI & 报表 | 退货时效、异常率、损耗率、可再售比例 |
-
-## 6. 数据 & API
-- 表：`reverse_waybills`、`reverse_tasks`、`reverse_logs`、`reverse_compensations`。
-- API：`POST /api/reverse/waybills`、`GET /api/reverse/waybills/{id}`、`POST /api/reverse/waybills/{id}/track`、`POST /api/reverse/tasks/{id}/complete`。
-
-## 7. 权限 & 审计
-- 权限：`reverse.read`、`reverse.manage`、`reverse.compensation`。
-- 审计：退货原因、物流、检验、补偿、退款操作记录。
-
-## 8. KPI
-| 指标 | 目标 |
-| --- | --- |
-| 退货处理周期 | ≤ 5 天 |
-| 逆向异常率 | < 3% |
-| 可再售率 | ≥ 60% |
-| 补偿时效 | < 48h |
-
-## 9. Backlog
-- 门店退货自提模式。
-- AI 识别退货图像判定损耗。
-- 与供应商逆向对接（供应商自收退货）。

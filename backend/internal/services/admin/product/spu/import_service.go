@@ -44,9 +44,11 @@ type ExportRequest struct {
 
 // ImportService orchestrates bulk import/export flows and reports via job store.
 type ImportService struct {
-	deps     *app.Deps
-	jobStore *taskcenter.Store
-	metrics  *productmetrics.SPUMetrics
+	deps          *app.Deps
+	jobStore      *taskcenter.Store
+	taskSubmitter taskcenter.TaskSubmitter
+	taskReporter  taskcenter.TaskReporter
+	metrics       *productmetrics.SPUMetrics
 }
 
 // NewImportService constructs the orchestrator with shared dependencies.
@@ -54,10 +56,13 @@ func NewImportService(deps *app.Deps) *ImportService {
 	if deps == nil || deps.DB == nil {
 		return nil
 	}
+	frameworkTaskClient := taskcenter.NewFrameworkTaskClient("", "")
 	return &ImportService{
-		deps:     deps,
-		jobStore: taskcenter.DefaultStore(),
-		metrics:  resolveSPUMetrics(deps, "product-spu-import-service"),
+		deps:          deps,
+		jobStore:      taskcenter.DefaultStore(),
+		taskSubmitter: frameworkTaskClient,
+		taskReporter:  frameworkTaskClient,
+		metrics:       resolveSPUMetrics(deps, "product-spu-import-service"),
 	}
 }
 
@@ -76,23 +81,22 @@ func (s *ImportService) StartImport(ctx context.Context, req ImportRequest) (str
 	if strings.TrimSpace(req.TemplateID) == "" {
 		req.TemplateID = "default"
 	}
-	job := s.jobStore.Create(importJobType, map[string]any{
-		"tenantUuid": tenantID,
+	taskID, err := s.submitFrameworkTask(ctx, importJobType, tenantID, map[string]any{
 		"templateId": req.TemplateID,
 		"filename":   req.Filename,
 	})
-	if job == nil {
-		return "", errors.New("无法创建导入任务")
-	}
-	if err := s.insertImportTask(ctx, tenantID, job.TaskID, req); err != nil {
+	if err != nil {
 		return "", err
 	}
-	s.emitAudit(ctx, tenantID, job.TaskID, "import_start", map[string]any{
+	if err := s.insertImportTask(ctx, tenantID, taskID, req); err != nil {
+		return "", err
+	}
+	s.emitAudit(ctx, tenantID, taskID, "import_start", map[string]any{
 		"templateId": req.TemplateID,
 		"filename":   req.Filename,
 	})
-	go s.runImportJob(authx.ContextWithTenantUUID(context.Background(), tenantID), job.TaskID, req)
-	return job.TaskID, nil
+	go s.runImportJob(authx.ContextWithTenantUUID(context.Background(), tenantID), taskID, req)
+	return taskID, nil
 }
 
 // StartExport registers an export job and creates a CSV snapshot asynchronously.
@@ -104,23 +108,77 @@ func (s *ImportService) StartExport(ctx context.Context, req ExportRequest) (str
 	if err != nil {
 		return "", err
 	}
-	job := s.jobStore.Create(exportJobType, map[string]any{
-		"tenantUuid": tenantID,
-		"fields":     req.Fields,
+	taskID, err := s.submitFrameworkTask(ctx, exportJobType, tenantID, map[string]any{
+		"fields": req.Fields,
 	})
-	if job == nil {
-		return "", errors.New("无法创建导出任务")
-	}
-	if err := s.insertExportTask(ctx, tenantID, job.TaskID, req); err != nil {
+	if err != nil {
 		return "", err
 	}
-	s.emitAudit(ctx, tenantID, job.TaskID, "export_start", map[string]any{"fields": req.Fields})
-	go s.runExportJob(authx.ContextWithTenantUUID(context.Background(), tenantID), job.TaskID, req)
-	return job.TaskID, nil
+	if err := s.insertExportTask(ctx, tenantID, taskID, req); err != nil {
+		return "", err
+	}
+	s.emitAudit(ctx, tenantID, taskID, "export_start", map[string]any{"fields": req.Fields})
+	go s.runExportJob(authx.ContextWithTenantUUID(context.Background(), tenantID), taskID, req)
+	return taskID, nil
+}
+
+func (s *ImportService) submitFrameworkTask(ctx context.Context, taskType, tenantID string, metadata map[string]any) (string, error) {
+	if s == nil {
+		return "", errors.New("import service unavailable")
+	}
+	if s.taskSubmitter == nil {
+		return s.createLocalTask(taskType, tenantID, metadata)
+	}
+	result, err := s.taskSubmitter.Submit(ctx, taskcenter.TaskSubmitRequest{
+		Type:       taskType,
+		TenantUUID: tenantID,
+		Metadata:   metadata,
+	})
+	if err != nil {
+		if errors.Is(err, taskcenter.ErrTaskSubmitNotAvailable) {
+			return s.createLocalTask(taskType, tenantID, metadata)
+		}
+		return "", fmt.Errorf("提交 framework 任务失败: %w", err)
+	}
+	if result == nil || strings.TrimSpace(result.TaskID) == "" {
+		return "", errors.New("framework task id 为空")
+	}
+	return strings.TrimSpace(result.TaskID), nil
+}
+
+func (s *ImportService) createLocalTask(taskType, tenantID string, metadata map[string]any) (string, error) {
+	if s == nil || s.jobStore == nil {
+		return "", errors.New("无法创建本地任务")
+	}
+	localMeta := map[string]any{"tenantUuid": strings.TrimSpace(tenantID)}
+	for key, value := range metadata {
+		localMeta[key] = value
+	}
+	job := s.jobStore.Create(taskType, localMeta)
+	if job == nil || strings.TrimSpace(job.TaskID) == "" {
+		return "", errors.New("无法创建本地任务")
+	}
+	return strings.TrimSpace(job.TaskID), nil
+}
+
+func (s *ImportService) reportFrameworkTask(ctx context.Context, taskID, status, message, downloadURL string, completedAt *time.Time) {
+	if s == nil || s.taskReporter == nil {
+		return
+	}
+	tenantID, _ := authx.TenantUUIDFromContext(ctx)
+	_ = s.taskReporter.Update(ctx, taskcenter.TaskUpdateRequest{
+		TaskID:      taskID,
+		TenantUUID:  tenantID,
+		Status:      status,
+		Message:     message,
+		DownloadURL: downloadURL,
+		CompletedAt: completedAt,
+	})
 }
 
 func (s *ImportService) runImportJob(ctx context.Context, taskID string, req ImportRequest) {
 	_, _ = s.jobStore.SetStatus(taskID, "running", "正在导入商品")
+	s.reportFrameworkTask(ctx, taskID, "running", "正在导入商品", "", nil)
 	_ = s.updateImportTaskStatus(ctx, taskID, "running", nil)
 	records, err := parseImportRecords(req.Payload)
 	if err != nil {
@@ -143,6 +201,12 @@ func (s *ImportService) runImportJob(ctx context.Context, taskID string, req Imp
 	}
 	message := fmt.Sprintf("成功 %d 行，失败 %d 行", summary.SuccessCount, len(summary.Failures))
 	_, _ = s.jobStore.Success(taskID, message, reportPath)
+	completedAt := time.Now().UTC()
+	frameworkStatus := "success"
+	if statusFromSummary(summary) == "failed" {
+		frameworkStatus = "failed"
+	}
+	s.reportFrameworkTask(ctx, taskID, frameworkStatus, message, reportPath, &completedAt)
 	tenantID, _ := authx.TenantUUIDFromContext(ctx)
 	s.emitAudit(ctx, tenantID, taskID, "import_completed", map[string]any{
 		"success": summary.SuccessCount,
@@ -153,6 +217,7 @@ func (s *ImportService) runImportJob(ctx context.Context, taskID string, req Imp
 
 func (s *ImportService) runExportJob(ctx context.Context, taskID string, req ExportRequest) {
 	_, _ = s.jobStore.SetStatus(taskID, "running", "正在导出商品")
+	s.reportFrameworkTask(ctx, taskID, "running", "正在导出商品", "", nil)
 	_ = s.updateExportTaskStatus(ctx, taskID, "running", "")
 	path, err := s.buildExportSnapshot(ctx, taskID, req)
 	if err != nil {
@@ -161,6 +226,8 @@ func (s *ImportService) runExportJob(ctx context.Context, taskID string, req Exp
 	}
 	message := "导出完成，可下载文件"
 	_, _ = s.jobStore.Success(taskID, message, path)
+	completedAt := time.Now().UTC()
+	s.reportFrameworkTask(ctx, taskID, "success", message, path, &completedAt)
 	_ = s.completeExportTask(ctx, taskID, "success", path)
 	tenantID, _ := authx.TenantUUIDFromContext(ctx)
 	s.emitAudit(ctx, tenantID, taskID, "export_completed", map[string]any{
@@ -170,6 +237,8 @@ func (s *ImportService) runExportJob(ctx context.Context, taskID string, req Exp
 
 func (s *ImportService) failImport(ctx context.Context, taskID string, err error) {
 	_, _ = s.jobStore.Fail(taskID, err)
+	completedAt := time.Now().UTC()
+	s.reportFrameworkTask(ctx, taskID, "failed", err.Error(), "", &completedAt)
 	_ = s.updateImportTaskStatus(ctx, taskID, "failed", err)
 	tenantID, _ := authx.TenantUUIDFromContext(ctx)
 	s.emitAudit(ctx, tenantID, taskID, "import_failed", map[string]any{"error": err.Error()})
@@ -177,6 +246,8 @@ func (s *ImportService) failImport(ctx context.Context, taskID string, err error
 
 func (s *ImportService) failExport(ctx context.Context, taskID string, err error) {
 	_, _ = s.jobStore.Fail(taskID, err)
+	completedAt := time.Now().UTC()
+	s.reportFrameworkTask(ctx, taskID, "failed", err.Error(), "", &completedAt)
 	_ = s.completeExportTask(ctx, taskID, "failed", "")
 	tenantID, _ := authx.TenantUUIDFromContext(ctx)
 	s.emitAudit(ctx, tenantID, taskID, "export_failed", map[string]any{"error": err.Error()})

@@ -40,22 +40,44 @@ func NewMetricRefreshJob(deps *app.Deps, interval time.Duration) *MetricRefreshJ
 	}
 }
 
+// Name returns scheduler worker name.
+func (j *MetricRefreshJob) Name() string {
+	return "channel.master.metric.refresh"
+}
+
+// Interval returns scheduler interval.
+func (j *MetricRefreshJob) Interval() time.Duration {
+	if j == nil || j.interval <= 0 {
+		return 30 * time.Minute
+	}
+	return j.interval
+}
+
+// RunOnce executes one metric refresh cycle.
+func (j *MetricRefreshJob) RunOnce(ctx context.Context) error {
+	if j == nil || j.db == nil {
+		return nil
+	}
+	j.refreshOnce(ctx)
+	return nil
+}
+
 // Run starts ticker loop.
 func (j *MetricRefreshJob) Run(ctx context.Context) {
 	if j == nil || j.db == nil {
 		return
 	}
 	j.logger.Info("channel metric refresh job started")
-	ticker := time.NewTicker(j.interval)
+	ticker := time.NewTicker(j.Interval())
 	defer ticker.Stop()
-	j.refreshOnce(ctx)
+	_ = j.RunOnce(ctx)
 	for {
 		select {
 		case <-ctx.Done():
 			j.logger.Info("channel metric refresh job stopped")
 			return
 		case <-ticker.C:
-			j.refreshOnce(ctx)
+			_ = j.RunOnce(ctx)
 		}
 	}
 }

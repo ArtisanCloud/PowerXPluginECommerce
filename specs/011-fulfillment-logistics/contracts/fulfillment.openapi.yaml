@@ -1,0 +1,346 @@
+openapi: 3.0.3
+info:
+  title: Fulfillment & Logistics API
+  version: 1.0.0
+servers:
+  - url: /api/v1
+paths:
+  /admin/logistics/carriers:
+    get:
+      summary: 查询承运商列表
+      responses:
+        '200':
+          description: OK
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      summary: 创建承运商
+      responses:
+        '200':
+          description: OK
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /admin/logistics/carriers/{id}:
+    patch:
+      summary: 更新承运商
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /admin/logistics/carriers/{id}/test:
+    post:
+      summary: 承运商连通性测试
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /admin/logistics/templates:
+    get:
+      summary: 查询运费模板
+      responses:
+        '200':
+          description: OK
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      summary: 创建运费模板
+      responses:
+        '200':
+          description: OK
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /admin/logistics/templates/{id}:
+    patch:
+      summary: 更新运费模板
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /admin/logistics/templates/{id}/publish:
+    post:
+      summary: 发布运费模板
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /admin/logistics/waybills:
+    post:
+      summary: 创建运单（订单触发主入口，支持异常补单）
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKeyHeader'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WaybillCreateRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WaybillUpsertResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /admin/logistics/waybills/{id}:
+    get:
+      summary: 查询运单详情
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /admin/logistics/waybills/{id}/track:
+    post:
+      summary: 拉取/补录轨迹（承运商回调优先）
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /admin/logistics/waybills/{id}/cancel:
+    post:
+      summary: 取消运单
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /admin/fulfillment/tasks:
+    get:
+      summary: 查询履约任务
+      responses:
+        '200':
+          description: OK
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      summary: 创建履约任务
+      responses:
+        '200':
+          description: OK
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /admin/fulfillment/tasks/{id}/complete:
+    patch:
+      summary: 完成履约任务
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /admin/fulfillment/exceptions:
+    post:
+      summary: 提交履约异常
+      responses:
+        '200':
+          description: OK
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /admin/reverse/waybills:
+    post:
+      summary: 创建逆向运单
+      responses:
+        '200':
+          description: OK
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /admin/reverse/waybills/{id}:
+    get:
+      summary: 查询逆向运单详情
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+  /admin/reverse/waybills/{id}/track:
+    post:
+      summary: 更新逆向轨迹
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /admin/logistics/webhook:
+    post:
+      summary: 承运商轨迹回调（幂等键：事件ID+运单号）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TrackingWebhookRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IdempotentAckResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+components:
+  parameters:
+    IdempotencyKeyHeader:
+      name: X-Idempotency-Key
+      in: header
+      description: |
+        幂等请求键。用于创建运单等写操作，建议与业务唯一键共同确保“重复请求只生效一次”。
+      required: false
+      schema:
+        type: string
+        minLength: 8
+        maxLength: 128
+  responses:
+    ErrorResponse:
+      description: 统一错误响应
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          $ref: '#/components/schemas/ErrorDetail'
+        request_id:
+          type: string
+          description: 请求追踪 ID（用于日志排查）
+      required: [error]
+    ErrorDetail:
+      type: object
+      properties:
+        code:
+          type: string
+          example: INVALID_ARGUMENT
+        message:
+          type: string
+          example: invalid input payload
+        details:
+          type: object
+          additionalProperties: true
+      required: [code, message]
+    WaybillCreateRequest:
+      type: object
+      properties:
+        order_id:
+          type: string
+        carrier_id:
+          type: string
+        service_code:
+          type: string
+        manual_fallback_reason:
+          type: string
+          nullable: true
+          description: 异常补单时必填
+      required: [order_id, carrier_id, service_code]
+    IdempotencyMeta:
+      type: object
+      properties:
+        idempotency_key:
+          type: string
+          description: 归一化后的幂等键（header 或服务端生成）
+        idempotency_status:
+          type: string
+          enum: [created, replayed]
+      required: [idempotency_key, idempotency_status]
+    WaybillUpsertResponse:
+      type: object
+      properties:
+        id:
+          type: string
+        waybill_no:
+          type: string
+        status:
+          type: string
+        idempotency:
+          $ref: '#/components/schemas/IdempotencyMeta'
+      required: [id, waybill_no, status, idempotency]
+    TrackingWebhookRequest:
+      type: object
+      properties:
+        event_id:
+          type: string
+        waybill_no:
+          type: string
+        status:
+          type: string
+        occurred_at:
+          type: string
+          format: date-time
+        payload:
+          type: object
+          additionalProperties: true
+      description: 轨迹回调幂等联合键为 event_id + waybill_no。
+      required: [event_id, waybill_no, status]
+    IdempotentAckResponse:
+      type: object
+      properties:
+        accepted:
+          type: boolean
+        idempotency:
+          $ref: '#/components/schemas/IdempotencyMeta'
+      required: [accepted, idempotency]

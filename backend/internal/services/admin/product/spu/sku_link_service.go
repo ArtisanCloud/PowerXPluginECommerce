@@ -12,6 +12,7 @@ import (
 	productmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product"
 	productskumodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_sku"
 	productrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/product"
+	productskurepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/product_sku"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	productskuservice "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/product_sku"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
@@ -58,6 +59,7 @@ type SKULinkService struct {
 	deps        *app.Deps
 	spuRepo     *productrepo.SPURepository
 	versionRepo *productrepo.VersionRepository
+	skuRepo     *productskurepo.SKURepository
 	skuService  *productskuservice.Service
 }
 
@@ -70,6 +72,7 @@ func NewSKULinkService(deps *app.Deps) *SKULinkService {
 		deps:        deps,
 		spuRepo:     productrepo.NewSPURepository(deps.DB),
 		versionRepo: productrepo.NewVersionRepository(deps.DB),
+		skuRepo:     productskurepo.NewSKURepository(deps.DB),
 		skuService:  productskuservice.NewService(deps),
 	}
 }
@@ -102,7 +105,11 @@ func (s *SKULinkService) List(ctx context.Context, spuID string) ([]LinkedSKU, e
 		return nil, err
 	}
 	decoded := decodeVersionPayload(datatypes.JSON(versionPayload.Payload))
-	return parseLinkedSKUs(decoded), nil
+	linked := parseLinkedSKUs(decoded)
+	if len(linked) == 0 {
+		linked = s.loadLinkedSkusFromProduct(ctx, tenantID, spuID)
+	}
+	return s.enrichLinkedSKUs(ctx, tenantID, linked), nil
 }
 
 // Replace overwrites SKU associations for the given SPU.
@@ -348,6 +355,113 @@ func parseLinkedSKUs(payload map[string]any) []LinkedSKU {
 	return items
 }
 
+func (s *SKULinkService) enrichLinkedSKUs(ctx context.Context, tenantID string, items []LinkedSKU) []LinkedSKU {
+	if len(items) == 0 || s == nil {
+		return items
+	}
+	missing := make([]string, 0)
+	for _, item := range items {
+		if strings.TrimSpace(item.ID) == "" && strings.TrimSpace(item.Code) != "" {
+			missing = append(missing, strings.TrimSpace(item.Code))
+		}
+	}
+	if len(missing) == 0 {
+		return items
+	}
+	var rows []struct {
+		ID            string         `gorm:"column:id"`
+		Code          string         `gorm:"column:sku_code"`
+		DefaultValues datatypes.JSON `gorm:"column:default_values"`
+	}
+	if err := s.spuRepo.DB.WithContext(ctx).
+		Table(productskumodel.ProductSKU{}.TableName()).
+		Select("id, sku_code, default_values").
+		Where("tenant_uuid = ? AND sku_code IN ?", tenantID, missing).
+		Find(&rows).Error; err != nil {
+		return items
+	}
+	byCode := make(map[string]struct {
+		ID   string
+		Name string
+	}, len(rows))
+	for _, row := range rows {
+		code := strings.TrimSpace(row.Code)
+		if code == "" {
+			continue
+		}
+		name := extractSkuNameFromDefaults(row.DefaultValues)
+		if name == "" {
+			name = code
+		}
+		byCode[code] = struct {
+			ID   string
+			Name string
+		}{ID: strings.TrimSpace(row.ID), Name: strings.TrimSpace(name)}
+	}
+	for i, item := range items {
+		if strings.TrimSpace(item.ID) != "" {
+			continue
+		}
+		code := strings.TrimSpace(item.Code)
+		if code == "" {
+			continue
+		}
+		if row, ok := byCode[code]; ok {
+			items[i].ID = row.ID
+			if strings.TrimSpace(items[i].Name) == "" {
+				items[i].Name = row.Name
+			}
+		}
+	}
+	return items
+}
+
+func (s *SKULinkService) loadLinkedSkusFromProduct(ctx context.Context, tenantID, spuID string) []LinkedSKU {
+	if s == nil || s.skuRepo == nil {
+		return []LinkedSKU{}
+	}
+	rows, err := s.skuRepo.ListBySPU(ctx, tenantID, spuID)
+	if err != nil || len(rows) == 0 {
+		return []LinkedSKU{}
+	}
+	out := make([]LinkedSKU, 0, len(rows))
+	for _, row := range rows {
+		code := strings.TrimSpace(row.SKUCode)
+		name := extractSkuNameFromDefaults(row.DefaultValues)
+		if name == "" {
+			name = code
+		}
+		if name == "" {
+			name = strings.TrimSpace(row.ID)
+		}
+		out = append(out, LinkedSKU{
+			ID:      strings.TrimSpace(row.ID),
+			Code:    code,
+			Name:    name,
+			Pricing: SKUPricing{},
+		})
+	}
+	return out
+}
+
+func extractSkuNameFromDefaults(raw datatypes.JSON) string {
+	if len(raw) == 0 {
+		return ""
+	}
+	var m map[string]any
+	if err := json.Unmarshal(raw, &m); err != nil {
+		return ""
+	}
+	for _, key := range []string{"name", "title", "sku_name", "skuName"} {
+		if v, ok := m[key]; ok && v != nil {
+			val := strings.TrimSpace(fmt.Sprint(v))
+			if val != "" {
+				return val
+			}
+		}
+	}
+	return ""
+}
 func firstNonEmpty(values ...string) string {
 	for _, v := range values {
 		if strings.TrimSpace(v) != "" {

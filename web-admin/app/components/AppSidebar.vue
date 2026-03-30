@@ -23,7 +23,7 @@
         </button>
       </div>
     </div>
-    <nav class="p-4 space-y-4">
+    <nav class="p-4 pb-10 space-y-4">
       <!-- 经营总览 -->
       <div>
         <UButton
@@ -70,7 +70,7 @@
             @click="toggleMembershipTiers"
           >
             <UIcon name="i-heroicons-star" class="w-4 h-4 mr-3"/>
-            会员等级
+            会籍管理
             <UIcon
               :name="
                 showMembershipTiers
@@ -83,18 +83,18 @@
 
           <div v-show="showMembershipTiers" class="ml-6 mt-1 space-y-1">
             <UButton
-              to="/customer/membership/tiers"
+              to="/customer/membership"
               variant="ghost"
               color="neutral"
               size="sm"
               class="w-full justify-start text-sm"
               :class="{
                 'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
-                  $route.path === '/customer/membership/tiers',
+                  $route.path === '/customer/membership',
               }"
             >
-              <UIcon name="i-heroicons-list-bullet" class="w-3 h-3 mr-2"/>
-              等级管理
+              <UIcon name="i-heroicons-home" class="w-3 h-3 mr-2"/>
+              会籍总览
             </UButton>
             <UButton
               to="/customer/membership/benefits"
@@ -108,7 +108,21 @@
               }"
             >
               <UIcon name="i-heroicons-gift" class="w-3 h-3 mr-2"/>
-              等级权益
+              会籍权益
+            </UButton>
+            <UButton
+              to="/customer/membership/tiers"
+              variant="ghost"
+              color="neutral"
+              size="sm"
+              class="w-full justify-start text-sm"
+              :class="{
+                'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
+                  $route.path === '/customer/membership/tiers',
+              }"
+            >
+              <UIcon name="i-heroicons-list-bullet" class="w-3 h-3 mr-2"/>
+              会籍等级
             </UButton>
             <UButton
               to="/customer/membership/rules"
@@ -122,7 +136,7 @@
               }"
             >
               <UIcon name="i-heroicons-cog-6-tooth" class="w-3 h-3 mr-2"/>
-              等级规则
+              会籍规则
             </UButton>
             <UButton
               to="/customer/membership/analytics"
@@ -136,7 +150,7 @@
               }"
             >
               <UIcon name="i-heroicons-chart-bar" class="w-3 h-3 mr-2"/>
-              客户分布分析
+              会籍分析
             </UButton>
           </div>
 
@@ -333,7 +347,7 @@
           <UButton
             variant="ghost"
             color="neutral"
-            class="w-full justify-start text-gray-500"
+            class="w-full justify-start"
             @click="toggleReturns"
           >
             <UIcon name="i-heroicons-arrow-uturn-left" class="w-4 h-4 mr-3" />
@@ -508,7 +522,7 @@
             to="/product/suppliers"
             variant="ghost"
             color="neutral"
-            class="w-full justify-start text-gray-500"
+            class="w-full justify-start"
             :class="{
               'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
                 $route.path === '/product/suppliers',
@@ -903,6 +917,34 @@
         </div>
         <div class="space-y-1">
           <UButton
+            to="/shipping/control-tower"
+            variant="ghost"
+            color="neutral"
+            class="w-full justify-start"
+            :class="{
+              'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
+                $route.path === '/shipping/control-tower',
+            }"
+          >
+            <UIcon name="i-heroicons-building-office-2" class="w-4 h-4 mr-3"/>
+            履约控制塔
+          </UButton>
+
+          <UButton
+            to="/shipping/kpi-dashboard"
+            variant="ghost"
+            color="neutral"
+            class="w-full justify-start"
+            :class="{
+              'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
+                $route.path === '/shipping/kpi-dashboard',
+            }"
+          >
+            <UIcon name="i-heroicons-chart-bar-square" class="w-4 h-4 mr-3"/>
+            KPI 大屏
+          </UButton>
+
+          <UButton
             to="/shipping/carriers"
             variant="ghost"
             color="neutral"
@@ -942,6 +984,76 @@
           >
             <UIcon name="i-heroicons-map" class="w-4 h-4 mr-3"/>
             运单与轨迹
+          </UButton>
+
+          <UButton
+            to="/shipping/labels"
+            variant="ghost"
+            color="neutral"
+            class="w-full justify-start"
+            :class="{
+              'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
+                $route.path === '/shipping/labels',
+            }"
+          >
+            <UIcon name="i-heroicons-printer" class="w-4 h-4 mr-3"/>
+            面单打印
+          </UButton>
+
+          <UButton
+            to="/shipping/sla"
+            variant="ghost"
+            color="neutral"
+            class="w-full justify-start"
+            :class="{
+              'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
+                $route.path === '/shipping/sla',
+            }"
+          >
+            <UIcon name="i-heroicons-chart-pie" class="w-4 h-4 mr-3"/>
+            SLA 看板
+          </UButton>
+
+          <UButton
+            to="/shipping/capacity-forecast"
+            variant="ghost"
+            color="neutral"
+            class="w-full justify-start"
+            :class="{
+              'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
+                $route.path === '/shipping/capacity-forecast',
+            }"
+          >
+            <UIcon name="i-heroicons-chart-bar" class="w-4 h-4 mr-3"/>
+            容量预测
+          </UButton>
+
+          <UButton
+            to="/shipping/notifications"
+            variant="ghost"
+            color="neutral"
+            class="w-full justify-start"
+            :class="{
+              'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
+                $route.path === '/shipping/notifications',
+            }"
+          >
+            <UIcon name="i-heroicons-bell-alert" class="w-4 h-4 mr-3"/>
+            通知中心
+          </UButton>
+
+          <UButton
+            to="/shipping/risk-control"
+            variant="ghost"
+            color="neutral"
+            class="w-full justify-start"
+            :class="{
+              'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
+                $route.path === '/shipping/risk-control',
+            }"
+          >
+            <UIcon name="i-heroicons-shield-exclamation" class="w-4 h-4 mr-3"/>
+            风控中心
           </UButton>
         </div>
       </div>
@@ -1170,14 +1282,154 @@
           </UButton>
         </div>
       </div>
+
+      <template v-if="isRootUser">
+        <!-- 模板管理（仅 root） -->
+        <div>
+          <div
+            class="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+          >
+            模板管理
+          </div>
+          <div class="space-y-1">
+            <UButton
+              variant="ghost"
+              color="neutral"
+              class="w-full justify-start"
+              @click="toggleTemplateManagement"
+            >
+              <UIcon name="i-heroicons-clipboard-document-list" class="w-4 h-4 mr-3"/>
+              模板管理
+              <UIcon
+                :name="
+                  showTemplateManagement
+                    ? 'i-heroicons-chevron-down'
+                    : 'i-heroicons-chevron-right'
+                "
+                class="w-4 h-4 ml-auto"
+              />
+            </UButton>
+
+            <div v-show="showTemplateManagement" class="ml-6 mt-1 space-y-1">
+              <UButton
+                to="/templates"
+                variant="ghost"
+                color="neutral"
+                size="sm"
+                class="w-full justify-start text-sm"
+                :class="{
+                  'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
+                    $route.path === '/templates',
+                }"
+              >
+                <UIcon name="i-heroicons-document-text" class="w-3 h-3 mr-2"/>
+                模板概览
+              </UButton>
+
+              <UButton
+                to="/templates/develop"
+                variant="ghost"
+                color="neutral"
+                size="sm"
+                class="w-full justify-start text-sm"
+                :class="{
+                  'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
+                    $route.path === '/templates/develop',
+                }"
+              >
+                <UIcon name="i-heroicons-code-bracket-square" class="w-3 h-3 mr-2"/>
+                开发指南
+              </UButton>
+
+              <UButton
+                to="/templates/crud"
+                variant="ghost"
+                color="neutral"
+                size="sm"
+                class="w-full justify-start text-sm"
+                :class="{
+                  'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
+                    $route.path === '/templates/crud',
+                }"
+              >
+                <UIcon name="i-heroicons-wrench-screwdriver" class="w-3 h-3 mr-2"/>
+                模板 CRUD
+              </UButton>
+            </div>
+          </div>
+        </div>
+
+        <!-- 插件能力注册（仅 root） -->
+        <div>
+          <div
+            class="px-3 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider"
+          >
+            插件能力注册
+          </div>
+          <div class="space-y-1">
+            <UButton
+              to="/powerx/capability-registration"
+              exact
+              variant="ghost"
+              color="neutral"
+              class="w-full justify-start"
+              :class="{
+                'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
+                  $route.path === '/powerx/capability-registration',
+              }"
+            >
+              <UIcon name="i-heroicons-arrows-pointing-out" class="w-4 h-4 mr-3"/>
+              插件能力注册
+            </UButton>
+
+            <UButton
+              to="/powerx/capability-lifecycle"
+              exact
+              variant="ghost"
+              color="neutral"
+              class="w-full justify-start"
+              :class="{
+                'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
+                  $route.path === '/powerx/capability-lifecycle',
+              }"
+            >
+              <UIcon name="i-heroicons-clock" class="w-4 h-4 mr-3"/>
+              生命周期治理
+            </UButton>
+
+            <UButton
+              to="/powerx/capability-lab"
+              exact
+              variant="ghost"
+              color="neutral"
+              class="w-full justify-start"
+              :class="{
+                'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
+                  $route.path === '/powerx/capability-lab',
+              }"
+            >
+              <UIcon name="i-heroicons-beaker" class="w-4 h-4 mr-3"/>
+              PowerX 能力调试
+            </UButton>
+          </div>
+        </div>
+      </template>
     </nav>
   </aside>
 </template>
 
 <script setup lang="ts">
 const {t} = useI18n();
+const userStore = useUserStore();
 const asideRef = ref<HTMLElement | null>(null);
 const scrollRatio = ref(0);
+
+const isRootUser = computed(() => {
+  const ctx = userStore.context || {};
+  if (ctx.is_root) return true;
+  const roles = Array.isArray(ctx.roles) ? ctx.roles : [];
+  return roles.some((role) => ["root", "superadmin", "system.admin"].includes(String(role).toLowerCase()));
+});
 
 // 控制各个子菜单的展开状态
 const showMarketingInteraction = ref(false);
@@ -1186,6 +1438,7 @@ const showMembershipTiers = ref(false);
 const showMembershipPointsAndGrowth = ref(false);
 const showAffiliates = ref(false);
 const showReturns = ref(false);
+const showTemplateManagement = ref(false);
 
 // 切换营销互动子菜单
 const toggleMarketingInteraction = () => {
@@ -1217,11 +1470,15 @@ const toggleReturns = () => {
   showReturns.value = !showReturns.value;
 };
 
+const toggleTemplateManagement = () => {
+  showTemplateManagement.value = !showTemplateManagement.value;
+};
+
 const colorMode = useColorMode();
 const asideClass = computed(() =>
   colorMode.value === "dark"
-    ? "relative w-64 min-w-64 max-w-64 bg-slate-900/90 text-slate-100 border-r border-gray-800 h-screen sticky top-0 flex-shrink-0 overflow-y-auto overscroll-contain backdrop-blur"
-    : "relative w-64 min-w-64 max-w-64 bg-white text-slate-900 border-r border-gray-200 h-screen sticky top-0 flex-shrink-0 overflow-y-auto overscroll-contain"
+    ? "relative w-64 min-w-64 max-w-64 bg-slate-900/90 text-slate-100 border-r border-gray-800 h-[calc(100dvh-4rem)] sticky top-0 flex-shrink-0 overflow-y-auto overscroll-contain backdrop-blur"
+    : "relative w-64 min-w-64 max-w-64 bg-white text-slate-900 border-r border-gray-200 h-[calc(100dvh-4rem)] sticky top-0 flex-shrink-0 overflow-y-auto overscroll-contain"
 );
 
 // 监听路由变化，自动展开相应的子菜单
@@ -1307,7 +1564,8 @@ watch(
       showAfterSales.value = true;
     }
     // 会员等级相关路由
-    if (newPath.startsWith("/customer/membership/tiers") ||
+    if (newPath === "/customer/membership" ||
+      newPath.startsWith("/customer/membership/tiers") ||
       newPath.startsWith("/customer/membership/benefits") ||
       newPath.startsWith("/customer/membership/rules") ||
       newPath.startsWith("/customer/membership/analytics")) {
@@ -1325,6 +1583,10 @@ watch(
     // 客户自助退换货门户相关路由
     if (newPath.startsWith("/customer/returns")) {
       showReturns.value = true;
+    }
+    // 模板管理相关路由
+    if (newPath.startsWith("/templates")) {
+      showTemplateManagement.value = true;
     }
   },
   {immediate: true}

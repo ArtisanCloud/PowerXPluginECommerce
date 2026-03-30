@@ -221,7 +221,17 @@ func createOrderTables(t *testing.T, db *gorm.DB) {
 		`CREATE TABLE IF NOT EXISTS product_spus (
 			id TEXT PRIMARY KEY,
 			tenant_uuid TEXT NOT NULL,
+			type TEXT,
 			status TEXT NOT NULL,
+			deleted_at DATETIME
+		)`,
+		`CREATE TABLE IF NOT EXISTS customers (
+			id TEXT PRIMARY KEY,
+			tenant_uuid TEXT NOT NULL,
+			customer_id TEXT NOT NULL,
+			last_order_amount REAL,
+			last_order_at DATETIME,
+			updated_at DATETIME,
 			deleted_at DATETIME
 		)`,
 		`CREATE TABLE IF NOT EXISTS product_spu_channels (
@@ -341,7 +351,7 @@ func createOrderTables(t *testing.T, db *gorm.DB) {
 
 func seedSellabilityFixtures(t *testing.T, db *gorm.DB, tenant, spuID, skuID string, available, locked int64, withPrice bool) {
 	t.Helper()
-	require.NoError(t, db.Exec(`INSERT INTO product_spus (id, tenant_uuid, status, deleted_at) VALUES (?, ?, ?, NULL)`, spuID, tenant, "published").Error)
+	require.NoError(t, db.Exec(`INSERT INTO product_spus (id, tenant_uuid, type, status, deleted_at) VALUES (?, ?, ?, ?, NULL)`, spuID, tenant, "physical", "published").Error)
 	require.NoError(t, db.Exec(`INSERT INTO product_spu_channels (id, tenant_uuid, spu_id, channel, availability, audit_state, publish_at, withdraw_at) VALUES (?, ?, ?, ?, ?, ?, NULL, NULL)`,
 		"ch-1", tenant, spuID, "official", "published", "approved").Error)
 	require.NoError(t, db.Exec(`INSERT INTO product_skus (id, tenant_uuid, spu_id, status, sku_code, default_values, deleted_at) VALUES (?, ?, ?, ?, ?, ?, NULL)`,

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"net/http"
 	"strings"
 
@@ -17,6 +18,34 @@ import (
 // Handler 负责客户域 API。
 type Handler struct {
 	service *srv.Service
+}
+
+// DownloadImportConflictReport downloads import conflict CSV by taskId.
+func (h *Handler) DownloadImportConflictReport(c *gin.Context) {
+	taskID := strings.TrimSpace(c.Param("taskId"))
+	if taskID == "" {
+		contracts.ResponseBadRequest(c, "task id is required")
+		return
+	}
+
+	path := srv.ImportConflictReportPath(taskID)
+	if strings.TrimSpace(path) == "" {
+		contracts.ResponseBadRequest(c, "task id is required")
+		return
+	}
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			contracts.ResponseNotFound(c, "冲突报告不存在")
+			return
+		}
+		contracts.ResponseInternalError(c, err)
+		return
+	}
+
+	filename := fmt.Sprintf("customer_import_conflicts_%s.csv", taskID)
+	c.Header("Content-Type", "text/csv; charset=utf-8")
+	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", filename))
+	c.File(path)
 }
 
 const maxImportFileSize = 5 << 20
@@ -163,7 +192,31 @@ func (h *Handler) CreateImportTask(c *gin.Context) {
 		contracts.ResponseInternalError(c, err)
 		return
 	}
-	taskID, err := h.service.StartImportJob(c.Request.Context(), file.Filename, payload)
+	strategyRaw := strings.TrimSpace(strings.ToLower(c.PostForm("conflict_strategy")))
+	strategy := srv.ImportConflictStrategyFail
+	if strategyRaw == string(srv.ImportConflictStrategySkip) {
+		strategy = srv.ImportConflictStrategySkip
+	}
+	taskID, err := h.service.StartImportJob(c.Request.Context(), file.Filename, payload, strategy)
+	if err != nil {
+		if errors.Is(err, authx.ErrTenantMissing) {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant context missing"})
+			return
+		}
+		contracts.ResponseBadRequest(c, err.Error())
+		return
+	}
+	contracts.ResponseSuccess(c, gin.H{"taskId": taskID})
+}
+
+// CreateExportTask accepts filter payload and schedules async export processing.
+func (h *Handler) CreateExportTask(c *gin.Context) {
+	var req exportTaskRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		contracts.ResponseBadRequest(c, "invalid request body: "+err.Error())
+		return
+	}
+	taskID, err := h.service.StartExportJob(c.Request.Context(), srv.ExportJobRequest{Filters: req.Filters, Fields: req.Fields})
 	if err != nil {
 		if errors.Is(err, authx.ErrTenantMissing) {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "tenant context missing"})
@@ -185,6 +238,11 @@ func (h *Handler) DownloadImportTemplate(c *gin.Context) {
 	c.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", importTemplateFilename))
 	c.Header("Cache-Control", "no-store")
 	c.Data(http.StatusOK, "text/csv; charset=utf-8", customerImportTemplate)
+}
+
+type exportTaskRequest struct {
+	Filters map[string]any `json:"filters"`
+	Fields  []string       `json:"fields"`
 }
 
 type listQuery struct {

@@ -84,19 +84,61 @@ pack: dist ## 使用 px-plugin pack 生成 .pxp 元数据包
 .PHONY: local-install
 local-install: dist local-install-run ## 调用 /admin/plugins/install/local 安装 dist 目录
 
+.PHONY: local-install-precheck
+local-install-precheck: ## 安装前完整性检查（包完整≠启用成功）
+	@if [ ! -d "$(LOCAL_INSTALL_SRC)" ]; then \
+		echo "❌ 未找到安装目录：$(LOCAL_INSTALL_SRC)"; \
+		echo "   请先执行 make dist 或传入 LOCAL_INSTALL_SRC=/path/to/dist"; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(LOCAL_INSTALL_SRC)/plugin.yaml" ]; then \
+		echo "❌ 缺少 $(LOCAL_INSTALL_SRC)/plugin.yaml"; \
+		exit 1; \
+	fi
+	@if [ ! -f "$(LOCAL_INSTALL_SRC)/backend/etc/config.yaml" ]; then \
+		echo "❌ 缺少 $(LOCAL_INSTALL_SRC)/backend/etc/config.yaml（运行时配置）"; \
+		echo "   请确认 make dist 已打包 backend/etc"; \
+		exit 1; \
+	fi
+	@for f in plugin.d/capabilities.yaml plugin.d/exposure.yaml plugin.d/rbac.yaml; do \
+		if [ ! -f "$(LOCAL_INSTALL_SRC)/$$f" ]; then \
+			echo "❌ 缺少 $(LOCAL_INSTALL_SRC)/$$f（运行时清单产物）"; \
+			exit 1; \
+		fi; \
+	done
+	@if [ ! -d "$(LOCAL_INSTALL_SRC)/contracts/capabilities" ]; then \
+		echo "❌ 缺少 $(LOCAL_INSTALL_SRC)/contracts/capabilities（能力事实源）"; \
+		exit 1; \
+	fi
+	@if ! awk '/^[[:space:]]*migrations:[[:space:]]*$$/{found=1} END{exit found?0:1}' "$(LOCAL_INSTALL_SRC)/plugin.yaml"; then \
+		echo "❌ $(LOCAL_INSTALL_SRC)/plugin.yaml 缺少 migrations 段"; \
+		exit 1; \
+	fi
+	@SCHEMA_REFS=$$(awk '/^[[:space:]]*(input|output):[[:space:]]*/ {print $$2}' "$(LOCAL_INSTALL_SRC)/plugin.yaml" | tr -d '"' | tr -d "'" | sed 's/[[:space:]]*$$//' | sed '/^$$/d' | sort -u); \
+	for p in $$SCHEMA_REFS; do \
+		case "$$p" in \
+			schema/*|contracts/schema/*) \
+				if [ -f "$(LOCAL_INSTALL_SRC)/$$p" ]; then \
+					:; \
+				elif [ -f "$(LOCAL_INSTALL_SRC)/contracts/$$p" ]; then \
+					:; \
+				else \
+					echo "❌ schema 引用文件不存在: $(LOCAL_INSTALL_SRC)/$$p"; \
+					echo "   也未找到兼容路径: $(LOCAL_INSTALL_SRC)/contracts/$$p"; \
+					exit 1; \
+				fi ;; \
+		esac; \
+	done
+	@echo "✅ local install precheck passed"
+
 .PHONY: local-install-run
-local-install-run:
+local-install-run: local-install-precheck
 	@if [ -z "$(API_BASE)" ]; then \
 		echo "❌ 需要提供 API_BASE=https://dev-api.powerx.local/api/v1"; \
 		exit 1; \
 	fi
 	@if [ -z "$(TOKEN)" ]; then \
 		echo "❌ 需要提供 TOKEN=<admin bearer token>"; \
-		exit 1; \
-	fi
-	@if [ ! -d "$(LOCAL_INSTALL_SRC)" ]; then \
-		echo "❌ 未找到安装目录：$(LOCAL_INSTALL_SRC)"; \
-		echo "   请先执行 make dist 或传入 LOCAL_INSTALL_SRC=/path/to/dist"; \
 		exit 1; \
 	fi
 	@echo "==> 调用 $(API_BASE)/admin/plugins/install/local"
@@ -108,9 +150,25 @@ local-install-run:
 			-H "Content-Type: application/json" \
 			-d "$$PAYLOAD"); \
 		if command -v jq >/dev/null 2>&1; then \
-			echo "$$RESPONSE" | jq; \
+			SANITIZED=$$(printf '%s' "$$RESPONSE" | tr -d '\000-\010\013\014\016-\037'); \
+			if echo "$$SANITIZED" | jq . >/dev/null 2>&1; then \
+				echo "$$SANITIZED" | jq .; \
+				CODE=$$(echo "$$SANITIZED" | jq -r '.code // 0'); \
+			else \
+				echo "$$RESPONSE"; \
+				CODE=$$(echo "$$SANITIZED" | sed -n 's/.*"code":[[:space:]]*\([0-9][0-9]*\).*/\1/p' | head -n1); \
+			fi; \
+			if [ -z "$$CODE" ]; then CODE=0; fi; \
+			if [ "$$CODE" != "0" ] && [ "$$CODE" -ge 400 ]; then \
+				echo "❌ local-install failed with code=$$CODE"; \
+				exit 1; \
+			fi; \
 		else \
 			echo "$$RESPONSE"; \
+			if echo "$$RESPONSE" | grep -q '"code":[[:space:]]*[45][0-9][0-9]'; then \
+				echo "❌ local-install failed (non-2xx application code)"; \
+				exit 1; \
+			fi; \
 		fi
 
 .PHONY: local-install-pxp
@@ -152,3 +210,57 @@ local-install-pxp: ## 先解包 PACKAGE 再调用 local install（当前 .pxp �
 			TOKEN="$(TOKEN)" \
 			ENABLE="$(ENABLE)" \
 			FORCE="$(FORCE)"
+
+.PHONY: local-reinstall
+local-reinstall: dist ## 禁用当前版本 -> 强制安装 -> 切换并启用目标版本
+	@if [ -z "$(API_BASE)" ]; then \
+		echo "❌ 需要提供 API_BASE=https://dev-api.powerx.local/api/v1"; \
+		exit 1; \
+	fi
+	@if [ -z "$(TOKEN)" ]; then \
+		echo "❌ 需要提供 TOKEN=<admin bearer token>"; \
+		exit 1; \
+	fi
+	@echo "==> [reinstall] disable current plugin: $(PLUGIN_ID)"
+	@curl -sS -X POST "$(API_BASE)/admin/plugins/$(PLUGIN_ID)/disable" \
+		-H "Authorization: Bearer $(TOKEN)" \
+		-H "Content-Type: application/json" >/tmp/powerx-plugin-disable.json || true
+	@if [ -s /tmp/powerx-plugin-disable.json ]; then \
+		if command -v jq >/dev/null 2>&1; then \
+			SANITIZED=$$(tr -d '\000-\010\013\014\016-\037' </tmp/powerx-plugin-disable.json); \
+			echo "$$SANITIZED" | jq . >/dev/null 2>&1 && echo "$$SANITIZED" | jq . || cat /tmp/powerx-plugin-disable.json; \
+		else \
+			cat /tmp/powerx-plugin-disable.json; \
+		fi; \
+	fi
+	@echo "==> [reinstall] force install version=$(VERSION) enable=false"
+	@$(MAKE) --no-print-directory local-install-run \
+		LOCAL_INSTALL_SRC=$(abspath $(DIST_DIR)) \
+		API_BASE="$(API_BASE)" \
+		TOKEN="$(TOKEN)" \
+		ENABLE=false \
+		FORCE=true
+	@echo "==> [reinstall] switch_version $(PLUGIN_ID) -> $(VERSION) (enable=true)"
+	@PAYLOAD=$$(printf '{"version":"%s","enable":true}' "$(VERSION)"); \
+		RESPONSE=$$(curl -sS -X POST "$(API_BASE)/admin/plugins/$(PLUGIN_ID)/switch_version" \
+			-H "Authorization: Bearer $(TOKEN)" \
+			-H "Content-Type: application/json" \
+			-d "$$PAYLOAD"); \
+		if command -v jq >/dev/null 2>&1; then \
+			SANITIZED=$$(printf '%s' "$$RESPONSE" | tr -d '\000-\010\013\014\016-\037'); \
+			echo "$$SANITIZED" | jq . >/dev/null 2>&1 && echo "$$SANITIZED" | jq . || echo "$$RESPONSE"; \
+			CODE=$$(echo "$$SANITIZED" | jq -r '.code // 0' 2>/dev/null || echo 0); \
+			if [ "$$CODE" != "0" ] && [ "$$CODE" -ge 400 ]; then \
+				echo "❌ switch_version failed with code=$$CODE"; \
+				exit 1; \
+			fi; \
+		else \
+			echo "$$RESPONSE"; \
+			if echo "$$RESPONSE" | grep -q '"code":[[:space:]]*[45][0-9][0-9]'; then \
+				echo "❌ switch_version failed (non-2xx application code)"; \
+				exit 1; \
+			fi; \
+		fi
+
+.PHONY: skeleton-reinstall
+skeleton-reinstall: local-reinstall ## 兼容 PowerXPlugin 文档命令别名

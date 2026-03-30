@@ -4,7 +4,6 @@ import (
 	"context"
 	"strings"
 	"sync"
-	"time"
 
 	productmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/product"
 	taskcenter "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/taskcenter"
@@ -121,25 +120,4 @@ func (w *SyncWorker) handleFeedback(fb Feedback) {
 			w.metrics.RecordChannelSync(false)
 		}
 	}
-}
-
-// StartPolling is a helper that periodically emits heartbeat events for long-running jobs.
-func (w *SyncWorker) StartPolling(ctx context.Context, interval time.Duration, taskID string) {
-	if interval <= 0 {
-		interval = 5 * time.Second
-	}
-	w.wg.Add(1)
-	go func() {
-		defer w.wg.Done()
-		ticker := time.NewTicker(interval)
-		defer ticker.Stop()
-		for {
-			select {
-			case <-ticker.C:
-				w.Enqueue(Feedback{TaskID: taskID, State: "running", Message: "渠道同步中"})
-			case <-ctx.Done():
-				return
-			}
-		}
-	}()
 }

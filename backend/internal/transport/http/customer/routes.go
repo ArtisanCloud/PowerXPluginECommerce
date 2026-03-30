@@ -16,9 +16,13 @@ func RegisterRoutes(rg *gin.RouterGroup, deps *app.Deps) {
 	{
 		group.GET("", handler.ListCustomers)
 		group.GET("import/template", handler.DownloadImportTemplate)
+		group.GET("import/conflicts/:taskId", handler.DownloadImportConflictReport)
 		group.POST("import", handler.CreateImportTask)
+		group.POST("export", handler.CreateExportTask)
 		group.POST("", handler.CreateCustomer)
 		group.GET(":id", handler.GetCustomer)
+		group.GET(":id/entitlements", handler.ListCustomerEntitlements)
+		group.GET(":id/tokens", handler.GetCustomerTokenBalances)
 		group.PATCH(":id", handler.UpdateCustomer)
 		group.DELETE(":id", handler.DeleteCustomer)
 	}

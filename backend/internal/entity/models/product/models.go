@@ -113,6 +113,20 @@ func (SubscriptionPlan) TableName() string {
 	return models.S(models.TableProductSpuSubscriptionPlans)
 }
 
+// SubscriptionPlanBenefit links a subscription plan to a membership benefit.
+type SubscriptionPlanBenefit struct {
+	ID         string    `gorm:"type:uuid;primaryKey;default:gen_random_uuid()" json:"id"`
+	TenantUUID string    `gorm:"type:uuid;not null;index" json:"tenant_uuid"`
+	PlanID     string    `gorm:"type:uuid;not null;index" json:"plan_id"`
+	BenefitID  string    `gorm:"type:uuid;not null;index" json:"benefit_id"`
+	CreatedAt  time.Time `gorm:"autoCreateTime" json:"created_at"`
+	UpdatedAt  time.Time `gorm:"autoUpdateTime" json:"updated_at"`
+}
+
+func (SubscriptionPlanBenefit) TableName() string {
+	return models.S(models.TableProductSpuSubscriptionPlanLinks)
+}
+
 // SPUImportTask records asynchronous import executions.
 type SPUImportTask struct {
 	TaskID       string         `gorm:"primaryKey;type:varchar(64)" json:"task_id"`

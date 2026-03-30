@@ -11,8 +11,8 @@
 ## 依赖 & 权限
 
 ### RBAC
-- 读取库存快照：`com.powerx.plugin.ecommerce:product.sku.inventory:read`
-- 调整库存：`com.powerx.plugin.ecommerce:product.sku.inventory:manage`
+- 读取库存快照：`com.powerx.plugins.ecommerce:product.sku.inventory:read`
+- 调整库存：`com.powerx.plugins.ecommerce:product.sku.inventory:manage`
 - 触发发布/上架：对应现有 SPU/SKU/channel 权限（按你当前环境配置为准）
 
 ### 可售口径（当前实现）

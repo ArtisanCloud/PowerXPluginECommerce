@@ -43,6 +43,12 @@ func (c *DatabaseConfig) ApplyDefaults() {
 	if driver == "" {
 		driver = "memory"
 	}
+	lowerDSN := strings.ToLower(strings.TrimSpace(c.DSN))
+	// 兼容宿主仅注入 POWERX_DB_DSN（未同步注入 POWERX_DB_DRIVER）的场景。
+	if (driver == "memory" || driver == "sqlite") &&
+		(strings.HasPrefix(lowerDSN, "postgres://") || strings.HasPrefix(lowerDSN, "postgresql://")) {
+		driver = "postgres"
+	}
 	c.Driver = driver
 
 	if c.MaxIdleConns == 0 {

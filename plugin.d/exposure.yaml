@@ -1,0 +1,8 @@
+exposure:
+  channels:
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.template.create
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/resources
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:template:manage
+      type: rest

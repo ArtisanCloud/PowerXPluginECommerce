@@ -60,6 +60,7 @@ type OrderItemDTO struct {
 	Qty        int64  `json:"qty"`
 	UnitPrice  int64  `json:"unitPrice"`
 	LineAmount int64  `json:"lineAmount"`
+	PriceSource string `json:"priceSource,omitempty"`
 }
 
 type OrderEventDTO struct {

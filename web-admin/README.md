@@ -14,6 +14,11 @@ npm run dev
 - **API Base**  
   - 宿主模式：设置 `POWERX_PROXY=1` 且 `POWERX_PLUGIN_ID=<插件 ID>`，Nuxt 会自动将 `runtimeConfig.public.apiBaseUrl` 指向 `/_p/<plugin-id>/api/v1`。  
   - Standalone / 本地联调：如需直连后端，可设置 `NUXT_PUBLIC_API_BASE=http://localhost:8078`（或其他网关地址）以及可选的 `NUXT_PUBLIC_API_PREFIX=/api/v1`。
+- **IAM / Proxy 推荐默认**  
+  - 宿主安装默认：`IAM_MODE=delegated` + `POWERX_PROXY=1`。  
+  - 本地开发默认：`IAM_MODE=local` + `POWERX_PROXY=0`。  
+- **Capability Lab 判定口径**  
+  - 是否可调用 CoreX 能力取决于网关配置与凭证（`PX_GATEWAY_*` + `PX_TOOL_TOKEN/PX_GATEWAY_API_KEY`），不以 `POWERX_PROXY` 作为功能开关。
 - **STS / 身份交换**  
   - 使用 PowerX STS（`/_p/_internal/sts/exchange`）获取宿主颁发的短期凭证；本地 mock 场景可开启 `POWERX_DEV_MODE=1` 并在 `.env` 中写入测试 token。
 - **任务中心入口**  

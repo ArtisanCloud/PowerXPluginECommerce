@@ -2,7 +2,7 @@
   "description": "uni-app mp-weixin",
   "compileType": "miniprogram",
   "appid": "wxc1ebbc8236ffae2b",
-  "projectname": "com.powerx.plugin.ecommerce-mini-app",
+  "projectname": "com.powerx.plugins.ecommerce-mini-app",
   "miniprogramRoot": "dist/dev/mp-weixin/",
   "setting": {
     "urlCheck": false,
@@ -11,4 +11,3 @@
     "minified": true
   }
 }
-

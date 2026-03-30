@@ -9,7 +9,7 @@ servers:
   - url: https://example.com/_p/{pluginId}/api/v1
     variables:
       pluginId:
-        default: com.powerx.plugin.ecommerce
+        default: com.powerx.plugins.ecommerce
 security:
   - bearerAuth: []
   - X-PowerX-Tenant: []

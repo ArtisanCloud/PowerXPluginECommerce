@@ -19,7 +19,7 @@
 
     <view class="px-4 pt-4 space-y-4">
 	      <!-- 地址 -->
-	      <view class="relative overflow-hidden rounded-xl bg-white shadow-sm" hover-class="opacity-95" @tap="onSelectAddress">
+	      <view v-if="!isVirtualOrder" class="relative overflow-hidden rounded-xl bg-white shadow-sm" hover-class="opacity-95" @tap="onSelectAddress">
 	        <view class="p-4 flex items-center gap-3">
 	          <view class="h-10 w-10 shrink-0 rounded-full bg-primary-10 flex items-center justify-center">
 	            <text class="text-primary font-black">址</text>
@@ -69,7 +69,7 @@
         </view>
 
         <view class="px-4 pb-2">
-          <view class="flex items-center justify-between py-3 border-t" style="border-color: rgba(0,0,0,0.04);">
+          <view v-if="!isVirtualOrder" class="flex items-center justify-between py-3 border-t" style="border-color: rgba(0,0,0,0.04);">
             <text class="text-sm text-muted">配送方式</text>
             <view class="flex items-center gap-1" hover-class="opacity-80" @tap="noop">
               <text class="text-sm font-semibold">标准快递</text>
@@ -79,7 +79,7 @@
               <text class="text-muted">›</text>
             </view>
           </view>
-          <view class="flex items-start gap-4 py-3 border-t" style="border-color: rgba(0,0,0,0.04);">
+          <view v-if="!isVirtualOrder" class="flex items-start gap-4 py-3 border-t" style="border-color: rgba(0,0,0,0.04);">
             <text class="text-sm text-muted shrink-0 mt-1">留言</text>
             <textarea
               v-model="buyerNote"
@@ -102,7 +102,7 @@
           <text class="text-muted">商品金额</text>
           <text class="font-semibold">{{ totalText }}</text>
         </view>
-        <view class="flex justify-between text-sm">
+        <view v-if="!isVirtualOrder" class="flex justify-between text-sm">
           <text class="text-muted">运费</text>
           <text class="font-semibold">{{ shippingText }}</text>
         </view>
@@ -172,8 +172,8 @@ type DraftPayload = {
 		const submitting = ref(false);
 		const buyerNote = ref("");
 
-		const selectedAddress = ref<MiniAppCustomerAddress | null>(null);
-		const addressTitle = computed(() => selectedAddress.value?.shippingAddress?.recipientName || "收货人（待选择）");
+	const selectedAddress = ref<MiniAppCustomerAddress | null>(null);
+	const addressTitle = computed(() => selectedAddress.value?.shippingAddress?.recipientName || "收货人（待选择）");
 		const addressPhoneMasked = computed(() =>
 		  selectedAddress.value ? maskPhone(selectedAddress.value.shippingAddress?.recipientPhone) : "—",
 		);
@@ -242,6 +242,7 @@ const shippingText = computed(() => formatMoney(currency.value, 0));
 const discountText = computed(() => `-${formatMoney(currency.value, 0)}`);
 const payableText = computed(() => formatMoney(currency.value, totalAmount.value));
 const savedText = computed(() => "");
+const isVirtualOrder = computed(() => String(draft.value?.from || "").trim() === "membership");
 
 function ensureTopInset() {
   try {
@@ -305,7 +306,7 @@ function goBack() {
 
 	function onSubmitTap() {
 	  if (submitting.value || !items.value.length) return;
-	  if (!selectedAddress.value) {
+	  if (!isVirtualOrder.value && !selectedAddress.value) {
 	    uni.showToast({ title: "请选择收货地址", icon: "none" });
 	    return;
 	  }
@@ -350,7 +351,7 @@ function loadDraft(options?: any) {
 		async function submitOrder() {
 		  if (submitting.value) return;
 		  if (!items.value.length) return;
-		  if (!selectedAddress.value) {
+		  if (!isVirtualOrder.value && !selectedAddress.value) {
 		    uni.showToast({ title: "请选择收货地址", icon: "none" });
 		    return;
 		  }
@@ -364,15 +365,15 @@ function loadDraft(options?: any) {
     const payload = draft.value;
     if (!payload) throw new Error("缺少订单信息");
     const idem = `order-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-	    const order = await createOrder(
-	      {
-	        channel: payload.channel,
-	        locale: payload.locale,
-	        shippingAddressId: selectedAddress.value.id,
-	        items: payload.items.map((x) => ({ skuId: x.skuId, qty: x.qty })),
-	      },
-	      idem,
-	    );
+	    const orderPayload: any = {
+	      channel: payload.channel,
+	      locale: payload.locale,
+	      items: payload.items.map((x) => ({ skuId: x.skuId, qty: x.qty })),
+	    };
+	    if (!isVirtualOrder.value && selectedAddress.value?.id) {
+	      orderPayload.shippingAddressId = selectedAddress.value.id;
+	    }
+	    const order = await createOrder(orderPayload, idem);
     if (payload.from === "cart") {
       clearLocalCart();
     }
@@ -390,7 +391,9 @@ function loadDraft(options?: any) {
 		onLoad((options) => {
 		  ensureTopInset();
 		  loadDraft(options);
-		  void loadSelectedAddress();
+		  if (!isVirtualOrder.value) {
+		    void loadSelectedAddress();
+		  }
 		});
 
 	onMounted(() => {
@@ -398,7 +401,9 @@ function loadDraft(options?: any) {
 	});
 
 		onShow(() => {
-		  void loadSelectedAddress();
+		  if (!isVirtualOrder.value) {
+		    void loadSelectedAddress();
+		  }
 		});
 		</script>
 

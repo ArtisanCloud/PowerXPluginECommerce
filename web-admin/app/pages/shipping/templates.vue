@@ -110,11 +110,41 @@
         </UCard>
       </div>
     </UCard>
+
+    <UCard>
+      <template #header>
+        <div class="flex items-center justify-between gap-2">
+          <div>
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">模拟试算</h3>
+            <p class="text-sm text-gray-500 dark:text-gray-400">输入区域与重量/件数/体积，实时计算运费。</p>
+          </div>
+          <UButton color="primary" icon="i-heroicons-calculator" @click="runQuote">开始试算</UButton>
+        </div>
+      </template>
+
+      <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+        <USelect v-model="quoteForm.templateId" :options="templateOptions" placeholder="选择模板" />
+        <UInput v-model="quoteForm.region" placeholder="区域（如 华东）" />
+        <UInput v-model.number="quoteForm.orderAmount" type="number" placeholder="订单金额（可选）" />
+        <UInput v-model.number="quoteForm.weight" type="number" placeholder="重量 kg（可选）" />
+        <UInput v-model.number="quoteForm.pieceCount" type="number" placeholder="件数（可选）" />
+        <UInput v-model.number="quoteForm.volume" type="number" placeholder="体积（可选）" />
+      </div>
+
+      <div v-if="quoteResult" class="mt-4 rounded-xl border border-gray-200 p-4 dark:border-gray-800">
+        <div class="text-sm text-gray-500">模板：{{ quoteResult.template }} · 币种：{{ quoteResult.currency }}</div>
+        <div class="mt-2 text-2xl font-semibold text-primary-600">¥{{ quoteResult.feeAmount.toFixed(2) }}</div>
+        <div class="mt-2 text-sm text-gray-500">
+          匹配区域：{{ quoteResult.matchedZone.region || "-" }} · 计费：{{ quoteResult.billingType }}
+        </div>
+      </div>
+    </UCard>
   </div>
 </template>
 
 <script setup lang="ts">
 import type { TableColumn } from "@nuxt/ui";
+import { useLogisticsApi } from "~/composables/api";
 
 definePageMeta({
   name: "shipping-templates",
@@ -135,54 +165,82 @@ type Template = {
   lastUpdate: string;
 };
 
-const templates = ref<Template[]>([
-  {
-    id: "TMP-001",
-    name: "全国标准模板",
-    channel: "自营商城",
-    billing: "weight",
-    status: "enabled",
-    defaultRule: { region: "大陆 1kg 内", fee: "¥12" },
-    lastUpdate: "2024-02-10",
-  },
-  {
-    id: "TMP-002",
-    name: "华南极速达",
-    channel: "京东自营",
-    billing: "piece",
-    status: "enabled",
-    defaultRule: { region: "珠三角", fee: "¥15" },
-    lastUpdate: "2024-02-08",
-  },
-  {
-    id: "TMP-003",
-    name: "跨境保税仓",
-    channel: "天猫国际",
-    billing: "weight",
-    status: "disabled",
-    defaultRule: { region: "保税区入仓", fee: "¥28" },
-    lastUpdate: "2024-01-30",
-  },
-]);
+const logisticsApi = useLogisticsApi();
+const templates = ref<Template[]>([]);
+const quoteResult = ref<any>(null);
+const quoteForm = reactive({
+  templateId: "",
+  region: "默认区域",
+  weight: 1,
+  pieceCount: 1,
+  volume: 0,
+  orderAmount: 0,
+});
 
-const heatmap = ref([
-  {
-    id: "RT-1",
-    name: "华北 → 华东",
-    channel: "自营商城",
-    baseFee: "¥13",
-    extraFee: "¥3 /kg",
-    leadTime: "2.2 天",
-  },
-  {
-    id: "RT-2",
-    name: "华南 → 华中",
-    channel: "京东自营",
-    baseFee: "¥15",
-    extraFee: "¥2.5 /kg",
-    leadTime: "1.8 天",
-  },
-]);
+const normalizeBilling = (v: string): BillingType => {
+  const val = String(v || "").toLowerCase();
+  if (val === "piece") return "piece";
+  if (val === "volume") return "volume";
+  return "weight";
+};
+
+const loadTemplates = async () => {
+  const rows = await logisticsApi.listTemplates();
+  templates.value = rows.map((row) => {
+    const channels = Array.isArray(row.channels) ? row.channels : [];
+    const rules = (row.rules || {}) as Record<string, any>;
+    const defaultZone = (rules.defaultZone || rules.default_zone || {}) as Record<string, any>;
+    const baseFee = Number(defaultZone.firstFee ?? defaultZone.first_fee ?? 0);
+    return {
+      id: row.id,
+      name: row.name,
+      channel: String(channels[0] || "未配置"),
+      billing: normalizeBilling(String(rules.billing || rules.billing_type || "weight")),
+      status: row.status === "published" ? "enabled" : "disabled",
+      defaultRule: {
+        region: String(defaultZone.region || "默认区域"),
+        fee: `¥${baseFee.toFixed(2)}`,
+      },
+      lastUpdate: row.updatedAt ? row.updatedAt.slice(0, 10) : "-",
+    };
+  });
+  if (!quoteForm.templateId && templates.value.length > 0) {
+    quoteForm.templateId = templates.value[0].id;
+  }
+};
+
+onMounted(() => {
+  loadTemplates();
+});
+
+const templateOptions = computed(() =>
+  templates.value.map((item) => ({
+    label: item.name,
+    value: item.id,
+  })),
+);
+
+const runQuote = async () => {
+  if (!quoteForm.templateId) return;
+  quoteResult.value = await logisticsApi.quoteTemplate(quoteForm.templateId, {
+    region: quoteForm.region,
+    weight: Number(quoteForm.weight) || 0,
+    piece_count: Number(quoteForm.pieceCount) || 0,
+    volume: Number(quoteForm.volume) || 0,
+    order_amount: Number(quoteForm.orderAmount) || 0,
+  });
+};
+
+const heatmap = computed(() =>
+  templates.value.slice(0, 4).map((item, idx) => ({
+    id: item.id,
+    name: item.defaultRule.region,
+    channel: item.channel,
+    baseFee: item.defaultRule.fee,
+    extraFee: "按规则计算",
+    leadTime: `${1.5 + idx * 0.3} 天`,
+  })),
+);
 
 const keyword = ref("");
 const channelFilter = ref("");
@@ -216,7 +274,7 @@ const columns = computed<TableColumn<Template>[]>(() => [
         piece: "按件数",
         volume: "按体积",
       };
-      return map[getValue()];
+      return map[getValue() as BillingType] || "按重量";
     },
   },
   { accessorKey: "defaultRule", header: "基础规则" },

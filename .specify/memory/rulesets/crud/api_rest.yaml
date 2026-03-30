@@ -70,10 +70,10 @@ checks:
 
         2) 服务层/仓储层只从 context 读取租户，不从 Header/Query 读取：
            - 使用 authx.TenantUUIDFromContext(ctx) / authx.RequireTenantUUID(ctx)
-           - 不要在 service/repo 内部解析 X-Tenant-UUID 或 tenant_uuid query 参数
+           - 不要在 service/repo 内部解析租户 Header（如历史兼容头）或 tenant_uuid query 参数
 
-        3) 不要把 X-Tenant-UUID 作为生产信任来源：
-           - 该 header 仅用于本地调试/内部调用的兜底（最终信任来源应来自 JWT tid 或 PowerX 签名上下文）
+        3) 不要把“租户 Header”作为生产信任来源：
+           - 最终信任来源应来自 JWT tid 或 PowerX 签名上下文
 
         4) 验收点（新增接口必须自测）：
            - 仅带 Authorization Bearer（含 tid）时，service 必须能读到 tenant_uuid

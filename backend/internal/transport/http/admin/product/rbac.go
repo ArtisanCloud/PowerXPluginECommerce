@@ -14,7 +14,7 @@ func RBACEntries(prefix string) map[string]authx.Permission {
 	categoryBase := base + "/categories"
 	templateBase := base + "/category-templates"
 	resource := func(suffix string) string {
-		return "com.powerx.plugin.ecommerce:" + suffix
+		return "com.powerx.plugins.ecommerce:" + suffix
 	}
 
 		entries := map[string]authx.Permission{

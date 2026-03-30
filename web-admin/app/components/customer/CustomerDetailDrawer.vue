@@ -191,15 +191,57 @@
                   </div>
                 </div>
               </div>
-              <div v-else-if="item.value === 'orders'" class="space-y-3 rounded-xl border border-gray-100 p-4 dark:border-gray-800">
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                  {{ t('customer.directory.drawer.lastOrder') }}
-                </p>
-                <p class="text-lg font-semibold text-gray-900 dark:text-white">
-                  {{ formatDate(customer.lastOrderAt) }}
-                </p>
-                <p class="text-sm text-gray-500 dark:text-gray-400">
-                  {{ t('customer.directory.drawer.lastOrderAmount', { amount: formattedAmount }) }}
+              <div v-else-if="item.value === 'orders'" class="space-y-4 rounded-xl border border-gray-100 p-4 dark:border-gray-800">
+                <div class="flex items-center justify-between">
+                  <div>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                      {{ t('customer.directory.drawer.lastOrder') }}
+                    </p>
+                    <p class="text-lg font-semibold text-gray-900 dark:text-white">
+                      {{ formatDate(customer.lastOrderAt) }}
+                    </p>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">
+                      {{ t('customer.directory.drawer.lastOrderAmount', { amount: formattedAmount }) }}
+                    </p>
+                  </div>
+                  <UBadge v-if="ordersTotal" size="xs" variant="soft" color="primary">
+                    {{ t('customer.directory.status.total', { total: ordersTotal }) }}
+                  </UBadge>
+                </div>
+
+                <div v-if="ordersLoading" class="space-y-2">
+                  <USkeleton class="h-10 rounded-xl" />
+                  <USkeleton class="h-10 rounded-xl" />
+                </div>
+                <div v-else-if="orders.length" class="space-y-2">
+                  <div
+                    v-for="order in orders"
+                    :key="order.orderId"
+                    class="flex items-center justify-between gap-3 rounded-xl border border-gray-100 px-3 py-2 text-sm text-gray-700 dark:border-gray-800 dark:text-gray-200"
+                  >
+                    <div class="min-w-0">
+                      <p class="truncate font-medium text-gray-900 dark:text-white">
+                        {{ order.orderNo }}
+                      </p>
+                      <p class="text-xs text-gray-500 dark:text-gray-400">
+                        {{ formatDate(order.createdAt) }}
+                      </p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                      <UBadge :color="statusColor(order.status)" variant="soft">
+                        {{ statusLabel(order.status) }}
+                      </UBadge>
+                      <span class="text-sm font-semibold text-gray-900 dark:text-white">
+                        ¥{{ formatOrderAmount(order.amounts?.total) }}
+                      </span>
+                      <UButton size="xs" variant="ghost" @click="openOrderDetail(order.orderId)">
+                        查看
+                      </UButton>
+                    </div>
+                  </div>
+                </div>
+                <p v-else class="text-sm text-gray-500 dark:text-gray-400">
+                  {{ t('customer.directory.drawer.lastOrder') }}：{{ t('customer.directory.drawer.unknown') }}
                 </p>
               </div>
               <div v-else-if="item.value === 'addresses'" class="space-y-3">
@@ -237,6 +279,104 @@
                   </div>
                 </div>
               </div>
+              <div v-else-if="item.value === 'entitlements'" class="space-y-4">
+                <UAlert
+                  v-if="membershipError"
+                  color="red"
+                  variant="soft"
+                  :title="t('customer.directory.drawer.entitlements.loadError')"
+                  :description="membershipError"
+                />
+                <div class="flex flex-wrap items-center justify-between gap-2">
+                  <p class="text-sm text-gray-500 dark:text-gray-400">
+                    {{ t('customer.directory.drawer.entitlements.tokens') }} / {{ t('customer.directory.drawer.entitlements.entitlements') }}
+                  </p>
+                  <div class="flex flex-wrap items-center gap-2" v-if="allowWrite">
+                    <UButton size="xs" variant="soft" color="primary" @click="grantModalOpen = true">
+                      手动发放权益
+                    </UButton>
+                    <UButton size="xs" variant="soft" color="primary" @click="tokenModalOpen = true">
+                      调整代币余额
+                    </UButton>
+                  </div>
+                </div>
+                <div class="grid gap-4 md:grid-cols-2">
+                  <div class="rounded-xl border border-gray-100 p-4 dark:border-gray-800">
+                    <div class="flex items-center justify-between">
+                      <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                        {{ t('customer.directory.drawer.entitlements.tokens') }}
+                      </p>
+                      <UBadge v-if="tokenBalances.length" size="xs" variant="soft" color="primary">
+                        {{ t('customer.directory.drawer.entitlements.tokenTypes', { count: tokenBalances.length }) }}
+                      </UBadge>
+                    </div>
+                    <div v-if="membershipLoading" class="mt-3 space-y-2">
+                      <USkeleton class="h-6 w-24 rounded" />
+                      <USkeleton class="h-6 w-32 rounded" />
+                    </div>
+                    <div v-else-if="tokenBalances.length" class="mt-3 space-y-2">
+                      <div
+                        v-for="token in tokenBalances"
+                        :key="token.tokenCode"
+                        class="flex items-center justify-between rounded-lg border border-gray-100 px-3 py-2 text-sm text-gray-700 dark:border-gray-800 dark:text-gray-200"
+                      >
+                        <span class="font-medium">{{ token.tokenCode }}</span>
+                        <span class="text-gray-500 dark:text-gray-400">
+                          {{ formatNumber(token.balance) }}
+                        </span>
+                      </div>
+                    </div>
+                    <p v-else class="mt-3 text-sm text-gray-500 dark:text-gray-400">
+                      {{ t('customer.directory.drawer.entitlements.emptyTokens') }}
+                    </p>
+                  </div>
+                  <div class="rounded-xl border border-gray-100 p-4 dark:border-gray-800">
+                    <div class="flex items-center justify-between">
+                      <p class="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
+                        {{ t('customer.directory.drawer.entitlements.entitlements') }}
+                      </p>
+                      <UBadge v-if="entitlements.length" size="xs" variant="soft" color="primary">
+                        {{ entitlements.length }}
+                      </UBadge>
+                    </div>
+                    <div v-if="membershipLoading" class="mt-3 space-y-2">
+                      <USkeleton class="h-6 w-36 rounded" />
+                      <USkeleton class="h-6 w-28 rounded" />
+                    </div>
+                    <div v-else-if="entitlements.length" class="mt-3 space-y-3">
+                      <div
+                        v-for="entitlement in entitlements"
+                        :key="entitlement.id"
+                        class="rounded-lg border border-gray-100 px-3 py-2 text-sm text-gray-700 dark:border-gray-800 dark:text-gray-200"
+                      >
+                        <div class="flex items-center justify-between gap-2">
+                          <span class="font-medium">{{ entitlement.serviceCode }}</span>
+                          <div class="flex items-center gap-2">
+                            <span class="text-gray-500 dark:text-gray-400">
+                              {{ formatQuantity(entitlement.quantity) }}
+                            </span>
+                            <UButton
+                              v-if="allowWrite"
+                              size="xs"
+                              color="red"
+                              variant="ghost"
+                              @click="revokeEntitlement(entitlement.id)"
+                            >
+                              回收
+                            </UButton>
+                          </div>
+                        </div>
+                        <p class="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                          {{ formatValidity(entitlement.validFrom, entitlement.validTo) }}
+                        </p>
+                      </div>
+                    </div>
+                    <p v-else class="mt-3 text-sm text-gray-500 dark:text-gray-400">
+                      {{ t('customer.directory.drawer.entitlements.emptyEntitlements') }}
+                    </p>
+                  </div>
+                </div>
+              </div>
               <div
                 v-else-if="item.value === 'notes'"
                 class="rounded-xl border border-gray-100 bg-gray-50/60 p-4 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-800/40 dark:text-gray-300"
@@ -260,14 +400,80 @@
       </div>
     </template>
   </UDrawer>
+
+  <UModal
+    v-model:open="grantModalOpen"
+    title="手动发放权益"
+    description="为客户手动发放权益。"
+    :prevent-close="true"
+    :ui="{ content: 'max-w-3xl w-full', body: 'p-4 sm:p-5' }"
+  >
+    <template #body>
+      <div class="space-y-4">
+        <UFormField label="服务编码">
+          <UInput v-model="grantForm.serviceCode" placeholder="service_code" />
+        </UFormField>
+        <UFormField label="数量">
+          <UInput v-model.number="grantForm.quantity" type="number" min="-1" />
+        </UFormField>
+        <UFormField label="有效期（到期日）">
+          <UInput v-model="grantForm.validTo" type="date" />
+        </UFormField>
+        <UFormField label="叠加策略">
+          <USelect v-model="grantForm.stackPolicy" :items="[{ label: '叠加', value: 'stack' }, { label: '替换', value: 'replace' }]" />
+        </UFormField>
+        <UFormField label="原因">
+          <UInput v-model="grantForm.reason" placeholder="可选" />
+        </UFormField>
+      </div>
+    </template>
+    <template #footer>
+      <div class="flex justify-end gap-2">
+        <UButton variant="ghost" @click="closeGrantModal">取消</UButton>
+        <UButton color="primary" @click="submitGrant">确认发放</UButton>
+      </div>
+    </template>
+  </UModal>
+
+  <UModal
+    v-model:open="tokenModalOpen"
+    title="调整代币余额"
+    description="为客户账户调整代币余额。"
+    :prevent-close="true"
+    :ui="{ content: 'max-w-3xl w-full', body: 'p-4 sm:p-5' }"
+  >
+    <template #body>
+      <div class="space-y-4">
+        <UFormField label="代币编码">
+          <UInput v-model="tokenForm.tokenCode" placeholder="token_code" />
+        </UFormField>
+        <UFormField label="调整数量（正数增加/负数减少）">
+          <UInput v-model.number="tokenForm.delta" type="number" />
+        </UFormField>
+        <UFormField label="原因">
+          <UInput v-model="tokenForm.reason" placeholder="可选" />
+        </UFormField>
+      </div>
+    </template>
+    <template #footer>
+      <div class="flex justify-end gap-2">
+        <UButton variant="ghost" @click="closeTokenModal">取消</UButton>
+        <UButton color="primary" @click="submitTokenAdjust">确认调整</UButton>
+      </div>
+    </template>
+  </UModal>
 </template>
 
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
-import { useI18n } from "#imports";
+import { useI18n, useToast, useRouter } from "#imports";
 import CustomerAddressBookPanel from "~/components/customer/CustomerAddressBookPanel.vue";
+import { useCustomerApi } from "~/composables/api/useCustomer";
+import { useOrderApi } from "~/composables/api/useOrder";
+import { useMembershipAdminApi } from "~/composables/api/useMembership";
 import { useCustomerStore } from "~/stores/customer";
-import type { Customer } from "~/types/customer";
+import type { Customer, CustomerEntitlement, CustomerTokenBalance } from "~/types/customer";
+import type { OrderSummary } from "~/types/order";
 
 const props = defineProps<{
   customer: Customer | null
@@ -283,7 +489,12 @@ const emit = defineEmits<{
 }>()
 
 const { t, locale } = useI18n()
+const toast = useToast()
 const store = useCustomerStore()
+const customerApi = useCustomerApi()
+const orderApi = useOrderApi()
+const membershipApi = useMembershipAdminApi()
+const router = useRouter()
 
 const open = computed({
   get: () => props.modelValue,
@@ -301,6 +512,37 @@ watch(
   },
 );
 const allowWrite = computed(() => Boolean(props.canManage))
+const entitlements = ref<CustomerEntitlement[]>([])
+const tokenBalances = ref<CustomerTokenBalance[]>([])
+const membershipLoading = ref(false)
+const membershipError = ref('')
+const ordersLoading = ref(false)
+const orders = ref<OrderSummary[]>([])
+const ordersTotal = ref(0)
+const grantModalOpen = ref(false)
+const tokenModalOpen = ref(false)
+const grantForm = reactive({
+  serviceCode: '',
+  quantity: 1,
+  validTo: '',
+  stackPolicy: 'stack',
+  reason: '',
+})
+const tokenForm = reactive({
+  tokenCode: '',
+  delta: 0,
+  reason: '',
+})
+
+const closeGrantModal = () => {
+  document.activeElement?.blur()
+  grantModalOpen.value = false
+}
+
+const closeTokenModal = () => {
+  document.activeElement?.blur()
+  tokenModalOpen.value = false
+}
 
 const isMasked = (field: string) => (props.customer ? store.isFieldMasked(props.customer, field) : false)
 
@@ -411,6 +653,22 @@ const formatCurrency = (value?: number | null) => {
 }
 
 const formattedAmount = computed(() => formatCurrency(props.customer?.lastOrderAmount))
+const formatOrderAmount = (value?: number | null) => formatCurrency(value ? value / 100 : 0)
+const formatQuantity = (value?: number | null) => {
+  if (value === undefined || value === null) {
+    return t('customer.directory.drawer.unknown')
+  }
+  if (value < 0) {
+    return t('customer.directory.drawer.entitlements.unlimited')
+  }
+  return formatNumber(value)
+}
+
+const formatValidity = (from?: string, to?: string) => {
+  const fromLabel = from ? formatDate(from) : t('customer.directory.drawer.unknown')
+  const toLabel = to ? formatDate(to) : t('customer.directory.drawer.entitlements.noExpiry')
+  return t('customer.directory.drawer.entitlements.validityRange', { from: fromLabel, to: toLabel })
+}
 
 const statusLabel = (status?: string) => {
   switch (status) {
@@ -556,12 +814,147 @@ const handleDelete = () => {
   }
 }
 
+const openOrderDetail = (orderId: string) => {
+  if (!orderId) return
+  router.push(`/market/orders/${orderId}`)
+}
+
+const resetGrantForm = () => {
+  grantForm.serviceCode = ''
+  grantForm.quantity = 1
+  grantForm.validTo = ''
+  grantForm.stackPolicy = 'stack'
+  grantForm.reason = ''
+}
+
+const resetTokenForm = () => {
+  tokenForm.tokenCode = ''
+  tokenForm.delta = 0
+  tokenForm.reason = ''
+}
+
+const submitGrant = async () => {
+  if (!props.customer?.id) return
+  if (!grantForm.serviceCode.trim()) {
+    toast.add({ title: '请填写服务编码', color: 'red' })
+    return
+  }
+  if (!grantForm.quantity || grantForm.quantity === 0) {
+    toast.add({ title: '数量必须不为 0', color: 'red' })
+    return
+  }
+  try {
+    await membershipApi.grantEntitlement({
+      customerId: props.customer.id,
+      serviceCode: grantForm.serviceCode.trim(),
+      quantity: Number(grantForm.quantity),
+      validTo: grantForm.validTo ? new Date(grantForm.validTo).toISOString() : undefined,
+      stackPolicy: grantForm.stackPolicy,
+      reason: grantForm.reason.trim() || undefined,
+    })
+    toast.add({ title: '权益已发放', color: 'green' })
+    closeGrantModal()
+    resetGrantForm()
+    loadMembershipAssets()
+  } catch (error: any) {
+    toast.add({ title: error?.message || '发放失败', color: 'red' })
+  }
+}
+
+const submitTokenAdjust = async () => {
+  if (!props.customer?.id) return
+  if (!tokenForm.tokenCode.trim()) {
+    toast.add({ title: '请填写代币编码', color: 'red' })
+    return
+  }
+  if (!tokenForm.delta || tokenForm.delta === 0) {
+    toast.add({ title: '调整数量必须不为 0', color: 'red' })
+    return
+  }
+  try {
+    await membershipApi.adjustToken({
+      customerId: props.customer.id,
+      tokenCode: tokenForm.tokenCode.trim(),
+      delta: Number(tokenForm.delta),
+      reason: tokenForm.reason.trim() || undefined,
+    })
+    toast.add({ title: '代币余额已调整', color: 'green' })
+    closeTokenModal()
+    resetTokenForm()
+    loadMembershipAssets()
+  } catch (error: any) {
+    toast.add({ title: error?.message || '调整失败', color: 'red' })
+  }
+}
+
+const revokeEntitlement = async (entitlementId: string) => {
+  if (!props.customer?.id || !entitlementId) return
+  if (!confirm('确定要回收该权益吗？')) return
+  try {
+    await membershipApi.revokeEntitlement({ entitlementId })
+    toast.add({ title: '权益已回收', color: 'green' })
+    loadMembershipAssets()
+  } catch (error: any) {
+    toast.add({ title: error?.message || '回收失败', color: 'red' })
+  }
+}
+
+const loadMembershipAssets = async () => {
+  if (!props.customer?.id) {
+    entitlements.value = []
+    tokenBalances.value = []
+    return
+  }
+  try {
+    membershipLoading.value = true
+    membershipError.value = ''
+    const [entitlementResp, tokenResp] = await Promise.all([
+      customerApi.getCustomerEntitlements(props.customer.id),
+      customerApi.getCustomerTokenBalances(props.customer.id),
+    ])
+    entitlements.value = entitlementResp?.items ?? []
+    tokenBalances.value = tokenResp?.items ?? []
+  } catch (error: any) {
+    console.error(error)
+    entitlements.value = []
+    tokenBalances.value = []
+    membershipError.value = error?.message || t('customer.directory.drawer.entitlements.loadError')
+  } finally {
+    membershipLoading.value = false
+  }
+}
+
+const loadCustomerOrders = async () => {
+  if (!props.customer?.id) {
+    orders.value = []
+    ordersTotal.value = 0
+    return
+  }
+  try {
+    ordersLoading.value = true
+    const resp = await orderApi.listOrders({
+      customerId: props.customer.id,
+      page: 1,
+      pageSize: 5,
+    })
+    orders.value = resp?.items ?? []
+    ordersTotal.value = resp?.total ?? 0
+  } catch (error) {
+    orders.value = []
+    ordersTotal.value = 0
+    console.error(error)
+  } finally {
+    ordersLoading.value = false
+  }
+}
+
 const tabs = computed(() => [
   { label: t("customer.directory.drawer.tabs.overview"), value: "overview" },
   { label: t("customer.directory.drawer.tabs.orders"), value: "orders" },
   { label: locale.value === "en" ? "Addresses" : "收货地址", value: "addresses" },
   { label: t("customer.directory.drawer.tabs.afterSales"), value: "afterSales" },
   { label: t("customer.directory.drawer.tabs.points"), value: "points" },
+  { label: t("customer.directory.drawer.tabs.entitlements"), value: "entitlements" },
   { label: t("customer.directory.drawer.tabs.notes"), value: "notes" },
   { label: t("customer.directory.drawer.tabs.audit"), value: "audit" },
 ]);
@@ -571,5 +964,22 @@ watch(
   () => {
     activeTab.value = 'overview'
   },
+)
+
+watch(
+  () => [open.value, props.customer?.id],
+  ([isOpen, id]) => {
+    if (!isOpen || !id) {
+      entitlements.value = []
+      tokenBalances.value = []
+      membershipError.value = ''
+      orders.value = []
+      ordersTotal.value = 0
+      return
+    }
+    loadMembershipAssets()
+    loadCustomerOrders()
+  },
+  { immediate: true },
 )
 </script>

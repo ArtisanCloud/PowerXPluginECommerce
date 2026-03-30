@@ -9,7 +9,7 @@
           {{ $t("templates.crud.description") }}
         </p>
       </div>
-      <UButton icon="i-heroicons-plus" color="primary" @click="startCreate">
+      <UButton icon="i-heroicons-plus" color="primary" :disabled="!canCreate" @click="startCreate">
         {{ $t("templates.crud.create") }}
       </UButton>
     </div>
@@ -64,6 +64,7 @@
               size="xs"
               variant="soft"
               icon="i-heroicons-pencil"
+              :disabled="!canUpdate"
               @click="startEdit(row.original)"
             >
               {{ $t('common.edit') }}
@@ -73,6 +74,7 @@
               variant="soft"
               color="error"
               icon="i-heroicons-trash"
+              :disabled="!canDelete"
               @click="confirmDelete(row.original)"
             >
               {{ $t('common.delete') }}
@@ -113,6 +115,8 @@ import type { Template } from "~/composables/api/useTemplate"
 import TemplateFormModal from "~/components/templates/TemplateFormModal.vue"
 import { nextTick } from "vue"
 import { useI18n } from "vue-i18n"
+import { storeToRefs } from "pinia"
+import { useUserStore } from "~/stores/user"
 
 type TemplateFormState = {
   name: string
@@ -147,6 +151,11 @@ const toast = reactive({
 })
 
 const { t } = useI18n()
+const userStore = useUserStore()
+const { templatesCapability } = storeToRefs(userStore)
+const canCreate = computed(() => Boolean(templatesCapability.value?.can_create))
+const canUpdate = computed(() => Boolean(templatesCapability.value?.can_update))
+const canDelete = computed(() => Boolean(templatesCapability.value?.can_delete))
 
 const tableColumns = computed(() => [
   { accessorKey: 'name', header: t('templates.crud.fields.name') },
@@ -250,11 +259,13 @@ const closeFormModal = () => {
 }
 
 const startCreate = () => {
+  if (!canCreate.value) return
   resetForm()
   openFormModal()
 }
 
 const startEdit = (tpl: Template) => {
+  if (!canUpdate.value) return
   editingId.value = tpl.id
   Object.assign(form, {
     name: tpl.name,
@@ -266,6 +277,22 @@ const startEdit = (tpl: Template) => {
 
 const handleSubmit = async (payload: { name: string; description: string; content: string }) => {
   if (!payload.name || !payload.description || !payload.content) {
+    return
+  }
+  if (editingId.value && !canUpdate.value) {
+    showToast({
+      title: t("message.error"),
+      message: "无权限执行该操作",
+      color: "warning",
+    })
+    return
+  }
+  if (!editingId.value && !canCreate.value) {
+    showToast({
+      title: t("message.error"),
+      message: "无权限执行该操作",
+      color: "warning",
+    })
     return
   }
   saving.value = true
@@ -311,12 +338,21 @@ const handleSubmit = async (payload: { name: string; description: string; conten
 }
 
 const confirmDelete = (tpl: Template) => {
+  if (!canDelete.value) return
   selectedTemplate.value = tpl
   deleteDialog.value = true
 }
 
 const performDelete = async () => {
   if (!selectedTemplate.value || deleting.value) return
+  if (!canDelete.value) {
+    showToast({
+      title: t("message.error"),
+      message: "无权限执行该操作",
+      color: "warning",
+    })
+    return
+  }
   deleting.value = true
   try {
     const res = await deleteTemplateApi(

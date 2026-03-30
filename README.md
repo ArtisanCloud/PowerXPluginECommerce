@@ -1,6 +1,6 @@
 # Powerx Plugin Ecommerce Plugin
 
-由 `px-plugin init com.powerx.plugin.ecommerce` 生成的 PowerX 插件模板。
+由 `px-plugin init com.powerx.plugins.ecommerce` 生成的 PowerX 插件模板。
 
 ## 快速开始
 

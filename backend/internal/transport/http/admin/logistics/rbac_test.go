@@ -1,0 +1,444 @@
+package logistics
+
+import "testing"
+
+func TestRBACEntries_LogisticsRoutes(t *testing.T) {
+	entries := RBACEntries("/api/v1")
+
+	if len(entries) < 18 {
+		t.Fatalf("expected at least 18 logistics RBAC entries, got %d", len(entries))
+	}
+
+	key := "POST:/api/v1/admin/logistics/waybills"
+	perm, ok := entries[key]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", key)
+	}
+	if perm.Action != "manage" {
+		t.Fatalf("expected manage action, got %s", perm.Action)
+	}
+	if perm.Resource != "com.powerx.plugins.ecommerce:logistics.waybill" {
+		t.Fatalf("unexpected resource %s", perm.Resource)
+	}
+
+	exportKey := "GET:/api/v1/admin/logistics/billing/export"
+	exportPerm, ok := entries[exportKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", exportKey)
+	}
+	if exportPerm.Action != "export" {
+		t.Fatalf("expected export action, got %s", exportPerm.Action)
+	}
+
+	printKey := "POST:/api/v1/admin/logistics/labels/prints"
+	printPerm, ok := entries[printKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", printKey)
+	}
+	if printPerm.Action != "manage" {
+		t.Fatalf("expected manage action, got %s", printPerm.Action)
+	}
+	if printPerm.Resource != "com.powerx.plugins.ecommerce:logistics.label_print" {
+		t.Fatalf("unexpected resource %s", printPerm.Resource)
+	}
+
+	slaKey := "GET:/api/v1/admin/logistics/sla/dashboard"
+	slaPerm, ok := entries[slaKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", slaKey)
+	}
+	if slaPerm.Action != "read" {
+		t.Fatalf("expected read action, got %s", slaPerm.Action)
+	}
+	if slaPerm.Resource != "com.powerx.plugins.ecommerce:logistics.sla" {
+		t.Fatalf("unexpected resource %s", slaPerm.Resource)
+	}
+
+	quoteKey := "POST:/api/v1/admin/logistics/templates/:id/quote"
+	quotePerm, ok := entries[quoteKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", quoteKey)
+	}
+	if quotePerm.Action != "read" {
+		t.Fatalf("expected read action, got %s", quotePerm.Action)
+	}
+
+	caseKey := "PATCH:/api/v1/admin/logistics/billing/cases/:id/transition"
+	casePerm, ok := entries[caseKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", caseKey)
+	}
+	if casePerm.Resource != "com.powerx.plugins.ecommerce:logistics.billing.case" {
+		t.Fatalf("unexpected resource %s", casePerm.Resource)
+	}
+	financeRiskReadKey := "GET:/api/v1/admin/logistics/billing/finance-risks"
+	financeRiskReadPerm, ok := entries[financeRiskReadKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", financeRiskReadKey)
+	}
+	if financeRiskReadPerm.Action != "read" {
+		t.Fatalf("expected read action, got %s", financeRiskReadPerm.Action)
+	}
+	if financeRiskReadPerm.Resource != "com.powerx.plugins.ecommerce:logistics.finance_risk" {
+		t.Fatalf("unexpected resource %s", financeRiskReadPerm.Resource)
+	}
+	financeRiskActionKey := "POST:/api/v1/admin/logistics/billing/finance-risks/:id/actions"
+	financeRiskActionPerm, ok := entries[financeRiskActionKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", financeRiskActionKey)
+	}
+	if financeRiskActionPerm.Action != "manage" {
+		t.Fatalf("expected manage action, got %s", financeRiskActionPerm.Action)
+	}
+	opsPolicyKey := "GET:/api/v1/admin/logistics/ops-automation/policies"
+	opsPolicyPerm, ok := entries[opsPolicyKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", opsPolicyKey)
+	}
+	if opsPolicyPerm.Resource != "com.powerx.plugins.ecommerce:logistics.ops_automation" {
+		t.Fatalf("unexpected resource %s", opsPolicyPerm.Resource)
+	}
+	opsTakeoverKey := "POST:/api/v1/admin/logistics/ops-automation/runs/:id/takeover"
+	opsTakeoverPerm, ok := entries[opsTakeoverKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", opsTakeoverKey)
+	}
+	if opsTakeoverPerm.Action != "manage" {
+		t.Fatalf("expected manage action, got %s", opsTakeoverPerm.Action)
+	}
+
+	notifyKey := "POST:/api/v1/admin/logistics/notifications/send"
+	notifyPerm, ok := entries[notifyKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", notifyKey)
+	}
+	if notifyPerm.Resource != "com.powerx.plugins.ecommerce:logistics.notification" {
+		t.Fatalf("unexpected resource %s", notifyPerm.Resource)
+	}
+
+	routingKey := "POST:/api/v1/admin/logistics/routing/preview"
+	routingPerm, ok := entries[routingKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", routingKey)
+	}
+	if routingPerm.Resource != "com.powerx.plugins.ecommerce:logistics.routing" {
+		t.Fatalf("unexpected resource %s", routingPerm.Resource)
+	}
+
+	redeliveryKey := "POST:/api/v1/admin/logistics/redelivery/tasks/:id/redispatch"
+	redeliveryPerm, ok := entries[redeliveryKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", redeliveryKey)
+	}
+	if redeliveryPerm.Resource != "com.powerx.plugins.ecommerce:logistics.redelivery" {
+		t.Fatalf("unexpected resource %s", redeliveryPerm.Resource)
+	}
+
+	syncTrackKey := "POST:/api/v1/admin/logistics/waybills/:id/sync-track"
+	syncTrackPerm, ok := entries[syncTrackKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", syncTrackKey)
+	}
+	if syncTrackPerm.Resource != "com.powerx.plugins.ecommerce:logistics.waybill" {
+		t.Fatalf("unexpected resource %s", syncTrackPerm.Resource)
+	}
+
+	profileListKey := "GET:/api/v1/admin/logistics/carriers/profiles"
+	profileListPerm, ok := entries[profileListKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", profileListKey)
+	}
+	if profileListPerm.Action != "read" {
+		t.Fatalf("expected read action, got %s", profileListPerm.Action)
+	}
+	if profileListPerm.Resource != "com.powerx.plugins.ecommerce:logistics.carrier_profile" {
+		t.Fatalf("unexpected resource %s", profileListPerm.Resource)
+	}
+	profileRetireKey := "POST:/api/v1/admin/logistics/carriers/profiles/:id/retire"
+	profileRetirePerm, ok := entries[profileRetireKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", profileRetireKey)
+	}
+	if profileRetirePerm.Action != "manage" {
+		t.Fatalf("expected manage action, got %s", profileRetirePerm.Action)
+	}
+
+	riskKey := "POST:/api/v1/admin/logistics/risk/hits/:id/release"
+	riskPerm, ok := entries[riskKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", riskKey)
+	}
+	if riskPerm.Resource != "com.powerx.plugins.ecommerce:logistics.risk" {
+		t.Fatalf("unexpected resource %s", riskPerm.Resource)
+	}
+
+	trackingSyncKey := "POST:/api/v1/admin/logistics/tracking-sync/jobs"
+	trackingSyncPerm, ok := entries[trackingSyncKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", trackingSyncKey)
+	}
+	if trackingSyncPerm.Resource != "com.powerx.plugins.ecommerce:logistics.tracking_sync" {
+		t.Fatalf("unexpected resource %s", trackingSyncPerm.Resource)
+	}
+
+	gatewayKey := "GET:/api/v1/admin/logistics/gateway/health"
+	gatewayPerm, ok := entries[gatewayKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", gatewayKey)
+	}
+	if gatewayPerm.Action != "read" {
+		t.Fatalf("expected read action, got %s", gatewayPerm.Action)
+	}
+	costKey := "GET:/api/v1/admin/logistics/gateway/costs"
+	costPerm, ok := entries[costKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", costKey)
+	}
+	if costPerm.Action != "read" {
+		t.Fatalf("expected read action, got %s", costPerm.Action)
+	}
+	alertKey := "GET:/api/v1/admin/logistics/gateway/cost-alerts"
+	alertPerm, ok := entries[alertKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", alertKey)
+	}
+	if alertPerm.Resource != "com.powerx.plugins.ecommerce:logistics.gateway" {
+		t.Fatalf("unexpected resource %s", alertPerm.Resource)
+	}
+
+	scheduleKey := "POST:/api/v1/admin/logistics/tracking-sync/schedules"
+	schedulePerm, ok := entries[scheduleKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", scheduleKey)
+	}
+	if schedulePerm.Resource != "com.powerx.plugins.ecommerce:logistics.tracking_sync" {
+		t.Fatalf("unexpected resource %s", schedulePerm.Resource)
+	}
+
+	failureCompensateKey := "POST:/api/v1/admin/logistics/gateway/failures/:id/compensate"
+	failureCompensatePerm, ok := entries[failureCompensateKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", failureCompensateKey)
+	}
+	if failureCompensatePerm.Action != "manage" {
+		t.Fatalf("expected manage action, got %s", failureCompensatePerm.Action)
+	}
+
+	orchestrationKey := "POST:/api/v1/admin/logistics/exceptions/orchestration/execute"
+	orchestrationPerm, ok := entries[orchestrationKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", orchestrationKey)
+	}
+	if orchestrationPerm.Resource != "com.powerx.plugins.ecommerce:logistics.orchestration" {
+		t.Fatalf("unexpected resource %s", orchestrationPerm.Resource)
+	}
+
+	addressCheckKey := "POST:/api/v1/admin/logistics/address-validation/check"
+	addressCheckPerm, ok := entries[addressCheckKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", addressCheckKey)
+	}
+	if addressCheckPerm.Resource != "com.powerx.plugins.ecommerce:logistics.address_validation" {
+		t.Fatalf("unexpected resource %s", addressCheckPerm.Resource)
+	}
+
+	optimizerKey := "POST:/api/v1/admin/logistics/routing/optimizer/simulate"
+	optimizerPerm, ok := entries[optimizerKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", optimizerKey)
+	}
+	if optimizerPerm.Resource != "com.powerx.plugins.ecommerce:logistics.routing_optimizer" {
+		t.Fatalf("unexpected resource %s", optimizerPerm.Resource)
+	}
+
+	settlementKey := "POST:/api/v1/admin/logistics/settlement/batches/:id/confirm"
+	settlementPerm, ok := entries[settlementKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", settlementKey)
+	}
+	if settlementPerm.Resource != "com.powerx.plugins.ecommerce:logistics.settlement" {
+		t.Fatalf("unexpected resource %s", settlementPerm.Resource)
+	}
+
+	reconciliationKey := "POST:/api/v1/admin/logistics/reconciliation/cases/:id/handle"
+	reconciliationPerm, ok := entries[reconciliationKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", reconciliationKey)
+	}
+	if reconciliationPerm.Resource != "com.powerx.plugins.ecommerce:logistics.reconciliation" {
+		t.Fatalf("unexpected resource %s", reconciliationPerm.Resource)
+	}
+
+	controlTowerKey := "GET:/api/v1/admin/logistics/control-tower/overview"
+	controlTowerPerm, ok := entries[controlTowerKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", controlTowerKey)
+	}
+	if controlTowerPerm.Resource != "com.powerx.plugins.ecommerce:logistics.control_tower" {
+		t.Fatalf("unexpected resource %s", controlTowerPerm.Resource)
+	}
+
+	allocationKey := "POST:/api/v1/admin/logistics/allocation/allocate"
+	allocationPerm, ok := entries[allocationKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", allocationKey)
+	}
+	if allocationPerm.Resource != "com.powerx.plugins.ecommerce:logistics.allocation" {
+		t.Fatalf("unexpected resource %s", allocationPerm.Resource)
+	}
+	forecastKey := "GET:/api/v1/admin/logistics/allocation/forecasts"
+	forecastPerm, ok := entries[forecastKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", forecastKey)
+	}
+	if forecastPerm.Resource != "com.powerx.plugins.ecommerce:logistics.capacity_forecast" {
+		t.Fatalf("unexpected resource %s", forecastPerm.Resource)
+	}
+	sandboxKey := "GET:/api/v1/admin/logistics/sandbox/scenarios"
+	sandboxPerm, ok := entries[sandboxKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", sandboxKey)
+	}
+	if sandboxPerm.Resource != "com.powerx.plugins.ecommerce:logistics.fulfillment_sandbox" {
+		t.Fatalf("unexpected resource %s", sandboxPerm.Resource)
+	}
+	policyFlowListKey := "GET:/api/v1/admin/logistics/policy-orchestration/flows"
+	policyFlowListPerm, ok := entries[policyFlowListKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", policyFlowListKey)
+	}
+	if policyFlowListPerm.Action != "read" {
+		t.Fatalf("expected read action, got %s", policyFlowListPerm.Action)
+	}
+	if policyFlowListPerm.Resource != "com.powerx.plugins.ecommerce:logistics.policy_orchestration" {
+		t.Fatalf("unexpected resource %s", policyFlowListPerm.Resource)
+	}
+	policyPublishKey := "POST:/api/v1/admin/logistics/policy-orchestration/flows/:id/publish"
+	policyPublishPerm, ok := entries[policyPublishKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", policyPublishKey)
+	}
+	if policyPublishPerm.Action != "manage" {
+		t.Fatalf("expected manage action, got %s", policyPublishPerm.Action)
+	}
+	interCandidateKey := "GET:/api/v1/admin/logistics/allocation/interwarehouse/candidates"
+	interCandidatePerm, ok := entries[interCandidateKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", interCandidateKey)
+	}
+	if interCandidatePerm.Action != "read" {
+		t.Fatalf("expected read action, got %s", interCandidatePerm.Action)
+	}
+	if interCandidatePerm.Resource != "com.powerx.plugins.ecommerce:logistics.interwarehouse" {
+		t.Fatalf("unexpected resource %s", interCandidatePerm.Resource)
+	}
+	interSuggestKey := "POST:/api/v1/admin/logistics/allocation/interwarehouse/suggest"
+	interSuggestPerm, ok := entries[interSuggestKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", interSuggestKey)
+	}
+	if interSuggestPerm.Action != "manage" {
+		t.Fatalf("expected manage action, got %s", interSuggestPerm.Action)
+	}
+	interConfirmKey := "POST:/api/v1/admin/logistics/allocation/interwarehouse/confirm"
+	interConfirmPerm, ok := entries[interConfirmKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", interConfirmKey)
+	}
+	if interConfirmPerm.Resource != "com.powerx.plugins.ecommerce:logistics.interwarehouse" {
+		t.Fatalf("unexpected resource %s", interConfirmPerm.Resource)
+	}
+	rootCauseKey := "GET:/api/v1/admin/logistics/tracking-root-causes/summary"
+	rootCausePerm, ok := entries[rootCauseKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", rootCauseKey)
+	}
+	if rootCausePerm.Resource != "com.powerx.plugins.ecommerce:logistics.tracking_root_cause" {
+		t.Fatalf("unexpected resource %s", rootCausePerm.Resource)
+	}
+	qualityListKey := "GET:/api/v1/admin/logistics/quality-reports"
+	qualityListPerm, ok := entries[qualityListKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", qualityListKey)
+	}
+	if qualityListPerm.Resource != "com.powerx.plugins.ecommerce:logistics.quality_audit" {
+		t.Fatalf("unexpected resource %s", qualityListPerm.Resource)
+	}
+	qualityGenerateKey := "POST:/api/v1/admin/logistics/quality-reports/generate"
+	qualityGeneratePerm, ok := entries[qualityGenerateKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", qualityGenerateKey)
+	}
+	if qualityGeneratePerm.Action != "manage" {
+		t.Fatalf("expected manage action, got %s", qualityGeneratePerm.Action)
+	}
+	qualityExportKey := "GET:/api/v1/admin/logistics/quality-reports/export"
+	qualityExportPerm, ok := entries[qualityExportKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", qualityExportKey)
+	}
+	if qualityExportPerm.Action != "export" {
+		t.Fatalf("expected export action, got %s", qualityExportPerm.Action)
+	}
+
+	lastmileKey := "POST:/api/v1/admin/logistics/lastmile-recovery/execute"
+	lastmilePerm, ok := entries[lastmileKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", lastmileKey)
+	}
+	if lastmilePerm.Resource != "com.powerx.plugins.ecommerce:logistics.lastmile_recovery" {
+		t.Fatalf("unexpected resource %s", lastmilePerm.Resource)
+	}
+
+	crossborderKey := "POST:/api/v1/admin/logistics/crossborder/tax-quote"
+	crossborderPerm, ok := entries[crossborderKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", crossborderKey)
+	}
+	if crossborderPerm.Resource != "com.powerx.plugins.ecommerce:logistics.crossborder" {
+		t.Fatalf("unexpected resource %s", crossborderPerm.Resource)
+	}
+
+	customsKey := "POST:/api/v1/admin/logistics/customs/precheck"
+	customsPerm, ok := entries[customsKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", customsKey)
+	}
+	if customsPerm.Resource != "com.powerx.plugins.ecommerce:logistics.customs_rule" {
+		t.Fatalf("unexpected resource %s", customsPerm.Resource)
+	}
+	complianceListKey := "GET:/api/v1/admin/logistics/customs/compliance-kb/versions"
+	complianceListPerm, ok := entries[complianceListKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", complianceListKey)
+	}
+	if complianceListPerm.Resource != "com.powerx.plugins.ecommerce:logistics.compliance_kb" {
+		t.Fatalf("unexpected resource %s", complianceListPerm.Resource)
+	}
+	compliancePublishKey := "POST:/api/v1/admin/logistics/customs/compliance-kb/:id/publish"
+	compliancePublishPerm, ok := entries[compliancePublishKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", compliancePublishKey)
+	}
+	if compliancePublishPerm.Action != "manage" {
+		t.Fatalf("expected manage action, got %s", compliancePublishPerm.Action)
+	}
+
+	kpiKey := "GET:/api/v1/admin/logistics/kpi-dashboard/overview"
+	kpiPerm, ok := entries[kpiKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", kpiKey)
+	}
+	if kpiPerm.Resource != "com.powerx.plugins.ecommerce:logistics.kpi_dashboard" {
+		t.Fatalf("unexpected resource %s", kpiPerm.Resource)
+	}
+
+	sloGuardKey := "GET:/api/v1/admin/logistics/slo-guard/status"
+	sloGuardPerm, ok := entries[sloGuardKey]
+	if !ok {
+		t.Fatalf("missing rbac entry: %s", sloGuardKey)
+	}
+	if sloGuardPerm.Resource != "com.powerx.plugins.ecommerce:logistics.slo_guard" {
+		t.Fatalf("unexpected resource %s", sloGuardPerm.Resource)
+	}
+}

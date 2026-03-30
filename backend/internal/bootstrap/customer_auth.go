@@ -16,7 +16,11 @@ func BuildCustomerAuthenticator(cfg *config.Config, deps *app.Deps) (customeraut
 	case config.CustomerAuthModeDelegate:
 		token := customerCfg.ServiceToken
 		if strings.TrimSpace(token) == "" {
-			token = strings.TrimSpace(config.GetString("POWERX_AUTH_TOKEN", ""))
+			if resolved, _ := ResolveToolToken(); strings.TrimSpace(resolved) != "" {
+				token = strings.TrimSpace(resolved)
+			} else {
+				token = strings.TrimSpace(config.GetString("POWERX_AUTH_TOKEN", ""))
+			}
 		}
 		authenticator, err := customerauth.NewDelegateAuthenticator(customerauth.DelegateOptions{
 			Endpoint:     customerCfg.DelegateEndpoint,

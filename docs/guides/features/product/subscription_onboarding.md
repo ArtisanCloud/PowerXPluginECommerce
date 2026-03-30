@@ -75,7 +75,7 @@ lear# 订阅型商品上架 & 下单准备用例
 
 1. 调用 `/api/v1/admin/product/spus/{id}` 或面向渠道的公开 API（若有代理）检查商品详情。
 2. 若订单服务需要 SKU 详情，可使用 `/api/v1/admin/product/skus?spuId={id}` 获取 SKU 列表。
-3. 迷你应用/小程序场景：调用 `/api/v1/mini-app/products?keyword=SUB-PLAN-001`、`/api/v1/mini-app/products/{id}/skus` 对齐移动端可见的数据（仅需 `X-Tenant-UUID`；迷你端 API 不再要求管理员 JWT）。
+3. 迷你应用/小程序场景：调用 `/api/v1/mini-app/products?keyword=SUB-PLAN-001&tenant_uuid=<uuid>`、`/api/v1/mini-app/products/{id}/skus?tenant_uuid=<uuid>` 对齐移动端可见的数据（迷你端 API 不再要求管理员 JWT）。
 4. **验证**：各接口返回的 `status`、`channels`、`priceRefs`、`code` 等字段与配置一致，mini-app 响应中至少包含 `id/code/status`，确保可作为下单输入。
 
 ## 回归测试提示
@@ -98,6 +98,6 @@ lear# 订阅型商品上架 & 下单准备用例
 | SKU 创建 403 / 501                              | 检查 RBAC（`product.sku:create`）和 `/backend/internal/transport/http/admin/product/rbac.go` 配置。 |
 | SKU 列表显示空白（编码/状态缺失）                | 确认前端 `web-admin/app/pages/product/skus/index.vue` 的 `formatSkuRow` 是否收到合法字段。 |
 | 渠道发布无响应                                   | 查看后台日志是否出现 `channel.product.publish` 任务，必要时手动调用 `/channels/publish` API。 |
-| 前端 API 404 / 401                               | 检查 `X-Tenant-UUID` 与 `Authorization` 是否在 `_client.ts` 注入；必要时重新登录刷新 token。 |
+| 前端 API 404 / 401                               | 检查 `tenant_uuid`（query）与 `Authorization` 是否正确；必要时重新登录刷新 token。 |
 
 > 若需扩展自动化测试，请在本指南末尾记录新增脚本位置与命令，保持文档与代码一致。

@@ -33,6 +33,31 @@ export interface Customer {
   maskedFields?: string[];
   membershipSnapshot?: MembershipSnapshot;
   metadata?: Record<string, any>;
+  progress?: number;
+}
+
+export interface CustomerEntitlement {
+  id: string;
+  serviceCode: string;
+  quantity: number;
+  validFrom?: string;
+  validTo?: string;
+  stackPolicy?: string;
+  sourceType?: string;
+  sourceId?: string;
+}
+
+export interface CustomerEntitlementList {
+  items: CustomerEntitlement[];
+}
+
+export interface CustomerTokenBalance {
+  tokenCode: string;
+  balance: number;
+}
+
+export interface CustomerTokenBalanceList {
+  items: CustomerTokenBalance[];
 }
 
 export interface SavedView {
@@ -142,6 +167,7 @@ export interface BulkReminderPayload {
   channel: string;
   templateId: string;
   metadata?: Record<string, any>;
+  progress?: number;
 }
 
 export interface CustomerExportPayload {
@@ -157,6 +183,7 @@ export interface JobStatus {
   completedAt?: string;
   createdAt?: string;
   metadata?: Record<string, any>;
+  progress?: number;
 }
 
 export interface BulkTask extends JobStatus {

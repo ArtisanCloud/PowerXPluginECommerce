@@ -9,11 +9,13 @@ import (
 	opservice "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/operations"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin"
+	admincapability "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/capability"
 	adminchannels "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/channel_master"
 	adminconsole "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/console"
 	admincustomeraddress "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/customer_address"
 	adminintegration "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/integration"
 	adminmarketplace "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/marketplace"
+	adminmembership "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/membership"
 	adminoperations "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/operations"
 	adminorder "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/order"
 	adminpayments "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/payments"
@@ -72,10 +74,13 @@ func (r *Registry) RegisterAPIRoutes(gApi *gin.RouterGroup) {
 	r.mergeRBAC(adminmarketplace.RBACEntries(r.apiPrefix()))
 	r.mergeRBAC(adminproduct.RBACEntries(r.apiPrefix()))
 	r.mergeRBAC(adminchannels.RBACEntries(r.apiPrefix()))
+	r.mergeRBAC(admincapability.RBACEntries(r.apiPrefix()))
 	r.mergeRBAC(adminpricing.RBACEntries(r.apiPrefix()))
 	r.mergeRBAC(adminorder.RBACEntries(r.apiPrefix()))
 	r.mergeRBAC(adminpayments.RBACEntries(r.apiPrefix()))
 	r.mergeRBAC(admincustomeraddress.RBACEntries(r.apiPrefix()))
+	r.mergeRBAC(adminmembership.RBACEntries(r.apiPrefix()))
+	r.mergeRBAC(templates.RBACEntries(r.apiPrefix()))
 	r.mergeRBAC(integrationRBACEntries(r.apiPrefix()))
 	r.mergeRBAC(marketplacePublicRBACEntries(r.apiPrefix()))
 	r.mergeRBAC(customerapi.RBACEntries(r.apiPrefix()))

@@ -69,7 +69,11 @@
           color="primary"
           variant="soft"
           :title="t('customer.directory.export.taskCreated', { id: lastTaskId })"
-          :description="t('customer.directory.export.taskDesc')"
+          :description="
+            typeof currentTaskProgress === 'number'
+              ? `${t('customer.directory.export.taskDesc')}（${currentTaskProgress}%）`
+              : t('customer.directory.export.taskDesc')
+          "
         />
       </div>
     </template>
@@ -177,6 +181,10 @@ watch(resolveOpen, (value) => {
 const exporting = computed(() => store.exportState.submitting);
 const exportError = computed(() => store.exportState.error);
 const lastTaskId = computed(() => store.exportState.lastTaskId);
+const currentTask = computed(() =>
+  store.bulkTasks.find((task) => task.taskId === lastTaskId.value)
+);
+const currentTaskProgress = computed(() => currentTask.value?.progress);
 
 const title = computed(() =>
   props.context === "members"
@@ -243,7 +251,6 @@ const handleSubmit = async () => {
       context: props.context || "directory",
     });
     emit("submitted");
-    closeModal();
   } catch (error) {
     console.error("[CustomerExportDialog] export failed", error);
   }

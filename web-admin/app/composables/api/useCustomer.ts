@@ -6,11 +6,12 @@ import type {
   Customer,
   CustomerCreatePayload,
   CustomerDeletePayload,
+  CustomerEntitlementList,
   CustomerExportPayload,
   CustomerListFilters,
   CustomerListResponse,
+  CustomerTokenBalanceList,
   CustomerUpdatePayload,
-  JobStatus,
   MembershipFilters,
   MembershipListResponse,
 } from "~/types/customer";
@@ -39,6 +40,12 @@ export function useCustomerApi() {
     getCustomer: (id: string, init?: any) =>
       unwrap(apiGet<ApiEnvelope<Customer>>(`${basePath}/${id}`, undefined, init)),
 
+    getCustomerEntitlements: (id: string, init?: any) =>
+      unwrap(apiGet<ApiEnvelope<CustomerEntitlementList>>(`${basePath}/${id}/entitlements`, undefined, init)),
+
+    getCustomerTokenBalances: (id: string, init?: any) =>
+      unwrap(apiGet<ApiEnvelope<CustomerTokenBalanceList>>(`${basePath}/${id}/tokens`, undefined, init)),
+
     createCustomer: (payload: CustomerCreatePayload, init?: any) =>
       unwrap(apiPost<ApiEnvelope<Customer>>(basePath, payload, init)),
 
@@ -65,14 +72,11 @@ export function useCustomerApi() {
     requestExport: (payload: CustomerExportPayload, init?: any) =>
       unwrap(apiPost<ApiEnvelope<{ taskId: string }>>(`${basePath}/export`, payload, init)),
 
-    requestImport: (file: File, init?: any) => {
+    requestImport: (file: File, conflictStrategy: "fail" | "skip" = "fail", init?: any) => {
       const form = new FormData();
       form.append("file", file);
+      form.append("conflict_strategy", conflictStrategy);
       return unwrap(apiPost<ApiEnvelope<{ taskId: string }>>(`${basePath}/import`, form, init));
     },
-
-    fetchJobStatus: (taskId: string, init?: any) =>
-      unwrap(apiGet<ApiEnvelope<JobStatus>>(`jobs/${taskId}`, undefined, init)),
   };
 }
-

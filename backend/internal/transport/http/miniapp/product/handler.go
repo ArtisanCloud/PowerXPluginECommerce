@@ -823,6 +823,14 @@ func (h *Handler) ListSubscriptionPlans(c *gin.Context) {
 		return
 	}
 	items := make([]miniAppSubscriptionPlan, 0, len(plans))
+	tenantUUID, _ := middleware.TenantUUIDFromContext(c)
+	planIDs := make([]string, 0, len(plans))
+	for _, plan := range plans {
+		if id := strings.TrimSpace(plan.ID); id != "" {
+			planIDs = append(planIDs, id)
+		}
+	}
+	benefitByPlan := h.loadPlanBenefits(c.Request.Context(), tenantUUID, planIDs)
 	for _, p := range plans {
 		if !strings.EqualFold(strings.TrimSpace(p.Status), "active") {
 			continue
@@ -843,6 +851,7 @@ func (h *Handler) ListSubscriptionPlans(c *gin.Context) {
 				}
 			}
 		}
+		benefitIDs := benefitByPlan[p.ID]
 		items = append(items, miniAppSubscriptionPlan{
 			ID:           p.ID,
 			SKUID:        skuID,
@@ -856,6 +865,7 @@ func (h *Handler) ListSubscriptionPlans(c *gin.Context) {
 			AutoRenew:    p.AutoRenew,
 			CancelPolicy: p.CancelPolicy,
 			Status:       p.Status,
+			BenefitIDs:   benefitIDs,
 		})
 	}
 	sort.Slice(items, func(i, j int) bool {
@@ -943,6 +953,34 @@ func (h *Handler) enrichProductSummaries(ctx context.Context, tenantUUID string,
 			PriceLabel: buildPriceLabel(item.Type, minPrice, maxPrice, currency),
 			SKUCount:   skuCount,
 		})
+	}
+	return out
+}
+
+func (h *Handler) loadPlanBenefits(ctx context.Context, tenantUUID string, planIDs []string) map[string][]string {
+	out := make(map[string][]string)
+	if h == nil || h.db == nil || strings.TrimSpace(tenantUUID) == "" || len(planIDs) == 0 {
+		return out
+	}
+	type linkRow struct {
+		PlanID    string `gorm:"column:plan_id"`
+		BenefitID string `gorm:"column:benefit_id"`
+	}
+	var rows []linkRow
+	if err := h.db.WithContext(ctx).
+		Table(productmodel.SubscriptionPlanBenefit{}.TableName()).
+		Where("tenant_uuid = ? AND plan_id IN ?", tenantUUID, planIDs).
+		Order("created_at ASC").
+		Find(&rows).Error; err != nil {
+		return out
+	}
+	for _, row := range rows {
+		planID := strings.TrimSpace(row.PlanID)
+		benefitID := strings.TrimSpace(row.BenefitID)
+		if planID == "" || benefitID == "" {
+			continue
+		}
+		out[planID] = append(out[planID], benefitID)
 	}
 	return out
 }

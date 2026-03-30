@@ -2,7 +2,7 @@
 
 ## 项目结构与模块组织
 
-- 说明：本目录 `mini-app/` 是 `com.powerx.plugin.ecommerce` 插件仓库的一部分（仓库根在上一级目录）。
+- 说明：本目录 `mini-app/` 是 `com.powerx.plugins.ecommerce` 插件仓库的一部分（仓库根在上一级目录）。
 - `backend/`：Go 插件后端（入口：`backend/cmd/plugin`），HTTP 前缀默认 `/api/v1`；mini-app 相关接口在 `backend/internal/transport/http/miniapp/`。
 - `web-admin/`：Nuxt 4 管理端（面向运营/管理员），构建产物在 `web-admin/.output/`，菜单与路由由 `plugin.yaml` 声明。
 - `mini-app/`：`uni-app + Vue3` 客户端（面向 C 端/小程序/H5）。当前仍是脚手架页面，实际业务联调需要对接后端 mini-app API。
@@ -39,7 +39,7 @@
 - API Base：插件内部基路径为 ` /api/v1`（注意：与标准模板常见的 `/v1` 不同），mini-app 前缀为 `/api/v1/mini-app`。
 - 对接模式：
   - **宿主模式（推荐）**：通过 PowerX 访问 `/_p/<plugin-id>/api/v1/mini-app/...`；宿主会注入签名上下文（通常是 `Authorization: Bearer ...` 或 `X-PowerX-CTX`/`X-PowerX-CTX-SIG`），插件可从中解析租户信息。
-  - **Skeleton/本地直连**：直接访问 `http://localhost:8078/api/v1/mini-app/...`；必须显式传 `X-Tenant-UUID: <uuid>`（或 query `tenant_uuid=<uuid>`），否则 401。开发期可用 `POWERX_DEV_MODE=1`，线上禁用。
+  - **Skeleton/本地直连**：直接访问 `http://localhost:8078/api/v1/mini-app/...`；未走宿主上下文时请显式传 query `tenant_uuid=<uuid>`，否则 401。开发期可用 `POWERX_DEV_MODE=1`，线上禁用。
 - 响应结构：统一 JSON Envelope（通常形如 `{"code":0,"message":"ok","data":...}`），mini-app 也遵循同一规范。
 - 登录与鉴权：
   - `POST /auth/register`、`POST /auth/login` 返回 `token/expiresAt/customerId/tenantUuid`（`customer_auth.mode=delegate` 时注册可能不可用）。

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/cmd/database/migrate"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/cmd/database/seed"
@@ -22,6 +23,7 @@ func main() {
 		log.Fatalf("Usage: %s [migrate|seed|setup|refresh|pricing-base-upsert]", os.Args[0])
 	}
 	cmd := os.Args[1]
+	applyDatabaseCommandConfigFallbacks(cmd)
 
 	// 加载配置
 	cfg, err := config.Load()
@@ -129,5 +131,22 @@ func main() {
 
 	default:
 		log.Fatalf("Unknown command: %s", cmd)
+	}
+}
+
+// applyDatabaseCommandConfigFallbacks ensures migration/seed commands do not
+// fail on runtime-only customer auth delegate config gaps.
+func applyDatabaseCommandConfigFallbacks(cmd string) {
+	switch cmd {
+	case "migrate", "seed", "setup", "refresh", "pricing-base-upsert":
+	default:
+		return
+	}
+
+	if strings.TrimSpace(os.Getenv("POWERX_CUSTOMER_AUTH_MODE")) == "" {
+		_ = os.Setenv("POWERX_CUSTOMER_AUTH_MODE", "local")
+	}
+	if strings.TrimSpace(os.Getenv("POWERX_CUSTOMER_JWT_SECRET")) == "" {
+		_ = os.Setenv("POWERX_CUSTOMER_JWT_SECRET", "migration-bootstrap-secret")
 	}
 }

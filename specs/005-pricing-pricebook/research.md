@@ -1,6 +1,6 @@
 # Phase 0 Research — 定价中心 Pricebook（结论汇总）
 
-> 本文件用于将“影响实现与验收的关键决策”显式化，并给出替代方案对比。结论来源：`/private/var/www/html/ArtisanCloud/X/PowerX/Core/Plugins/com.powerx.plugin.ecommerce/specs/005-pricing-pricebook/spec.md` 的 Clarifications 与 `docs/plan/pricing/pricebooks.md` 的 Phase 1 目标。
+> 本文件用于将“影响实现与验收的关键决策”显式化，并给出替代方案对比。结论来源：`/private/var/www/html/ArtisanCloud/X/PowerX/Core/Plugins/com.powerx.plugins.ecommerce/specs/005-pricing-pricebook/spec.md` 的 Clarifications 与 `docs/plan/pricing/pricebooks.md` 的 Phase 1 目标。
 
 ## Decision 1：API 前缀与分层
 

@@ -4,7 +4,6 @@ import { useCustomerStore } from "../../app/stores/customer";
 
 const submitImportMock = vi.fn();
 const submitExportMock = vi.fn();
-const pollJobMock = vi.fn();
 
 vi.mock("../../app/composables/api/services/customerService", () => ({
   useCustomerService: () => ({
@@ -31,7 +30,6 @@ vi.mock("../../app/composables/useCustomerBulkActions", () => ({
   useCustomerBulkActions: () => ({
     submitImport: submitImportMock,
     submitExport: submitExportMock,
-    pollJobUntilFinished: pollJobMock,
     submitReminder: vi.fn(),
   }),
 }));
@@ -41,7 +39,6 @@ describe("customer store import/export", () => {
     setActivePinia(createPinia());
     submitImportMock.mockReset();
     submitExportMock.mockReset();
-    pollJobMock.mockReset();
     (globalThis as any).window = {
       localStorage: {
         getItem: vi.fn().mockReturnValue(null),
@@ -52,10 +49,6 @@ describe("customer store import/export", () => {
 
   it("submits import task and registers bulk task", async () => {
     submitImportMock.mockResolvedValueOnce({ taskId: "import-001" });
-    pollJobMock.mockResolvedValueOnce({
-      taskId: "import-001",
-      status: "success",
-    });
     const store = useCustomerStore();
 
     await store.submitImportTask({
@@ -65,7 +58,6 @@ describe("customer store import/export", () => {
 
     expect(store.importState.lastTaskId).toBe("import-001");
     expect(store.bulkTasks[0]?.type).toBe("import");
-    expect(pollJobMock).toHaveBeenCalledWith("import-001", expect.any(Object));
   });
 
   it("captures import errors", async () => {
@@ -81,10 +73,6 @@ describe("customer store import/export", () => {
 
   it("submits export task with context", async () => {
     submitExportMock.mockResolvedValueOnce({ taskId: "export-123" });
-    pollJobMock.mockResolvedValueOnce({
-      taskId: "export-123",
-      status: "success",
-    });
     const store = useCustomerStore();
     await store.submitExportTask({
       fields: ["id", "name"],

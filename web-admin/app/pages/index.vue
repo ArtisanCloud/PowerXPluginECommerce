@@ -169,5 +169,14 @@ const nextSteps = computed(() => [
       to: "/intro",
     },
   },
+  {
+    icon: "i-heroicons-bolt",
+    title: "Capability Lab",
+    description: "对齐 PowerXPlugin 能力调用机制",
+    body: "通过 /integration/capabilities/invoke 调试 capabilityId/action/payload 到 Gateway 的完整链路。",
+    cta: "打开调试页",
+    ctaIcon: "i-heroicons-beaker",
+    to: "/powerx/capability-lab",
+  },
 ]);
 </script>

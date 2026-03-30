@@ -4,7 +4,8 @@ import "strings"
 
 // TaskBusConfig 描述 TaskBus 的运行参数。
 type TaskBusConfig struct {
-	Enabled     bool   `yaml:"enabled" json:"enabled"`
+	Enabled bool `yaml:"enabled" json:"enabled"`
+	// Adapter supports: framework (recommended), local (standalone fallback), noop(disabled fallback)
 	Adapter     string `yaml:"adapter" json:"adapter"`
 	TopicPrefix string `yaml:"topic_prefix" json:"topic_prefix"`
 }

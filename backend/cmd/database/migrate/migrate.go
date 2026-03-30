@@ -90,6 +90,8 @@ var businessTables = func() []interface{} {
 	tables = append(tables, migrations.OrderTables...)
 	tables = append(tables, migrations.CartTables...)
 	tables = append(tables, migrations.PaymentTables...)
+	tables = append(tables, migrations.MembershipEntitlementTables...)
+	tables = append(tables, migrations.FulfillmentLogisticsTables...)
 	tables = append(tables, marketplaceTables...)
 	tables = append(tables, runtimeOpsTables...)
 	tables = append(tables, operationsTables...)
@@ -154,7 +156,7 @@ func MigratePluginModels(ctx context.Context, db *gorm.DB, includeIAM bool) erro
 func safeAutoMigrate(ctx context.Context, db *gorm.DB, tables []interface{}) error {
 	for _, tbl := range tables {
 		if err := migrateWithTolerance(ctx, db, tbl); err != nil {
-			return err
+			return fmt.Errorf("auto migrate table %T failed: %w", tbl, err)
 		}
 	}
 	return nil

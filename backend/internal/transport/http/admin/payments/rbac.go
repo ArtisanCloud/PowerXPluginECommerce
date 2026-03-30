@@ -9,7 +9,7 @@ import (
 // RBACEntries declares route-level RBAC mappings for payment admin APIs.
 func RBACEntries(prefix string) map[string]authx.Permission {
 	base := strings.TrimRight(prefix, "/") + "/admin/payments"
-	res := func() string { return "com.powerx.plugin.ecommerce:payments" }
+	res := func() string { return "com.powerx.plugins.ecommerce:payments" }
 	return map[string]authx.Permission{
 		"GET:" + base + "/providers":                                  {Resource: res(), Action: "read"},
 		"GET:" + base + "/providers/:id":                              {Resource: res(), Action: "read"},

@@ -10,7 +10,7 @@ import (
 func RBACEntries(prefix string) map[string]authx.Permission {
 	base := strings.TrimRight(prefix, "/") + "/admin/pricing"
 	res := func(suffix string) string {
-		return "com.powerx.plugin.ecommerce:" + suffix
+		return "com.powerx.plugins.ecommerce:" + suffix
 	}
 	return map[string]authx.Permission{
 		"GET:" + base + "/pricebooks":                                           {Resource: res("pricing.pricebook"), Action: "read"},

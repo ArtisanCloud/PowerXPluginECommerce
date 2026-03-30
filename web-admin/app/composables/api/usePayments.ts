@@ -173,6 +173,8 @@ export type ProviderListQuery = {
 export type TransactionListQuery = {
   status?: string;
   providerId?: number;
+  orderId?: string;
+  orderNo?: string;
   from?: string;
   to?: string;
 };

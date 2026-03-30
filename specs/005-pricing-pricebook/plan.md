@@ -1,7 +1,7 @@
 # Implementation Plan: 定价中心—价目表（Pricebook）与基础查价
 
-**Branch**: `005-pricing-pricebook` | **Date**: 2026-01-07 | **Spec**: `/private/var/www/html/ArtisanCloud/X/PowerX/Core/Plugins/com.powerx.plugin.ecommerce/specs/005-pricing-pricebook/spec.md`  
-**Input**: Feature specification from `/private/var/www/html/ArtisanCloud/X/PowerX/Core/Plugins/com.powerx.plugin.ecommerce/specs/005-pricing-pricebook/spec.md`
+**Branch**: `005-pricing-pricebook` | **Date**: 2026-01-07 | **Spec**: `/private/var/www/html/ArtisanCloud/X/PowerX/Core/Plugins/com.powerx.plugins.ecommerce/specs/005-pricing-pricebook/spec.md`  
+**Input**: Feature specification from `/private/var/www/html/ArtisanCloud/X/PowerX/Core/Plugins/com.powerx.plugins.ecommerce/specs/005-pricing-pricebook/spec.md`
 
 **Note**: This template is filled in by the `/speckit.plan` command. See `.specify/templates/commands/plan.md` for the execution workflow.
 
@@ -25,7 +25,7 @@
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-基于 `/private/var/www/html/ArtisanCloud/X/PowerX/Core/Plugins/com.powerx.plugin.ecommerce/.specify/memory/constitution.md`：
+基于 `/private/var/www/html/ArtisanCloud/X/PowerX/Core/Plugins/com.powerx.plugins.ecommerce/.specify/memory/constitution.md`：
 
 - Host Contract First：通过（API 前缀使用 `/api/v1`，管理端路由置于 `/api/v1/admin/**`）  
 - Tenant Isolation & Zero Trust：通过（全表 `tenant_uuid` + RLS；请求验签与 tenant context 复用现有中间件）  

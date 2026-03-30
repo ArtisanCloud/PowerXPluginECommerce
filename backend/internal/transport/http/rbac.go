@@ -10,6 +10,7 @@ import (
 func integrationRBACEntries(prefix string) map[string]authx.Permission {
 	base := strings.TrimRight(prefix, "/") + "/integration"
 	return map[string]authx.Permission{
+		"POST:" + base + "/capabilities/invoke":   {Resource: "integration.dispatch", Action: "invoke"},
 		"POST:" + base + "/dispatch":               {Resource: "integration.dispatch", Action: "invoke"},
 		"GET:" + base + "/grant-matrix":            {Resource: "integration.grant_matrix", Action: "read"},
 		"POST:" + base + "/grant-matrix":           {Resource: "integration.grant_matrix", Action: "manage"},

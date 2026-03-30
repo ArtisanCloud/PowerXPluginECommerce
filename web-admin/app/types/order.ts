@@ -28,6 +28,7 @@ export type OrderItem = {
   qty: number;
   unitPrice: number;
   lineAmount: number;
+  priceSource?: string;
 };
 
 export type OrderEvent = {

@@ -1398,8 +1398,20 @@
           "orders": "订单",
           "afterSales": "售后",
           "points": "积分成长",
+          "entitlements": "权益与代币",
           "notes": "备注",
           "audit": "审计"
+        },
+        "entitlements": {
+          "loadError": "加载权益/代币失败",
+          "tokens": "代币余额",
+          "tokenTypes": "{count} 种代币",
+          "entitlements": "可用权益",
+          "emptyTokens": "暂无代币余额",
+          "emptyEntitlements": "暂无权益",
+          "unlimited": "不限量",
+          "noExpiry": "长期有效",
+          "validityRange": "有效期：{from} - {to}"
         },
         "empty": "选择客户以查看详情",
         "lastOrder": "最近下单时间",

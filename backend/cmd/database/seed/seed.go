@@ -15,6 +15,7 @@ import (
 	channelmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/channel_master"
 	customermodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/customer"
 	iammodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/iam"
+	membershipmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/membership"
 	pricingmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/pricing"
 	productmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product"
 	productcategory "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_category"
@@ -57,10 +58,132 @@ func SeedPluginData(ctx context.Context, db *gorm.DB) error {
 	if err := seedPaymentProviders(ctxDB); err != nil {
 		return err
 	}
+	if err := seedMembershipBenefits(ctxDB); err != nil {
+		return err
+	}
 	if err := seedSportsCatalog(ctxDB); err != nil {
 		return err
 	}
 	return nil
+}
+
+func seedMembershipBenefits(db *gorm.DB) error {
+	if db == nil || db.Migrator() == nil {
+		return nil
+	}
+	if !db.Migrator().HasTable(&membershipmodel.MembershipBenefit{}) {
+		return nil
+	}
+	now := time.Now().UTC()
+	benefits := []membershipmodel.MembershipBenefit{
+		{
+			ID:         "b1111111-1111-4111-8111-111111111111",
+			TenantUUID: defaultTenantUUID,
+			Name:       "高阶权益",
+			Type:       "single",
+			Items:      datatypes.JSON([]byte(`[{"name":"优先体验","description":"高阶服务优先开放"}]`)),
+			Status:     "active",
+			CreatedAt:  now,
+			UpdatedAt:  now,
+		},
+		{
+			ID:         "b2222222-2222-4222-8222-222222222222",
+			TenantUUID: defaultTenantUUID,
+			Name:       "专属支持",
+			Type:       "single",
+			Items:      datatypes.JSON([]byte(`[{"name":"专属通道","description":"快速响应与处理"}]`)),
+			Status:     "active",
+			CreatedAt:  now,
+			UpdatedAt:  now,
+		},
+		{
+			ID:         "b3333333-3333-4333-8333-333333333333",
+			TenantUUID: defaultTenantUUID,
+			Name:       "佣金加成",
+			Type:       "single",
+			Items:      datatypes.JSON([]byte(`[{"name":"佣金加成","description":"分销佣金上浮"}]`)),
+			Status:     "active",
+			CreatedAt:  now,
+			UpdatedAt:  now,
+		},
+		{
+			ID:         "b4444444-4444-4444-8444-444444444444",
+			TenantUUID: defaultTenantUUID,
+			Name:       "成长礼包",
+			Type:       "bundle",
+			Items:      datatypes.JSON([]byte(`[{"name":"每月礼包","description":"会员成长礼包"}]`)),
+			Status:     "active",
+			CreatedAt:  now,
+			UpdatedAt:  now,
+		},
+	}
+	for _, benefit := range benefits {
+		var existing membershipmodel.MembershipBenefit
+		err := db.Where("tenant_uuid = ? AND id = ?", defaultTenantUUID, benefit.ID).First(&existing).Error
+		switch {
+		case errors.Is(err, gorm.ErrRecordNotFound):
+			if err := db.Create(&benefit).Error; err != nil {
+				return err
+			}
+		case err != nil:
+			return err
+		default:
+			updates := map[string]any{
+				"name":       benefit.Name,
+				"type":       benefit.Type,
+				"items":      benefit.Items,
+				"status":     benefit.Status,
+				"updated_at": time.Now().UTC(),
+			}
+			if err := db.Model(&existing).Updates(updates).Error; err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func seedPlanBenefitLinks(db *gorm.DB, planID string, benefitIDs []string) error {
+	if db == nil || db.Migrator() == nil || !db.Migrator().HasTable(&productmodel.SubscriptionPlanBenefit{}) {
+		return nil
+	}
+	planID = strings.TrimSpace(planID)
+	if planID == "" {
+		return nil
+	}
+	uniq := make(map[string]struct{})
+	normalized := make([]string, 0, len(benefitIDs))
+	for _, id := range benefitIDs {
+		id = strings.TrimSpace(id)
+		if id == "" {
+			continue
+		}
+		if _, ok := uniq[id]; ok {
+			continue
+		}
+		uniq[id] = struct{}{}
+		normalized = append(normalized, id)
+	}
+	if err := db.Where("tenant_uuid = ? AND plan_id = ?", defaultTenantUUID, planID).
+		Delete(&productmodel.SubscriptionPlanBenefit{}).Error; err != nil {
+		return err
+	}
+	if len(normalized) == 0 {
+		return nil
+	}
+	now := time.Now().UTC()
+	rows := make([]productmodel.SubscriptionPlanBenefit, 0, len(normalized))
+	for _, id := range normalized {
+		rows = append(rows, productmodel.SubscriptionPlanBenefit{
+			ID:         utils.NewUUID(),
+			TenantUUID: defaultTenantUUID,
+			PlanID:     planID,
+			BenefitID:  id,
+			CreatedAt:  now,
+			UpdatedAt:  now,
+		})
+	}
+	return db.Create(&rows).Error
 }
 
 func seedSampleChannelMasters(db *gorm.DB) error {
@@ -261,9 +384,23 @@ func seedPaymentProviders(db *gorm.DB) error {
 				"fee_rate":         provider.FeeRate,
 				"settlement_cycle": provider.SettlementCycle,
 				"currency":         provider.Currency,
-				"credentials":      provider.Credentials,
 				"risk_policy":      provider.RiskPolicy,
 				"updated_at":       now,
+			}
+			if strings.TrimSpace(existing.AppID) == "" && strings.TrimSpace(provider.AppID) != "" {
+				updates["app_id"] = provider.AppID
+			}
+			if strings.TrimSpace(existing.MchID) == "" && strings.TrimSpace(provider.MchID) != "" {
+				updates["mch_id"] = provider.MchID
+			}
+			if strings.TrimSpace(existing.SerialNo) == "" && strings.TrimSpace(provider.SerialNo) != "" {
+				updates["serial_no"] = provider.SerialNo
+			}
+			if strings.TrimSpace(existing.NotifyURL) == "" && strings.TrimSpace(provider.NotifyURL) != "" {
+				updates["notify_url"] = provider.NotifyURL
+			}
+			if len(existing.Credentials) == 0 || string(existing.Credentials) == "{}" || string(existing.Credentials) == "null" {
+				updates["credentials"] = provider.Credentials
 			}
 			if err := db.Model(&existing).Updates(updates).Error; err != nil {
 				return err
@@ -333,32 +470,32 @@ func seedCustomerPermissions(db *gorm.DB) (map[string]uint64, error) {
 
 	productPermissions := []iammodel.Permission{
 		// SKU 基础
-		{Resource: "com.powerx.plugin.ecommerce:product.sku", Action: "read", Description: "查看 SKU 列表与详情"},
-		{Resource: "com.powerx.plugin.ecommerce:product.sku", Action: "manage", Description: "创建/编辑/删除 SKU"},
+		{Resource: "com.powerx.plugins.ecommerce:product.sku", Action: "read", Description: "查看 SKU 列表与详情"},
+		{Resource: "com.powerx.plugins.ecommerce:product.sku", Action: "manage", Description: "创建/编辑/删除 SKU"},
 		// SKU 批量任务
-		{Resource: "com.powerx.plugin.ecommerce:product.sku.bulk", Action: "read", Description: "查看 SKU 批量任务"},
-		{Resource: "com.powerx.plugin.ecommerce:product.sku.bulk", Action: "manage", Description: "提交/审批/重试 SKU 批量任务"},
+		{Resource: "com.powerx.plugins.ecommerce:product.sku.bulk", Action: "read", Description: "查看 SKU 批量任务"},
+		{Resource: "com.powerx.plugins.ecommerce:product.sku.bulk", Action: "manage", Description: "提交/审批/重试 SKU 批量任务"},
 		// 渠道映射
-		{Resource: "com.powerx.plugin.ecommerce:product.sku.channel", Action: "read", Description: "查看 SKU 渠道映射"},
-		{Resource: "com.powerx.plugin.ecommerce:product.sku.channel", Action: "manage", Description: "维护 SKU 渠道映射与发布"},
+		{Resource: "com.powerx.plugins.ecommerce:product.sku.channel", Action: "read", Description: "查看 SKU 渠道映射"},
+		{Resource: "com.powerx.plugins.ecommerce:product.sku.channel", Action: "manage", Description: "维护 SKU 渠道映射与发布"},
 		// 库存
-		{Resource: "com.powerx.plugin.ecommerce:product.sku.inventory", Action: "read", Description: "查看 SKU 库存与快照"},
-		{Resource: "com.powerx.plugin.ecommerce:product.sku.inventory", Action: "manage", Description: "调整 SKU 库存策略"},
+		{Resource: "com.powerx.plugins.ecommerce:product.sku.inventory", Action: "read", Description: "查看 SKU 库存与快照"},
+		{Resource: "com.powerx.plugins.ecommerce:product.sku.inventory", Action: "manage", Description: "调整 SKU 库存策略"},
 		// 序列号与条码
-		{Resource: "com.powerx.plugin.ecommerce:product.sku.serial", Action: "read", Description: "查看 SKU 序列号/批次"},
-		{Resource: "com.powerx.plugin.ecommerce:product.sku.serial", Action: "manage", Description: "录入或导出 SKU 序列号/批次"},
-		{Resource: "com.powerx.plugin.ecommerce:product.sku.barcode", Action: "read", Description: "查看 SKU 条码"},
-		{Resource: "com.powerx.plugin.ecommerce:product.sku.barcode", Action: "manage", Description: "生成/校验 SKU 条码"},
+		{Resource: "com.powerx.plugins.ecommerce:product.sku.serial", Action: "read", Description: "查看 SKU 序列号/批次"},
+		{Resource: "com.powerx.plugins.ecommerce:product.sku.serial", Action: "manage", Description: "录入或导出 SKU 序列号/批次"},
+		{Resource: "com.powerx.plugins.ecommerce:product.sku.barcode", Action: "read", Description: "查看 SKU 条码"},
+		{Resource: "com.powerx.plugins.ecommerce:product.sku.barcode", Action: "manage", Description: "生成/校验 SKU 条码"},
 
 		// 商品类目（004-product-categories）
-		{Resource: "com.powerx.plugin.ecommerce:product.category", Action: "read", Description: "查看类目树、类目列表与审计记录"},
-		{Resource: "com.powerx.plugin.ecommerce:product.category", Action: "manage", Description: "创建/编辑/迁移/启停类目"},
-		{Resource: "com.powerx.plugin.ecommerce:product.category.template", Action: "read", Description: "查看类目模板、预览与历史版本"},
-		{Resource: "com.powerx.plugin.ecommerce:product.category.template", Action: "manage", Description: "创建/编辑/发布/回滚类目模板"},
-		{Resource: "com.powerx.plugin.ecommerce:product.category.mapping", Action: "read", Description: "查看渠道类目映射"},
-		{Resource: "com.powerx.plugin.ecommerce:product.category.mapping", Action: "manage", Description: "维护渠道类目映射"},
-		{Resource: "com.powerx.plugin.ecommerce:product.category.import", Action: "read", Description: "导出类目/映射 CSV"},
-		{Resource: "com.powerx.plugin.ecommerce:product.category.import", Action: "manage", Description: "导入类目/映射 CSV"},
+		{Resource: "com.powerx.plugins.ecommerce:product.category", Action: "read", Description: "查看类目树、类目列表与审计记录"},
+		{Resource: "com.powerx.plugins.ecommerce:product.category", Action: "manage", Description: "创建/编辑/迁移/启停类目"},
+		{Resource: "com.powerx.plugins.ecommerce:product.category.template", Action: "read", Description: "查看类目模板、预览与历史版本"},
+		{Resource: "com.powerx.plugins.ecommerce:product.category.template", Action: "manage", Description: "创建/编辑/发布/回滚类目模板"},
+		{Resource: "com.powerx.plugins.ecommerce:product.category.mapping", Action: "read", Description: "查看渠道类目映射"},
+		{Resource: "com.powerx.plugins.ecommerce:product.category.mapping", Action: "manage", Description: "维护渠道类目映射"},
+		{Resource: "com.powerx.plugins.ecommerce:product.category.import", Action: "read", Description: "导出类目/映射 CSV"},
+		{Resource: "com.powerx.plugins.ecommerce:product.category.import", Action: "manage", Description: "导入类目/映射 CSV"},
 	}
 
 	customerPermissions = append(customerPermissions, productPermissions...)
@@ -536,7 +673,6 @@ func seedDebugCustomerAccount(db *gorm.DB) error {
 	// 约束条件：
 	// - POWERX_PROXY=0（非宿主代理）
 	// - IAM_MODE=local（本地模式）
-	// - POWERX_RBAC_DELEGATE=false（非 delegated）
 	if !shouldSeedDebugCustomerAccount() {
 		return nil
 	}
@@ -610,11 +746,6 @@ func shouldSeedDebugCustomerAccount() bool {
 
 	// IAM 非 local 时不写入（避免污染非本地环境）
 	if v := strings.ToLower(strings.TrimSpace(os.Getenv("IAM_MODE"))); v != "" && v != "local" {
-		return false
-	}
-
-	// delegated RBAC 环境不写入
-	if v := strings.ToLower(strings.TrimSpace(os.Getenv("POWERX_RBAC_DELEGATE"))); v == "1" || v == "true" {
 		return false
 	}
 
@@ -1294,7 +1425,29 @@ func seedSportsSPUs(db *gorm.DB) error {
 		yearlyID := "a1b2c3d4-5f60-4a9a-9f2a-1b2c3d4e5f61"
 		subSkuID := "8a8a8a8a-bbbb-4f0d-8c3e-0b9a4d7e1c3a"
 		subSpuID := specs[len(specs)-1].ID
-		metadata := datatypes.JSON([]byte(fmt.Sprintf(`{"skuId":"%s"}`, subSkuID)))
+		benefitIDs := []string{
+			"b1111111-1111-4111-8111-111111111111",
+			"b2222222-2222-4222-8222-222222222222",
+			"b3333333-3333-4333-8333-333333333333",
+		}
+		monthlyMetaRaw, _ := json.Marshal(map[string]any{
+			"skuId":           subSkuID,
+			"benefitIds":      benefitIDs,
+			"tokenCode":       "service_credit",
+			"tokenAmount":     100,
+			"tokenExpireDays": 30,
+			"tokenRollover":   false,
+		})
+		yearlyMetaRaw, _ := json.Marshal(map[string]any{
+			"skuId":           subSkuID,
+			"benefitIds":      benefitIDs,
+			"tokenCode":       "service_credit",
+			"tokenAmount":     1200,
+			"tokenExpireDays": 365,
+			"tokenRollover":   false,
+		})
+		monthlyMetadata := datatypes.JSON(monthlyMetaRaw)
+		yearlyMetadata := datatypes.JSON(yearlyMetaRaw)
 		plans := []productmodel.SubscriptionPlan{
 			{
 				ID:           monthlyID,
@@ -1311,7 +1464,7 @@ func seedSportsSPUs(db *gorm.DB) error {
 				CancelPolicy: "anytime",
 				EffectScope:  "new_only",
 				Status:       "active",
-				Metadata:     metadata,
+				Metadata:     monthlyMetadata,
 			},
 			{
 				ID:           yearlyID,
@@ -1328,7 +1481,7 @@ func seedSportsSPUs(db *gorm.DB) error {
 				CancelPolicy: "anytime",
 				EffectScope:  "new_only",
 				Status:       "active",
-				Metadata:     metadata,
+				Metadata:     yearlyMetadata,
 			},
 		}
 		for _, plan := range plans {
@@ -1363,6 +1516,25 @@ func seedSportsSPUs(db *gorm.DB) error {
 				if err := db.Model(&existingPlan).Updates(updates).Error; err != nil {
 					return err
 				}
+			}
+		}
+
+		if db.Migrator().HasTable(&productmodel.SubscriptionPlanBenefit{}) {
+			monthlyBenefits := []string{
+				"b1111111-1111-4111-8111-111111111111",
+				"b2222222-2222-4222-8222-222222222222",
+			}
+			yearlyBenefits := []string{
+				"b1111111-1111-4111-8111-111111111111",
+				"b2222222-2222-4222-8222-222222222222",
+				"b3333333-3333-4333-8333-333333333333",
+				"b4444444-4444-4444-8444-444444444444",
+			}
+			if err := seedPlanBenefitLinks(db, monthlyID, monthlyBenefits); err != nil {
+				return err
+			}
+			if err := seedPlanBenefitLinks(db, yearlyID, yearlyBenefits); err != nil {
+				return err
 			}
 		}
 	}

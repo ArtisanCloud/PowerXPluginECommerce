@@ -27,5 +27,14 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) {
 	quota.GET("/status", quotaHandler.GetStatus)
 	quota.POST("/overrides", quotaHandler.SetOverride)
 
+	wsBus := NewWSBusHandler(deps)
+	internal := router.Group("/internal/ws-bus")
+	internal.POST("/grant", wsBus.Grant)
+	internal.POST("/publish", wsBus.Publish)
+
+	eventFabric := NewEventFabricHandler(deps)
+	internalEventFabric := router.Group("/internal/event-fabric")
+	internalEventFabric.POST("/topics", eventFabric.CreateTopics)
+
 	router.GET("/metrics", MetricsHandler)
 }

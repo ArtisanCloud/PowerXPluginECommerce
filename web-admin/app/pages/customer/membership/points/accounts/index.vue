@@ -118,7 +118,7 @@
         </div>
       </template>
 
-      <UTable :columns="columns" :data="filteredAccounts">
+      <UTable :columns="columns" :data="filteredAccounts" :loading="loading || adjusting">
         <template #customer-cell="{ row }">
           <div class="flex items-center gap-3">
             <UAvatar
@@ -170,7 +170,7 @@
               variant="ghost"
               size="sm"
               icon="i-heroicons-plus-circle"
-              @click="adjustPoints(row, 'add')"
+              @click="adjustPoints(row)"
             >
               赠送
             </UButton>
@@ -179,7 +179,7 @@
               variant="ghost"
               size="sm"
               icon="i-heroicons-minus-circle"
-              @click="adjustPoints(row, 'deduct')"
+              @click="adjustPoints(row)"
             >
               扣减
             </UButton>
@@ -191,7 +191,7 @@
       <template #footer>
         <div class="flex items-center justify-between">
           <div class="text-sm text-gray-500 dark:text-gray-400">
-            显示第 {{ (currentPage - 1) * pageSize + 1 }} 到 {{ Math.min(currentPage * pageSize, totalAccounts) }} 条，共 {{ totalAccounts }} 条
+            显示第 {{ totalAccounts === 0 ? 0 : (currentPage - 1) * pageSize + 1 }} 到 {{ Math.min(currentPage * pageSize, totalAccounts) }} 条，共 {{ totalAccounts }} 条
           </div>
           <UPagination
             v-model="currentPage"
@@ -224,139 +224,45 @@
 </template>
 
 <script setup lang="ts">
-// 导入模态框组件
+import { computed, onMounted, ref, watch } from "vue";
+import { navigateTo, useToast } from "#imports";
 import BatchAdjustPointsModal from "~/components/modals/BatchAdjustPointsModal.vue";
+import { useCustomerApi } from "~/composables/api/useCustomer";
+import { useMembershipAdminApi } from "~/composables/api/useMembership";
+import type { MembershipInsight } from "~/types/customer";
 
-// 模态框状态
+type PointsAccount = {
+  id: string;
+  customerId: string;
+  customerName: string;
+  customerPhone: string;
+  avatar: string;
+  levelName: string;
+  levelColor: string;
+  balance: number;
+};
+
+const customerApi = useCustomerApi();
+const membershipApi = useMembershipAdminApi();
+const toast = useToast();
+
 const showBatchAdjustModal = ref(false);
 const showAdjustModal = ref(false);
+const loading = ref(false);
+const adjusting = ref(false);
 
-// 当前操作的账户
-const currentAccount = ref<any>(null);
-
-// 搜索
+const currentAccount = ref<PointsAccount | null>(null);
 const searchQuery = ref("");
 
-// 分页
 const currentPage = ref(1);
 const pageSize = ref(10);
-const totalAccounts = ref(1245);
-const pageCount = computed(() => Math.ceil(totalAccounts.value / pageSize.value));
 
-// 统计数据
-const totalBalance = ref(2456789);
-const todayEarned = ref(12450);
-const todaySpent = ref(8765);
+const todayEarned = ref(0);
+const todaySpent = ref(0);
 
-// 账户数据
-const accounts = ref([
-  {
-    id: "acc_1",
-    customerName: "张三",
-    customerPhone: "13800138001",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=1",
-    levelName: "钻石会员",
-    levelColor: "#B9F2FF",
-    balance: 12500,
-    customerId: "cust_1",
-  },
-  {
-    id: "acc_2",
-    customerName: "李四",
-    customerPhone: "13800138002",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=2",
-    levelName: "铂金会员",
-    levelColor: "#E5E4E2",
-    balance: 8650,
-    customerId: "cust_2",
-  },
-  {
-    id: "acc_3",
-    customerName: "王五",
-    customerPhone: "13800138003",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=3",
-    levelName: "黄金会员",
-    levelColor: "#FFD700",
-    balance: 5200,
-    customerId: "cust_3",
-  },
-  {
-    id: "acc_4",
-    customerName: "赵六",
-    customerPhone: "13800138004",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=4",
-    levelName: "白银会员",
-    levelColor: "#C0C0C0",
-    balance: 2450,
-    customerId: "cust_4",
-  },
-  {
-    id: "acc_5",
-    customerName: "孙七",
-    customerPhone: "13800138005",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=5",
-    levelName: "青铜会员",
-    levelColor: "#CD7F32",
-    balance: 800,
-    customerId: "cust_5",
-  },
-]);
+const accounts = ref<PointsAccount[]>([]);
+const customers = ref<Array<{ id: string; name: string; phone: string; avatar: string; points: number; selected: boolean }>>([]);
 
-// 过滤后的账户列表
-const filteredAccounts = computed(() => {
-  if (!searchQuery.value) return accounts.value;
-  return accounts.value.filter(
-    (account) =>
-      account.customerName.toLowerCase().includes(searchQuery.value.toLowerCase()) ||
-      account.customerPhone.includes(searchQuery.value)
-  );
-});
-
-// 客户数据（用于批量调整）
-const customers = ref([
-  {
-    id: "cust_1",
-    name: "张三",
-    phone: "13800138001",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=1",
-    points: 12500,
-    selected: false,
-  },
-  {
-    id: "cust_2",
-    name: "李四",
-    phone: "13800138002",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=2",
-    points: 8650,
-    selected: false,
-  },
-  {
-    id: "cust_3",
-    name: "王五",
-    phone: "13800138003",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=3",
-    points: 5200,
-    selected: false,
-  },
-  {
-    id: "cust_4",
-    name: "赵六",
-    phone: "13800138004",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=4",
-    points: 2450,
-    selected: false,
-  },
-  {
-    id: "cust_5",
-    name: "孙七",
-    phone: "13800138005",
-    avatar: "https://api.dicebear.com/7.x/miniavs/svg?seed=5",
-    points: 800,
-    selected: false,
-  },
-]);
-
-// 表格列定义
 const columns = [
   { accessorKey: "customer", header: "客户" },
   { accessorKey: "level", header: "会员等级" },
@@ -364,83 +270,165 @@ const columns = [
   { id: "actions", header: "操作" },
 ];
 
-// 打开批量调整模态框
+const filteredAccountsRaw = computed(() => {
+  const keyword = searchQuery.value.trim().toLowerCase();
+  if (!keyword) return accounts.value;
+  return accounts.value.filter(
+    (account) =>
+      account.customerName.toLowerCase().includes(keyword) ||
+      account.customerPhone.includes(keyword),
+  );
+});
+
+const filteredAccounts = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  const end = start + pageSize.value;
+  return filteredAccountsRaw.value.slice(start, end);
+});
+
+const totalAccounts = computed(() => filteredAccountsRaw.value.length);
+const pageCount = computed(() => Math.max(1, Math.ceil(filteredAccountsRaw.value.length / pageSize.value)));
+const totalBalance = computed(() =>
+  accounts.value.reduce((sum, account) => sum + (Number(account.balance) || 0), 0),
+);
+
+const levelColors = ["#CD7F32", "#C0C0C0", "#FFD700", "#E5E4E2", "#B9F2FF", "#111827"];
+const colorOfLevel = (name: string) => {
+  if (!name) return "#9CA3AF";
+  let hash = 0;
+  for (let i = 0; i < name.length; i += 1) hash = (hash << 5) - hash + name.charCodeAt(i);
+  return levelColors[Math.abs(hash) % levelColors.length];
+};
+
+const mapInsightToAccount = (insight: MembershipInsight): PointsAccount => {
+  const customerId = insight.customer?.id || insight.snapshot?.customerId || "";
+  const customerName = insight.customer?.name || customerId || "未知客户";
+  const customerPhone = insight.customer?.phone || "-";
+  const levelName =
+    insight.snapshot?.tier || insight.customer?.membershipTierLabel || insight.customer?.membershipTier || "未分层";
+  return {
+    id: customerId,
+    customerId,
+    customerName,
+    customerPhone,
+    avatar: `https://api.dicebear.com/7.x/miniavs/svg?seed=${encodeURIComponent(customerId || customerName)}`,
+    levelName,
+    levelColor: colorOfLevel(levelName),
+    balance: Number(insight.snapshot?.points ?? insight.customer?.points ?? 0) || 0,
+  };
+};
+
+const loadPageData = async () => {
+  try {
+    loading.value = true;
+    const membersResp = await customerApi.listMembers({ page: 1, pageSize: 1000 });
+
+    const rows = (membersResp?.data || []) as MembershipInsight[];
+    accounts.value = rows.map(mapInsightToAccount);
+
+    customers.value = accounts.value.map((account) => ({
+      id: account.customerId,
+      name: account.customerName,
+      phone: account.customerPhone,
+      avatar: account.avatar,
+      points: account.balance,
+      selected: false,
+    }));
+  } catch (error: any) {
+    toast.add({ title: "加载积分账户失败", description: error?.message || "请稍后重试", color: "error" });
+  } finally {
+    loading.value = false;
+  }
+};
+
 const openBatchAdjustModal = () => {
   showBatchAdjustModal.value = true;
 };
 
-// 处理批量调整提交
-const handleBatchAdjustSubmit = async (data) => {
+const handleBatchAdjustSubmit = async (data: { type: "add" | "deduct"; points: number; reason: string; customerIds: string[] }) => {
+  if (!data.customerIds?.length) return;
   try {
-    // 模拟API调用
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    adjusting.value = true;
+    const delta = data.type === "add" ? Math.abs(data.points) : -Math.abs(data.points);
+    let successCount = 0;
 
-    // 更新账户积分
-    accounts.value.forEach((account) => {
-      const customer = customers.value.find((c) =>
-        data.customerIds.includes(c.id) && c.id === account.customerId
-      );
-      if (customer) {
-        if (data.type === "add") {
-          account.balance += data.points;
-        } else {
-          account.balance = Math.max(0, account.balance - data.points);
-        }
+    for (const customerId of data.customerIds) {
+      try {
+        await membershipApi.adjustToken({
+          customerId,
+          tokenCode: "points",
+          delta,
+          reason: data.reason,
+        });
+        successCount += 1;
+      } catch {
+        // noop
       }
-    });
+    }
 
-    // 显示成功消息
-    alert(`成功为 ${data.customerIds.length} 个客户${data.type === "add" ? "赠送" : "扣减"}积分`);
-  } catch (error) {
-    console.error("批量调整积分失败:", error);
-    alert("批量调整积分失败，请重试");
+    await loadPageData();
+    toast.add({
+      title: "批量调整完成",
+      description: `成功 ${successCount}/${data.customerIds.length} 个客户`,
+      color: successCount > 0 ? "success" : "error",
+    });
+  } catch (error: any) {
+    toast.add({ title: "批量调整积分失败", description: error?.message || "请稍后重试", color: "error" });
+  } finally {
+    adjusting.value = false;
   }
 };
 
-// 处理批量调整关闭
 const handleBatchAdjustClose = () => {
   showBatchAdjustModal.value = false;
 };
 
-// 打开调整模态框
-const adjustPoints = (account: any, type: string) => {
+const adjustPoints = (account: PointsAccount) => {
   currentAccount.value = account;
   showAdjustModal.value = true;
 };
 
-// 处理调整提交
-const handleAdjustSubmit = async (data) => {
+const handleAdjustSubmit = async (data: { type: "add" | "deduct"; points: number; reason: string; accountId: string }) => {
   try {
-    // 模拟API调用
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    adjusting.value = true;
+    const delta = data.type === "add" ? Math.abs(data.points) : -Math.abs(data.points);
 
-    // 更新账户积分
-    const account = accounts.value.find((a) => a.id === data.accountId);
-    if (account) {
-      if (data.type === "add") {
-        account.balance += data.points;
-      } else {
-        account.balance = Math.max(0, account.balance - data.points);
-      }
-    }
+    await membershipApi.adjustToken({
+      customerId: data.accountId,
+      tokenCode: "points",
+      delta,
+      reason: data.reason,
+    });
 
-    // 显示成功消息
-    alert(`${data.type === "add" ? "赠送" : "扣减"}积分成功`);
-  } catch (error) {
-    console.error("调整积分失败:", error);
-    alert("调整积分失败，请重试");
+    await loadPageData();
+    toast.add({ title: `${data.type === "add" ? "赠送" : "扣减"}积分成功`, color: "success" });
+  } catch (error: any) {
+    toast.add({ title: "调整积分失败", description: error?.message || "请稍后重试", color: "error" });
+  } finally {
+    adjusting.value = false;
   }
 };
 
-// 处理调整关闭
 const handleAdjustClose = () => {
   showAdjustModal.value = false;
   currentAccount.value = null;
 };
 
-// 查看账户详情
-const viewAccountDetails = (account: any) => {
-  // 跳转到账户详情页面
+const viewAccountDetails = (account: PointsAccount) => {
   navigateTo(`/customer/membership/points/accounts/${account.id}`);
 };
+
+watch(searchQuery, () => {
+  currentPage.value = 1;
+});
+
+watch(pageCount, (value) => {
+  if (currentPage.value > value) {
+    currentPage.value = value;
+  }
+});
+
+onMounted(() => {
+  loadPageData();
+});
 </script>

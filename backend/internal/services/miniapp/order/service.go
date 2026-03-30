@@ -14,6 +14,7 @@ import (
 	customermodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/customer"
 	integrationmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/integration"
 	ordermodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/order"
+	productmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product"
 	productskumodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_sku"
 	customerrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/customer"
 	idrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/integration"
@@ -176,6 +177,7 @@ func (s *Service) createOrderWithIdempotencyTx(
 	req CreateOrderRequest,
 ) (*OrderSummaryDTO, error) {
 	shippingAddrID := strings.TrimSpace(req.ShippingAddressID)
+	requiresShipping := s.requiresShipping(ctx, tenantUUID, skuIDs)
 	var shippingSnap *ShippingAddress
 	switch {
 	case shippingAddrID != "":
@@ -192,8 +194,10 @@ func (s *Service) createOrderWithIdempotencyTx(
 			return nil, ErrInvalidShippingAddress
 		}
 		shippingSnap = req.ShippingAddress
-	default:
+	case requiresShipping:
 		return nil, ErrShippingAddressRequired
+	default:
+		shippingSnap = nil
 	}
 	shippingSnapJSON, _ := json.Marshal(shippingSnap)
 
@@ -299,6 +303,9 @@ func (s *Service) createOrderWithIdempotencyTx(
 		if err := s.OrderRepo.CreateWithTx(ctx, tx, order); err != nil {
 			return err
 		}
+		if err := s.touchCustomerLastOrder(ctx, tx, tenantUUID, customerID, total, now); err != nil {
+			return err
+		}
 
 		items := make([]*ordermodel.OrderItem, 0, len(req.Items))
 		for _, it := range req.Items {
@@ -379,6 +386,67 @@ func hashCreatePayload(customerID string, req CreateOrderRequest) (string, error
 	}
 	sum := sha256.Sum256(raw)
 	return hex.EncodeToString(sum[:]), nil
+}
+
+func (s *Service) requiresShipping(ctx context.Context, tenantUUID string, skuIDs []string) bool {
+	if s == nil || s.deps == nil || s.deps.DB == nil {
+		return true
+	}
+	cleanIDs := make([]string, 0, len(skuIDs))
+	seen := map[string]struct{}{}
+	for _, id := range skuIDs {
+		trim := strings.TrimSpace(id)
+		if trim == "" {
+			continue
+		}
+		if _, ok := seen[trim]; ok {
+			continue
+		}
+		seen[trim] = struct{}{}
+		cleanIDs = append(cleanIDs, trim)
+	}
+	if len(cleanIDs) == 0 {
+		return true
+	}
+	type row struct {
+		Type string `gorm:"column:type"`
+	}
+	var rows []row
+	if err := s.deps.DB.WithContext(ctx).
+		Table(productskumodel.ProductSKU{}.TableName() + " AS skus").
+		Select("spus.type").
+		Joins("JOIN " + productmodel.SPU{}.TableName() + " AS spus ON spus.id = skus.spu_id").
+		Where("skus.tenant_uuid = ? AND skus.id IN ?", tenantUUID, cleanIDs).
+		Find(&rows).Error; err != nil {
+		return true
+	}
+	if len(rows) < len(cleanIDs) {
+		return true
+	}
+	for _, r := range rows {
+		if strings.ToLower(strings.TrimSpace(r.Type)) != "subscription" {
+			return true
+		}
+	}
+	return false
+}
+
+func (s *Service) touchCustomerLastOrder(ctx context.Context, tx *gorm.DB, tenantUUID, customerID string, totalMinor int64, createdAt time.Time) error {
+	if tx == nil {
+		return nil
+	}
+	if strings.TrimSpace(customerID) == "" || strings.TrimSpace(tenantUUID) == "" {
+		return nil
+	}
+	amount := float64(totalMinor) / 100.0
+	return tx.WithContext(ctx).
+		Model(&customermodel.Customer{}).
+		Where("tenant_uuid = ? AND customer_id = ? AND (last_order_at IS NULL OR last_order_at <= ?)", tenantUUID, customerID, createdAt).
+		Updates(map[string]any{
+			"last_order_at":     createdAt,
+			"last_order_amount": amount,
+			"updated_at":        time.Now().UTC(),
+		}).Error
 }
 
 func isValidShippingAddress(addr *ShippingAddress) bool {

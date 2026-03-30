@@ -132,6 +132,9 @@ func (s *SubscriptionPlanService) Create(ctx context.Context, spuID string, inpu
 		if err := tx.Create(&record).Error; err != nil {
 			return err
 		}
+		if err := s.syncPlanBenefits(tx, tenantID, record.ID, parseBenefitIDs(input.Metadata)); err != nil {
+			return err
+		}
 		entries := s.toEntries([]productmodel.SubscriptionPlan{record})
 		if len(entries) > 0 {
 			entry = &entries[0]
@@ -184,6 +187,9 @@ func (s *SubscriptionPlanService) Update(ctx context.Context, spuID, planID stri
 			updates["plan_code"] = strings.TrimSpace(input.PlanCode)
 		}
 		if err := tx.Model(&plan).Updates(updates).Error; err != nil {
+			return err
+		}
+		if err := s.syncPlanBenefits(tx, tenantID, plan.ID, parseBenefitIDs(input.Metadata)); err != nil {
 			return err
 		}
 		if err := tx.Where("tenant_uuid = ? AND id = ?", tenantID, plan.ID).First(&plan).Error; err != nil {
@@ -320,4 +326,91 @@ func normalizePlanStatus(status string) string {
 	default:
 		return "active"
 	}
+}
+
+func parseBenefitIDs(metadata map[string]any) []string {
+	if metadata == nil {
+		return []string{}
+	}
+	raw, ok := metadata["benefitIds"]
+	if !ok {
+		raw = metadata["benefit_ids"]
+	}
+	switch value := raw.(type) {
+	case []string:
+		out := make([]string, 0, len(value))
+		for _, v := range value {
+			if s := strings.TrimSpace(v); s != "" {
+				out = append(out, s)
+			}
+		}
+		return out
+	case []any:
+		out := make([]string, 0, len(value))
+		for _, v := range value {
+			if s := strings.TrimSpace(fmt.Sprint(v)); s != "" {
+				out = append(out, s)
+			}
+		}
+		return out
+	case string:
+		parts := strings.Split(value, ",")
+		out := make([]string, 0, len(parts))
+		for _, part := range parts {
+			if s := strings.TrimSpace(part); s != "" {
+				out = append(out, s)
+			}
+		}
+		return out
+	default:
+		if raw == nil {
+			return []string{}
+		}
+		if s := strings.TrimSpace(fmt.Sprint(raw)); s != "" {
+			return []string{s}
+		}
+		return []string{}
+	}
+}
+
+func (s *SubscriptionPlanService) syncPlanBenefits(tx *gorm.DB, tenantID, planID string, benefitIDs []string) error {
+	if tx == nil {
+		return errors.New("transaction required")
+	}
+	if strings.TrimSpace(planID) == "" {
+		return errors.New("planID is required")
+	}
+	uniq := make(map[string]struct{})
+	normalized := make([]string, 0, len(benefitIDs))
+	for _, id := range benefitIDs {
+		id = strings.TrimSpace(id)
+		if id == "" {
+			continue
+		}
+		if _, ok := uniq[id]; ok {
+			continue
+		}
+		uniq[id] = struct{}{}
+		normalized = append(normalized, id)
+	}
+	if err := tx.Where("tenant_uuid = ? AND plan_id = ?", tenantID, planID).
+		Delete(&productmodel.SubscriptionPlanBenefit{}).Error; err != nil {
+		return err
+	}
+	if len(normalized) == 0 {
+		return nil
+	}
+	now := time.Now().UTC()
+	rows := make([]productmodel.SubscriptionPlanBenefit, 0, len(normalized))
+	for _, id := range normalized {
+		rows = append(rows, productmodel.SubscriptionPlanBenefit{
+			ID:         utils.NewUUID(),
+			TenantUUID: tenantID,
+			PlanID:     planID,
+			BenefitID:  id,
+			CreatedAt:  now,
+			UpdatedAt:  now,
+		})
+	}
+	return tx.Create(&rows).Error
 }
