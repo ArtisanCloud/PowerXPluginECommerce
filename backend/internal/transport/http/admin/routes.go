@@ -21,6 +21,7 @@ import (
 	adminreverse "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/reverse"
 	adminruntime "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/runtime_ops"
 	adminsecurity "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/security"
+	adminsubscriptionreconciliation "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/subscription_reconciliation"
 	"github.com/gin-gonic/gin"
 )
 
@@ -56,5 +57,6 @@ func RegisterAPIRoutes(rg *gin.RouterGroup, deps *app.Deps) {
 		adminlogistics.RegisterRoutes(admin, deps)
 		adminfulfillment.RegisterRoutes(admin, deps)
 		adminreverse.RegisterRoutes(admin, deps)
+		adminsubscriptionreconciliation.RegisterRoutes(admin, deps)
 	}
 }
