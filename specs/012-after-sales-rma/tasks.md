@@ -111,14 +111,14 @@
 
 **Purpose**: 跨故事收口、质量门禁与验收记录
 
-- [ ] T038 [P] 补充售后领域审计/观测埋点在 `backend/internal/observability/after_sales/events.go`
-- [ ] T039 实现统一失败原因分类与错误码映射在 `backend/internal/contracts/{error_codes.go,error_mapping.go}` 与 `backend/internal/transport/http/admin/after_sales/handler.go`
-- [ ] T040 同步 OpenAPI 错误响应示例（校验失败/状态冲突/权限不足/数据不存在）在 `specs/012-after-sales-rma/contracts/openapi.yaml`
-- [ ] T041 同步 docs/plan 规划文档（reverse-logistics 与 returns-portal）在 `docs/plan/fulfillment/reverse-logistics.md` 与 `docs/plan/customer/returns-portal.md`
-- [ ] T042 执行后端回归并记录结果在 `specs/012-after-sales-rma/quickstart.md`（命令：`make test`）
-- [ ] T043 执行前端回归并记录结果在 `specs/012-after-sales-rma/quickstart.md`（命令：`make test-admin-ci`）
-- [ ] T044 执行端到端冒烟并记录结果在 `specs/012-after-sales-rma/quickstart.md`（按 US1→US2→US3 顺序）
-- [ ] T045 记录 SC 指标验收结果（5 秒可见性、非法流转拦截率、处理时长样本）在 `specs/012-after-sales-rma/quickstart.md`
+- [X] T038 [P] 补充售后领域审计/观测埋点在 `backend/internal/observability/after_sales/events.go`
+- [X] T039 实现统一失败原因分类与错误码映射在 `backend/internal/contracts/{error_codes.go,error_mapping.go}` 与 `backend/internal/transport/http/admin/after_sales/handler.go`
+- [X] T040 同步 OpenAPI 错误响应示例（校验失败/状态冲突/权限不足/数据不存在）在 `specs/012-after-sales-rma/contracts/openapi.yaml`
+- [X] T041 同步 docs/plan 规划文档（reverse-logistics 与 returns-portal）在 `docs/plan/fulfillment/reverse-logistics.md` 与 `docs/plan/customer/returns-portal.md`
+- [X] T042 执行后端回归并记录结果在 `specs/012-after-sales-rma/quickstart.md`（命令：`make test`）
+- [X] T043 执行前端回归并记录结果在 `specs/012-after-sales-rma/quickstart.md`（命令：`make test-admin-ci`）
+- [X] T044 执行端到端冒烟并记录结果在 `specs/012-after-sales-rma/quickstart.md`（按 US1→US2→US3 顺序）
+- [X] T045 记录 SC 指标验收结果（5 秒可见性、非法流转拦截率、处理时长样本）在 `specs/012-after-sales-rma/quickstart.md`
 
 ---
 

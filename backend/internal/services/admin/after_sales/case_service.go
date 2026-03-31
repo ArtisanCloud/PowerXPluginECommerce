@@ -10,6 +10,8 @@ import (
 	models "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models"
 	AfterSalesModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/after_sales"
 	AfterSalesRepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/after_sales"
+	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
+	afterSalesObs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/after_sales"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -33,6 +35,7 @@ type CaseService struct {
 	caseRepo     *AfterSalesRepo.CaseRepository
 	timelineRepo *AfterSalesRepo.TimelineRepository
 	orderSync    *OrderSyncService
+	emitter      *afterSalesObs.Emitter
 }
 
 func NewCaseService(deps *app.Deps) *CaseService {
@@ -44,6 +47,7 @@ func NewCaseService(deps *app.Deps) *CaseService {
 		caseRepo:     AfterSalesRepo.NewCaseRepository(deps.DB),
 		timelineRepo: AfterSalesRepo.NewTimelineRepository(deps.DB),
 		orderSync:    NewOrderSyncService(deps),
+		emitter:      afterSalesObs.NewEmitter(deps.RuntimeLogger(deps.Ctx, "after-sales", nil)),
 	}
 }
 
@@ -167,6 +171,27 @@ func (s *CaseService) Transition(ctx context.Context, tenantUUID, caseID, action
 			if err := s.orderSync.SyncCaseTransitionWithTx(ctx, tx, tenantUUID, action, operatorID, note, row); err != nil && !errors.Is(err, ErrOrderSyncUnavailable) {
 				return err
 			}
+		}
+		if s.emitter != nil {
+			reqID, _ := authx.RequestIDFromContext(ctx)
+			s.emitter.Emit(afterSalesObs.Event{
+				Action:     "after_sales.transition",
+				TenantUUID: strings.TrimSpace(tenantUUID),
+				RequestID:  reqID,
+				OperatorID: strings.TrimSpace(operatorID),
+				CaseID:     strings.TrimSpace(row.ID),
+				CaseNo:     strings.TrimSpace(row.CaseNo),
+				CaseType:   strings.TrimSpace(row.CaseType),
+				OrderID:    strings.TrimSpace(row.OrderID),
+				Status:     strings.TrimSpace(row.Status),
+				Result:     "success",
+				Reason:     strings.TrimSpace(note),
+				Metadata: map[string]any{
+					"from_status": fromStatus,
+					"to_status":   row.Status,
+					"action":      strings.TrimSpace(strings.ToLower(action)),
+				},
+			})
 		}
 		updated = row
 		return nil

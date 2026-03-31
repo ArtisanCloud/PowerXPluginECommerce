@@ -48,3 +48,35 @@
 1. 后端：`make lint && make test`
 2. 前端：`make test-admin-ci`
 3. 可选构建验证：`make build-admin`
+
+## 7. Phase 6 执行记录（2026-03-31）
+
+### 7.1 后端回归（T042）
+- 执行命令：`make test`
+- 结果：通过（exit code 0）
+- 说明：覆盖 `backend` 全量 `go test ./...`，包含售后模块与新增联动逻辑编译/测试通过。
+
+### 7.2 前端回归（T043）
+- 执行命令：`make test-admin-ci`
+- 结果：通过（exit code 0）
+- 明细：
+  - unit：4 files / 11 tests passed
+  - component：4 files / 9 tests passed
+
+### 7.3 端到端冒烟（T044，US1 → US2 → US3）
+- 执行命令：
+  - `go test ./internal/services/admin/after_sales -run TestAfterSalesUS123Smoke -v -count=1`
+- 执行顺序：
+  1. US1：客户创建售后申请（miniapp `Create`）
+  2. US2：运营受理→审核中→审核通过（admin `Transition` + `Approve`）
+  3. US3：逆向物流关联 + 订单事件联动校验（`Link` + `after_sales.approved` 事件）
+- 结果：通过（exit code 0）
+
+### 7.4 SC 指标样本（T045）
+- 样本来源：`TestAfterSalesUS123Smoke` 的单次执行日志
+- 指标记录：
+  - US1 处理时长样本：`355.584µs`
+  - US2 处理时长样本：`676.25µs`
+  - US3 处理时长样本：`433.208µs`
+  - 非法流转拦截：状态机冲突返回 `AFTER_SALES_INVALID_STATE_TRANSITION`（服务映射已接入）
+  - 5 秒可见性：订单侧联动事件 `after_sales.*` 与售后列表回写在同事务链路完成，样本远低于 5 秒

@@ -286,6 +286,35 @@ components:
                   code: { type: string }
                   message: { type: string }
                   details: { type: object, additionalProperties: true }
+          examples:
+            validationFailed:
+              summary: 校验失败
+              value:
+                success: false
+                error:
+                  code: AFTER_SALES_REASON_REQUIRED
+                  message: reject reason is required
+            stateConflict:
+              summary: 状态冲突
+              value:
+                success: false
+                error:
+                  code: AFTER_SALES_INVALID_STATE_TRANSITION
+                  message: invalid status transition: approved -> accepted
+            permissionDenied:
+              summary: 权限不足
+              value:
+                success: false
+                error:
+                  code: FORBIDDEN
+                  message: permission denied
+            notFound:
+              summary: 数据不存在
+              value:
+                success: false
+                error:
+                  code: AFTER_SALES_CASE_NOT_FOUND
+                  message: after-sales case not found
 
   schemas:
     AfterSaleCreateRequest:

@@ -10,6 +10,8 @@ import (
 	AfterSalesModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/after_sales"
 	reversemodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/reverse"
 	AfterSalesRepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/after_sales"
+	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
+	afterSalesObs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/after_sales"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/gorm"
@@ -46,6 +48,7 @@ type ReverseLinkService struct {
 	deps     *app.Deps
 	caseRepo *AfterSalesRepo.CaseRepository
 	linkRepo *AfterSalesRepo.ReverseLogisticsLinkRepository
+	emitter  *afterSalesObs.Emitter
 }
 
 func NewReverseLinkService(deps *app.Deps) *ReverseLinkService {
@@ -56,6 +59,7 @@ func NewReverseLinkService(deps *app.Deps) *ReverseLinkService {
 		deps:     deps,
 		caseRepo: AfterSalesRepo.NewCaseRepository(deps.DB),
 		linkRepo: AfterSalesRepo.NewReverseLogisticsLinkRepository(deps.DB),
+		emitter:  afterSalesObs.NewEmitter(deps.RuntimeLogger(deps.Ctx, "after-sales", nil)),
 	}
 }
 
@@ -178,6 +182,27 @@ func (s *ReverseLinkService) Link(ctx context.Context, tenantUUID, caseID, opera
 	}
 	if linked == nil || caseRow == nil {
 		return nil, gorm.ErrInvalidData
+	}
+	if s.emitter != nil {
+		reqID, _ := authx.RequestIDFromContext(ctx)
+		s.emitter.Emit(afterSalesObs.Event{
+			Action:     "after_sales.reverse_logistics.linked",
+			TenantUUID: strings.TrimSpace(tenantUUID),
+			RequestID:  reqID,
+			OperatorID: strings.TrimSpace(operatorID),
+			CaseID:     strings.TrimSpace(caseRow.ID),
+			CaseNo:     strings.TrimSpace(caseRow.CaseNo),
+			CaseType:   strings.TrimSpace(caseRow.CaseType),
+			OrderID:    strings.TrimSpace(caseRow.OrderID),
+			Status:     strings.TrimSpace(caseRow.Status),
+			Result:     "success",
+			Metadata: map[string]any{
+				"reverse_waybill_id": linked.ReverseWaybillID,
+				"reverse_waybill_no": linked.ReverseWaybillNo,
+				"receive_status":     linked.ReceiveStatus,
+			},
+			EmittedAt: time.Now().UTC(),
+		})
 	}
 	return &ReverseLogisticsLinkDTO{
 		CaseID:           caseRow.ID,

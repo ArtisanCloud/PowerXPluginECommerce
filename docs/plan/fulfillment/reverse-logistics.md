@@ -25,3 +25,15 @@
 - 权限：`reverse.read`、`reverse.manage`、`reverse.compensation`
 - KPI：退货处理周期、逆向异常率、可再售率
 
+## 5. 与售后 RMA 联动（012 收口）
+- 联动入口：`POST /api/v1/admin/after-sales/cases/{id}/reverse-logistics`
+- 联动约束：
+  - 仅 `return_refund` / `exchange` 可绑定逆向物流。
+  - 逆向运单必须与售后单 `order_id` 一致，否则返回冲突错误。
+- 回写字段（售后摘要）：
+  - `reverseWaybillNo`
+  - `reverseReceiveStatus`（`pending|received`）
+  - `reverseLinkedAt`
+- 审计与观测：
+  - 事件 `after_sales.reverse_logistics.linked`
+  - 轨迹动作 `link_reverse_logistics`

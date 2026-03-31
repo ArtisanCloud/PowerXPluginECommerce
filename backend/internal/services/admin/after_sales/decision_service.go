@@ -8,6 +8,8 @@ import (
 
 	AfterSalesModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/after_sales"
 	AfterSalesRepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/after_sales"
+	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
+	afterSalesObs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/after_sales"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"gorm.io/gorm"
@@ -20,6 +22,7 @@ type DecisionService struct {
 	caseService  *CaseService
 	decisionRepo *AfterSalesRepo.DecisionRepository
 	paymentGuard *PaymentGuardService
+	emitter      *afterSalesObs.Emitter
 }
 
 func NewDecisionService(deps *app.Deps) *DecisionService {
@@ -31,6 +34,7 @@ func NewDecisionService(deps *app.Deps) *DecisionService {
 		caseService:  NewCaseService(deps),
 		decisionRepo: AfterSalesRepo.NewDecisionRepository(deps.DB),
 		paymentGuard: NewPaymentGuardService(deps),
+		emitter:      afterSalesObs.NewEmitter(deps.RuntimeLogger(deps.Ctx, "after-sales", nil)),
 	}
 }
 
@@ -74,6 +78,23 @@ func (s *DecisionService) Approve(ctx context.Context, tenantUUID, caseID, opera
 	if err != nil {
 		return nil, err
 	}
+	if s.emitter != nil {
+		reqID, _ := authx.RequestIDFromContext(ctx)
+		s.emitter.EmitAudit(afterSalesObs.AuditEvent{
+			Action:     "after_sales.approve",
+			TenantUUID: strings.TrimSpace(tenantUUID),
+			ActorID:    strings.TrimSpace(operatorID),
+			TargetID:   strings.TrimSpace(row.ID),
+			Result:     "approved",
+			Reason:     strings.TrimSpace(note),
+			EmittedAt:  time.Now().UTC(),
+			Metadata: map[string]any{
+				"request_id": reqID,
+				"case_no":    row.CaseNo,
+				"order_id":   row.OrderID,
+			},
+		})
+	}
 	return row, nil
 }
 
@@ -99,6 +120,24 @@ func (s *DecisionService) Reject(ctx context.Context, tenantUUID, caseID, operat
 	})
 	if err != nil {
 		return nil, err
+	}
+	if s.emitter != nil {
+		reqID, _ := authx.RequestIDFromContext(ctx)
+		s.emitter.EmitAudit(afterSalesObs.AuditEvent{
+			Action:     "after_sales.reject",
+			TenantUUID: strings.TrimSpace(tenantUUID),
+			ActorID:    strings.TrimSpace(operatorID),
+			TargetID:   strings.TrimSpace(row.ID),
+			Result:     "rejected",
+			Reason:     strings.TrimSpace(reasonCode),
+			EmittedAt:  time.Now().UTC(),
+			Metadata: map[string]any{
+				"request_id": reqID,
+				"case_no":    row.CaseNo,
+				"order_id":   row.OrderID,
+				"note":       strings.TrimSpace(note),
+			},
+		})
 	}
 	return row, nil
 }

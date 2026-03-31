@@ -3,7 +3,6 @@ package after_sales
 import (
 	"errors"
 	"io"
-	"net/http"
 	"strconv"
 	"strings"
 
@@ -172,34 +171,6 @@ func adminUserID(c *gin.Context) (string, bool) {
 }
 
 func respondAdminError(c *gin.Context, err error) {
-	if err == nil {
-		contracts.ResponseError(c, http.StatusInternalServerError, contracts.ErrCodeInternalError, "unknown error")
-		return
-	}
-	switch {
-	case errors.Is(err, adminsvc.ErrAdminServiceUnavailable):
-		contracts.ResponseServiceUnavailable(c, "after-sales service unavailable", nil)
-	case errors.Is(err, adminsvc.ErrAdminCaseNotFound):
-		contracts.ResponseNotFound(c, "after-sales case not found")
-	case errors.Is(err, adminsvc.ErrDecisionReasonRequired),
-		errors.Is(err, adminsvc.ErrInvalidAction),
-		errors.Is(err, adminsvc.ErrReverseWaybillRequired),
-		errors.Is(err, adminsvc.ErrReverseLinkNotAllowed):
-		contracts.ResponseBadRequest(c, err.Error())
-	case errors.Is(err, adminsvc.ErrReverseWaybillNotFound):
-		contracts.ResponseNotFound(c, err.Error())
-	case errors.Is(err, adminsvc.ErrCoreFieldsFrozen):
-		contracts.ResponseError(c, http.StatusConflict, contracts.ErrCodeConflict, err.Error())
-	case errors.Is(err, adminsvc.ErrRefundAlreadyApplied),
-		errors.Is(err, adminsvc.ErrRefundAlreadyInPayment),
-		errors.Is(err, adminsvc.ErrReverseWaybillOrderMismatch):
-		contracts.ResponseError(c, http.StatusConflict, contracts.ErrCodeConflict, err.Error())
-	default:
-		message := strings.TrimSpace(err.Error())
-		if strings.Contains(message, "invalid status transition") {
-			contracts.ResponseError(c, http.StatusConflict, contracts.ErrCodeConflict, message)
-			return
-		}
-		contracts.ResponseError(c, http.StatusInternalServerError, contracts.ErrCodeInternalError, message)
-	}
+	mapped := contracts.MapAfterSalesError(err)
+	contracts.ResponseError(c, mapped.Status, mapped.Code, mapped.Message)
 }
