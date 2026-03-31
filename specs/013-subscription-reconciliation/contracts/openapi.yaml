@@ -1,0 +1,309 @@
+openapi: 3.0.3
+info:
+  title: Subscription Reconciliation API
+  version: 1.0.0
+servers:
+  - url: /api/v1
+paths:
+  /admin/subscription-reconciliation/batches:
+    post:
+      summary: 创建并触发账期对账批次
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBatchRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchDetailResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    get:
+      summary: 查询对账批次列表
+      parameters:
+        - in: query
+          name: billingCycle
+          schema: { type: string }
+        - in: query
+          name: status
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BatchListResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /admin/subscription-reconciliation/batches/{id}/deltas:
+    get:
+      summary: 查询批次差异明细
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+        - in: query
+          name: deltaType
+          schema: { type: string }
+        - in: query
+          name: riskLevel
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeltaListResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /admin/subscription-reconciliation/deltas/{id}/tasks:
+    post:
+      summary: 将差异转为处置任务
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDeltaTaskRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeltaTaskResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /admin/subscription-reconciliation/tasks/{id}/close:
+    post:
+      summary: 关闭差异处置任务
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CloseTaskRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeltaTaskResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /admin/subscription-reconciliation/governance/run:
+    post:
+      summary: 执行续费失败治理（重试/提醒/升级）
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunGovernanceRequest'
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GovernanceRunResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /admin/subscription-reconciliation/dashboard:
+    get:
+      summary: 获取对账与治理运营看板
+      parameters:
+        - in: query
+          name: from
+          schema: { type: string, format: date }
+        - in: query
+          name: to
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DashboardResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+components:
+  responses:
+    ErrorResponse:
+      description: 统一错误响应
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success: { type: boolean, example: false }
+              error:
+                type: object
+                properties:
+                  code: { type: string }
+                  message: { type: string }
+
+  schemas:
+    CreateBatchRequest:
+      type: object
+      required: [billingCycle, runType]
+      properties:
+        billingCycle: { type: string, example: '2026-03-31' }
+        runType: { type: string, enum: [daily, rerun] }
+
+    BatchSummary:
+      type: object
+      properties:
+        id: { type: string }
+        billingCycle: { type: string }
+        runType: { type: string }
+        status: { type: string }
+        expectedAmountMinor: { type: integer }
+        actualAmountMinor: { type: integer }
+        deltaAmountMinor: { type: integer }
+        deltaCount: { type: integer }
+        startedAt: { type: string, format: date-time }
+        finishedAt: { type: string, format: date-time }
+
+    BatchDetailResponse:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        data:
+          $ref: '#/components/schemas/BatchSummary'
+
+    BatchListResponse:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/BatchSummary'
+
+    DeltaSummary:
+      type: object
+      properties:
+        id: { type: string }
+        batchId: { type: string }
+        deltaType:
+          type: string
+          enum: [missing_payment, duplicate_payment, amount_mismatch, status_mismatch, data_missing]
+        riskLevel: { type: string, enum: [high, medium, low] }
+        expectedAmountMinor: { type: integer }
+        actualAmountMinor: { type: integer }
+        deltaAmountMinor: { type: integer }
+        status: { type: string }
+        reasonCode: { type: string }
+
+    DeltaListResponse:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/DeltaSummary'
+
+    CreateDeltaTaskRequest:
+      type: object
+      required: [assignee, slaLevel]
+      properties:
+        assignee: { type: string }
+        slaLevel: { type: string, enum: [high, medium, low] }
+        note: { type: string }
+
+    CloseTaskRequest:
+      type: object
+      required: [resolution]
+      properties:
+        resolution: { type: string, enum: [fixed, escalated, false_positive] }
+        resolutionNote: { type: string }
+
+    DeltaTask:
+      type: object
+      properties:
+        id: { type: string }
+        deltaId: { type: string }
+        assignee: { type: string }
+        slaLevel: { type: string }
+        slaDeadline: { type: string, format: date-time }
+        status: { type: string }
+        resolution: { type: string }
+
+    DeltaTaskResponse:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        data:
+          $ref: '#/components/schemas/DeltaTask'
+
+    RunGovernanceRequest:
+      type: object
+      required: [billingCycle]
+      properties:
+        billingCycle: { type: string }
+        dryRun: { type: boolean, default: false }
+
+    GovernanceRunResponse:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        data:
+          type: object
+          properties:
+            retryTotal: { type: integer }
+            retrySucceeded: { type: integer }
+            retryFailed: { type: integer }
+            escalated: { type: integer }
+
+    DashboardResponse:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        data:
+          type: object
+          properties:
+            deltaRate: { type: number }
+            recoveryRate: { type: number }
+            avgHandleHours: { type: number }
+            pendingTasks: { type: integer }
+            byDeltaType:
+              type: array
+              items:
+                type: object
+                properties:
+                  type: { type: string }
+                  count: { type: integer }
