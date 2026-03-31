@@ -2,6 +2,7 @@ package subscription_reconciliation
 
 import (
 	"context"
+	"errors"
 	"strings"
 
 	SubscriptionReconciliationModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/subscription_reconciliation"
@@ -65,6 +66,24 @@ func (r *ReconciliationBatchRepository) GetByID(ctx context.Context, id string) 
 	return &row, nil
 }
 
+func (r *ReconciliationBatchRepository) FindByCycleRunType(ctx context.Context, billingCycle, runType string) (*SubscriptionReconciliationModel.ReconciliationBatch, error) {
+	tenantUUID, err := RequireTenantUUID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var row SubscriptionReconciliationModel.ReconciliationBatch
+	err = r.DB.WithContext(ctx).
+		Where("tenant_uuid = ? AND billing_cycle = ? AND run_type = ?", tenantUUID, strings.TrimSpace(billingCycle), strings.TrimSpace(runType)).
+		First(&row).Error
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
+		return nil, err
+	}
+	return &row, nil
+}
+
 type ReconciliationDeltaRepository struct {
 	*Repository[SubscriptionReconciliationModel.ReconciliationDelta]
 }
@@ -122,4 +141,11 @@ func (r *ReconciliationDeltaRepository) GetByID(ctx context.Context, id string) 
 		return nil, err
 	}
 	return &row, nil
+}
+
+func (r *ReconciliationDeltaRepository) Save(ctx context.Context, row *SubscriptionReconciliationModel.ReconciliationDelta) error {
+	if row == nil {
+		return gorm.ErrInvalidData
+	}
+	return r.DB.WithContext(ctx).Save(row).Error
 }

@@ -20,6 +20,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.GET("/batches", handler.ListBatches)
 	rg.GET("/batches/:id/deltas", handler.ListBatchDeltas)
 	rg.POST("/deltas/:id/tasks", handler.CreateDeltaTask)
+	rg.POST("/deltas/:id/adjust", handler.AdjustDelta)
 	rg.POST("/tasks/:id/close", handler.CloseTask)
 	rg.POST("/governance/run", handler.RunGovernance)
 	rg.GET("/dashboard", handler.Dashboard)

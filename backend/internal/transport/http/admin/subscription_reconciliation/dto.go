@@ -49,3 +49,16 @@ func (r runGovernanceRequest) normalize() runGovernanceRequest {
 	r.BillingCycle = strings.TrimSpace(r.BillingCycle)
 	return r
 }
+
+type adjustDeltaRequest struct {
+	ExpectedAmountMinor int64  `json:"expectedAmountMinor"`
+	ActualAmountMinor   int64  `json:"actualAmountMinor"`
+	ReasonCode          string `json:"reasonCode"`
+	Note                string `json:"note"`
+}
+
+func (r adjustDeltaRequest) normalize() adjustDeltaRequest {
+	r.ReasonCode = strings.TrimSpace(r.ReasonCode)
+	r.Note = strings.TrimSpace(r.Note)
+	return r
+}

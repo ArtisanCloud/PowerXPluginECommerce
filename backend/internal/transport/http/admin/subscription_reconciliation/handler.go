@@ -117,6 +117,37 @@ func (h *Handler) CreateDeltaTask(c *gin.Context) {
 	contracts.ResponseSuccess(c, row)
 }
 
+func (h *Handler) AdjustDelta(c *gin.Context) {
+	if h == nil || h.service == nil {
+		contracts.ResponseServiceUnavailable(c, "subscription reconciliation service unavailable", nil)
+		return
+	}
+	deltaID := strings.TrimSpace(c.Param("id"))
+	if deltaID == "" {
+		contracts.ResponseBadRequest(c, "delta id is required")
+		return
+	}
+	var payload adjustDeltaRequest
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		contracts.ResponseBadRequest(c, "invalid request body: "+err.Error())
+		return
+	}
+	payload = payload.normalize()
+	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
+	row, err := h.service.AdjustDelta(c.Request.Context(), tenantUUID, SubscriptionReconciliationSvc.AdjustDeltaInput{
+		DeltaID:             deltaID,
+		ExpectedAmountMinor: payload.ExpectedAmountMinor,
+		ActualAmountMinor:   payload.ActualAmountMinor,
+		ReasonCode:          payload.ReasonCode,
+		Note:                payload.Note,
+	})
+	if err != nil {
+		h.respondServiceError(c, err)
+		return
+	}
+	contracts.ResponseSuccess(c, row)
+}
+
 func (h *Handler) CloseTask(c *gin.Context) {
 	if h == nil || h.service == nil {
 		contracts.ResponseServiceUnavailable(c, "subscription reconciliation service unavailable", nil)
@@ -192,6 +223,20 @@ func (h *Handler) respondServiceError(c *gin.Context, err error) {
 		contracts.ResponseServiceUnavailable(c, err.Error(), nil)
 	case errors.Is(err, SubscriptionReconciliationSvc.ErrNotImplemented):
 		contracts.ResponseError(c, http.StatusNotImplemented, contracts.ErrCodeReconciliationUnsupportedAction, err.Error())
+	case errors.Is(err, SubscriptionReconciliationSvc.ErrInvalidBillingCycle):
+		contracts.ResponseError(c, http.StatusBadRequest, contracts.ErrCodeReconciliationInvalidBillingCycle, err.Error())
+	case errors.Is(err, SubscriptionReconciliationSvc.ErrInvalidRunType),
+		errors.Is(err, SubscriptionReconciliationSvc.ErrInvalidSLALevel),
+		errors.Is(err, SubscriptionReconciliationSvc.ErrInvalidResolution):
+		contracts.ResponseError(c, http.StatusBadRequest, contracts.ErrCodeReconciliationUnsupportedAction, err.Error())
+	case errors.Is(err, SubscriptionReconciliationSvc.ErrBatchNotFound):
+		contracts.ResponseError(c, http.StatusNotFound, contracts.ErrCodeReconciliationBatchNotFound, err.Error())
+	case errors.Is(err, SubscriptionReconciliationSvc.ErrDeltaNotFound):
+		contracts.ResponseError(c, http.StatusNotFound, contracts.ErrCodeReconciliationDeltaNotFound, err.Error())
+	case errors.Is(err, SubscriptionReconciliationSvc.ErrTaskAlreadyOpen):
+		contracts.ResponseError(c, http.StatusConflict, contracts.ErrCodeReconciliationTaskAlreadyOpen, err.Error())
+	case errors.Is(err, SubscriptionReconciliationSvc.ErrTaskNotFound):
+		contracts.ResponseError(c, http.StatusNotFound, contracts.ErrCodeReconciliationDeltaNotFound, err.Error())
 	default:
 		contracts.ResponseInternalError(c, err)
 	}

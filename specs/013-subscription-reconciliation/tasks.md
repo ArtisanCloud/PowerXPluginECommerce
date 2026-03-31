@@ -47,21 +47,21 @@
 
 ### Tests for User Story 1
 
-- [ ] T015 [P] [US1] 新增对账批次创建与幂等服务测试在 `backend/internal/services/admin/subscription_reconciliation/reconciliation_service_test.go`
-- [ ] T016 [P] [US1] 新增差异类型判定与净应收口径测试在 `backend/internal/services/admin/subscription_reconciliation/reconciliation_delta_classifier_test.go`
-- [ ] T017 [P] [US1] 新增差异转任务唯一性测试在 `backend/internal/services/admin/subscription_reconciliation/delta_task_service_test.go`
-- [ ] T018 [P] [US1] 新增手工纠偏与审计日志测试在 `backend/internal/services/admin/subscription_reconciliation/manual_adjustment_service_test.go`
-- [ ] T019 [P] [US1] 新增 API 合同测试（批次创建/批次查询/差异查询/转任务/纠偏）在 `backend/internal/transport/http/admin/subscription_reconciliation/handler_contract_test.go`
+- [x] T015 [P] [US1] 新增对账批次创建与幂等服务测试在 `backend/internal/services/admin/subscription_reconciliation/reconciliation_service_test.go`
+- [x] T016 [P] [US1] 新增差异类型判定与净应收口径测试在 `backend/internal/services/admin/subscription_reconciliation/reconciliation_delta_classifier_test.go`
+- [x] T017 [P] [US1] 新增差异转任务唯一性测试在 `backend/internal/services/admin/subscription_reconciliation/delta_task_service_test.go`
+- [x] T018 [P] [US1] 新增手工纠偏与审计日志测试在 `backend/internal/services/admin/subscription_reconciliation/manual_adjustment_service_test.go`
+- [x] T019 [P] [US1] 新增 API 合同测试（批次创建/批次查询/差异查询/转任务/纠偏）在 `backend/internal/transport/http/admin/subscription_reconciliation/handler_contract_test.go`
 
 ### Implementation for User Story 1
 
-- [ ] T020 [US1] 实现日对账编排（应收/实收/差异汇总）在 `backend/internal/services/admin/subscription_reconciliation/reconciliation_service.go`
-- [ ] T021 [US1] 实现标准五分类差异生成与风险分级在 `backend/internal/services/admin/subscription_reconciliation/delta_classifier.go`
-- [ ] T022 [US1] 实现差异任务创建与未关闭任务去重在 `backend/internal/services/admin/subscription_reconciliation/delta_task_service.go`
-- [ ] T023 [US1] 实现批次与差异查询接口在 `backend/internal/transport/http/admin/subscription_reconciliation/query_handler.go`
-- [ ] T024 [US1] 实现差异转任务与任务关闭接口在 `backend/internal/transport/http/admin/subscription_reconciliation/task_handler.go`
-- [ ] T025 [US1] 实现手工纠偏接口与字段变更审计在 `backend/internal/transport/http/admin/subscription_reconciliation/manual_adjustment_handler.go`
-- [ ] T026 [US1] 记录 `reconciliation.generated` 与 `delta.task.created/closed` 与 `delta.adjusted` 事件在 `backend/internal/observability/subscription_reconciliation/publisher.go`
+- [x] T020 [US1] 实现日对账编排（应收/实收/差异汇总）在 `backend/internal/services/admin/subscription_reconciliation/reconciliation_service.go`
+- [x] T021 [US1] 实现标准五分类差异生成与风险分级在 `backend/internal/services/admin/subscription_reconciliation/delta_classifier.go`
+- [x] T022 [US1] 实现差异任务创建与未关闭任务去重在 `backend/internal/services/admin/subscription_reconciliation/delta_task_service.go`
+- [x] T023 [US1] 实现批次与差异查询接口在 `backend/internal/transport/http/admin/subscription_reconciliation/query_handler.go`
+- [x] T024 [US1] 实现差异转任务与任务关闭接口在 `backend/internal/transport/http/admin/subscription_reconciliation/task_handler.go`
+- [x] T025 [US1] 实现手工纠偏接口与字段变更审计在 `backend/internal/transport/http/admin/subscription_reconciliation/manual_adjustment_handler.go`
+- [x] T026 [US1] 记录 `reconciliation.generated` 与 `delta.task.created/closed` 与 `delta.adjusted` 事件在 `backend/internal/observability/subscription_reconciliation/publisher.go`
 
 **Checkpoint**: US1 可独立上线验证（MVP）。
 
