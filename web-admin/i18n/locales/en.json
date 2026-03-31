@@ -25,6 +25,52 @@
     "inventory": "Inventory",
     "payments": "Payments"
   },
+  "afterSales": {
+    "customer": {
+      "title": "After-sales Service",
+      "subtitle": "Submit refund/return/exchange requests and track progress.",
+      "form": {
+        "orderId": "Order ID",
+        "orderIdPlaceholder": "Enter order ID",
+        "orderItemId": "Order Item ID",
+        "orderItemIdPlaceholder": "Enter order item ID",
+        "caseType": "After-sales Type",
+        "reasonCode": "Reason Code",
+        "reasonCodePlaceholder": "e.g. damaged",
+        "reasonDetail": "Additional Notes",
+        "reasonDetailPlaceholder": "Optional"
+      },
+      "caseType": {
+        "refundOnly": "Refund Only",
+        "returnRefund": "Return & Refund",
+        "exchange": "Exchange"
+      },
+      "actions": {
+        "submit": "Submit Request",
+        "refresh": "Refresh List",
+        "viewDetail": "View Detail"
+      },
+      "list": {
+        "title": "My After-sales Requests",
+        "empty": "No after-sales requests yet.",
+        "total": "Total {count}",
+        "orderItem": "Order {orderId} / Item {orderItemId}"
+      },
+      "detail": {
+        "title": "After-sales Detail",
+        "timeline": "Timeline",
+        "emptyTimeline": "No timeline events"
+      },
+      "toast": {
+        "required": "Please complete all required fields",
+        "submitSuccess": "After-sales request submitted",
+        "submitFailed": "Submit failed",
+        "listFailed": "Failed to load after-sales list",
+        "detailFailed": "Failed to load after-sales detail",
+        "retryLater": "Please try again later"
+      }
+    }
+  },
   "inventory": {
     "stockTitle": "SKU Stock",
     "stockListTitle": "Stock List",

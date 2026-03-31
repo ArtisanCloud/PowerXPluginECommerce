@@ -126,7 +126,7 @@ export const useAfterSalesApi = () => {
   const adminBase = 'admin/after-sales/cases'
 
   return {
-    listMiniAppCases: (params?: { page?: number; pageSize?: number }) =>
+    listMiniAppCases: (params?: { status?: string; page?: number; pageSize?: number }) =>
       unwrap(apiGet<AfterSaleListResponse>(miniBase, params)).then(normalizeList),
 
     createMiniAppCase: (payload: MiniAppAfterSaleCreateRequest) =>

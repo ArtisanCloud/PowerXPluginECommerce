@@ -35,6 +35,52 @@
     "inventory": "库存",
     "payments": "支付单"
   },
+  "afterSales": {
+    "customer": {
+      "title": "售后服务",
+      "subtitle": "提交退款/退货退款/换货申请并查看进度。",
+      "form": {
+        "orderId": "订单号",
+        "orderIdPlaceholder": "请输入订单号",
+        "orderItemId": "订单明细 ID",
+        "orderItemIdPlaceholder": "请输入订单明细 ID",
+        "caseType": "售后类型",
+        "reasonCode": "原因编码",
+        "reasonCodePlaceholder": "例如：damaged",
+        "reasonDetail": "补充说明",
+        "reasonDetailPlaceholder": "可选"
+      },
+      "caseType": {
+        "refundOnly": "仅退款",
+        "returnRefund": "退货退款",
+        "exchange": "换货"
+      },
+      "actions": {
+        "submit": "提交申请",
+        "refresh": "刷新列表",
+        "viewDetail": "查看详情"
+      },
+      "list": {
+        "title": "我的售后申请",
+        "empty": "暂无售后申请记录。",
+        "total": "共 {count} 条",
+        "orderItem": "订单 {orderId} / 明细 {orderItemId}"
+      },
+      "detail": {
+        "title": "售后详情",
+        "timeline": "处理时间线",
+        "emptyTimeline": "暂无处理轨迹"
+      },
+      "toast": {
+        "required": "请填写完整必填字段",
+        "submitSuccess": "售后申请已提交",
+        "submitFailed": "提交失败",
+        "listFailed": "获取售后列表失败",
+        "detailFailed": "获取售后详情失败",
+        "retryLater": "请稍后重试"
+      }
+    }
+  },
   "inventory": {
     "stockTitle": "SKU 库存",
     "stockListTitle": "库存列表",

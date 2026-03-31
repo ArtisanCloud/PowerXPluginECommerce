@@ -51,14 +51,14 @@
 
 ### Implementation for User Story 1
 
-- [ ] T013 [US1] 实现 mini-app 申请创建服务（窗口校验、防重、初始轨迹）在 `backend/internal/services/miniapp/after_sales/case_service.go`
-- [ ] T014 [US1] 实现 mini-app 售后查询服务（列表/详情/时间线）在 `backend/internal/services/miniapp/after_sales/query_service.go`
-- [ ] T015 [US1] 实现 mini-app 售后 Handler 在 `backend/internal/transport/http/miniapp/after_sales/handler.go`
-- [ ] T016 [US1] 注册 mini-app 售后路由在 `backend/internal/transport/http/miniapp/after_sales/routes.go`
-- [ ] T017 [US1] 实现客户侧售后 API composable 在 `web-admin/app/composables/api/useAfterSales.ts`
-- [ ] T018 [US1] 实现客户侧售后入口页面（申请+列表+详情）在 `web-admin/app/pages/customer/returns-portal.vue`
-- [ ] T019 [US1] 补充客户侧售后文案键值在 `web-admin/app/i18n/{zh-CN.json,en-US.json}`
-- [ ] T020 [US1] 对齐 US1 接口合同（请求/响应字段）在 `specs/012-after-sales-rma/contracts/openapi.yaml`
+- [X] T013 [US1] 实现 mini-app 申请创建服务（窗口校验、防重、初始轨迹）在 `backend/internal/services/miniapp/after_sales/case_service.go`
+- [X] T014 [US1] 实现 mini-app 售后查询服务（列表/详情/时间线）在 `backend/internal/services/miniapp/after_sales/query_service.go`
+- [X] T015 [US1] 实现 mini-app 售后 Handler 在 `backend/internal/transport/http/miniapp/after_sales/handler.go`
+- [X] T016 [US1] 注册 mini-app 售后路由在 `backend/internal/transport/http/miniapp/after_sales/routes.go`
+- [X] T017 [US1] 实现客户侧售后 API composable 在 `web-admin/app/composables/api/useAfterSales.ts`
+- [X] T018 [US1] 实现客户侧售后入口页面（申请+列表+详情）在 `web-admin/app/pages/customer/returns-portal.vue`
+- [X] T019 [US1] 补充客户侧售后文案键值在 `web-admin/app/i18n/{zh-CN.json,en-US.json}`
+- [X] T020 [US1] 对齐 US1 接口合同（请求/响应字段）在 `specs/012-after-sales-rma/contracts/openapi.yaml`
 
 **Checkpoint**: User Story 1 should be fully functional and testable independently
 

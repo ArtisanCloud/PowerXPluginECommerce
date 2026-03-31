@@ -10,6 +10,10 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	if router == nil {
 		return nil
 	}
-	_ = deps
-	return router.Group("/after-sales")
+	handler := NewHandler(deps)
+	rg := router.Group("/after-sales")
+	rg.GET("", handler.ListCases)
+	rg.POST("", handler.CreateCase)
+	rg.GET("/:id", handler.GetCase)
+	return rg
 }
