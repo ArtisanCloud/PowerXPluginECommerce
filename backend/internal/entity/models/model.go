@@ -156,6 +156,13 @@ const (
 	TablePaymentManualReviews       = "payment_manual_reviews"
 	TablePaymentManualReviewLogs    = "payment_manual_review_logs"
 
+	// Subscription Reconciliation
+	TableSubscriptionReconciliationBatches            = "subscription_reconciliation_batches"
+	TableSubscriptionReconciliationDeltas             = "subscription_reconciliation_deltas"
+	TableSubscriptionReconciliationDeltaTasks         = "subscription_reconciliation_delta_tasks"
+	TableSubscriptionReconciliationGovernancePolicies = "subscription_reconciliation_governance_policies"
+	TableSubscriptionReconciliationExecutionLogs      = "subscription_reconciliation_execution_logs"
+
 	// Fulfillment & Logistics
 	TableLogisticsCarriers                       = "logistics_carriers"
 	TableLogisticsCarrierServices                = "logistics_carrier_services"

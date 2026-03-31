@@ -93,6 +93,7 @@ var businessTables = func() []interface{} {
 	tables = append(tables, migrations.MembershipEntitlementTables...)
 	tables = append(tables, migrations.FulfillmentLogisticsTables...)
 	tables = append(tables, migrations.AfterSalesRMATables...)
+	tables = append(tables, migrations.SubscriptionReconciliationTables...)
 	tables = append(tables, marketplaceTables...)
 	tables = append(tables, runtimeOpsTables...)
 	tables = append(tables, operationsTables...)

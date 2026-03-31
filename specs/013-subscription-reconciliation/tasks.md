@@ -24,16 +24,16 @@
 
 **⚠️ CRITICAL**: 本阶段完成前不得开始任一用户故事实现。
 
-- [ ] T005 新增对账批次与差异表迁移在 `backend/cmd/database/migrations/20260331190000_create_subscription_reconciliation_tables.sql`
-- [ ] T006 [P] 新增差异任务与治理执行日志表迁移在 `backend/cmd/database/migrations/20260331191000_create_subscription_reconciliation_task_tables.sql`
-- [ ] T007 [P] 定义 `ReconciliationBatch/ReconciliationDelta` 模型在 `backend/internal/entity/models/subscription_reconciliation/reconciliation_models.go`
-- [ ] T008 [P] 定义 `DeltaTask/RenewalGovernancePolicy/RenewalExecutionLog` 模型在 `backend/internal/entity/models/subscription_reconciliation/governance_models.go`
-- [ ] T009 实现基础仓储接口与 tenant 过滤在 `backend/internal/entity/repository/subscription_reconciliation/repository.go`
-- [ ] T010 [P] 实现 GORM 仓储（批次+差异）在 `backend/internal/entity/repository/subscription_reconciliation/reconciliation_repository_gorm.go`
-- [ ] T011 [P] 实现 GORM 仓储（任务+治理）在 `backend/internal/entity/repository/subscription_reconciliation/governance_repository_gorm.go`
-- [ ] T012 定义通用请求/响应 DTO 与分页结构在 `backend/internal/transport/http/admin/subscription_reconciliation/dto.go`
-- [ ] T013 [P] 创建 service 骨架与依赖装配在 `backend/internal/services/admin/subscription_reconciliation/service.go`
-- [ ] T014 [P] 创建 handler 骨架与参数校验入口在 `backend/internal/transport/http/admin/subscription_reconciliation/handler.go`
+- [x] T005 新增对账批次与差异表迁移在 `backend/cmd/database/migrations/20260331190000_create_subscription_reconciliation_tables.sql`
+- [x] T006 [P] 新增差异任务与治理执行日志表迁移在 `backend/cmd/database/migrations/20260331191000_create_subscription_reconciliation_task_tables.sql`
+- [x] T007 [P] 定义 `ReconciliationBatch/ReconciliationDelta` 模型在 `backend/internal/entity/models/subscription_reconciliation/reconciliation_models.go`
+- [x] T008 [P] 定义 `DeltaTask/RenewalGovernancePolicy/RenewalExecutionLog` 模型在 `backend/internal/entity/models/subscription_reconciliation/governance_models.go`
+- [x] T009 实现基础仓储接口与 tenant 过滤在 `backend/internal/entity/repository/subscription_reconciliation/repository.go`
+- [x] T010 [P] 实现 GORM 仓储（批次+差异）在 `backend/internal/entity/repository/subscription_reconciliation/reconciliation_repository_gorm.go`
+- [x] T011 [P] 实现 GORM 仓储（任务+治理）在 `backend/internal/entity/repository/subscription_reconciliation/governance_repository_gorm.go`
+- [x] T012 定义通用请求/响应 DTO 与分页结构在 `backend/internal/transport/http/admin/subscription_reconciliation/dto.go`
+- [x] T013 [P] 创建 service 骨架与依赖装配在 `backend/internal/services/admin/subscription_reconciliation/service.go`
+- [x] T014 [P] 创建 handler 骨架与参数校验入口在 `backend/internal/transport/http/admin/subscription_reconciliation/handler.go`
 
 **Checkpoint**: 共享基础设施完成，可进入用户故事开发。
 
