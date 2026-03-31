@@ -29,15 +29,15 @@
 
 **⚠️ CRITICAL**: No user story work can begin until this phase is complete
 
-- [ ] T004 新增售后域表名常量并绑定 `TableName()` 在 `backend/internal/entity/models/model.go`
-- [ ] T005 [P] 新增售后主模型 `AfterSaleCase` 在 `backend/internal/entity/models/after_sales/case.go`
-- [ ] T006 [P] 新增售后轨迹/凭证/决策模型在 `backend/internal/entity/models/after_sales/{timeline.go,evidence.go,decision.go}`
-- [ ] T007 [P] 新增逆向关联模型 `ReturnLogisticsLink` 在 `backend/internal/entity/models/after_sales/reverse_logistics_link.go`
-- [ ] T008 在 `backend/cmd/database/migrate/migrate.go` 注册售后域模型迁移
-- [ ] T009 [P] 实现售后仓储基础封装（含租户事务）在 `backend/internal/entity/repository/after_sales/{case_repository.go,timeline_repository.go,evidence_repository.go,decision_repository.go,reverse_logistics_link_repository.go}`
-- [ ] T010 [P] 定义售后状态机与校验器在 `backend/internal/services/admin/after_sales/state_machine.go`
-- [ ] T011 [P] 新增售后 RBAC 资源与权限映射在 `backend/internal/transport/http/admin/after_sales/rbac.go`
-- [ ] T012 挂载 admin/mini-app 售后路由入口在 `backend/internal/transport/http/admin/routes.go` 与 `backend/internal/transport/http/miniapp/router.go`
+- [X] T004 新增售后域表名常量并绑定 `TableName()` 在 `backend/internal/entity/models/model.go`
+- [X] T005 [P] 新增售后主模型 `AfterSaleCase` 在 `backend/internal/entity/models/after_sales/case.go`
+- [X] T006 [P] 新增售后轨迹/凭证/决策模型在 `backend/internal/entity/models/after_sales/{timeline.go,evidence.go,decision.go}`
+- [X] T007 [P] 新增逆向关联模型 `ReturnLogisticsLink` 在 `backend/internal/entity/models/after_sales/reverse_logistics_link.go`
+- [X] T008 在 `backend/cmd/database/migrate/migrate.go` 注册售后域模型迁移
+- [X] T009 [P] 实现售后仓储基础封装（含租户事务）在 `backend/internal/entity/repository/after_sales/{case_repository.go,timeline_repository.go,evidence_repository.go,decision_repository.go,reverse_logistics_link_repository.go}`
+- [X] T010 [P] 定义售后状态机与校验器在 `backend/internal/services/admin/after_sales/state_machine.go`
+- [X] T011 [P] 新增售后 RBAC 资源与权限映射在 `backend/internal/transport/http/admin/after_sales/rbac.go`
+- [X] T012 挂载 admin/mini-app 售后路由入口在 `backend/internal/transport/http/admin/routes.go` 与 `backend/internal/transport/http/miniapp/router.go`
 
 **Checkpoint**: Foundation ready - user story implementation can now begin in parallel
 
