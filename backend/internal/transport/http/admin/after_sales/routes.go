@@ -1,6 +1,7 @@
 package after_sales
 
 import (
+	adminsvc "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/after_sales"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	httpmw "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
@@ -11,6 +12,27 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	if router == nil {
 		return nil
 	}
-	_ = deps
-	return router.Group("/after-sales", httpmw.EnsureTenant())
+	rg := router.Group("/after-sales", httpmw.EnsureTenant())
+	if deps == nil || deps.DB == nil {
+		return rg
+	}
+
+	caseService := adminsvc.NewCaseService(deps)
+	decisionService := adminsvc.NewDecisionService(deps)
+	dashboardService := adminsvc.NewDashboardService(deps)
+
+	handler := NewHandler(caseService, decisionService)
+	dashboard := NewDashboardHandler(dashboardService)
+
+	rg.GET("/cases", handler.ListCases)
+	rg.GET("/cases/:id", handler.GetCase)
+	rg.POST("/cases/:id/accept", handler.AcceptCase)
+	rg.POST("/cases/:id/review", handler.ReviewCase)
+	rg.POST("/cases/:id/approve", handler.ApproveCase)
+	rg.POST("/cases/:id/reject", handler.RejectCase)
+	rg.POST("/cases/:id/complete", handler.CompleteCase)
+	rg.POST("/cases/:id/close", handler.CloseCase)
+	rg.GET("/dashboard", dashboard.GetSnapshot)
+
+	return rg
 }

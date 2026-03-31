@@ -17,6 +17,7 @@
     "reset": "Reset",
     "close": "Close",
     "copy": "Copy",
+    "all": "All",
     "actions": "Actions",
     "welcome": "Welcome",
     "appName": "PowerX Base"
@@ -68,6 +69,50 @@
         "listFailed": "Failed to load after-sales list",
         "detailFailed": "Failed to load after-sales detail",
         "retryLater": "Please try again later"
+      }
+    },
+    "admin": {
+      "title": "After-sales Workbench",
+      "subtitle": "Search after-sales cases and run accept/review/complete/close actions.",
+      "dashboard": {
+        "pending": "Pending",
+        "processing": "Processing",
+        "completed": "Completed",
+        "rejected": "Rejected"
+      },
+      "filters": {
+        "keyword": "Search by CaseNo / order / customer"
+      },
+      "list": {
+        "empty": "No after-sales cases"
+      },
+      "actions": {
+        "search": "Search",
+        "detail": "Detail",
+        "accept": "Accept",
+        "review": "Review",
+        "approve": "Approve",
+        "reject": "Reject",
+        "complete": "Complete",
+        "close": "Close"
+      },
+      "detail": {
+        "title": "After-sales Case Detail",
+        "timeline": "Timeline"
+      },
+      "reject": {
+        "title": "Reject Case",
+        "reasonCode": "Reject Reason Code",
+        "reasonCodePlaceholder": "Enter reason code",
+        "note": "Note"
+      },
+      "toast": {
+        "listFailed": "Failed to load after-sales list",
+        "detailFailed": "Failed to load after-sales detail",
+        "actionSuccess": "Action succeeded",
+        "actionFailed": "Action failed",
+        "retryLater": "Please try again later",
+        "rejectReasonRequired": "Reject reason code is required"
       }
     }
   },

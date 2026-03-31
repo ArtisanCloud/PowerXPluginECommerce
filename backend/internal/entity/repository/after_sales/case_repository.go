@@ -2,6 +2,7 @@ package after_sales
 
 import (
 	"context"
+	"fmt"
 	"strings"
 
 	AfterSalesModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/after_sales"
@@ -91,6 +92,71 @@ func (r *CaseRepository) ListByCustomer(ctx context.Context, customerID, status 
 
 	var rows []AfterSalesModel.AfterSaleCase
 	err = query.Order("created_at DESC").Offset((page - 1) * pageSize).Limit(pageSize).Find(&rows).Error
+	if err != nil {
+		return nil, 0, err
+	}
+	return rows, total, nil
+}
+
+func (r *CaseRepository) GetByID(ctx context.Context, id string) (*AfterSalesModel.AfterSaleCase, error) {
+	tenantUUID, err := RequireTenantUUID(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var row AfterSalesModel.AfterSaleCase
+	err = r.DB.WithContext(ctx).
+		Where("tenant_uuid = ? AND id = ?", tenantUUID, strings.TrimSpace(id)).
+		First(&row).Error
+	if err != nil {
+		return nil, err
+	}
+	return &row, nil
+}
+
+type AdminCaseListFilter struct {
+	Status   string
+	CaseType string
+	Keyword  string
+	Page     int
+	PageSize int
+}
+
+func (r *CaseRepository) ListForAdmin(ctx context.Context, filter AdminCaseListFilter) ([]AfterSalesModel.AfterSaleCase, int64, error) {
+	tenantUUID, err := RequireTenantUUID(ctx)
+	if err != nil {
+		return nil, 0, err
+	}
+	if filter.Page <= 0 {
+		filter.Page = 1
+	}
+	if filter.PageSize <= 0 {
+		filter.PageSize = 20
+	}
+	if filter.PageSize > 200 {
+		filter.PageSize = 200
+	}
+
+	query := r.DB.WithContext(ctx).
+		Model(&AfterSalesModel.AfterSaleCase{}).
+		Where("tenant_uuid = ?", tenantUUID)
+	if v := strings.TrimSpace(filter.Status); v != "" {
+		query = query.Where("status = ?", v)
+	}
+	if v := strings.TrimSpace(filter.CaseType); v != "" {
+		query = query.Where("case_type = ?", v)
+	}
+	if v := strings.TrimSpace(filter.Keyword); v != "" {
+		like := fmt.Sprintf("%%%s%%", v)
+		query = query.Where("case_no ILIKE ? OR order_id::text ILIKE ? OR customer_id ILIKE ?", like, like, like)
+	}
+
+	var total int64
+	if err := query.Count(&total).Error; err != nil {
+		return nil, 0, err
+	}
+
+	var rows []AfterSalesModel.AfterSaleCase
+	err = query.Order("created_at DESC").Offset((filter.Page - 1) * filter.PageSize).Limit(filter.PageSize).Find(&rows).Error
 	if err != nil {
 		return nil, 0, err
 	}

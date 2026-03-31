@@ -8,8 +8,11 @@ export interface AfterSaleSummary {
   caseNo: string
   orderId: string
   orderItemId: string
+  customerId?: string
   caseType: AfterSaleCaseType | string
   status: string
+  reasonCode?: string
+  reasonDetail?: string
   requestedAmountMinor?: number
   currency?: string
   createdAt?: string
@@ -84,8 +87,11 @@ const normalizeSummary = (item: Record<string, any>): AfterSaleSummary => ({
   caseNo: String(item?.caseNo ?? item?.case_no ?? '').trim(),
   orderId: String(item?.orderId ?? item?.order_id ?? '').trim(),
   orderItemId: String(item?.orderItemId ?? item?.order_item_id ?? '').trim(),
+  customerId: String(item?.customerId ?? item?.customer_id ?? '').trim(),
   caseType: String(item?.caseType ?? item?.case_type ?? '').trim(),
   status: String(item?.status ?? '').trim(),
+  reasonCode: String(item?.reasonCode ?? item?.reason_code ?? '').trim(),
+  reasonDetail: String(item?.reasonDetail ?? item?.reason_detail ?? '').trim(),
   requestedAmountMinor: item?.requestedAmountMinor ?? item?.requested_amount_minor,
   currency: item?.currency,
   createdAt: item?.createdAt ?? item?.created_at,
@@ -143,6 +149,9 @@ export const useAfterSalesApi = () => {
 
     acceptCase: (id: string) =>
       unwrap(apiPost(`${adminBase}/${id}/accept`, {})),
+
+    reviewCase: (id: string, payload?: CaseDecisionRequest) =>
+      unwrap(apiPost(`${adminBase}/${id}/review`, payload ?? {})),
 
     approveCase: (id: string, payload?: CaseDecisionRequest) =>
       unwrap(apiPost(`${adminBase}/${id}/approve`, payload ?? {})),

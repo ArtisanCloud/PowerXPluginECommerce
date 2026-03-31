@@ -115,6 +115,34 @@ paths:
       responses:
         '200':
           description: Accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AfterSaleDetailResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /admin/after-sales/cases/{id}/review:
+    post:
+      summary: 售后单进入审核中
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CaseDecisionRequest'
+      responses:
+        '200':
+          description: Reviewing
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AfterSaleDetailResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
 
@@ -135,6 +163,10 @@ paths:
       responses:
         '200':
           description: Approved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AfterSaleDetailResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
 
@@ -155,6 +187,10 @@ paths:
       responses:
         '200':
           description: Rejected
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AfterSaleDetailResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
 
@@ -169,6 +205,10 @@ paths:
       responses:
         '200':
           description: Completed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AfterSaleDetailResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
 
@@ -183,6 +223,10 @@ paths:
       responses:
         '200':
           description: Closed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AfterSaleDetailResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
 

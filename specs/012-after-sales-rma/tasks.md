@@ -72,16 +72,16 @@
 
 ### Implementation for User Story 2
 
-- [ ] T021 [US2] 实现 admin 售后工作台服务（检索、受理、审核、完结、关闭）在 `backend/internal/services/admin/after_sales/case_service.go`
-- [ ] T022 [US2] 实现审核决策与轨迹写入服务在 `backend/internal/services/admin/after_sales/decision_service.go`
-- [ ] T023 [US2] 实现 admin 售后 Handler 在 `backend/internal/transport/http/admin/after_sales/handler.go`
-- [ ] T024 [US2] 注册 admin 售后路由在 `backend/internal/transport/http/admin/after_sales/routes.go`
-- [ ] T025 [US2] 实现 admin 售后看板统计服务在 `backend/internal/services/admin/after_sales/dashboard_service.go`
-- [ ] T026 [US2] 实现 admin 售后看板接口在 `backend/internal/transport/http/admin/after_sales/dashboard_handler.go`
-- [ ] T027 [US2] 实现运营侧售后页面（列表/详情/流转动作）在 `web-admin/app/pages/market/after-sales.vue`
-- [ ] T028 [US2] 补充运营侧售后文案键值在 `web-admin/app/i18n/{zh-CN.json,en-US.json}`
-- [ ] T029 [US2] 对齐 US2 接口合同（admin actions + dashboard）在 `specs/012-after-sales-rma/contracts/openapi.yaml`
-- [ ] T030 [US2] 明确终态字段冻结策略并在服务层实现字段只读约束在 `backend/internal/services/admin/after_sales/case_service.go`
+- [X] T021 [US2] 实现 admin 售后工作台服务（检索、受理、审核、完结、关闭）在 `backend/internal/services/admin/after_sales/case_service.go`
+- [X] T022 [US2] 实现审核决策与轨迹写入服务在 `backend/internal/services/admin/after_sales/decision_service.go`
+- [X] T023 [US2] 实现 admin 售后 Handler 在 `backend/internal/transport/http/admin/after_sales/handler.go`
+- [X] T024 [US2] 注册 admin 售后路由在 `backend/internal/transport/http/admin/after_sales/routes.go`
+- [X] T025 [US2] 实现 admin 售后看板统计服务在 `backend/internal/services/admin/after_sales/dashboard_service.go`
+- [X] T026 [US2] 实现 admin 售后看板接口在 `backend/internal/transport/http/admin/after_sales/dashboard_handler.go`
+- [X] T027 [US2] 实现运营侧售后页面（列表/详情/流转动作）在 `web-admin/app/pages/market/after-sales.vue`
+- [X] T028 [US2] 补充运营侧售后文案键值在 `web-admin/app/i18n/{zh-CN.json,en-US.json}`
+- [X] T029 [US2] 对齐 US2 接口合同（admin actions + dashboard）在 `specs/012-after-sales-rma/contracts/openapi.yaml`
+- [X] T030 [US2] 明确终态字段冻结策略并在服务层实现字段只读约束在 `backend/internal/services/admin/after_sales/case_service.go`
 
 **Checkpoint**: User Stories 1 AND 2 should both work independently
 
