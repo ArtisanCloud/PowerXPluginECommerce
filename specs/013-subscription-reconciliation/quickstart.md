@@ -23,7 +23,7 @@ curl -X POST "http://localhost:8086/api/v1/admin/subscription-reconciliation/bat
 
 预期：
 - 返回 `success=true`
-- `data.status` 初始为 `running`，完成后变为 `completed`
+- `data.status=completed`
 - 批次金额字段遵循：`expected = bill + tax - discount`
 
 ## 3. 查询差异并转处置任务
@@ -62,13 +62,13 @@ curl -X POST "http://localhost:8086/api/v1/admin/subscription-reconciliation/gov
   -H "Authorization: Bearer <ADMIN_TOKEN>" \
   -d '{
     "billingCycle": "2026-03-31",
-    "mode": "retry"
+    "dryRun": false
   }'
 ```
 
 预期：
 - 触发递增重试窗口：`1h -> 24h -> 72h -> 7d`
-- 返回执行统计（成功/失败/跳过）
+- 返回执行统计（`retryTotal/retrySucceeded/retryFailed/escalated`）
 - 生成审计事件：`renewal.retry.executed`
 
 ## 5. 运营看板验证
@@ -81,7 +81,7 @@ curl "http://localhost:8086/api/v1/admin/subscription-reconciliation/dashboard?f
 ```
 
 检查项：
-- 差异率、恢复率、SLA 达成率是否返回
+- 差异率、恢复率、平均处理时长、待处理积压是否返回
 - 指标与批次/任务明细可相互追溯
 
 ## 6. 回归验证命令
@@ -108,3 +108,37 @@ cd backend && go test ./internal/services/admin/subscription_reconciliation -run
 - 单测全部通过
 - 对账批次可重复触发但保持幂等
 - 同一差异指纹不生成重复活跃任务
+
+## 7. Phase 6 回归清单（Polish）
+
+### 7.1 错误码与用户文案核对
+
+1. 后端返回错误码应落在对账域集合：`RECONCILIATION_*`
+2. 前端根据错误码展示用户文案（示例）：
+   - `RECONCILIATION_BATCH_NOT_FOUND` -> 未找到对账批次，请刷新后重试
+   - `RECONCILIATION_TASK_ALREADY_OPEN` -> 该差异已有未关闭处置任务，请直接跟进现有任务
+
+### 7.2 性能回归（模块级）
+
+对账编排基准：
+
+```bash
+cd backend && go test ./internal/services/admin/subscription_reconciliation -run TestReconciliationPerformance_10kBenchmark -count=1
+```
+
+看板查询基准：
+
+```bash
+cd backend && go test ./internal/services/admin/subscription_reconciliation -run TestDashboardPerformance_P95LessThan1s -count=1
+```
+
+### 7.3 示例请求（看板导出）
+
+```bash
+curl "http://localhost:8086/api/v1/admin/subscription-reconciliation/dashboard/export?from=2026-03-01&to=2026-03-31&channel=app&plan=pro&region=CN&failureReason=always_fail" \
+  -H "Authorization: Bearer <ADMIN_TOKEN>"
+```
+
+预期：
+- 返回 `text/csv`
+- 结果至少包含 `deltaRate/recoveryRate/avgHandleHours/pendingTasks` 四行指标

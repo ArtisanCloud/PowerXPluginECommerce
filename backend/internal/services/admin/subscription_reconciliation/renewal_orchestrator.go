@@ -39,6 +39,9 @@ func (s *Service) runRenewalGovernance(ctx context.Context, tenantUUID, billingC
 		retryFailed += candidateResult.retryFailed
 		if candidateResult.retrySucceeded {
 			retrySucceeded++
+			SubscriptionReconciliationObs.RecordGovernanceRecovery(tenantUUID)
+		} else {
+			SubscriptionReconciliationObs.RecordGovernanceFailure(tenantUUID)
 		}
 		logs = append(logs, candidateResult.logs...)
 		for _, entry := range candidateResult.logs {

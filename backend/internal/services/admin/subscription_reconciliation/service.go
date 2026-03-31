@@ -247,6 +247,7 @@ func (s *Service) CreateBatch(ctx context.Context, tenantUUID string, input Crea
 			DeltaFingerprint:    fingerprintForSample(cycle, sample, deltaType),
 			DetectedAt:          &now,
 		})
+		SubscriptionReconciliationObs.RecordDeltaCase(tenantUUID, deltaType)
 	}
 	batch.DeltaAmountMinor = batch.ExpectedAmountMinor - batch.ActualAmountMinor
 

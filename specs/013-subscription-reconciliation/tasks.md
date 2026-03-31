@@ -120,13 +120,19 @@
 
 **Purpose**: 跨故事质量提升、性能验收、业务指标闭环与回归。
 
-- [ ] T044 [P] 补充错误码与用户文案映射在 `backend/internal/contracts/errors.go` 与 `web-admin/app/constants/error-codes.ts`
-- [ ] T045 [P] 补充 quickstart 回归说明与示例请求在 `specs/013-subscription-reconciliation/quickstart.md`
-- [ ] T046 建立对账性能基准测试（10k 账单 30 分钟内）在 `backend/internal/services/admin/subscription_reconciliation/reconciliation_performance_test.go`
-- [ ] T047 [P] 建立看板查询性能测试（p95 < 1s）在 `backend/internal/services/admin/subscription_reconciliation/dashboard_performance_test.go`
-- [ ] T048 [P] 增加 SC-002/SC-003 运营指标采集与口径说明在 `backend/internal/observability/subscription_reconciliation/kpi_metrics.go`
-- [ ] T049 执行后端与前端回归并记录失败用例清单在 `specs/013-subscription-reconciliation/tasks.md`
-- [ ] T050 执行 `make test` 与 `make test-admin-ci` 并记录最终通过结果在 `specs/013-subscription-reconciliation/tasks.md`
+- [x] T044 [P] 补充错误码与用户文案映射在 `backend/internal/contracts/errors.go` 与 `web-admin/app/constants/error-codes.ts`
+- [x] T045 [P] 补充 quickstart 回归说明与示例请求在 `specs/013-subscription-reconciliation/quickstart.md`
+- [x] T046 建立对账性能基准测试（10k 账单 30 分钟内）在 `backend/internal/services/admin/subscription_reconciliation/reconciliation_performance_test.go`
+- [x] T047 [P] 建立看板查询性能测试（p95 < 1s）在 `backend/internal/services/admin/subscription_reconciliation/dashboard_performance_test.go`
+- [x] T048 [P] 增加 SC-002/SC-003 运营指标采集与口径说明在 `backend/internal/observability/subscription_reconciliation/kpi_metrics.go`
+- [x] T049 执行后端与前端回归并记录失败用例清单在 `specs/013-subscription-reconciliation/tasks.md`
+- [x] T050 执行 `make test` 与 `make test-admin-ci` 并记录最终通过结果在 `specs/013-subscription-reconciliation/tasks.md`
+
+### Phase 6 执行记录（2026-03-31）
+
+- 回归命令：`make test`（通过）
+- 回归命令：`make test-admin-ci`（通过）
+- 失败用例清单：无（本轮执行未发现失败用例）
 
 ---
 

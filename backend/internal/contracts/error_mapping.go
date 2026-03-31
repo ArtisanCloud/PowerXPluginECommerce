@@ -15,6 +15,14 @@ type ErrorMapping struct {
 	Message string
 }
 
+var reconciliationErrorMessages = map[string]string{
+	ErrCodeReconciliationBatchNotFound:       "未找到对账批次，请刷新后重试",
+	ErrCodeReconciliationDeltaNotFound:       "未找到差异记录，请确认数据是否已变更",
+	ErrCodeReconciliationTaskAlreadyOpen:     "该差异已有未关闭处置任务，请直接跟进现有任务",
+	ErrCodeReconciliationUnsupportedAction:   "当前操作不被支持，请检查请求参数或状态",
+	ErrCodeReconciliationInvalidBillingCycle: "账期格式错误，请使用 YYYY-MM-DD",
+}
+
 // MapAfterSalesError maps domain errors to unified HTTP/code/message triples.
 func MapAfterSalesError(err error) ErrorMapping {
 	if err == nil {
@@ -57,4 +65,14 @@ func MapAfterSalesError(err error) ErrorMapping {
 		}
 		return ErrorMapping{Status: http.StatusInternalServerError, Code: ErrCodeInternalError, Message: msg}
 	}
+}
+
+// ReconciliationMessageByCode returns user-facing message for reconciliation error codes.
+// If no override is configured, it falls back to the provided default message.
+func ReconciliationMessageByCode(code, defaultMessage string) string {
+	msg := strings.TrimSpace(reconciliationErrorMessages[strings.TrimSpace(code)])
+	if msg != "" {
+		return msg
+	}
+	return strings.TrimSpace(defaultMessage)
 }
