@@ -87,8 +87,12 @@ type RunGovernanceInput struct {
 }
 
 type DashboardQuery struct {
-	From string
-	To   string
+	From          string
+	To            string
+	Channel       string
+	Plan          string
+	Region        string
+	FailureReason string
 }
 
 func NewService(deps *app.Deps) *Service {
@@ -401,7 +405,6 @@ func (s *Service) Dashboard(ctx context.Context, tenantUUID string, query Dashbo
 	if err := s.ensureAvailable(); err != nil {
 		return nil, err
 	}
-	_ = s.withTenantContext(ctx, tenantUUID)
-	_ = query
-	return nil, ErrNotImplemented
+	ctx = s.withTenantContext(ctx, tenantUUID)
+	return s.buildDashboard(ctx, query)
 }

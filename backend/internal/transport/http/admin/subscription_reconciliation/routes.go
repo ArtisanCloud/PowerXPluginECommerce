@@ -24,6 +24,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.POST("/tasks/:id/close", handler.CloseTask)
 	rg.POST("/governance/run", handler.RunGovernance)
 	rg.GET("/dashboard", handler.Dashboard)
+	rg.GET("/dashboard/export", handler.ExportDashboard)
 
 	return rg
 }

@@ -99,18 +99,18 @@
 
 ### Tests for User Story 3
 
-- [ ] T035 [P] [US3] 新增看板聚合服务测试在 `backend/internal/services/admin/subscription_reconciliation/dashboard_service_test.go`
-- [ ] T036 [P] [US3] 新增看板与导出 API 合同测试在 `backend/internal/transport/http/admin/subscription_reconciliation/dashboard_handler_contract_test.go`
-- [ ] T037 [P] [US3] 新增运营看板页面单测在 `web-admin/tests/unit/subscription-reconciliation-dashboard.spec.ts`
+- [x] T035 [P] [US3] 新增看板聚合服务测试在 `backend/internal/services/admin/subscription_reconciliation/dashboard_service_test.go`
+- [x] T036 [P] [US3] 新增看板与导出 API 合同测试在 `backend/internal/transport/http/admin/subscription_reconciliation/dashboard_handler_contract_test.go`
+- [x] T037 [P] [US3] 新增运营看板页面单测在 `web-admin/tests/unit/subscription-reconciliation-dashboard.spec.ts`
 
 ### Implementation for User Story 3
 
-- [ ] T038 [US3] 实现看板指标聚合（差异率/恢复率/SLA/积压）在 `backend/internal/services/admin/subscription_reconciliation/dashboard_service.go`
-- [ ] T039 [US3] 实现多维筛选与归因分布查询在 `backend/internal/services/admin/subscription_reconciliation/analytics_query_service.go`
-- [ ] T040 [US3] 实现看板接口 `/dashboard` 与导出接口在 `backend/internal/transport/http/admin/subscription_reconciliation/dashboard_handler.go`
-- [ ] T041 [US3] 新增运营看板页在 `web-admin/app/pages/finance/subscription-reconciliation.vue`
-- [ ] T042 [US3] 新增看板状态管理与查询组合式在 `web-admin/app/stores/subscription-reconciliation.ts`
-- [ ] T043 [US3] 增加渠道/套餐/地区/失败原因维度筛选控件在 `web-admin/app/pages/finance/subscription-reconciliation.vue`
+- [x] T038 [US3] 实现看板指标聚合（差异率/恢复率/SLA/积压）在 `backend/internal/services/admin/subscription_reconciliation/dashboard_service.go`
+- [x] T039 [US3] 实现多维筛选与归因分布查询在 `backend/internal/services/admin/subscription_reconciliation/analytics_query_service.go`
+- [x] T040 [US3] 实现看板接口 `/dashboard` 与导出接口在 `backend/internal/transport/http/admin/subscription_reconciliation/dashboard_handler.go`
+- [x] T041 [US3] 新增运营看板页在 `web-admin/app/pages/finance/subscription-reconciliation.vue`
+- [x] T042 [US3] 新增看板状态管理与查询组合式在 `web-admin/app/stores/subscription-reconciliation.ts`
+- [x] T043 [US3] 增加渠道/套餐/地区/失败原因维度筛选控件在 `web-admin/app/pages/finance/subscription-reconciliation.vue`
 
 **Checkpoint**: US3 可独立提供经营分析与审计导出。
 

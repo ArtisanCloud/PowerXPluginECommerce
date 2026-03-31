@@ -177,23 +177,6 @@ func (h *Handler) CloseTask(c *gin.Context) {
 	contracts.ResponseSuccess(c, row)
 }
 
-func (h *Handler) Dashboard(c *gin.Context) {
-	if h == nil || h.service == nil {
-		contracts.ResponseServiceUnavailable(c, "subscription reconciliation service unavailable", nil)
-		return
-	}
-	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
-	resp, err := h.service.Dashboard(c.Request.Context(), tenantUUID, SubscriptionReconciliationSvc.DashboardQuery{
-		From: strings.TrimSpace(c.Query("from")),
-		To:   strings.TrimSpace(c.Query("to")),
-	})
-	if err != nil {
-		h.respondServiceError(c, err)
-		return
-	}
-	contracts.ResponseSuccess(c, resp)
-}
-
 func (h *Handler) respondServiceError(c *gin.Context, err error) {
 	switch {
 	case errors.Is(err, SubscriptionReconciliationSvc.ErrServiceUnavailable):
