@@ -1,0 +1,338 @@
+openapi: 3.0.3
+info:
+  title: After-Sales RMA API
+  version: 1.0.0
+servers:
+  - url: /api/v1
+paths:
+  /mini-app/after-sales:
+    get:
+      summary: 客户查询售后单列表
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AfterSaleListResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+    post:
+      summary: 客户提交售后申请
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AfterSaleCreateRequest'
+      responses:
+        '200':
+          description: Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AfterSaleDetailResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /mini-app/after-sales/{id}:
+    get:
+      summary: 客户查询售后单详情与时间线
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AfterSaleDetailResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /admin/after-sales/cases:
+    get:
+      summary: 管理端检索售后单
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string }
+        - in: query
+          name: caseType
+          schema: { type: string }
+        - in: query
+          name: keyword
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AfterSaleListResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /admin/after-sales/cases/{id}:
+    get:
+      summary: 管理端查询售后单详情
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AfterSaleDetailResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /admin/after-sales/cases/{id}/accept:
+    post:
+      summary: 受理售后单
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Accepted
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /admin/after-sales/cases/{id}/approve:
+    post:
+      summary: 审核通过
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CaseDecisionRequest'
+      responses:
+        '200':
+          description: Approved
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /admin/after-sales/cases/{id}/reject:
+    post:
+      summary: 审核拒绝
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CaseDecisionRequest'
+      responses:
+        '200':
+          description: Rejected
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /admin/after-sales/cases/{id}/complete:
+    post:
+      summary: 完结售后单
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Completed
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /admin/after-sales/cases/{id}/close:
+    post:
+      summary: 关闭售后单
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Closed
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /admin/after-sales/cases/{id}/reverse-logistics:
+    post:
+      summary: 关联逆向物流信息
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReverseLogisticsLinkRequest'
+      responses:
+        '200':
+          description: Linked
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+  /admin/after-sales/dashboard:
+    get:
+      summary: 售后看板统计（待处理/处理中/已完成/已拒绝）
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AfterSaleDashboardResponse'
+        default:
+          $ref: '#/components/responses/ErrorResponse'
+
+components:
+  responses:
+    ErrorResponse:
+      description: 统一错误响应
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              success: { type: boolean, example: false }
+              error:
+                type: object
+                properties:
+                  code: { type: string }
+                  message: { type: string }
+                  details: { type: object, additionalProperties: true }
+
+  schemas:
+    AfterSaleCreateRequest:
+      type: object
+      required: [orderId, orderItemId, caseType, reasonCode]
+      properties:
+        orderId: { type: string }
+        orderItemId: { type: string }
+        caseType:
+          type: string
+          enum: [refund_only, return_refund, exchange]
+        reasonCode: { type: string }
+        reasonDetail: { type: string }
+        requestedQty: { type: integer, minimum: 1 }
+        requestedAmountMinor: { type: integer, minimum: 0 }
+        currency: { type: string, example: CNY }
+        evidences:
+          type: array
+          items:
+            $ref: '#/components/schemas/EvidenceInput'
+
+    EvidenceInput:
+      type: object
+      required: [evidenceType, contentRef]
+      properties:
+        evidenceType: { type: string, enum: [image, video, text, other] }
+        contentRef: { type: string }
+        description: { type: string }
+
+    CaseDecisionRequest:
+      type: object
+      properties:
+        reasonCode: { type: string }
+        note: { type: string }
+
+    ReverseLogisticsLinkRequest:
+      type: object
+      required: [reverseWaybillNo]
+      properties:
+        reverseWaybillId: { type: string }
+        reverseWaybillNo: { type: string }
+        carrierCode: { type: string }
+        note: { type: string }
+
+    AfterSaleSummary:
+      type: object
+      properties:
+        id: { type: string }
+        caseNo: { type: string }
+        orderId: { type: string }
+        orderItemId: { type: string }
+        caseType: { type: string }
+        status: { type: string }
+        requestedAmountMinor: { type: integer }
+        currency: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    TimelineEvent:
+      type: object
+      properties:
+        action: { type: string }
+        fromStatus: { type: string }
+        toStatus: { type: string }
+        operatorType: { type: string }
+        operatorId: { type: string }
+        note: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    AfterSaleDetailResponse:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        data:
+          type: object
+          properties:
+            case:
+              $ref: '#/components/schemas/AfterSaleSummary'
+            timeline:
+              type: array
+              items:
+                $ref: '#/components/schemas/TimelineEvent'
+
+    AfterSaleListResponse:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        data:
+          type: object
+          properties:
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/AfterSaleSummary'
+            meta:
+              type: object
+              properties:
+                total: { type: integer }
+                page: { type: integer }
+                pageSize: { type: integer }
+
+    AfterSaleDashboardResponse:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        data:
+          type: object
+          properties:
+            pendingCount: { type: integer }
+            processingCount: { type: integer }
+            completedCount: { type: integer }
+            rejectedCount: { type: integer }

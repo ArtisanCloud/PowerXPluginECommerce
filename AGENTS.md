@@ -54,6 +54,7 @@ Always respond in Chinese-simplified
 - Go 1.24; TypeScript 5.9 + Nuxt 4 (web-admin) + Uni-app (mini-app) + Gin, GORM (Postgres), PowerX plugin framework; Nuxt UI 3.3.x (010-membership-entitlements)
 - Go 1.24（backend）、TypeScript 5.9 + Nuxt 4（web-admin） + Gin、GORM(Postgres)、PowerX plugin framework、Nuxt UI 3.3.x、Pinia (011-fulfillment-logistics)
 - PostgreSQL（schema `powerx_plugin_base`），可选 Redis 用于异步任务/事件缓存 (011-fulfillment-logistics)
+- Go 1.24（backend）、TypeScript 4.x + Nuxt 4（web-admin） + Gin、GORM(Postgres)、PowerX plugin framework、Nuxt UI 3.3.x、Pinia (012-after-sales-rma)
 
 ## Recent Changes
 - 003-channels-subscription: Added Backend Go 1.24; Frontend Node 20 + TypeScript 5.9 + Nuxt 4 + Gin, GORM (postgres driver), PowerX plugin framework, JWT、grpc/protobuf、Redis 客户端；前端 @nuxt/ui 3.3.x、Pinia、i18n、Nuxt Icon
