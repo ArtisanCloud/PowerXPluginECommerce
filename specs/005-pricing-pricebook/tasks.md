@@ -121,7 +121,7 @@
 ## Phase 6: Polish & Cross-Cutting（收尾与质量）
 
 - [x] T060 [P] 文档同步：更新 `docs/plan/pricing/pricebooks.md`（如接口/字段有偏差，保持 PRD 与合同一致）
-- [ ] T061 完成 quickstart 验证：按 `docs/guides/features/pricing/pricebook.md` 跑通 migrate + dev + 查价冒烟
+- [x] T061 完成 quickstart 验证：按 `docs/guides/features/pricing/pricebook.md` 跑通 migrate + dev + 查价冒烟
 - [x] T062 代码格式化：运行 `gofmt`（触及文件）并修复格式问题
 - [x] T063 基础测试：运行 `go test ./...`（至少覆盖新增 pricing 域单测）
 - [x] T064 [P] OpenAPI 校验：对齐 `specs/005-pricing-pricebook/contracts/pricing-pricebooks.openapi.yaml` 与最终实现（必要时补充字段/响应示例）

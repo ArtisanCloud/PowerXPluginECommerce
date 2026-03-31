@@ -43,7 +43,7 @@
 ### Tests for User Story 1
 
 - [X] T013 [P] [US1] 编写 `backend/internal/services/admin/channel_master/service_test.go`，覆盖 CreateDraft/Update/Submit/Approve、`channel_type` 验证与审计写入。
-- [ ] T014 [P] [US1] 添加 `web-admin/tests/component/ChannelForm.spec.ts` 测试必填校验、线下渠道切换、提交事件。
+- [x] T014 [P] [US1] 添加 `web-admin/tests/component/ChannelForm.spec.ts` 测试必填校验、线下渠道切换、提交事件。
 
 ### Implementation for User Story 1
 

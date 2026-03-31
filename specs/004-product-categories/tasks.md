@@ -122,13 +122,14 @@
 - [X] T052 统一 RBAC manifest 输出：检查并修正 `backend/internal/transport/http/admin/product/rbac.go` 与插件 RBAC 暴露是否覆盖类目资源（与 FR-014 对齐）
 - [X] T053 运行后端质量门禁：执行 `make lint` 与 `make test`（记录结果，入口：`Makefile` / `make-files/`）
 - [X] T054 运行前端质量门禁：执行 `make build-admin`（记录结果，入口：`make-files/test.mk`）
-- [ ] T055 端到端冒烟：执行 `make dev` 后用最小数据走通 US1 的“创建类目→前台树查询→按类目筛选商品”（入口：`make-files/dev.mk`）
+- [X] T055 端到端冒烟：执行 `make dev` 后用最小数据走通 US1 的“创建类目→前台树查询→按类目筛选商品”（入口：`make-files/dev.mk`）
 
 执行记录（2026-01-02）：
 - `make lint` ✅
 - `make test` ✅
 - `make build-admin` ✅（存在 Nuxt circular-chunk 警告）
 - `make dev` ✅（可完成迁移并启动 HTTP；完整 E2E 需准备租户/鉴权与最小数据）
+- `2026-03-30` US1 冒烟 ✅：`POST /api/v1/admin/product/categories` 创建类目成功；`GET /api/v1/mini-app/categories/tree` 可返回新类目；`GET /api/v1/mini-app/products?categoryId=<new-id>` 返回 200（当前租户最小数据下为空列表）
 
 ---
 
