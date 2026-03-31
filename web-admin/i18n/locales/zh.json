@@ -35,6 +35,96 @@
     "inventory": "库存",
     "payments": "支付单"
   },
+  "afterSales": {
+    "customer": {
+      "title": "售后服务",
+      "subtitle": "提交退款/退货退款/换货申请并查看进度。",
+      "form": {
+        "orderId": "订单号",
+        "orderIdPlaceholder": "请输入订单号",
+        "orderItemId": "订单明细 ID",
+        "orderItemIdPlaceholder": "请输入订单明细 ID",
+        "caseType": "售后类型",
+        "reasonCode": "原因编码",
+        "reasonCodePlaceholder": "例如：damaged",
+        "reasonDetail": "补充说明",
+        "reasonDetailPlaceholder": "可选"
+      },
+      "caseType": {
+        "refundOnly": "仅退款",
+        "returnRefund": "退货退款",
+        "exchange": "换货"
+      },
+      "actions": {
+        "submit": "提交申请",
+        "refresh": "刷新列表",
+        "viewDetail": "查看详情"
+      },
+      "list": {
+        "title": "我的售后申请",
+        "empty": "暂无售后申请记录。",
+        "total": "共 {count} 条",
+        "orderItem": "订单 {orderId} / 明细 {orderItemId}"
+      },
+      "detail": {
+        "title": "售后详情",
+        "timeline": "处理时间线",
+        "emptyTimeline": "暂无处理轨迹"
+      },
+      "toast": {
+        "required": "请填写完整必填字段",
+        "submitSuccess": "售后申请已提交",
+        "submitFailed": "提交失败",
+        "listFailed": "获取售后列表失败",
+        "detailFailed": "获取售后详情失败",
+        "retryLater": "请稍后重试"
+      }
+    },
+    "admin": {
+      "title": "售后工作台",
+      "subtitle": "检索售后单并执行受理、审核、完结与关闭。",
+      "dashboard": {
+        "pending": "待处理",
+        "processing": "处理中",
+        "completed": "已完成",
+        "rejected": "已拒绝"
+      },
+      "filters": {
+        "keyword": "搜索 CaseNo/订单/客户"
+      },
+      "list": {
+        "empty": "暂无售后单"
+      },
+      "actions": {
+        "search": "查询",
+        "detail": "详情",
+        "accept": "受理",
+        "review": "转审核",
+        "approve": "通过",
+        "reject": "拒绝",
+        "complete": "完结",
+        "close": "关闭"
+      },
+      "detail": {
+        "title": "售后单详情",
+        "timeline": "轨迹"
+      },
+      "reject": {
+        "title": "驳回售后单",
+        "reasonCode": "驳回原因编码",
+        "reasonCodePlaceholder": "请输入原因编码",
+        "note": "备注"
+      },
+      "toast": {
+        "listFailed": "获取售后列表失败",
+        "detailFailed": "获取售后详情失败",
+        "actionSuccess": "操作成功",
+        "actionFailed": "操作失败",
+        "retryLater": "请稍后重试",
+        "rejectReasonRequired": "请输入驳回原因编码"
+      }
+    }
+  },
   "inventory": {
     "stockTitle": "SKU 库存",
     "stockListTitle": "库存列表",

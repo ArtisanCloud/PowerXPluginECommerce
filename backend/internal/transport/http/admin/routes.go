@@ -2,6 +2,7 @@ package admin
 
 import (
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
+	adminaftersales "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/after_sales"
 	admincapability "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/capability"
 	adminchannels "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/channel_master"
 	adminconsole "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/console"
@@ -51,6 +52,7 @@ func RegisterAPIRoutes(rg *gin.RouterGroup, deps *app.Deps) {
 		adminpayments.RegisterRoutes(admin, deps)
 		admincustomeraddress.RegisterRoutes(admin, deps)
 		adminmembership.RegisterRoutes(admin, deps)
+		adminaftersales.RegisterRoutes(admin, deps)
 		adminlogistics.RegisterRoutes(admin, deps)
 		adminfulfillment.RegisterRoutes(admin, deps)
 		adminreverse.RegisterRoutes(admin, deps)

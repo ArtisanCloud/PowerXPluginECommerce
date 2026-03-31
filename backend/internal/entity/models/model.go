@@ -230,4 +230,11 @@ const (
 	TableReverseWaybillWarehouseResults          = "reverse_waybill_warehouse_results"
 	TableReverseInspectionRules                  = "reverse_inspection_rules"
 	TableReverseWaybillInspections               = "reverse_waybill_inspections"
+
+	// After Sales RMA
+	TableAfterSalesCases                 = "after_sales_cases"
+	TableAfterSalesTimelines             = "after_sales_timelines"
+	TableAfterSalesEvidences             = "after_sales_evidences"
+	TableAfterSalesDecisions             = "after_sales_decisions"
+	TableAfterSalesReverseLogisticsLinks = "after_sales_reverse_logistics_links"
 )

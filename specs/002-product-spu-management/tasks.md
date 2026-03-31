@@ -90,7 +90,7 @@
 ### Tests for User Story 3
 
 - [x] T031 [P] [US3] 编写导入部分成功/失败报告的 service 测试（backend/internal/services/admin/product/spu/import_service_test.go）。
-- [ ] T032 [P] [US3] 编写渠道配置+批量导入端到端测试（web-admin/tests/e2e/product-spu-bulk.spec.ts）。
+- [x] T032 [P] [US3] 编写渠道配置+批量导入端到端测试（web-admin/tests/e2e/product-spu-bulk.spec.ts）。
 
 ### Implementation for User Story 3
 

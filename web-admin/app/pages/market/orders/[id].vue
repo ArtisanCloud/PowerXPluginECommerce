@@ -80,6 +80,35 @@
       </div>
     </UCard>
 
+    <UCard title="售后进度">
+      <div v-if="afterSalesLoading" class="text-sm text-gray-500 dark:text-gray-400">
+        加载中...
+      </div>
+      <div v-else-if="!afterSalesCases.length" class="text-sm text-gray-500 dark:text-gray-400">
+        当前订单暂无售后申请。
+      </div>
+      <div v-else class="space-y-3">
+        <div
+          v-for="item in afterSalesCases"
+          :key="item.id"
+          class="rounded border border-gray-200 p-3 dark:border-gray-700"
+        >
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="text-sm font-medium">{{ item.caseNo || item.id }}</div>
+            <UBadge :color="afterSalesStatusColor(item.status)" variant="subtle">
+              {{ afterSalesStatusLabel(item.status) }}
+            </UBadge>
+          </div>
+          <div class="mt-2 grid grid-cols-1 gap-2 text-xs text-gray-600 dark:text-gray-300 md:grid-cols-4">
+            <div>类型：{{ afterSalesCaseTypeLabel(item.caseType) }}</div>
+            <div>逆向单：{{ item.reverseWaybillNo || "-" }}</div>
+            <div>逆向状态：{{ afterSalesReverseStatusLabel(item.reverseReceiveStatus) }}</div>
+            <div>更新时间：{{ formatTime(item.reverseLinkedAt || item.createdAt || "") }}</div>
+          </div>
+        </div>
+      </div>
+    </UCard>
+
     <UCard title="收货信息">
       <div v-if="isEditMode" class="grid grid-cols-1 gap-4 md:grid-cols-2">
         <UFormField label="收货人" required>
@@ -570,6 +599,7 @@ import type { TableColumn } from "@nuxt/ui";
 import { useOrderApi } from "~/composables/api/useOrder";
 import { useSkuApi } from "~/composables/api/useSku";
 import { usePaymentsApi } from "~/composables/api/usePayments";
+import { useAfterSalesApi } from "~/composables/api/useAfterSales";
 import { useAuthService } from "~/composables/api/services/authService";
 import type { ManualPaymentReview, ManualPaymentReviewLog, PaymentTransaction } from "~/types/payments";
 import type { OrderBenefitReview, OrderDetail, OrderEvent, OrderItem, ShippingAddress } from "~/types/order";
@@ -584,11 +614,23 @@ const toast = useToastAlert();
 const api = useOrderApi();
 const skuApi = useSkuApi();
 const paymentsApi = usePaymentsApi();
+const afterSalesApi = useAfterSalesApi();
 const authService = useAuthService();
 
 const loading = ref(false);
 const cancelling = ref(false);
 const detail = ref<OrderDetail | null>(null);
+const afterSalesLoading = ref(false);
+const afterSalesCases = ref<Array<{
+  id: string
+  caseNo: string
+  caseType: string
+  status: string
+  reverseWaybillNo?: string
+  reverseReceiveStatus?: string
+  reverseLinkedAt?: string
+  createdAt?: string
+}>>([]);
 const skuDisplayMap = ref<Record<string, string>>({});
 const operatorMap = ref<Record<string, string>>({});
 
@@ -734,6 +776,49 @@ const statusColor = (st: string) => {
     draft: "info",
   };
   return map[st] || "neutral";
+};
+
+const afterSalesStatusLabel = (st: string) => {
+  const map: Record<string, string> = {
+    pending: "待受理",
+    accepted: "已受理",
+    reviewing: "审核中",
+    approved: "已通过",
+    rejected: "已拒绝",
+    completed: "已完结",
+    closed: "已关闭",
+  };
+  return map[st] || st || "-";
+};
+
+const afterSalesStatusColor = (st: string) => {
+  const map: Record<string, "warning" | "success" | "neutral" | "info" | "error" | "primary"> = {
+    pending: "warning",
+    accepted: "info",
+    reviewing: "info",
+    approved: "success",
+    rejected: "error",
+    completed: "success",
+    closed: "neutral",
+  };
+  return map[st] || "neutral";
+};
+
+const afterSalesCaseTypeLabel = (caseType: string) => {
+  const map: Record<string, string> = {
+    refund_only: "仅退款",
+    return_refund: "退货退款",
+    exchange: "换货",
+  };
+  return map[caseType] || caseType || "-";
+};
+
+const afterSalesReverseStatusLabel = (status?: string) => {
+  const map: Record<string, string> = {
+    pending: "待收货",
+    received: "已收货",
+  };
+  return map[String(status || "").trim()] || (status || "-");
 };
 
 const paymentStatusLabel = (st: string) => {
@@ -908,6 +993,7 @@ const fetchDetail = async () => {
     await Promise.all([
       loadSkuMeta(detail.value?.items || []),
     ]);
+    await fetchAfterSalesProgress();
     await fetchPaymentTransactions();
     await fetchManualReviews();
     await fetchBenefitReviews();
@@ -920,6 +1006,28 @@ const fetchDetail = async () => {
     });
   } finally {
     loading.value = false;
+  }
+};
+
+const fetchAfterSalesProgress = async () => {
+  if (!id.value) return;
+  afterSalesLoading.value = true;
+  try {
+    const resp = await afterSalesApi.listAdminCases({ orderId: id.value, page: 1, pageSize: 20 });
+    afterSalesCases.value = (resp.items || []).map((item) => ({
+      id: item.id,
+      caseNo: item.caseNo,
+      caseType: String(item.caseType || ""),
+      status: String(item.status || ""),
+      reverseWaybillNo: item.reverseWaybillNo,
+      reverseReceiveStatus: item.reverseReceiveStatus,
+      reverseLinkedAt: item.reverseLinkedAt,
+      createdAt: item.createdAt,
+    }));
+  } catch {
+    afterSalesCases.value = [];
+  } finally {
+    afterSalesLoading.value = false;
   }
 };
 
