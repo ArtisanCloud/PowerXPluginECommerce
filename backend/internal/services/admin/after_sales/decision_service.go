@@ -19,6 +19,7 @@ type DecisionService struct {
 	deps         *app.Deps
 	caseService  *CaseService
 	decisionRepo *AfterSalesRepo.DecisionRepository
+	paymentGuard *PaymentGuardService
 }
 
 func NewDecisionService(deps *app.Deps) *DecisionService {
@@ -29,6 +30,7 @@ func NewDecisionService(deps *app.Deps) *DecisionService {
 		deps:         deps,
 		caseService:  NewCaseService(deps),
 		decisionRepo: AfterSalesRepo.NewDecisionRepository(deps.DB),
+		paymentGuard: NewPaymentGuardService(deps),
 	}
 }
 
@@ -39,6 +41,23 @@ func (s *DecisionService) Ready() bool {
 func (s *DecisionService) Approve(ctx context.Context, tenantUUID, caseID, operatorID, note string) (*AfterSalesModel.AfterSaleCase, error) {
 	if !s.Ready() {
 		return nil, ErrAdminServiceUnavailable
+	}
+	caseDetail, err := s.caseService.Detail(ctx, tenantUUID, caseID)
+	if err != nil {
+		return nil, err
+	}
+	if s.paymentGuard != nil {
+		if err := s.paymentGuard.EnsureRefundAllowed(ctx, tenantUUID, &AfterSalesModel.AfterSaleCase{
+			ID:                   caseDetail.Case.ID,
+			OrderID:              caseDetail.Case.OrderID,
+			OrderItemID:          caseDetail.Case.OrderItemID,
+			CaseType:             caseDetail.Case.CaseType,
+			Status:               caseDetail.Case.Status,
+			RequestedAmountMinor: caseDetail.Case.RequestedAmountMinor,
+			Currency:             caseDetail.Case.Currency,
+		}); err != nil {
+			return nil, err
+		}
 	}
 	row, err := s.caseService.Transition(ctx, tenantUUID, caseID, "approve", operatorID, note)
 	if err != nil {

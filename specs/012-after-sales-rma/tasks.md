@@ -95,13 +95,13 @@
 
 ### Implementation for User Story 3
 
-- [ ] T031 [US3] 实现订单售后标记同步服务在 `backend/internal/services/admin/after_sales/order_sync_service.go`
-- [ ] T032 [US3] 实现退款防重联动逻辑在 `backend/internal/services/admin/after_sales/payment_guard_service.go`
-- [ ] T033 [US3] 实现逆向物流关联服务在 `backend/internal/services/admin/after_sales/reverse_link_service.go`
-- [ ] T034 [US3] 实现逆向关联 admin 接口在 `backend/internal/transport/http/admin/after_sales/reverse_logistics_handler.go`
-- [ ] T035 [US3] 在订单详情页增加售后进度展示区块在 `web-admin/app/pages/market/orders/[id].vue`
-- [ ] T036 [US3] 对齐 US3 接口合同（reverse-logistics link + 联动返回）在 `specs/012-after-sales-rma/contracts/openapi.yaml`
-- [ ] T037 [US3] 固化换货首版边界（禁止自动补发/库存自动占用）在 `backend/internal/services/admin/after_sales/{case_service.go,order_sync_service.go}`
+- [X] T031 [US3] 实现订单售后标记同步服务在 `backend/internal/services/admin/after_sales/order_sync_service.go`
+- [X] T032 [US3] 实现退款防重联动逻辑在 `backend/internal/services/admin/after_sales/payment_guard_service.go`
+- [X] T033 [US3] 实现逆向物流关联服务在 `backend/internal/services/admin/after_sales/reverse_link_service.go`
+- [X] T034 [US3] 实现逆向关联 admin 接口在 `backend/internal/transport/http/admin/after_sales/reverse_logistics_handler.go`
+- [X] T035 [US3] 在订单详情页增加售后进度展示区块在 `web-admin/app/pages/market/orders/[id].vue`
+- [X] T036 [US3] 对齐 US3 接口合同（reverse-logistics link + 联动返回）在 `specs/012-after-sales-rma/contracts/openapi.yaml`
+- [X] T037 [US3] 固化换货首版边界（禁止自动补发/库存自动占用）在 `backend/internal/services/admin/after_sales/{case_service.go,order_sync_service.go}`
 
 **Checkpoint**: All user stories should now be independently functional
 

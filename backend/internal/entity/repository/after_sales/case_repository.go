@@ -116,6 +116,7 @@ func (r *CaseRepository) GetByID(ctx context.Context, id string) (*AfterSalesMod
 type AdminCaseListFilter struct {
 	Status   string
 	CaseType string
+	OrderID  string
 	Keyword  string
 	Page     int
 	PageSize int
@@ -144,6 +145,9 @@ func (r *CaseRepository) ListForAdmin(ctx context.Context, filter AdminCaseListF
 	}
 	if v := strings.TrimSpace(filter.CaseType); v != "" {
 		query = query.Where("case_type = ?", v)
+	}
+	if v := strings.TrimSpace(filter.OrderID); v != "" {
+		query = query.Where("order_id = ?", v)
 	}
 	if v := strings.TrimSpace(filter.Keyword); v != "" {
 		like := fmt.Sprintf("%%%s%%", v)

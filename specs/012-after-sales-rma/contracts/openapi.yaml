@@ -74,6 +74,9 @@ paths:
           name: caseType
           schema: { type: string }
         - in: query
+          name: orderId
+          schema: { type: string }
+        - in: query
           name: keyword
           schema: { type: string }
       responses:
@@ -247,6 +250,10 @@ paths:
       responses:
         '200':
           description: Linked
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ReverseLogisticsLinkResponse'
         default:
           $ref: '#/components/responses/ErrorResponse'
 
@@ -330,10 +337,16 @@ components:
         caseNo: { type: string }
         orderId: { type: string }
         orderItemId: { type: string }
+        customerId: { type: string }
         caseType: { type: string }
         status: { type: string }
+        reasonCode: { type: string }
+        reasonDetail: { type: string }
         requestedAmountMinor: { type: integer }
         currency: { type: string }
+        reverseWaybillNo: { type: string }
+        reverseReceiveStatus: { type: string, enum: [pending, received] }
+        reverseLinkedAt: { type: string, format: date-time }
         createdAt: { type: string, format: date-time }
 
     TimelineEvent:
@@ -390,3 +403,19 @@ components:
             processingCount: { type: integer }
             completedCount: { type: integer }
             rejectedCount: { type: integer }
+
+    ReverseLogisticsLinkResponse:
+      type: object
+      properties:
+        success: { type: boolean, example: true }
+        data:
+          type: object
+          properties:
+            caseId: { type: string }
+            caseNo: { type: string }
+            reverseWaybillId: { type: string }
+            reverseWaybillNo: { type: string }
+            carrierCode: { type: string }
+            receiveStatus: { type: string, enum: [pending, received] }
+            receivedAt: { type: string, format: date-time }
+            linkedAt: { type: string, format: date-time }

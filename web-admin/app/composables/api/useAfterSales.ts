@@ -15,6 +15,9 @@ export interface AfterSaleSummary {
   reasonDetail?: string
   requestedAmountMinor?: number
   currency?: string
+  reverseWaybillNo?: string
+  reverseReceiveStatus?: string
+  reverseLinkedAt?: string
   createdAt?: string
 }
 
@@ -94,6 +97,9 @@ const normalizeSummary = (item: Record<string, any>): AfterSaleSummary => ({
   reasonDetail: String(item?.reasonDetail ?? item?.reason_detail ?? '').trim(),
   requestedAmountMinor: item?.requestedAmountMinor ?? item?.requested_amount_minor,
   currency: item?.currency,
+  reverseWaybillNo: item?.reverseWaybillNo ?? item?.reverse_waybill_no,
+  reverseReceiveStatus: item?.reverseReceiveStatus ?? item?.reverse_receive_status,
+  reverseLinkedAt: item?.reverseLinkedAt ?? item?.reverse_linked_at,
   createdAt: item?.createdAt ?? item?.created_at,
 })
 
@@ -141,7 +147,7 @@ export const useAfterSalesApi = () => {
     getMiniAppCase: (id: string) =>
       unwrap(apiGet<AfterSaleDetail>(`${miniBase}/${id}`)).then(normalizeDetail),
 
-    listAdminCases: (params?: { status?: string; caseType?: string; keyword?: string; page?: number; pageSize?: number }) =>
+    listAdminCases: (params?: { status?: string; caseType?: string; orderId?: string; keyword?: string; page?: number; pageSize?: number }) =>
       unwrap(apiGet<AfterSaleListResponse>(adminBase, params)).then(normalizeList),
 
     getAdminCase: (id: string) =>

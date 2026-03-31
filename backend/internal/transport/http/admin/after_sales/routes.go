@@ -20,9 +20,11 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	caseService := adminsvc.NewCaseService(deps)
 	decisionService := adminsvc.NewDecisionService(deps)
 	dashboardService := adminsvc.NewDashboardService(deps)
+	reverseLinkService := adminsvc.NewReverseLinkService(deps)
 
 	handler := NewHandler(caseService, decisionService)
 	dashboard := NewDashboardHandler(dashboardService)
+	reverse := NewReverseLogisticsHandler(reverseLinkService)
 
 	rg.GET("/cases", handler.ListCases)
 	rg.GET("/cases/:id", handler.GetCase)
@@ -32,6 +34,7 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	rg.POST("/cases/:id/reject", handler.RejectCase)
 	rg.POST("/cases/:id/complete", handler.CompleteCase)
 	rg.POST("/cases/:id/close", handler.CloseCase)
+	rg.POST("/cases/:id/reverse-logistics", reverse.LinkCase)
 	rg.GET("/dashboard", dashboard.GetSnapshot)
 
 	return rg

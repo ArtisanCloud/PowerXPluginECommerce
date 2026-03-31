@@ -9,6 +9,7 @@ import (
 type CaseQuery struct {
 	Status   string
 	CaseType string
+	OrderID  string
 	Keyword  string
 	Page     int
 	PageSize int
@@ -27,6 +28,9 @@ type CaseSummaryDTO struct {
 	RequestedQty         int        `json:"requestedQty"`
 	RequestedAmountMinor int64      `json:"requestedAmountMinor"`
 	Currency             string     `json:"currency"`
+	ReverseWaybillNo     string     `json:"reverseWaybillNo,omitempty"`
+	ReverseReceiveStatus string     `json:"reverseReceiveStatus,omitempty"`
+	ReverseLinkedAt      *time.Time `json:"reverseLinkedAt,omitempty"`
 	CreatedAt            time.Time  `json:"createdAt"`
 	ClosedAt             *time.Time `json:"closedAt,omitempty"`
 }

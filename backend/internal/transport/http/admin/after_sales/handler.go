@@ -39,6 +39,7 @@ func (h *Handler) ListCases(c *gin.Context) {
 	resp, err := h.caseService.List(c.Request.Context(), tenantUUID, adminsvc.CaseQuery{
 		Status:   strings.TrimSpace(c.Query("status")),
 		CaseType: strings.TrimSpace(c.Query("caseType")),
+		OrderID:  strings.TrimSpace(c.Query("orderId")),
 		Keyword:  strings.TrimSpace(c.Query("keyword")),
 		Page:     page,
 		PageSize: pageSize,
@@ -181,9 +182,17 @@ func respondAdminError(c *gin.Context, err error) {
 	case errors.Is(err, adminsvc.ErrAdminCaseNotFound):
 		contracts.ResponseNotFound(c, "after-sales case not found")
 	case errors.Is(err, adminsvc.ErrDecisionReasonRequired),
-		errors.Is(err, adminsvc.ErrInvalidAction):
+		errors.Is(err, adminsvc.ErrInvalidAction),
+		errors.Is(err, adminsvc.ErrReverseWaybillRequired),
+		errors.Is(err, adminsvc.ErrReverseLinkNotAllowed):
 		contracts.ResponseBadRequest(c, err.Error())
+	case errors.Is(err, adminsvc.ErrReverseWaybillNotFound):
+		contracts.ResponseNotFound(c, err.Error())
 	case errors.Is(err, adminsvc.ErrCoreFieldsFrozen):
+		contracts.ResponseError(c, http.StatusConflict, contracts.ErrCodeConflict, err.Error())
+	case errors.Is(err, adminsvc.ErrRefundAlreadyApplied),
+		errors.Is(err, adminsvc.ErrRefundAlreadyInPayment),
+		errors.Is(err, adminsvc.ErrReverseWaybillOrderMismatch):
 		contracts.ResponseError(c, http.StatusConflict, contracts.ErrCodeConflict, err.Error())
 	default:
 		message := strings.TrimSpace(err.Error())

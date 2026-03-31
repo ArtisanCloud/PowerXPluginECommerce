@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	models "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models"
 	AfterSalesModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/after_sales"
 	AfterSalesRepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/after_sales"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
@@ -31,6 +32,7 @@ type CaseService struct {
 	deps         *app.Deps
 	caseRepo     *AfterSalesRepo.CaseRepository
 	timelineRepo *AfterSalesRepo.TimelineRepository
+	orderSync    *OrderSyncService
 }
 
 func NewCaseService(deps *app.Deps) *CaseService {
@@ -41,6 +43,7 @@ func NewCaseService(deps *app.Deps) *CaseService {
 		deps:         deps,
 		caseRepo:     AfterSalesRepo.NewCaseRepository(deps.DB),
 		timelineRepo: AfterSalesRepo.NewTimelineRepository(deps.DB),
+		orderSync:    NewOrderSyncService(deps),
 	}
 }
 
@@ -56,6 +59,7 @@ func (s *CaseService) List(ctx context.Context, tenantUUID string, query CaseQue
 	rows, total, err := s.caseRepo.ListForAdmin(ctx, AfterSalesRepo.AdminCaseListFilter{
 		Status:   strings.TrimSpace(query.Status),
 		CaseType: strings.TrimSpace(query.CaseType),
+		OrderID:  strings.TrimSpace(query.OrderID),
 		Keyword:  strings.TrimSpace(query.Keyword),
 		Page:     query.Page,
 		PageSize: query.PageSize,
@@ -72,6 +76,9 @@ func (s *CaseService) List(ctx context.Context, tenantUUID string, query CaseQue
 	items := make([]CaseSummaryDTO, 0, len(rows))
 	for _, row := range rows {
 		items = append(items, toSummaryDTO(row))
+	}
+	if err := s.hydrateReverseLinkSummary(ctx, tenantUUID, items); err != nil {
+		return nil, err
 	}
 	resp := &CaseListDTO{Items: items}
 	resp.Meta.Total = total
@@ -96,7 +103,15 @@ func (s *CaseService) Detail(ctx context.Context, tenantUUID, caseID string) (*C
 	if err != nil {
 		return nil, err
 	}
-	return &CaseDetailDTO{Case: toSummaryDTO(*row), Timeline: toTimelineDTO(timeline)}, nil
+	summary := toSummaryDTO(*row)
+	one := []CaseSummaryDTO{summary}
+	if err := s.hydrateReverseLinkSummary(ctx, tenantUUID, one); err != nil {
+		return nil, err
+	}
+	if len(one) > 0 {
+		summary = one[0]
+	}
+	return &CaseDetailDTO{Case: summary, Timeline: toTimelineDTO(timeline)}, nil
 }
 
 func (s *CaseService) Transition(ctx context.Context, tenantUUID, caseID, action, operatorID, note string) (*AfterSalesModel.AfterSaleCase, error) {
@@ -121,6 +136,13 @@ func (s *CaseService) Transition(ctx context.Context, tenantUUID, caseID, action
 		now := time.Now().UTC()
 		fromStatus := row.Status
 		row.Status = toStatus
+		if strings.EqualFold(strings.TrimSpace(row.CaseType), "exchange") &&
+			(strings.EqualFold(strings.TrimSpace(action), "approve") || strings.EqualFold(strings.TrimSpace(action), "complete")) {
+			note = strings.TrimSpace(strings.Join([]string{
+				note,
+				"[exchange-boundary] auto reship disabled; auto inventory reserve disabled",
+			}, " "))
+		}
 		if toStatus == CaseStatusClosed {
 			row.ClosedAt = &now
 		}
@@ -140,6 +162,11 @@ func (s *CaseService) Transition(ctx context.Context, tenantUUID, caseID, action
 			Note:         strings.TrimSpace(note),
 		}).Error; err != nil {
 			return err
+		}
+		if s.orderSync != nil {
+			if err := s.orderSync.SyncCaseTransitionWithTx(ctx, tx, tenantUUID, action, operatorID, note, row); err != nil && !errors.Is(err, ErrOrderSyncUnavailable) {
+				return err
+			}
 		}
 		updated = row
 		return nil
@@ -238,4 +265,56 @@ func statusByAction(action string) (string, error) {
 func isTerminalStatus(status string) bool {
 	_, ok := terminalStatuses[NormalizeCaseStatus(status)]
 	return ok
+}
+
+type reverseLinkSnapshot struct {
+	CaseID           string
+	ReverseWaybillNo string
+	ReceiveStatus    string
+	CreatedAt        time.Time
+}
+
+func (s *CaseService) hydrateReverseLinkSummary(ctx context.Context, tenantUUID string, items []CaseSummaryDTO) error {
+	if s == nil || s.deps == nil || s.deps.DB == nil || len(items) == 0 {
+		return nil
+	}
+	ids := make([]string, 0, len(items))
+	index := make(map[string]int, len(items))
+	for i := range items {
+		id := strings.TrimSpace(items[i].ID)
+		if id == "" {
+			continue
+		}
+		ids = append(ids, id)
+		index[id] = i
+	}
+	if len(ids) == 0 {
+		return nil
+	}
+	table := models.S(models.TableAfterSalesReverseLogisticsLinks)
+	var rows []reverseLinkSnapshot
+	if err := s.deps.DB.WithContext(ctx).
+		Table(table).
+		Select("case_id, reverse_waybill_no, receive_status, created_at").
+		Where("tenant_uuid = ? AND case_id IN ? AND deleted_at IS NULL", strings.TrimSpace(tenantUUID), ids).
+		Order("created_at DESC").
+		Find(&rows).Error; err != nil {
+		return err
+	}
+	seen := map[string]struct{}{}
+	for _, row := range rows {
+		if _, ok := seen[row.CaseID]; ok {
+			continue
+		}
+		seen[row.CaseID] = struct{}{}
+		i, ok := index[row.CaseID]
+		if !ok {
+			continue
+		}
+		items[i].ReverseWaybillNo = strings.TrimSpace(row.ReverseWaybillNo)
+		items[i].ReverseReceiveStatus = strings.TrimSpace(row.ReceiveStatus)
+		linkedAt := row.CreatedAt
+		items[i].ReverseLinkedAt = &linkedAt
+	}
+	return nil
 }
