@@ -75,17 +75,17 @@
 
 ### Tests for User Story 2
 
-- [ ] T027 [P] [US2] 新增递增窗口调度与重试执行测试在 `backend/internal/services/admin/subscription_reconciliation/renewal_governance_service_test.go`
-- [ ] T028 [P] [US2] 新增连续失败升级阈值测试在 `backend/internal/services/admin/subscription_reconciliation/renewal_escalation_test.go`
-- [ ] T029 [P] [US2] 新增治理执行 API 合同测试在 `backend/internal/transport/http/admin/subscription_reconciliation/governance_handler_contract_test.go`
+- [x] T027 [P] [US2] 新增递增窗口调度与重试执行测试在 `backend/internal/services/admin/subscription_reconciliation/renewal_governance_service_test.go`
+- [x] T028 [P] [US2] 新增连续失败升级阈值测试在 `backend/internal/services/admin/subscription_reconciliation/renewal_escalation_test.go`
+- [x] T029 [P] [US2] 新增治理执行 API 合同测试在 `backend/internal/transport/http/admin/subscription_reconciliation/governance_handler_contract_test.go`
 
 ### Implementation for User Story 2
 
-- [ ] T030 [US2] 实现治理策略加载与生效区间校验在 `backend/internal/services/admin/subscription_reconciliation/governance_policy_service.go`
-- [ ] T031 [US2] 实现重试窗口执行器（1h/24h/72h/7d）在 `backend/internal/services/admin/subscription_reconciliation/renewal_retry_executor.go`
-- [ ] T032 [US2] 实现通知与升级处置编排在 `backend/internal/services/admin/subscription_reconciliation/renewal_orchestrator.go`
-- [ ] T033 [US2] 实现治理执行接口 `/governance/run` 在 `backend/internal/transport/http/admin/subscription_reconciliation/governance_handler.go`
-- [ ] T034 [US2] 记录 `renewal.retry.executed` 与 `renewal.escalated` 审计事件在 `backend/internal/observability/subscription_reconciliation/publisher.go`
+- [x] T030 [US2] 实现治理策略加载与生效区间校验在 `backend/internal/services/admin/subscription_reconciliation/governance_policy_service.go`
+- [x] T031 [US2] 实现重试窗口执行器（1h/24h/72h/7d）在 `backend/internal/services/admin/subscription_reconciliation/renewal_retry_executor.go`
+- [x] T032 [US2] 实现通知与升级处置编排在 `backend/internal/services/admin/subscription_reconciliation/renewal_orchestrator.go`
+- [x] T033 [US2] 实现治理执行接口 `/governance/run` 在 `backend/internal/transport/http/admin/subscription_reconciliation/governance_handler.go`
+- [x] T034 [US2] 记录 `renewal.retry.executed` 与 `renewal.escalated` 审计事件在 `backend/internal/observability/subscription_reconciliation/publisher.go`
 
 **Checkpoint**: US2 可独立验证恢复率与升级处置链路。
 

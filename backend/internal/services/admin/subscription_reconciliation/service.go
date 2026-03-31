@@ -389,9 +389,12 @@ func (s *Service) RunGovernance(ctx context.Context, tenantUUID string, input Ru
 	if err := s.ensureAvailable(); err != nil {
 		return nil, err
 	}
-	_ = s.withTenantContext(ctx, tenantUUID)
-	_ = input
-	return nil, ErrNotImplemented
+	cycle, err := validateBillingCycle(input.BillingCycle)
+	if err != nil {
+		return nil, err
+	}
+	ctx = s.withTenantContext(ctx, tenantUUID)
+	return s.runRenewalGovernance(ctx, tenantUUID, cycle, input.DryRun)
 }
 
 func (s *Service) Dashboard(ctx context.Context, tenantUUID string, query DashboardQuery) (map[string]any, error) {

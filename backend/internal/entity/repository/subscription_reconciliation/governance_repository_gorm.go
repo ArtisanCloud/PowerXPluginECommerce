@@ -2,6 +2,7 @@ package subscription_reconciliation
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -96,6 +97,9 @@ func (r *RenewalGovernancePolicyRepository) GetLatestEnabled(ctx context.Context
 		Order("version DESC").
 		First(&row).Error
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil
+		}
 		return nil, err
 	}
 	return &row, nil
@@ -123,4 +127,22 @@ func (r *RenewalExecutionLogRepository) CreateBatch(ctx context.Context, rows []
 		}
 	}
 	return r.DB.WithContext(ctx).Create(&rows).Error
+}
+
+func (r *RenewalExecutionLogRepository) CountFailedRetries(ctx context.Context, subscriptionRef string, since time.Time) (int64, error) {
+	tenantUUID, err := RequireTenantUUID(ctx)
+	if err != nil {
+		return 0, err
+	}
+	var count int64
+	q := r.DB.WithContext(ctx).
+		Model(&SubscriptionReconciliationModel.RenewalExecutionLog{}).
+		Where("tenant_uuid = ? AND subscription_ref = ? AND action_type = ? AND result = ?", tenantUUID, strings.TrimSpace(subscriptionRef), "retry", "failed")
+	if !since.IsZero() {
+		q = q.Where("executed_at >= ?", since)
+	}
+	if err := q.Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
 }
