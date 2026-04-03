@@ -13,6 +13,7 @@ import (
 	admincapability "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/capability"
 	adminchannels "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/channel_master"
 	adminconsole "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/console"
+	admincoupon "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/coupon"
 	admincustomeraddress "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/customer_address"
 	adminintegration "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/integration"
 	adminmarketplace "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/marketplace"
@@ -77,6 +78,7 @@ func (r *Registry) RegisterAPIRoutes(gApi *gin.RouterGroup) {
 	r.mergeRBAC(adminchannels.RBACEntries(r.apiPrefix()))
 	r.mergeRBAC(admincapability.RBACEntries(r.apiPrefix()))
 	r.mergeRBAC(adminpricing.RBACEntries(r.apiPrefix()))
+	r.mergeRBAC(admincoupon.RBACEntries(r.apiPrefix()))
 	r.mergeRBAC(adminorder.RBACEntries(r.apiPrefix()))
 	r.mergeRBAC(adminpayments.RBACEntries(r.apiPrefix()))
 	r.mergeRBAC(admincustomeraddress.RBACEntries(r.apiPrefix()))

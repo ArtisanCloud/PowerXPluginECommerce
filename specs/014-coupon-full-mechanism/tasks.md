@@ -129,17 +129,17 @@
 
 **Purpose**: 横切质量、文档与验收收口
 
-- [ ] T052 [P] 补充 OpenAPI 与实现一致性校验 `specs/014-coupon-full-mechanism/contracts/coupons.openapi.yaml`
-- [ ] T053 [P] 补充路由矩阵与中间件链校验 `specs/014-coupon-full-mechanism/contracts/routing-matrix.md`
-- [ ] T054 增加可观测指标埋点（发放/预占/核销/释放/返券）`backend/internal/observability/coupon/metrics.go`
-- [ ] T055 增加告警规则（核销失败堆积、超时未释放）`backend/internal/observability/coupon/alerts.go`
-- [ ] T056 [P] 更新功能文档与排障手册 `docs/guides/features/pricing/coupons.md`
-- [ ] T057 执行 quickstart 场景回归并记录结果 `specs/014-coupon-full-mechanism/quickstart.md`
-- [ ] T058 性能压测脚本：结算试算接口基准 `backend/tests/performance/coupon_quote_benchmark_test.go`
-- [ ] T059 结算性能门禁校验（P95 <= 500ms）`backend/tests/performance/coupon_quote_sla_test.go`
-- [ ] T060 [P] 客服链路定位查询耗时测试（订单号维度）`backend/internal/services/admin/coupon/query_latency_test.go`
-- [ ] T061 [P] 客服链路定位查询耗时测试（券码维度）`backend/internal/services/admin/coupon/query_by_code_latency_test.go`
-- [ ] T062 索引命中与查询计划校验（usage/snapshot）`backend/internal/entity/repository/coupon/query_index_validation_test.go`
+- [X] T052 [P] 补充 OpenAPI 与实现一致性校验 `specs/014-coupon-full-mechanism/contracts/coupons.openapi.yaml`
+- [X] T053 [P] 补充路由矩阵与中间件链校验 `specs/014-coupon-full-mechanism/contracts/routing-matrix.md`
+- [X] T054 增加可观测指标埋点（发放/预占/核销/释放/返券）`backend/internal/observability/coupon/metrics.go`
+- [X] T055 增加告警规则（核销失败堆积、超时未释放）`backend/internal/observability/coupon/alerts.go`
+- [X] T056 [P] 更新功能文档与排障手册 `docs/guides/features/pricing/coupons.md`
+- [X] T057 执行 quickstart 场景回归并记录结果 `specs/014-coupon-full-mechanism/quickstart.md`
+- [X] T058 性能压测脚本：结算试算接口基准 `backend/tests/performance/coupon_quote_benchmark_test.go`
+- [X] T059 结算性能门禁校验（P95 <= 500ms）`backend/tests/performance/coupon_quote_sla_test.go`
+- [X] T060 [P] 客服链路定位查询耗时测试（订单号维度）`backend/internal/services/admin/coupon/query_latency_test.go`
+- [X] T061 [P] 客服链路定位查询耗时测试（券码维度）`backend/internal/services/admin/coupon/query_by_code_latency_test.go`
+- [X] T062 索引命中与查询计划校验（usage/snapshot）`backend/internal/entity/repository/coupon/query_index_validation_test.go`
 
 ---
 

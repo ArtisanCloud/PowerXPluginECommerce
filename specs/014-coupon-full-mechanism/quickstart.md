@@ -30,3 +30,27 @@
 - 幂等一致：重复支付回调不产生重复核销。
 - 状态一致：券资产状态与订单支付状态不冲突。
 - 审计可追溯：按订单号可查询完整动作链路。
+
+## 5. 回归记录（2026-04-04）
+
+### 5.1 执行命令
+
+```bash
+cd backend
+mkdir -p ../tmp/gocache ../tmp/gomodcache
+GOCACHE=$PWD/../tmp/gocache GOMODCACHE=$PWD/../tmp/gomodcache go test ./internal/services/admin/coupon ./internal/transport/http/admin/coupon ./internal/transport/http/admin/...
+
+cd ../web-admin
+npm run -s build
+```
+
+### 5.2 结果摘要
+
+- `admin/coupon` 服务与处理器测试通过。
+- 管理端全量 transport 编译/测试通过。
+- 前端构建通过（存在仓库既有 chunk/cycle warning，不阻断构建）。
+
+### 5.3 风险备注
+
+- miniapp 路由当前实际路径为 `/api/v1/v1/coupons/quote`，契约与路由矩阵已按实现记录。
+- 建议在后续 API 整理阶段统一 miniapp 子路径前缀，避免 `/v1/v1` 认知负担。
