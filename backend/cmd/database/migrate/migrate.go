@@ -153,6 +153,9 @@ func MigratePluginModels(ctx context.Context, db *gorm.DB, includeIAM bool) erro
 	if err := ensurePricingRLSPolicies(ctx, db); err != nil {
 		return err
 	}
+	if err := ensureCouponIndexes(ctx, db); err != nil {
+		return err
+	}
 	return ensureOrderRLSPolicies(ctx, db)
 }
 
@@ -319,6 +322,39 @@ func ensureCustomerIdentityUniqueIndex(ctx context.Context, db *gorm.DB) error {
 		quoteIdentifier(idxName), tableName)
 	if err := db.WithContext(ctx).Exec(createSQL).Error; err != nil {
 		return fmt.Errorf("create unique index %s failed: %w", idxName, err)
+	}
+	return nil
+}
+
+func ensureCouponIndexes(ctx context.Context, db *gorm.DB) error {
+	if db == nil {
+		return nil
+	}
+	if !strings.EqualFold(db.Dialector.Name(), "postgres") {
+		return nil
+	}
+	stmts := []string{
+		fmt.Sprintf(`CREATE UNIQUE INDEX IF NOT EXISTS %s ON %s(tenant_uuid, code) WHERE deleted_at IS NULL`,
+			quoteIdentifier("uk_coupon_template_tenant_code"), models.S(models.TableCouponTemplates)),
+		fmt.Sprintf(`CREATE UNIQUE INDEX IF NOT EXISTS %s ON %s(tenant_uuid, coupon_code) WHERE deleted_at IS NULL`,
+			quoteIdentifier("uk_coupon_asset_code"), models.S(models.TableCouponAssets)),
+		fmt.Sprintf(`CREATE UNIQUE INDEX IF NOT EXISTS %s ON %s(tenant_uuid, action, idempotency_key)`,
+			quoteIdentifier("uk_coupon_usage_idempotency"), models.S(models.TableCouponUsageLogs)),
+		fmt.Sprintf(`CREATE UNIQUE INDEX IF NOT EXISTS %s ON %s(tenant_uuid, order_id) WHERE deleted_at IS NULL`,
+			quoteIdentifier("uk_order_coupon_snapshot"), models.S(models.TableOrderCouponSnapshots)),
+		fmt.Sprintf(`CREATE INDEX IF NOT EXISTS %s ON %s(tenant_uuid, user_id, status, valid_to) WHERE deleted_at IS NULL`,
+			quoteIdentifier("idx_coupon_asset_user_status"), models.S(models.TableCouponAssets)),
+		fmt.Sprintf(`CREATE INDEX IF NOT EXISTS %s ON %s(tenant_uuid, reserved_order_id) WHERE deleted_at IS NULL`,
+			quoteIdentifier("idx_coupon_asset_reserved_order"), models.S(models.TableCouponAssets)),
+		fmt.Sprintf(`CREATE INDEX IF NOT EXISTS %s ON %s(tenant_uuid, order_id, created_at)`,
+			quoteIdentifier("idx_coupon_usage_order_created"), models.S(models.TableCouponUsageLogs)),
+		fmt.Sprintf(`CREATE INDEX IF NOT EXISTS %s ON %s(tenant_uuid, priced_at) WHERE deleted_at IS NULL`,
+			quoteIdentifier("idx_order_coupon_snapshot_priced"), models.S(models.TableOrderCouponSnapshots)),
+	}
+	for _, stmt := range stmts {
+		if err := db.WithContext(ctx).Exec(stmt).Error; err != nil {
+			return err
+		}
 	}
 	return nil
 }

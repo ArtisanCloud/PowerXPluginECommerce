@@ -4,8 +4,8 @@ import couponModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plug
 
 // CouponTables enumerates coupon tables for automated migrations.
 var CouponTables = []interface{}{
-	&couponModel.Template{},
-	&couponModel.Asset{},
-	&couponModel.UsageLog{},
-	&couponModel.OrderSnapshot{},
+	&couponModel.CouponTemplate{},
+	&couponModel.CouponAsset{},
+	&couponModel.CouponUsageLog{},
+	&couponModel.OrderCouponSnapshot{},
 }

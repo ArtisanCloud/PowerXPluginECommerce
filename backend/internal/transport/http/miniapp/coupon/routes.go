@@ -7,11 +7,12 @@ import (
 )
 
 // RegisterRoutes wires /v1/coupons namespace.
-func RegisterRoutes(router *gin.RouterGroup, _ *app.Deps) *gin.RouterGroup {
+func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	if router == nil {
 		return nil
 	}
 	group := router.Group("/coupons", httpmw.EnsureTenant())
-	group.POST("/quote", Quote)
+	handler := NewHandler(deps)
+	group.POST("/quote", handler.Quote)
 	return group
 }

@@ -11,15 +11,18 @@ import (
 	"strings"
 	"time"
 
+	couponmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/coupon"
 	customermodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/customer"
 	integrationmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/integration"
 	ordermodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/order"
 	productskumodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_sku"
+	couponrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/coupon"
 	customerrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/customer"
 	idrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/integration"
 	orderrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/order"
 	skurepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/product_sku"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
+	couponsvc "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/coupon"
 	sellabilitysvc "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/miniapp/sellability"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/google/uuid"
@@ -56,16 +59,20 @@ var (
 )
 
 type Service struct {
-	deps            *app.Deps
-	idempotencyTTL  time.Duration
-	CustomerRepo    *customerrepo.Repository
-	OrderRepo       *orderrepo.OrderRepository
-	ItemRepo        *orderrepo.OrderItemRepository
-	EventRepo       *orderrepo.OrderEventRepository
-	InventoryRepo   *skurepo.InventoryRepository
-	IdempotencyRepo *idrepo.IdempotencyRepository
-	SellabilitySvc  *sellabilitysvc.Service
-	AddressRepo     *customerrepo.CustomerAddressRepository
+	deps               *app.Deps
+	idempotencyTTL     time.Duration
+	CustomerRepo       *customerrepo.Repository
+	OrderRepo          *orderrepo.OrderRepository
+	ItemRepo           *orderrepo.OrderItemRepository
+	EventRepo          *orderrepo.OrderEventRepository
+	InventoryRepo      *skurepo.InventoryRepository
+	IdempotencyRepo    *idrepo.IdempotencyRepository
+	SellabilitySvc     *sellabilitysvc.Service
+	AddressRepo        *customerrepo.CustomerAddressRepository
+	CouponSnapshotRepo *couponrepo.OrderSnapshotRepository
+	CouponQuoteSvc     *couponsvc.QuoteService
+	CouponReserveSvc   *couponsvc.ReservationService
+	CouponReleaseSvc   *couponsvc.ReleaseService
 }
 
 func NewService(deps *app.Deps) *Service {
@@ -79,16 +86,20 @@ func NewService(deps *app.Deps) *Service {
 	fallback := idrepo.NewPostgresIdempotencyProvider(deps.DB, ttl)
 	repository := idrepo.NewIdempotencyRepository(deps.DB, nil, fallback, nil)
 	return &Service{
-		deps:            deps,
-		idempotencyTTL:  ttl,
-		CustomerRepo:    customerrepo.NewRepository(deps.DB),
-		OrderRepo:       orderrepo.NewOrderRepository(deps.DB),
-		ItemRepo:        orderrepo.NewOrderItemRepository(deps.DB),
-		EventRepo:       orderrepo.NewOrderEventRepository(deps.DB),
-		InventoryRepo:   skurepo.NewInventoryRepository(deps.DB),
-		IdempotencyRepo: repository,
-		SellabilitySvc:  sellabilitysvc.NewService(deps.DB),
-		AddressRepo:     customerrepo.NewCustomerAddressRepository(deps.DB),
+		deps:               deps,
+		idempotencyTTL:     ttl,
+		CustomerRepo:       customerrepo.NewRepository(deps.DB),
+		OrderRepo:          orderrepo.NewOrderRepository(deps.DB),
+		ItemRepo:           orderrepo.NewOrderItemRepository(deps.DB),
+		EventRepo:          orderrepo.NewOrderEventRepository(deps.DB),
+		InventoryRepo:      skurepo.NewInventoryRepository(deps.DB),
+		IdempotencyRepo:    repository,
+		SellabilitySvc:     sellabilitysvc.NewService(deps.DB),
+		AddressRepo:        customerrepo.NewCustomerAddressRepository(deps.DB),
+		CouponSnapshotRepo: couponrepo.NewOrderSnapshotRepository(deps.DB),
+		CouponQuoteSvc:     couponsvc.NewQuoteService(deps),
+		CouponReserveSvc:   couponsvc.NewReservationService(deps),
+		CouponReleaseSvc:   couponsvc.NewReleaseService(deps),
 	}
 }
 
@@ -101,7 +112,11 @@ func (s *Service) Ready() bool {
 		s.InventoryRepo != nil &&
 		s.IdempotencyRepo != nil &&
 		s.SellabilitySvc != nil &&
-		s.AddressRepo != nil
+		s.AddressRepo != nil &&
+		s.CouponSnapshotRepo != nil &&
+		s.CouponQuoteSvc != nil &&
+		s.CouponReserveSvc != nil &&
+		s.CouponReleaseSvc != nil
 }
 
 func (s *Service) CreateOrder(ctx context.Context, tenantUUID, adminID, idempotencyKey string, req CreateOrderRequest) (*OrderSummaryDTO, error) {
@@ -274,6 +289,32 @@ func (s *Service) createOrderWithIdempotencyTx(
 		subtotal += price * it.Qty
 	}
 	total := subtotal
+	var quoteResult *couponsvc.QuoteResult
+	if len(req.CouponIDs) > 0 {
+		quoteItems := make([]couponsvc.QuoteItemInput, 0, len(req.Items))
+		for _, it := range req.Items {
+			skuID := strings.TrimSpace(it.SKUID)
+			quoteItems = append(quoteItems, couponsvc.QuoteItemInput{
+				LineID:         skuID,
+				SKUID:          skuID,
+				Qty:            it.Qty,
+				UnitPriceMinor: unitPriceMinor[skuID],
+			})
+		}
+		quoted, err := s.CouponQuoteSvc.Quote(ctx, couponsvc.QuoteInput{
+			TenantUUID: tenantUUID,
+			UserID:     req.CustomerID,
+			Channel:    req.Channel,
+			CouponIDs:  req.CouponIDs,
+			Items:      quoteItems,
+			Currency:   currency,
+		})
+		if err != nil {
+			return nil, err
+		}
+		quoteResult = quoted
+		total = quoted.PayableTotalMinor
+	}
 
 	now := time.Now().UTC()
 	orderID := uuid.NewString()
@@ -286,6 +327,9 @@ func (s *Service) createOrderWithIdempotencyTx(
 		"items":    req.Items,
 		"note":     req.Note,
 		"pricedAt": now.Format(time.RFC3339Nano),
+	}
+	if quoteResult != nil {
+		priceSnapshot["coupon"] = quoteResult
 	}
 	priceSnapJSON, _ := json.Marshal(priceSnapshot)
 	sellSnapJSON, _ := json.Marshal(sellability)
@@ -354,6 +398,45 @@ func (s *Service) createOrderWithIdempotencyTx(
 			return err
 		}
 
+		var reservedCouponIDs []string
+		if quoteResult != nil {
+			appliedAssetIDs := make([]string, 0, len(quoteResult.AppliedCoupons))
+			for _, applied := range quoteResult.AppliedCoupons {
+				appliedAssetIDs = append(appliedAssetIDs, applied.AssetID)
+			}
+			reserved, err := s.CouponReserveSvc.ReserveWithTx(ctx, tx, couponsvc.ReservationInput{
+				TenantUUID: tenantUUID,
+				OrderID:    orderID,
+				AssetIDs:   appliedAssetIDs,
+				RequestID:  requestIDFromContext(ctx),
+				CreatedBy:  adminID,
+			})
+			if err != nil {
+				return err
+			}
+			if reserved != nil {
+				reservedCouponIDs = append(reservedCouponIDs, reserved.ReservedAssetIDs...)
+			}
+			lineAllocRaw, _ := json.Marshal(quoteResult.LineAllocations)
+			appliedRaw, _ := json.Marshal(quoteResult.AppliedCoupons)
+			rejectedRaw, _ := json.Marshal(quoteResult.RejectedCoupons)
+			if err := s.CouponSnapshotRepo.UpsertWithTx(ctx, tx, &couponmodel.OrderCouponSnapshot{
+				ID:                 uuid.NewString(),
+				TenantUUID:         tenantUUID,
+				OrderID:            orderID,
+				Currency:           quoteResult.Currency,
+				BaseTotalMinor:     quoteResult.BaseTotalMinor,
+				DiscountTotalMinor: quoteResult.DiscountTotalMinor,
+				PayableTotalMinor:  quoteResult.PayableTotalMinor,
+				LineAllocations:    datatypes.JSON(lineAllocRaw),
+				AppliedCoupons:     datatypes.JSON(appliedRaw),
+				RejectedCoupons:    datatypes.JSON(rejectedRaw),
+				PricedAt:           quoteResult.PricedAt,
+			}); err != nil {
+				return err
+			}
+		}
+
 		eventPayload, _ := json.Marshal(map[string]any{
 			"requestId":         requestIDFromContext(ctx),
 			"idempotencyKey":    idempotencyKey,
@@ -361,6 +444,7 @@ func (s *Service) createOrderWithIdempotencyTx(
 			"customerId":        req.CustomerID,
 			"shippingAddressId": shippingAddrID,
 			"note":              req.Note,
+			"couponIds":         req.CouponIDs,
 		})
 		event := &ordermodel.OrderEvent{
 			ID:           uuid.NewString(),
@@ -374,6 +458,25 @@ func (s *Service) createOrderWithIdempotencyTx(
 		if err := s.EventRepo.CreateWithTx(ctx, tx, event); err != nil {
 			return err
 		}
+		if quoteResult != nil {
+			couponEventPayload, _ := json.Marshal(map[string]any{
+				"requestId":        requestIDFromContext(ctx),
+				"couponQuote":      quoteResult,
+				"reservedAssetIDs": reservedCouponIDs,
+			})
+			couponEvent := &ordermodel.OrderEvent{
+				ID:           uuid.NewString(),
+				TenantUUID:   tenantUUID,
+				OrderID:      orderID,
+				EventType:    "order.coupon.applied",
+				OperatorType: "admin",
+				Operator:     adminID,
+				Payload:      datatypes.JSON(couponEventPayload),
+			}
+			if err := s.EventRepo.CreateWithTx(ctx, tx, couponEvent); err != nil {
+				return err
+			}
+		}
 
 		summary = &OrderSummaryDTO{
 			OrderID:                 orderID,
@@ -383,6 +486,7 @@ func (s *Service) createOrderWithIdempotencyTx(
 			CreatedByType:           order.CreatedByType,
 			Status:                  order.Status,
 			Amounts:                 MoneyDTO{Currency: currency, Subtotal: subtotal, Total: total},
+			Coupon:                  toCouponSummaryDTO(quoteResult),
 			ShippingAddressSnapshot: shippingSnap,
 			// CreatedAt is not the DB-created timestamp, but deterministic enough for API response.
 			CreatedAt: now,
@@ -416,6 +520,7 @@ func hashCreatePayload(req CreateOrderRequest) (string, error) {
 	payload := map[string]any{
 		"customerId":        strings.TrimSpace(req.CustomerID),
 		"channel":           strings.TrimSpace(req.Channel),
+		"couponIds":         req.CouponIDs,
 		"shippingAddressId": strings.TrimSpace(req.ShippingAddressID),
 		"shippingAddress":   req.ShippingAddress,
 		"items":             req.Items,

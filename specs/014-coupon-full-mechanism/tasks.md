@@ -29,19 +29,19 @@
 **Purpose**: 完成所有用户故事共享的核心数据结构、状态机与错误语义  
 **⚠️ CRITICAL**: 完成前不得开始任何用户故事实现
 
-- [ ] T006 创建模型 `backend/internal/entity/models/coupon/template.go`（CouponTemplate）
-- [ ] T007 [P] 创建模型 `backend/internal/entity/models/coupon/asset.go`（CouponAsset）
-- [ ] T008 [P] 创建模型 `backend/internal/entity/models/coupon/usage_log.go`（CouponUsageLog）
-- [ ] T009 [P] 创建模型 `backend/internal/entity/models/coupon/order_snapshot.go`（OrderCouponSnapshot）
-- [ ] T010 编写迁移 `backend/cmd/database/migrate/versions/20260403120000_create_coupon_tables.go`（唯一约束与索引：模板编码、券码、幂等键、订单快照）
-- [ ] T011 创建仓储 `backend/internal/entity/repository/coupon/template_repository.go`
-- [ ] T012 [P] 创建仓储 `backend/internal/entity/repository/coupon/asset_repository.go`
-- [ ] T013 [P] 创建仓储 `backend/internal/entity/repository/coupon/usage_log_repository.go`
-- [ ] T014 [P] 创建仓储 `backend/internal/entity/repository/coupon/order_snapshot_repository.go`
-- [ ] T015 创建领域错误码与原因枚举 `backend/internal/services/admin/coupon/errors.go`（门槛不满足、范围不匹配、已过期、已占用、不可叠加）
-- [ ] T016 创建状态机与幂等守卫 `backend/internal/services/admin/coupon/state_machine.go`
-- [ ] T017 创建金额分摊器 `backend/internal/services/admin/coupon/allocation.go`（订单行占比分摊）
-- [ ] T018 创建叠加排序器 `backend/internal/services/admin/coupon/stacking.go`（先商品级后订单级、同层优先级）
+- [X] T006 创建模型 `backend/internal/entity/models/coupon/template.go`（CouponTemplate）
+- [X] T007 [P] 创建模型 `backend/internal/entity/models/coupon/asset.go`（CouponAsset）
+- [X] T008 [P] 创建模型 `backend/internal/entity/models/coupon/usage_log.go`（CouponUsageLog）
+- [X] T009 [P] 创建模型 `backend/internal/entity/models/coupon/order_snapshot.go`（OrderCouponSnapshot）
+- [X] T010 编写迁移 `backend/cmd/database/migrate/versions/20260403120000_create_coupon_tables.go`（唯一约束与索引：模板编码、券码、幂等键、订单快照）
+- [X] T011 创建仓储 `backend/internal/entity/repository/coupon/template_repository.go`
+- [X] T012 [P] 创建仓储 `backend/internal/entity/repository/coupon/asset_repository.go`
+- [X] T013 [P] 创建仓储 `backend/internal/entity/repository/coupon/usage_log_repository.go`
+- [X] T014 [P] 创建仓储 `backend/internal/entity/repository/coupon/order_snapshot_repository.go`
+- [X] T015 创建领域错误码与原因枚举 `backend/internal/services/admin/coupon/errors.go`（门槛不满足、范围不匹配、已过期、已占用、不可叠加）
+- [X] T016 创建状态机与幂等守卫 `backend/internal/services/admin/coupon/state_machine.go`
+- [X] T017 创建金额分摊器 `backend/internal/services/admin/coupon/allocation.go`（订单行占比分摊）
+- [X] T018 创建叠加排序器 `backend/internal/services/admin/coupon/stacking.go`（先商品级后订单级、同层优先级）
 
 **Checkpoint**: 基础设施完成，可进入用户故事实现
 
@@ -54,20 +54,20 @@
 
 ### Tests for User Story 1
 
-- [ ] T019 [P] [US1] 新增试算契约测试 `backend/internal/transport/http/miniapp/coupon/quote_handler_contract_test.go`
-- [ ] T020 [P] [US1] 新增规则计算单测 `backend/internal/services/admin/coupon/quote_service_test.go`（门槛、范围、叠加顺序、过期边界）
-- [ ] T021 [P] [US1] 新增金额分摊单测 `backend/internal/services/admin/coupon/allocation_test.go`
+- [X] T019 [P] [US1] 新增试算契约测试 `backend/internal/transport/http/miniapp/coupon/quote_handler_contract_test.go`
+- [X] T020 [P] [US1] 新增规则计算单测 `backend/internal/services/admin/coupon/quote_service_test.go`（门槛、范围、叠加顺序、过期边界）
+- [X] T021 [P] [US1] 新增金额分摊单测 `backend/internal/services/admin/coupon/allocation_test.go`
 
 ### Implementation for User Story 1
 
-- [ ] T022 [US1] 实现试算服务 `backend/internal/services/admin/coupon/quote_service.go`
-- [ ] T023 [US1] 实现订单提交预占服务 `backend/internal/services/admin/coupon/reservation_service.go`
-- [ ] T024 [US1] 实现交易接口处理器 `backend/internal/transport/http/miniapp/coupon/quote_handler.go`
-- [ ] T025 [US1] 在下单链路接入优惠复算与预占 `backend/internal/services/admin/order/service.go`
-- [ ] T026 [US1] 在订单落库时写入优惠快照 `backend/internal/services/admin/order/service.go`
-- [ ] T027 [US1] 扩展订单 DTO 输出优惠信息 `backend/internal/services/admin/order/types.go`
-- [ ] T028 [US1] 更新订单查询聚合返回优惠快照 `backend/internal/services/admin/order/query.go`
-- [ ] T029 [US1] 增加下单链路审计事件 `backend/internal/services/admin/order/service.go`
+- [X] T022 [US1] 实现试算服务 `backend/internal/services/admin/coupon/quote_service.go`
+- [X] T023 [US1] 实现订单提交预占服务 `backend/internal/services/admin/coupon/reservation_service.go`
+- [X] T024 [US1] 实现交易接口处理器 `backend/internal/transport/http/miniapp/coupon/quote_handler.go`
+- [X] T025 [US1] 在下单链路接入优惠复算与预占 `backend/internal/services/admin/order/service.go`
+- [X] T026 [US1] 在订单落库时写入优惠快照 `backend/internal/services/admin/order/service.go`
+- [X] T027 [US1] 扩展订单 DTO 输出优惠信息 `backend/internal/services/admin/order/types.go`
+- [X] T028 [US1] 更新订单查询聚合返回优惠快照 `backend/internal/services/admin/order/query.go`
+- [X] T029 [US1] 增加下单链路审计事件 `backend/internal/services/admin/order/service.go`
 
 **Checkpoint**: US1 可独立上线（MVP）
 
@@ -80,18 +80,18 @@
 
 ### Tests for User Story 2
 
-- [ ] T030 [P] [US2] 新增核销服务单测 `backend/internal/services/admin/coupon/redeem_service_test.go`
-- [ ] T031 [P] [US2] 新增释放服务单测 `backend/internal/services/admin/coupon/release_service_test.go`
-- [ ] T032 [P] [US2] 新增回调幂等集成测试 `backend/internal/services/admin/payment/coupon_idempotency_test.go`
+- [X] T030 [P] [US2] 新增核销服务单测 `backend/internal/services/admin/coupon/redeem_service_test.go`
+- [X] T031 [P] [US2] 新增释放服务单测 `backend/internal/services/admin/coupon/release_service_test.go`
+- [X] T032 [P] [US2] 新增回调幂等集成测试 `backend/internal/services/admin/payment/coupon_idempotency_test.go`
 
 ### Implementation for User Story 2
 
-- [ ] T033 [US2] 实现核销服务 `backend/internal/services/admin/coupon/redeem_service.go`
-- [ ] T034 [US2] 实现释放服务 `backend/internal/services/admin/coupon/release_service.go`
-- [ ] T035 [US2] 在支付成功回调接入核销 `backend/internal/services/admin/payment/service.go`
-- [ ] T036 [US2] 在订单取消/关闭链路接入释放 `backend/internal/services/admin/order/cancel.go`
-- [ ] T037 [US2] 在超时关闭任务中接入释放 `backend/internal/jobs/order_timeout_release_job.go`
-- [ ] T038 [US2] 新增券动作流水写入与幂等键校验 `backend/internal/services/admin/coupon/usage_log_service.go`
+- [X] T033 [US2] 实现核销服务 `backend/internal/services/admin/coupon/redeem_service.go`
+- [X] T034 [US2] 实现释放服务 `backend/internal/services/admin/coupon/release_service.go`
+- [X] T035 [US2] 在支付成功回调接入核销 `backend/internal/services/admin/payment/service.go`
+- [X] T036 [US2] 在订单取消/关闭链路接入释放 `backend/internal/services/admin/order/cancel.go`
+- [X] T037 [US2] 在超时关闭任务中接入释放 `backend/internal/jobs/order_timeout_release_job.go`
+- [X] T038 [US2] 新增券动作流水写入与幂等键校验 `backend/internal/services/admin/coupon/usage_log_service.go`
 
 **Checkpoint**: US2 可独立验证，不依赖 US3
 
@@ -104,22 +104,22 @@
 
 ### Tests for User Story 3
 
-- [ ] T039 [P] [US3] 新增模板管理处理器测试 `backend/internal/transport/http/admin/coupon/template_handler_test.go`
-- [ ] T040 [P] [US3] 新增发券服务测试 `backend/internal/services/admin/coupon/issue_service_test.go`
-- [ ] T041 [P] [US3] 新增资产/流水查询测试 `backend/internal/services/admin/coupon/query_service_test.go`
+- [X] T039 [P] [US3] 新增模板管理处理器测试 `backend/internal/transport/http/admin/coupon/template_handler_test.go`
+- [X] T040 [P] [US3] 新增发券服务测试 `backend/internal/services/admin/coupon/issue_service_test.go`
+- [X] T041 [P] [US3] 新增资产/流水查询测试 `backend/internal/services/admin/coupon/query_service_test.go`
 
 ### Implementation for User Story 3
 
-- [ ] T042 [US3] 实现模板管理服务 `backend/internal/services/admin/coupon/template_service.go`
-- [ ] T043 [US3] 实现发券服务 `backend/internal/services/admin/coupon/issue_service.go`
-- [ ] T044 [US3] 实现资产与流水查询服务 `backend/internal/services/admin/coupon/query_service.go`
-- [ ] T045 [US3] 实现管理端处理器 `backend/internal/transport/http/admin/coupon/template_handler.go`
-- [ ] T046 [P] [US3] 实现管理端处理器 `backend/internal/transport/http/admin/coupon/issue_handler.go`
-- [ ] T047 [P] [US3] 实现管理端处理器 `backend/internal/transport/http/admin/coupon/query_handler.go`
-- [ ] T048 [US3] 注册 RBAC 资源与动作 `backend/internal/transport/http/admin/coupon/rbac.go`
-- [ ] T049 [US3] 管理端 API 封装 `web-admin/app/composables/api/useCoupons.ts`
-- [ ] T050 [US3] 管理端页面：模板列表与编辑 `web-admin/app/pages/pricing/coupons.vue`
-- [ ] T051 [US3] 管理端页面：资产与流水查询 `web-admin/app/pages/pricing/coupon-usages.vue`
+- [X] T042 [US3] 实现模板管理服务 `backend/internal/services/admin/coupon/template_service.go`
+- [X] T043 [US3] 实现发券服务 `backend/internal/services/admin/coupon/issue_service.go`
+- [X] T044 [US3] 实现资产与流水查询服务 `backend/internal/services/admin/coupon/query_service.go`
+- [X] T045 [US3] 实现管理端处理器 `backend/internal/transport/http/admin/coupon/template_handler.go`
+- [X] T046 [P] [US3] 实现管理端处理器 `backend/internal/transport/http/admin/coupon/issue_handler.go`
+- [X] T047 [P] [US3] 实现管理端处理器 `backend/internal/transport/http/admin/coupon/query_handler.go`
+- [X] T048 [US3] 注册 RBAC 资源与动作 `backend/internal/transport/http/admin/coupon/rbac.go`
+- [X] T049 [US3] 管理端 API 封装 `web-admin/app/composables/api/useCoupons.ts`
+- [X] T050 [US3] 管理端页面：模板列表与编辑 `web-admin/app/pages/pricing/coupons.vue`
+- [X] T051 [US3] 管理端页面：资产与流水查询 `web-admin/app/pages/pricing/coupon-usages.vue`
 
 **Checkpoint**: 全量用户故事独立可测
 
