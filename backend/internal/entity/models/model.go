@@ -122,6 +122,12 @@ const (
 	TablePricebookItems     = "pricebook_items"
 	TablePricebookAuditLogs = "pricebook_audit_logs"
 
+	// Coupons
+	TableCouponTemplates      = "coupon_templates"
+	TableCouponAssets         = "coupon_assets"
+	TableCouponUsageLogs      = "coupon_usage_logs"
+	TableOrderCouponSnapshots = "order_coupon_snapshots"
+
 	// Customer Address Book (Checkout MVP)
 	TableCustomerAddresses = "customer_addresses"
 

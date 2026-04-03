@@ -87,6 +87,7 @@ var businessTables = func() []interface{} {
 	tables = append(tables, migrations.ProductCategoryTables...)
 	tables = append(tables, migrations.ChannelMasterTables...)
 	tables = append(tables, migrations.PricingPricebookTables...)
+	tables = append(tables, migrations.CouponTables...)
 	tables = append(tables, migrations.OrderTables...)
 	tables = append(tables, migrations.CartTables...)
 	tables = append(tables, migrations.PaymentTables...)
