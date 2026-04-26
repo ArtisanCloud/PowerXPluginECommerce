@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	pluginbootstrap "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/bootstrap"
 	integrationService "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/integration"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/gin-gonic/gin"
@@ -20,7 +21,20 @@ type capabilityInvokeRequest struct {
 	CapabilityID      string         `json:"capabilityId"`
 	Action            string         `json:"action"`
 	PreferredProtocol string         `json:"preferredProtocol"`
+	AuthRequired      *bool          `json:"auth_required,omitempty"`
+	TenantScoped      *bool          `json:"tenant_scoped,omitempty"`
 	Payload           map[string]any `json:"payload"`
+}
+
+type invokePolicy struct {
+	AuthRequired bool
+	TenantScoped bool
+}
+
+type invokeAuthContext struct {
+	Token       string
+	TokenSource string
+	TokenTID    string
 }
 
 // Handler 提供 integration HTTP API 的入口。
@@ -126,6 +140,7 @@ func (h *Handler) InvokeCapability(c *gin.Context) {
 		tenantUUID = firstNonEmptyEnv("PX_TENANT_UUID", "POWERX_TENANT_UUID")
 	}
 	mockModule := strings.TrimSpace(c.GetHeader("X-PX-Use-Mock"))
+	policy := parseInvokePolicy(rawBody)
 
 	primaryBody, err := buildTenantInvocationPayload(rawBody, tenantUUID)
 	if err != nil {
@@ -138,16 +153,35 @@ func (h *Handler) InvokeCapability(c *gin.Context) {
 		return
 	}
 
+	authCtx, policyErr := resolveInvokeAuthContext(c, tenantUUID, policy)
+	if policyErr != nil {
+		status := http.StatusForbidden
+		if policyErr.Code == "GW_POLICY_AUTH_REQUIRED" {
+			status = http.StatusUnauthorized
+		}
+		c.JSON(status, gin.H{
+			"error": gin.H{
+				"code":    policyErr.Code,
+				"message": policyErr.Message,
+			},
+		})
+		return
+	}
+	h.logInvokePolicy(c, policy, authCtx)
+
 	scheme := resolveGatewayAuthScheme()
-	token := firstNonEmptyEnv("PX_TOOL_TOKEN", "PX_PLUGIN_TOOL_TOKEN", "POWERX_AUTH_TOKEN")
-	apiKey := strings.TrimSpace(os.Getenv("PX_GATEWAY_API_KEY"))
+	apiKey := ""
+	// 业务调用默认走请求态 token；匿名模式不附带 Authorization。
+	if !policy.AuthRequired {
+		scheme = "bearer"
+	}
 
 	status, headers, raw, err := invokeGatewayEndpoint(
 		c,
 		primaryEndpoint,
 		primaryBody,
 		scheme,
-		token,
+		authCtx.Token,
 		apiKey,
 		requestID,
 		tenantUUID,
@@ -169,7 +203,7 @@ func (h *Handler) InvokeCapability(c *gin.Context) {
 			legacyEndpoint,
 			rawBody,
 			scheme,
-			token,
+			authCtx.Token,
 			apiKey,
 			requestID,
 			tenantUUID,
@@ -261,6 +295,118 @@ func buildTenantInvocationPayload(rawBody []byte, tenantUUID string) ([]byte, er
 		payload["payload"] = map[string]any{}
 	}
 	return json.Marshal(payload)
+}
+
+func parseInvokePolicy(rawBody []byte) invokePolicy {
+	policy := invokePolicy{AuthRequired: true, TenantScoped: true}
+	var req capabilityInvokeRequest
+	if err := json.Unmarshal(rawBody, &req); err == nil {
+		if req.AuthRequired != nil {
+			policy.AuthRequired = *req.AuthRequired
+		}
+		if req.TenantScoped != nil {
+			policy.TenantScoped = *req.TenantScoped
+		}
+	}
+	return policy
+}
+
+type invokePolicyError struct {
+	Code    string
+	Message string
+}
+
+func resolveInvokeAuthContext(c *gin.Context, tenantUUID string, policy invokePolicy) (invokeAuthContext, *invokePolicyError) {
+	rawToken := extractBearerToken(c.GetHeader("Authorization"))
+	ctx := invokeAuthContext{
+		Token:       rawToken,
+		TokenSource: "none",
+	}
+	if rawToken != "" {
+		ctx.TokenSource = "request"
+		if tid, ok := pluginbootstrap.ParseTenantIDFromJWT(rawToken); ok {
+			ctx.TokenTID = strings.TrimSpace(tid)
+		}
+	}
+
+	if !policy.AuthRequired {
+		ctx.Token = ""
+		ctx.TokenSource = "none"
+		return ctx, nil
+	}
+
+	if strings.TrimSpace(ctx.Token) == "" {
+		return ctx, &invokePolicyError{
+			Code:    "GW_POLICY_AUTH_REQUIRED",
+			Message: "authorization bearer token required for invoke",
+		}
+	}
+
+	if !policy.TenantScoped {
+		return ctx, nil
+	}
+
+	requestTenant := strings.TrimSpace(tenantUUID)
+	tokenTenant := strings.TrimSpace(ctx.TokenTID)
+	if tokenTenant == "" {
+		return ctx, &invokePolicyError{
+			Code:    "GW_POLICY_TOKEN_TENANT_MISSING",
+			Message: "tenant scoped invoke requires tid claim in token",
+		}
+	}
+	if strings.EqualFold(tokenTenant, zeroTenantUUID) {
+		return ctx, &invokePolicyError{
+			Code:    "GW_POLICY_ZERO_TENANT",
+			Message: "zero tenant token is not allowed for tenant scoped invoke",
+		}
+	}
+	if requestTenant != "" && !strings.EqualFold(requestTenant, tokenTenant) {
+		return ctx, &invokePolicyError{
+			Code:    "GW_POLICY_TENANT_MISMATCH",
+			Message: "request tenant does not match token tid",
+		}
+	}
+	return ctx, nil
+}
+
+func (h *Handler) logInvokePolicy(c *gin.Context, policy invokePolicy, auth invokeAuthContext) {
+	if h == nil || h.logger == nil {
+		return
+	}
+	entry := h.logger.WithFields(logrus.Fields{
+		"token_source":  strings.TrimSpace(auth.TokenSource),
+		"token_tid":     maskTenantID(auth.TokenTID),
+		"auth_required": policy.AuthRequired,
+		"tenant_scoped": policy.TenantScoped,
+	})
+	if c != nil {
+		entry = entry.WithField("path", c.FullPath())
+	}
+	entry.Debug("integration invoke policy resolved")
+}
+
+const zeroTenantUUID = "00000000-0000-0000-0000-000000000000"
+
+func extractBearerToken(raw string) string {
+	v := strings.TrimSpace(raw)
+	if v == "" {
+		return ""
+	}
+	if len(v) < 7 || !strings.EqualFold(v[:7], "Bearer ") {
+		return ""
+	}
+	return strings.TrimSpace(v[7:])
+}
+
+func maskTenantID(tid string) string {
+	tid = strings.TrimSpace(tid)
+	if tid == "" {
+		return ""
+	}
+	if len(tid) <= 8 {
+		return tid
+	}
+	return tid[:4] + "..." + tid[len(tid)-4:]
 }
 
 func normalizeInvokeResponse(status int, headers http.Header, raw []byte) (gin.H, int) {

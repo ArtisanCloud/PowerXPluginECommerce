@@ -14,6 +14,10 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) {
 	}
 	bootstrap := NewBootstrapHandler(runtimeops.NewService())
 	router.POST("/bootstrap", bootstrap.Bootstrap)
+	loggingPolicy := NewLoggingPolicyHandler()
+	router.GET("/logging/policy", loggingPolicy.Get)
+	router.PUT("/logging/policy", loggingPolicy.Put)
+	router.POST("/logging/probe", LoggingProbeHandler())
 
 	sessions := NewSessionsHandler(deps)
 	router.POST("/sessions/register", sessions.Register)

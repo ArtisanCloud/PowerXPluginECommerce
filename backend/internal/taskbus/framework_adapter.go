@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	frameworkevent "github.com/ArtisanCloud/PowerXPlugin/framework/event"
-	"github.com/ArtisanCloud/PowerXPlugin/framework/eventbridge"
+	frameworkevent "github.com/ArtisanCloud/PowerXPlugin/framework/backend/go/event"
+	"github.com/ArtisanCloud/PowerXPlugin/framework/backend/go/eventbridge"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	"github.com/sirupsen/logrus"
 )
