@@ -3,7 +3,6 @@ package product_sku
 import (
 	"errors"
 	"net/http"
-	"strconv"
 
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	productskuservice "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/product_sku"
@@ -36,9 +35,7 @@ func (h *BulkHandler) Submit(c *gin.Context) {
 	}
 	if tc, ok := middleware.GetTenantContext(c); ok {
 		req.TenantUUID = tc.TenantUUID
-		if tc.UserID != 0 {
-			req.RequestedBy = strconv.FormatInt(tc.UserID, 10)
-		}
+		req.RequestedBy = tc.Actor().ID()
 		req.RequestedByRoles = tc.Roles
 	}
 	resp, err := h.service.SubmitBulkTask(c.Request.Context(), req)
@@ -73,8 +70,8 @@ func (h *BulkHandler) DecideApproval(c *gin.Context) {
 		return
 	}
 	actor := "system"
-	if tc, ok := middleware.GetTenantContext(c); ok && tc.UserID != 0 {
-		actor = strconv.FormatInt(tc.UserID, 10)
+	if tc, ok := middleware.GetTenantContext(c); ok {
+		actor = tc.Actor().ID()
 	}
 	resp, err := h.service.DecideBulkTaskApproval(
 		c.Request.Context(),

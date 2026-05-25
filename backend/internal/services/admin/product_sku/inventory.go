@@ -3,7 +3,6 @@ package product_sku
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 	"time"
 
@@ -17,8 +16,8 @@ const inventoryStaleThreshold = 5 * time.Minute
 const defaultWarehouseID = "default"
 
 var (
-	ErrInventoryDeltaRequired   = errors.New("inventory delta is required")
-	ErrInventoryWouldBeNegative = errors.New("inventory would be negative")
+	ErrInventoryDeltaRequired      = errors.New("inventory delta is required")
+	ErrInventoryWouldBeNegative    = errors.New("inventory would be negative")
 	ErrInventoryRequiredForPublish = errors.New("publish requires available inventory")
 )
 
@@ -102,10 +101,7 @@ func (s *Service) AdjustInventory(ctx context.Context, skuID string, delta int64
 		return nil, ErrInventoryDeltaRequired
 	}
 
-	actor := ""
-	if tc, ok := authx.TenantContextFromContext(ctx); ok && tc.UserID > 0 {
-		actor = fmt.Sprintf("%d", tc.UserID)
-	}
+	actor := authx.ActorIDFromContext(ctx)
 	requestID, _ := ctx.Value("request_id").(string)
 
 	err = s.InventoryRepo.WithTenantTx(ctx, tenantID, func(tx *gorm.DB) error {
@@ -136,7 +132,7 @@ func (s *Service) AdjustInventory(ctx context.Context, skuID string, delta int64
 
 		if s.AuditLogRepo != nil {
 			log := &productskumodel.ProductSKUAuditLog{
-				ID:               uuid.NewString(),
+				ID:              uuid.NewString(),
 				TenantUUID:      tenantID,
 				SKUId:           skuID,
 				WarehouseID:     defaultWarehouseID,

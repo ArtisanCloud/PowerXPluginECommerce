@@ -27,6 +27,118 @@ type TenantContext struct {
 	PolicyVersion string   `json:"policy_version"`
 }
 
+type ActorContext struct {
+	TenantUUID string `json:"tenant_uuid,omitempty"`
+	TenantID   int64  `json:"tenant_id,omitempty"`
+	UserUUID   string `json:"user_uuid,omitempty"`
+	UserID     int64  `json:"user_id,omitempty"`
+	MemberUUID string `json:"member_uuid,omitempty"`
+	MemberID   int64  `json:"member_id,omitempty"`
+	Email      string `json:"email,omitempty"`
+}
+
+func (tc TenantContext) Actor() ActorContext {
+	return ActorContext{
+		TenantUUID: strings.TrimSpace(tc.TenantUUID),
+		TenantID:   tc.TenantID,
+		UserUUID:   strings.TrimSpace(tc.UserUUID),
+		UserID:     tc.UserID,
+		MemberUUID: strings.TrimSpace(tc.MemberUUID),
+		MemberID:   tc.MemberID,
+		Email:      strings.ToLower(strings.TrimSpace(tc.Email)),
+	}
+}
+
+func (a ActorContext) ID() string {
+	if v := strings.TrimSpace(a.MemberUUID); v != "" {
+		return "member:" + v
+	}
+	if a.MemberID > 0 {
+		return "member_id:" + strconv.FormatInt(a.MemberID, 10)
+	}
+	if v := strings.TrimSpace(a.UserUUID); v != "" {
+		return "user:" + v
+	}
+	if a.UserID > 0 {
+		return "user_id:" + strconv.FormatInt(a.UserID, 10)
+	}
+	if v := strings.TrimSpace(a.TenantUUID); v != "" {
+		return "tenant:" + v
+	}
+	return "system"
+}
+
+func (a ActorContext) Fields() map[string]any {
+	fields := map[string]any{}
+	if v := strings.TrimSpace(a.TenantUUID); v != "" {
+		fields["tenant_uuid"] = v
+	}
+	if a.TenantID > 0 {
+		fields["tenant_id"] = a.TenantID
+	}
+	if v := strings.TrimSpace(a.UserUUID); v != "" {
+		fields["user_uuid"] = v
+	}
+	if a.UserID > 0 {
+		fields["user_id"] = a.UserID
+	}
+	if v := strings.TrimSpace(a.MemberUUID); v != "" {
+		fields["member_uuid"] = v
+	}
+	if a.MemberID > 0 {
+		fields["member_id"] = a.MemberID
+	}
+	if v := strings.TrimSpace(a.Email); v != "" {
+		fields["email"] = v
+	}
+	return fields
+}
+
+func ActorFromContext(ctx context.Context) ActorContext {
+	if tc, ok := TenantContextFromContext(ctx); ok {
+		return tc.Actor()
+	}
+	if tenantUUID, ok := TenantUUIDFromContext(ctx); ok {
+		return ActorContext{TenantUUID: tenantUUID}
+	}
+	return ActorContext{}
+}
+
+func ActorIDFromContext(ctx context.Context) string {
+	return ActorFromContext(ctx).ID()
+}
+
+func ActorFromGin(c *gin.Context) (ActorContext, bool) {
+	if c == nil {
+		return ActorContext{}, false
+	}
+	if tc, ok := GetTenantContext(c); ok {
+		return tc.Actor(), true
+	}
+	if c.Request != nil {
+		actor := ActorFromContext(c.Request.Context())
+		if strings.TrimSpace(actor.ID()) != "system" {
+			return actor, true
+		}
+	}
+	return ActorContext{}, false
+}
+
+func RequireActorFromGin(c *gin.Context) (ActorContext, bool) {
+	actor, ok := ActorFromGin(c)
+	if !ok || actor.ID() == "system" {
+		return ActorContext{}, false
+	}
+	return actor, true
+}
+
+func ActorIDFromGin(c *gin.Context) string {
+	if actor, ok := ActorFromGin(c); ok {
+		return actor.ID()
+	}
+	return "system"
+}
+
 // CustomerContext 存放 mini-app 客户信息。
 type CustomerContext struct {
 	TenantUUID string   `json:"tenant_uuid"`

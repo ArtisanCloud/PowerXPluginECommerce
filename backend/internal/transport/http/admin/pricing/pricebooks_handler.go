@@ -250,14 +250,7 @@ func actorFromContext(c *gin.Context) string {
 	if c == nil {
 		return "admin"
 	}
-	ctx := c.Request.Context()
-	if tc, ok := authx.TenantContextFromContext(ctx); ok && tc.UserID > 0 {
-		return strconv.FormatInt(tc.UserID, 10)
-	}
-	if tenantUUID, ok := authx.TenantUUIDFromContext(ctx); ok && strings.TrimSpace(tenantUUID) != "" {
-		return "tenant:" + strings.TrimSpace(tenantUUID)
-	}
-	return "admin"
+	return authx.ActorIDFromGin(c)
 }
 
 func intFromQuery(c *gin.Context, key string, def int) int {

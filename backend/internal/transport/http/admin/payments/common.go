@@ -1,7 +1,6 @@
 package payments
 
 import (
-	"strconv"
 	"strings"
 
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/contracts"
@@ -10,12 +9,12 @@ import (
 )
 
 func requireAdminUser(c *gin.Context) (string, bool) {
-	tc, ok := authx.GetTenantContext(c)
-	if !ok || tc.UserID <= 0 {
+	actor, ok := authx.RequireActorFromGin(c)
+	if !ok {
 		contracts.ResponseUnauthorized(c, "unauthorized")
 		return "", false
 	}
-	return strconv.FormatInt(tc.UserID, 10), true
+	return actor.ID(), true
 }
 
 func requestIDFromRequest(c *gin.Context) string {
