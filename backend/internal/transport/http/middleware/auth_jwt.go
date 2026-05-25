@@ -36,8 +36,40 @@ func JWTAuth(cfg authx.JWTAuthConfig) gin.HandlerFunc {
 					if tid, ok := m["tid"].(string); ok {
 						tc.TenantUUID = strings.TrimSpace(tid)
 					}
-					if uid, ok := m["uid"].(float64); ok {
+					if tidN, ok := m["tid_n"].(float64); ok {
+						tc.TenantID = int64(tidN)
+					}
+					if uidN, ok := m["uid_n"].(float64); ok {
+						tc.UserID = int64(uidN)
+					} else if uid, ok := m["uid"].(float64); ok {
 						tc.UserID = int64(uid)
+					}
+					if uid, ok := m["uid"].(string); ok {
+						tc.UserUUID = strings.TrimSpace(uid)
+					}
+					if midN, ok := m["mid_n"].(float64); ok {
+						tc.MemberID = int64(midN)
+					} else if mid, ok := m["mid"].(float64); ok {
+						tc.MemberID = int64(mid)
+					}
+					if mid, ok := m["mid"].(string); ok {
+						tc.MemberUUID = strings.TrimSpace(mid)
+					}
+					if email, ok := m["email"].(string); ok {
+						tc.Email = strings.ToLower(strings.TrimSpace(email))
+					}
+					if phone, ok := m["phone"].(string); ok {
+						tc.Phone = strings.TrimSpace(phone)
+					}
+					if isRoot, ok := m["is_root"].(bool); ok {
+						tc.IsRoot = isRoot
+					}
+					if plats, ok := m["plats"].([]any); ok {
+						for _, p := range plats {
+							if s, ok := p.(string); ok && strings.TrimSpace(s) != "" {
+								tc.Platforms = append(tc.Platforms, strings.TrimSpace(s))
+							}
+						}
 					}
 					if roles, ok := m["roles"].([]any); ok {
 						for _, r := range roles {

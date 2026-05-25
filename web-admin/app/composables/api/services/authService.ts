@@ -142,6 +142,8 @@ export interface AuthMeContextResponse {
   is_root?: boolean;
   current_tenant_uuid?: string;
   current_member_id?: number;
+  current_member_uuid?: string;
+  tenant?: Record<string, any>;
   user?: Record<string, any>;
   members?: Array<Record<string, any>>;
   roles?: string[];

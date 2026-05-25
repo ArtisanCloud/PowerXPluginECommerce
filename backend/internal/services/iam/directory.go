@@ -41,12 +41,16 @@ type AuthTokens struct {
 type UserContext struct {
 	TenantUUID    string
 	TenantUuid    string
+	TenantID      uint64
 	TenantKey     string
 	TenantName    string
 	MemberID      uint64
+	MemberUUID    string
 	UserID        uint64
+	UserUUID      string
 	Username      string
 	Email         string
+	Phone         string
 	DisplayName   string
 	AvatarURL     string
 	Roles         []string

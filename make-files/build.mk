@@ -228,6 +228,10 @@ dist-verify: ## 校验 dist 安装包必需结构与核心权限注册
 	@awk '/^[[:space:]]*runtime:[[:space:]]*$$/{in_runtime=1; next} in_runtime && /^[^[:space:]]/ {in_runtime=0} in_runtime && /^[[:space:]]*entry:[[:space:]]*backend\/bin\/plugin[[:space:]]*$$/ {found=1} END{exit found?0:1}' "$(DIST_DIR)/plugin.yaml" || { echo "❌ plugin.yaml runtime.entry 必须是 backend/bin/plugin"; exit 1; }
 	@awk '/^[[:space:]]*migrations:[[:space:]]*$$/{in_migrations=1; next} in_migrations && /^[^[:space:]]/ {in_migrations=0} in_migrations && /^[[:space:]]*entry:[[:space:]]*backend\/bin\/migrate[[:space:]]*$$/ {found=1} END{exit found?0:1}' "$(DIST_DIR)/plugin.yaml" || { echo "❌ plugin.yaml migrations.entry 必须是 backend/bin/migrate"; exit 1; }
 	@test -f "$(DIST_WEBADMIN_OUTPUT)/server/index.mjs" || { echo "❌ 缺少前端服务入口 $(DIST_WEBADMIN_OUTPUT)/server/index.mjs"; exit 1; }
+	@test -f "$(DIST_WEBADMIN_OUTPUT)/public/icon.svg" || { echo "❌ 缺少插件市场图标 $(DIST_WEBADMIN_OUTPUT)/public/icon.svg"; exit 1; }
+	@awk '/^[[:space:]]*metadata:[[:space:]]*$$/{in_metadata=1; next} in_metadata && /^[^[:space:]]/ {in_metadata=0} in_metadata && /^[[:space:]]*icon:[[:space:]]*icon\.svg[[:space:]]*$$/ {found=1} END{exit found?0:1}' "$(DIST_DIR)/plugin.yaml" || { echo "❌ plugin.yaml metadata.icon 必须是 icon.svg"; exit 1; }
+	@test -f "$(DIST_WEBADMIN_DIR)/i18n/zh-CN/menus.json" || { echo "❌ 缺少宿主菜单中文多语言 $(DIST_WEBADMIN_DIR)/i18n/zh-CN/menus.json"; exit 1; }
+	@test -f "$(DIST_WEBADMIN_DIR)/i18n/en/menus.json" || { echo "❌ 缺少宿主菜单英文多语言 $(DIST_WEBADMIN_DIR)/i18n/en/menus.json"; exit 1; }
 	@test -f "$(DIST_DIR)/config/event_fabric.yaml" || { echo "❌ 缺少 $(DIST_DIR)/config/event_fabric.yaml"; exit 1; }
 	@for f in plugin.d/capabilities.yaml plugin.d/exposure.yaml plugin.d/rbac.yaml; do \
 	  test -f "$(DIST_DIR)/$$f" || { echo "❌ 缺少 $(DIST_DIR)/$$f"; exit 1; }; \

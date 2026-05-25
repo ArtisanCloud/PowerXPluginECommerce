@@ -13,7 +13,15 @@ import (
 
 type TenantContext struct {
 	TenantUUID    string   `json:"tenant_uuid"`
+	TenantID      int64    `json:"tenant_id,omitempty"`
 	UserID        int64    `json:"user_id"`
+	UserUUID      string   `json:"user_uuid,omitempty"`
+	MemberID      int64    `json:"member_id,omitempty"`
+	MemberUUID    string   `json:"member_uuid,omitempty"`
+	Email         string   `json:"email,omitempty"`
+	Phone         string   `json:"phone,omitempty"`
+	IsRoot        bool     `json:"is_root,omitempty"`
+	Platforms     []string `json:"platforms,omitempty"`
 	Roles         []string `json:"roles"`
 	Permissions   []string `json:"permissions"`
 	PolicyVersion string   `json:"policy_version"`

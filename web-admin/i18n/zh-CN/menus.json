@@ -1,0 +1,36 @@
+{
+  "menu": {
+    "com": {
+      "powerx": {
+        "plugins": {
+          "ecommerce": {
+            "console": "电商中台",
+            "productCenter": "商品中心",
+            "skuManagement": "SKU 管理",
+            "spuManagement": "SPU 管理",
+            "categories": "分类管理",
+            "categoryTemplates": "分类模板",
+            "inventory": "库存与变体",
+            "customerCenter": "客户中心",
+            "customerList": "客户列表",
+            "members": "会员管理",
+            "membershipBenefits": "会员权益",
+            "channelCenter": "渠道中心",
+            "channelList": "渠道列表",
+            "channelApprovals": "渠道审批",
+            "pricingPromotions": "价格与促销",
+            "pricebooks": "价格手册",
+            "couponTemplates": "优惠券模板",
+            "couponUsages": "发券与使用记录",
+            "orderCenter": "订单中心",
+            "orderList": "订单列表",
+            "paymentCenter": "支付中心",
+            "paymentProviders": "支付渠道",
+            "afterSalesCenter": "售后中心",
+            "afterSalesWorkbench": "售后工作台"
+          }
+        }
+      }
+    }
+  }
+}
