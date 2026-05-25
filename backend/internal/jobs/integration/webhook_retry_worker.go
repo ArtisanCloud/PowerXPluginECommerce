@@ -6,6 +6,7 @@ import (
 
 	model "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/integration"
 	repo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/integration"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	obs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/integration"
 	service "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/integration"
 	"github.com/sirupsen/logrus"
@@ -32,7 +33,7 @@ func NewWebhookRetryWorker(
 		interval = time.Minute
 	}
 	if logger == nil {
-		logger = logrus.WithField("component", "integration.webhook_retry_worker")
+		logger = pxlogger.WithField("component", "integration.webhook_retry_worker")
 	}
 	return &WebhookRetryWorker{
 		service:       svc,

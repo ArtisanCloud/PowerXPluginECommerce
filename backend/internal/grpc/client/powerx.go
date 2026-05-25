@@ -7,7 +7,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 	"strings"
@@ -37,16 +36,10 @@ func resolveUpstreamToken(cfg *cfgpkg.GRPCUpstream) string {
 	if cfg == nil {
 		return ""
 	}
-	if v := strings.TrimSpace(os.Getenv("PX_TOOL_TOKEN")); v != "" {
-		return v
-	}
-	if v := strings.TrimSpace(os.Getenv("PX_PLUGIN_TOOL_TOKEN")); v != "" {
-		return v
-	}
 	if v := strings.TrimSpace(cfg.Token); v != "" {
 		return v
 	}
-	return strings.TrimSpace(os.Getenv("POWERX_AUTH_TOKEN"))
+	return ""
 }
 
 func resolveUpstreamTenant(cfg *cfgpkg.GRPCUpstream, token string) string {
@@ -179,6 +172,9 @@ func NewPowerXServiceClient(ctx context.Context, c *cfgpkg.GRPCUpstream) (*Power
 			return &STSExchangeResponse{AccessToken: resp.Data.GetAccessToken(), ExpiresIn: int32(resp.Data.GetExpiresIn())}, nil
 		})
 	}
+	if p.tm == nil && strings.TrimSpace(p.token) == "" && effectiveHostModeEnv() {
+		return nil, fmt.Errorf("host mode requires STS credentials: POWERX_STS_CLIENT_ID and POWERX_STS_CLIENT_SECRET")
+	}
 
 	return p, nil
 }
@@ -259,20 +255,26 @@ func (p *PowerXServiceClient) STSClient(ctx context.Context) (stsv1.STSServiceCl
 func (p *PowerXServiceClient) Outgoing(ctx context.Context) context.Context {
 	md := metadata.New(map[string]string{})
 
-	// 优先使用 STS token，其次使用静态 Token
-	bearer := p.token
+	// 宿主/代理模式下必须优先使用 STS 签发的 powerx:api token。
+	bearer := ""
 	if p.tm != nil {
 		if tok, err := p.tm.GetToken(ctx); err == nil && tok != "" {
 			bearer = tok
 		}
+	}
+	if bearer == "" && !effectiveHostModeEnv() {
+		bearer = p.token
 	}
 	if bearer != "" {
 		head := bearer
 		if len(head) > 40 {
 			head = bearer[:40]
 		}
-		// 临时调试
-		log.Printf("[PLUGIN-GATE-TOKEN] upstream=%s token.head=%s...", p.cfg.Address, head)
+		logger.WithFields(logger.Fields{
+			"component":  "grpc.powerx_client",
+			"upstream":   p.cfg.Address,
+			"token_head": head,
+		}).Debug("powerx gateway token attached")
 		md.Set("authorization", "Bearer "+bearer)
 	}
 
@@ -281,7 +283,7 @@ func (p *PowerXServiceClient) Outgoing(ctx context.Context) context.Context {
 
 // GetToken 获取认证 token
 func (p *PowerXServiceClient) GetToken() string {
-	if p.token != "" {
+	if !effectiveHostModeEnv() && p.token != "" {
 		return p.token
 	}
 	if p.tm != nil && p.tm.HasValid() {
@@ -292,15 +294,38 @@ func (p *PowerXServiceClient) GetToken() string {
 	return ""
 }
 
+func (p *PowerXServiceClient) GetAccessToken(ctx context.Context) (string, error) {
+	if p == nil {
+		return "", fmt.Errorf("powerx client is nil")
+	}
+	if p.tm != nil {
+		return p.tm.GetToken(ctx)
+	}
+	if !effectiveHostModeEnv() && strings.TrimSpace(p.token) != "" {
+		return p.token, nil
+	}
+	return "", fmt.Errorf("powerx sts token manager not configured")
+}
+
 // HasToken 是否配置/具备可用的访问凭据（静态或临时）
 func (p *PowerXServiceClient) HasToken() bool {
-	if p.token != "" {
+	if !effectiveHostModeEnv() && p.token != "" {
 		return true
 	}
 	if p.tm != nil && p.tm.HasValid() {
 		return true
 	}
 	return false
+}
+
+func effectiveHostModeEnv() bool {
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("IAM_MODE")), "delegated") {
+		return true
+	}
+	if strings.EqualFold(strings.TrimSpace(os.Getenv("POWERX_IAM_MODE")), "delegated") {
+		return true
+	}
+	return strings.TrimSpace(os.Getenv("POWERX_PROXY")) == "1"
 }
 
 // GetTenantUUID 获取租户 UUID

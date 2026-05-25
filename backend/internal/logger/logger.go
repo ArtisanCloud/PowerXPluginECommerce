@@ -11,6 +11,7 @@ import (
 	"strings"
 	"sync"
 
+	runtimelogging "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/runtime/logging"
 	"github.com/sirupsen/logrus"
 )
 
@@ -42,8 +43,27 @@ const (
 
 // Init 初始化统一日志后端与 logrus 兼容层。
 func Init(level, format, output, filePath string, maxSize, maxBackups, maxAge int, httpAccess bool) {
+	InitWithHostMode(level, format, output, filePath, maxSize, maxBackups, maxAge, httpAccess, runtimelogging.IsHostProxyMode())
+}
+
+func InitWithHostMode(level, format, output, filePath string, maxSize, maxBackups, maxAge int, httpAccess bool, hostMode bool) {
 	Logger = logrus.New()
 	httpAccessEnabled = httpAccess
+	runtimelogging.SetHostModeOverride(hostMode)
+	if hostMode {
+		format = "json"
+		output = string(runtimelogging.SinkStdout)
+	}
+	policy := runtimelogging.ResolveWithHostDefaults(runtimelogging.Policy{
+		Format: strings.TrimSpace(format),
+		Level:  strings.TrimSpace(level),
+		Sinks:  []runtimelogging.SinkType{runtimelogging.SinkType(strings.TrimSpace(output))},
+	})
+	if err := runtimelogging.ValidatePolicy(policy); err == nil {
+		format = policy.Format
+		level = policy.Level
+		output = runtimelogging.PrimaryOutput(policy)
+	}
 
 	logLevel, err := logrus.ParseLevel(strings.ToLower(strings.TrimSpace(level)))
 	if err != nil {

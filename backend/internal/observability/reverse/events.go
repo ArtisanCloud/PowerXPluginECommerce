@@ -1,6 +1,7 @@
 package reverse
 
 import (
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"strings"
 	"time"
 
@@ -46,7 +47,7 @@ type AuditEvent struct {
 // NewEmitter constructs a reverse-logistics event emitter.
 func NewEmitter(entry *logrus.Entry) *Emitter {
 	if entry == nil {
-		entry = logrus.New().WithField("component", "reverse-observability")
+		entry = pxlogger.WithField("component", "reverse-observability")
 	}
 	return &Emitter{entry: entry}
 }

@@ -1,6 +1,7 @@
 package after_sales
 
 import (
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"strings"
 	"time"
 
@@ -50,7 +51,7 @@ type AuditEvent struct {
 // NewEmitter constructs an after-sales event emitter.
 func NewEmitter(entry *logrus.Entry) *Emitter {
 	if entry == nil {
-		entry = logrus.New().WithField("component", "after-sales-observability")
+		entry = pxlogger.WithField("component", "after-sales-observability")
 	}
 	return &Emitter{entry: entry}
 }

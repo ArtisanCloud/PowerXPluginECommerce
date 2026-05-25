@@ -60,15 +60,17 @@ Skeleton 与 Base 插件保持相同的字段结构，可直接复用宿主侧�
 | `PX_GATEWAY_API_PREFIX` | Gateway API 前缀（默认 `/api/v1`） |
 | `PX_GATEWAY_AUTH_SCHEME` | Gateway 鉴权方案：`bearer` / `apikey` |
 | `PX_GATEWAY_API_KEY` | 当 `PX_GATEWAY_AUTH_SCHEME=apikey` 时使用的 API Key |
-| `PX_TOOL_TOKEN` | 插件出站调用宿主能力/网关使用的 Token（最高优先） |
-| `PX_PLUGIN_TOOL_TOKEN` | 宿主注入的插件出站 Token（次优先） |
+| `POWERX_STS_CLIENT_ID` | STS client_id，建议格式 `<plugin_id>.<tenant_uuid>` |
+| `POWERX_STS_CLIENT_SECRET` | STS client_secret |
+| `POWERX_STS_AUDIENCE` | STS audience，默认 `powerx:api` |
+| `POWERX_STS_SCOPE` | STS scope，默认 `access` |
 | `PX_GATEWAY_TIMEOUT` | Gateway 调用超时（支持 `60s` 或 `60`，默认 `60s`） |
-| `POWERX_AUTH_TOKEN` | 兼容旧变量，仅当前两者缺失时回退使用 |
+| `POWERX_AUTH_TOKEN` | Root/Admin 本地调试 Token；宿主业务链路不得依赖 |
 | `IAM_MODE` / `POWERX_IAM_MODE` | 显式指定 IAM 模式：`local` / `delegated` |
 | `PLUGIN_IAM_ADMIN_EMAIL` | Local 模式默认管理员邮箱，`go run ./cmd/database setup` 时必填 |
 | `PLUGIN_IAM_ADMIN_PASSWORD` | Local 模式默认管理员密码，配合上方邮箱使用 |
 
-> 统一口径：租户来源优先从 `PX_TOOL_TOKEN`/`PX_PLUGIN_TOOL_TOKEN` 的 `tid` claim 解析；`PX_TENANT_UUID` 不再作为运行决策输入。
+> 统一口径：插件主动调用 PowerX 底座时使用 STS Exchange 获取短期 `powerx:api` token。`PX_TOOL_TOKEN` / `PX_PLUGIN_TOOL_TOKEN` 已废弃，宿主业务链路不得注入、读取或依赖。
 >
 > 建议在生产环境通过配置文件写入敏感信息，仅在必要时才使用环境变量覆盖。
 

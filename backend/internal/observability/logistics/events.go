@@ -1,6 +1,7 @@
 package logistics
 
 import (
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"strings"
 	"time"
 
@@ -45,7 +46,7 @@ type AuditEvent struct {
 // NewEmitter constructs a logistics event emitter.
 func NewEmitter(entry *logrus.Entry) *Emitter {
 	if entry == nil {
-		entry = logrus.New().WithField("component", "logistics-observability")
+		entry = pxlogger.WithField("component", "logistics-observability")
 	}
 	return &Emitter{entry: entry}
 }

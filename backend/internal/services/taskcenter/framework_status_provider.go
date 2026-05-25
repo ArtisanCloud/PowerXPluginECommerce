@@ -10,8 +10,6 @@ import (
 	"os"
 	"strings"
 	"time"
-
-	pluginbootstrap "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/bootstrap"
 )
 
 type FrameworkStatusProvider struct {
@@ -42,9 +40,6 @@ func NewFrameworkStatusProvider(baseURL, token string) *FrameworkStatusProvider 
 		base = strings.TrimSpace(resolveFrameworkBaseURL())
 	}
 	tok := strings.TrimSpace(token)
-	if tok == "" {
-		tok, _ = pluginbootstrap.ResolveToolToken()
-	}
 	return &FrameworkStatusProvider{
 		BaseURL: strings.TrimRight(base, "/"),
 		Token:   tok,

@@ -1,4 +1,5 @@
-import { useApiClient, getTenantUuid } from "../index";
+import { getTenantUuid } from "../_base";
+import { useApiClient } from "../_client";
 import type {
   ApiResponse,
   PaginatedResponse,

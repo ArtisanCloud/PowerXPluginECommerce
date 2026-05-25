@@ -117,7 +117,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import { useI18n, useToast } from '#imports'
-import { useApiClient } from '~/composables/api'
+import { useApiClient } from '~/composables/api/_client'
 import { useSkuBulkActions } from '~/composables/useSkuBulkActions'
 import type { SkuImportMode } from '~/types/product/sku'
 

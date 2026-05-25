@@ -4,13 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 	"strings"
 
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/config"
 	basemodels "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models"
 	iamm "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/iam"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -53,11 +53,20 @@ func SeedLocalAdmin(ctx context.Context, db *gorm.DB, cfg *config.Config) error 
 	}
 	if opts.AdminEmail == "" {
 		opts.AdminEmail = defaultAdminEmail
-		log.Printf("[iam] PLUGIN_IAM_ADMIN_EMAIL not set, using default %s", opts.AdminEmail)
+		pxlogger.WithFields(pxlogger.Fields{
+			"component":   "iam.seeder",
+			"status":      "defaulted",
+			"reason":      "missing_admin_email",
+			"admin_email": opts.AdminEmail,
+		}).Warn("PLUGIN_IAM_ADMIN_EMAIL not set, using default")
 	}
 	if strings.TrimSpace(opts.AdminPwd) == "" {
 		opts.AdminPwd = defaultAdminPwd
-		log.Printf("[iam] PLUGIN_IAM_ADMIN_PASSWORD not set, using default %s", opts.AdminPwd)
+		pxlogger.WithFields(pxlogger.Fields{
+			"component": "iam.seeder",
+			"status":    "defaulted",
+			"reason":    "missing_admin_password",
+		}).Warn("PLUGIN_IAM_ADMIN_PASSWORD not set, using default")
 	}
 	if len(opts.AdminPwd) < 6 {
 		return fmt.Errorf("PLUGIN_IAM_ADMIN_PASSWORD must be at least 6 characters")

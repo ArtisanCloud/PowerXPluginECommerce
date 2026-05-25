@@ -11,6 +11,7 @@ import (
 	"time"
 
 	pluginbootstrap "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/bootstrap"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	integrationService "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/integration"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/gin-gonic/gin"
@@ -65,7 +66,7 @@ func (h *Handler) buildDispatchService() *integrationService.DispatchService {
 
 	logger := h.logger
 	if logger == nil {
-		logger = logrus.WithField("component", "integration_http")
+		logger = pxlogger.WithField("component", "integration_http")
 	}
 	service := integrationService.BuildDispatchService(h.deps, logger)
 	if service == nil {

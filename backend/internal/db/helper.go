@@ -15,8 +15,9 @@ func qi(ident string) string {
 	return `"` + ident + `"`
 }
 
-// createSchema: CREATE SCHEMA IF NOT EXISTS
-func createSchema(schema string) error {
+// ensureSchemaUsable validates the schema prepared by the host installer.
+// Plugin runtime and migration users should not require database-level CREATE SCHEMA.
+func ensureSchemaUsable(schema string) error {
 	if db == nil || db.Dialector == nil || db.Dialector.Name() != "postgres" {
 		return nil
 	}
@@ -24,23 +25,15 @@ func createSchema(schema string) error {
 	if schema == "" {
 		return errors.New("empty schema")
 	}
-	// public 是 PostgreSQL 内置 schema，普通账号通常没有 CREATE DATABASE/SCHEMA 权限；
-	// 对 public 跳过 CREATE，避免安装迁移因权限不足失败。
 	if strings.EqualFold(schema, "public") {
 		return nil
 	}
-	sqlText := fmt.Sprintf("CREATE SCHEMA IF NOT EXISTS %s", qi(schema))
-	if err := db.Exec(sqlText).Error; err != nil {
-		if isPermissionDenied(err) {
-			exists, checkErr := schemaExists(schema)
-			if checkErr != nil {
-				return checkErr
-			}
-			if exists {
-				return nil
-			}
-		}
+	exists, err := schemaExists(schema)
+	if err != nil {
 		return err
+	}
+	if !exists {
+		return fmt.Errorf("schema %q does not exist; host installer must provision plugin schema before migration", schema)
 	}
 	return nil
 }

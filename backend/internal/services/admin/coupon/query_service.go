@@ -6,6 +6,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models"
 	couponmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/coupon"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 )
@@ -33,6 +34,7 @@ type AssetListResult struct {
 
 type UsageLogQueryFilter struct {
 	AssetID    string
+	TemplateID string
 	OrderID    string
 	Action     string
 	CouponCode string
@@ -135,11 +137,14 @@ func (s *QueryService) ListUsageLogs(ctx context.Context, tenantUUID string, fil
 		pageSize = 20
 	}
 	query := s.deps.DB.WithContext(ctx).
-		Table("coupon_usage_logs AS ul").
-		Joins("LEFT JOIN coupon_assets AS a ON a.tenant_uuid = ul.tenant_uuid AND a.id = ul.asset_id").
+		Table(models.S(models.TableCouponUsageLogs)+" AS ul").
+		Joins("LEFT JOIN "+models.S(models.TableCouponAssets)+" AS a ON a.tenant_uuid = ul.tenant_uuid AND a.id = ul.asset_id").
 		Where("ul.tenant_uuid = ?", tenantUUID)
 	if v := strings.TrimSpace(filter.AssetID); v != "" {
 		query = query.Where("ul.asset_id = ?", v)
+	}
+	if v := strings.TrimSpace(filter.TemplateID); v != "" {
+		query = query.Where("a.template_id = ?", v)
 	}
 	if v := strings.TrimSpace(filter.OrderID); v != "" {
 		query = query.Where("ul.order_id = ?", v)

@@ -57,6 +57,7 @@ func (h *QueryHandler) ListUsageLogs(c *gin.Context) {
 	ctx := authx.ContextWithRequestID(c.Request.Context(), requestIDFromRequest(c))
 	out, err := h.service.ListUsageLogs(ctx, tenantUUID, couponsvc.UsageLogQueryFilter{
 		AssetID:    strings.TrimSpace(c.Query("assetId")),
+		TemplateID: strings.TrimSpace(c.Query("templateId")),
 		OrderID:    strings.TrimSpace(c.Query("orderId")),
 		Action:     strings.TrimSpace(c.Query("action")),
 		CouponCode: strings.TrimSpace(c.Query("couponCode")),

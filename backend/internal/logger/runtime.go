@@ -1,6 +1,11 @@
 package logger
 
-import "github.com/sirupsen/logrus"
+import (
+	"strings"
+
+	runtimelogging "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/runtime/logging"
+	"github.com/sirupsen/logrus"
+)
 
 var runtimeFieldMasker func(Fields) Fields
 
@@ -12,11 +17,17 @@ func RegisterRuntimeMasker(masker func(Fields) Fields) {
 
 // WithRuntimeFields enriches the log entry with standard runtime metadata.
 func WithRuntimeFields(pluginID, tenantID, traceID, component string, extra Fields) *logrus.Entry {
+	tenantID = strings.TrimSpace(tenantID)
+	traceID = strings.TrimSpace(traceID)
 	fields := Fields{
-		"plugin_id":   pluginID,
-		"tenant_uuid": tenantID,
-		"trace_id":    traceID,
-		"component":   component,
+		runtimelogging.FieldPluginID:   strings.TrimSpace(pluginID),
+		runtimelogging.FieldTenantUUID: tenantID,
+		runtimelogging.FieldTraceID:    traceID,
+		runtimelogging.FieldRequestID:  traceID,
+		runtimelogging.FieldComponent:  strings.TrimSpace(component),
+	}
+	if tenantID != "" {
+		fields[runtimelogging.FieldTenantKey] = tenantID
 	}
 	for k, v := range extra {
 		fields[k] = v

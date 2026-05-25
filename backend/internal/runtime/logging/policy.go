@@ -52,7 +52,16 @@ func DefaultPolicy() Policy {
 	}
 }
 
+var hostModeOverride *bool
+
+func SetHostModeOverride(host bool) {
+	hostModeOverride = &host
+}
+
 func IsHostProxyMode() bool {
+	if hostModeOverride != nil {
+		return *hostModeOverride
+	}
 	return strings.TrimSpace(os.Getenv("POWERX_PROXY")) == "1"
 }
 

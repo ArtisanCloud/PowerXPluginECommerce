@@ -116,12 +116,16 @@ func Connect(cfg *config.DatabaseConfig) (*gorm.DB, error) {
 
 	// schema 准备
 	if strings.ToLower(cfg.Driver) == "postgres" {
-		if err := createSchema(cfg.Schema); err != nil {
-			return nil, fmt.Errorf("failed to create schema: %w", err)
+		if err := ensureSchemaUsable(cfg.Schema); err != nil {
+			return nil, fmt.Errorf("failed to resolve schema: %w", err)
 		}
 		if err := setDefaultSchema(cfg.Schema); err != nil {
 			return nil, fmt.Errorf("failed to set default schema: %w", err)
 		}
+		var dbName, schemaName string
+		_ = db.Raw("select current_database()").Scan(&dbName).Error
+		_ = db.Raw("select current_schema()").Scan(&schemaName).Error
+		logger.Infof("Database context resolved. database=%s schema=%s", dbName, schemaName)
 	}
 
 	logger.Infof("Database connected. schema=%s pool{idle=%d open=%d}", cfg.Schema, cfg.MaxIdleConns, cfg.MaxOpenConns)

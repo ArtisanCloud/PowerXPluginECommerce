@@ -144,6 +144,7 @@ export function useCouponsApi() {
     listUsageLogs: (
       params?: {
         assetId?: string;
+        templateId?: string;
         orderId?: string;
         action?: string;
         couponCode?: string;

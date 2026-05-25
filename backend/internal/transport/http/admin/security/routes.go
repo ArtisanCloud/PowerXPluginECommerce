@@ -36,16 +36,17 @@ func RBACEntries(prefix string) map[string]authx.Permission {
 	if prefix == "" {
 		prefix = "/api/v1"
 	}
+	base := prefix + "/admin/security"
 	return map[string]authx.Permission{
-		prefix + "/admin/security/consent-tokens":                 {Resource: "admin.security.consent", Action: "read"},
-		prefix + "/admin/security/consent-tokens/:tokenId":        {Resource: "admin.security.consent", Action: "write"},
-		prefix + "/admin/security/lifecycle-events":               {Resource: "admin.security.lifecycle", Action: "read"},
-		prefix + "/admin/security/audit-reports":                  {Resource: "admin.security.audit", Action: "read"},
-		prefix + "/admin/security/advisories":                     {Resource: "admin.security.advisory", Action: "read"},
-		prefix + "/admin/security/advisories#create":              {Resource: "admin.security.advisory", Action: "write"},
-		prefix + "/admin/security/advisories/:advisoryId/publish": {Resource: "admin.security.advisory", Action: "write"},
-		prefix + "/admin/security/toolgrants/revoke":              {Resource: "admin.security.toolgrant", Action: "write"},
-		prefix + "/admin/security/toolgrants/revocations":         {Resource: "admin.security.toolgrant", Action: "read"},
-		prefix + "/admin/security/toolgrants/usage":               {Resource: "admin.security.toolgrant", Action: "read"},
+		"GET:" + base + "/consent-tokens":                  {Resource: "admin.security.consent", Action: "read"},
+		"POST:" + base + "/consent-tokens/:tokenId/revoke": {Resource: "admin.security.consent", Action: "write"},
+		"GET:" + base + "/lifecycle-events":                {Resource: "admin.security.lifecycle", Action: "read"},
+		"GET:" + base + "/audit-reports":                   {Resource: "admin.security.audit", Action: "read"},
+		"GET:" + base + "/advisories":                      {Resource: "admin.security.advisory", Action: "read"},
+		"POST:" + base + "/advisories":                     {Resource: "admin.security.advisory", Action: "write"},
+		"POST:" + base + "/advisories/:advisoryId/publish": {Resource: "admin.security.advisory", Action: "write"},
+		"POST:" + base + "/toolgrants/revoke":              {Resource: "admin.security.toolgrant", Action: "write"},
+		"GET:" + base + "/toolgrants/revocations":          {Resource: "admin.security.toolgrant", Action: "read"},
+		"GET:" + base + "/toolgrants/usage":                {Resource: "admin.security.toolgrant", Action: "read"},
 	}
 }

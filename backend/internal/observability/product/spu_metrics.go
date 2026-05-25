@@ -1,6 +1,7 @@
 package product
 
 import (
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"sync/atomic"
 	"time"
 
@@ -35,7 +36,7 @@ type SPUMetricSnapshot struct {
 // NewSPUMetrics creates a collector with optional logger.
 func NewSPUMetrics(logger *logrus.Entry) *SPUMetrics {
 	if logger == nil {
-		logger = logrus.New().WithField("component", "spu-metrics")
+		logger = pxlogger.WithField("component", "spu-metrics")
 	}
 	return &SPUMetrics{logger: logger}
 }

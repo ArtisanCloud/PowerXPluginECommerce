@@ -10,8 +10,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func TestResolveWSBusGatewayAuth_LocalUsesToolToken(t *testing.T) {
-	t.Setenv("PX_TOOL_TOKEN", "eyJhbGciOiJub25lIn0.eyJ0aWQiOiJ0ZW5hbnQtdDEifQ.")
+func TestResolveWSBusGatewayAuth_BearerWithoutSTSHasNoCredential(t *testing.T) {
 	t.Setenv("PX_GATEWAY_BASE_URL", "http://localhost:8077/api/v1")
 	t.Setenv("PX_GATEWAY_API_PREFIX", "/api/v1")
 
@@ -19,14 +18,11 @@ func TestResolveWSBusGatewayAuth_LocalUsesToolToken(t *testing.T) {
 	c.Request = httptest.NewRequest("POST", "/", nil)
 
 	decision := resolveWSBusGatewayAuth(c, &app.Deps{IAMMode: authx.IAMModeLocal})
-	if decision.Source != "env:PX_TOOL_TOKEN" {
+	if decision.Source != "none" {
 		t.Fatalf("unexpected source: %s", decision.Source)
 	}
-	if decision.TenantID != "tenant-t1" {
-		t.Fatalf("unexpected tid: %s", decision.TenantID)
-	}
-	if decision.GatewayToken == "" {
-		t.Fatal("expected gateway token")
+	if decision.GatewayToken != "" || decision.Authorization != "" {
+		t.Fatalf("deprecated tool token must not be used: token=%q auth=%q", decision.GatewayToken, decision.Authorization)
 	}
 	if decision.GatewayBaseURL != "http://localhost:8077" {
 		t.Fatalf("unexpected base url: %s", decision.GatewayBaseURL)
@@ -39,10 +35,8 @@ func TestResolveWSBusGatewayAuth_LocalUsesToolToken(t *testing.T) {
 	}
 }
 
-func TestResolveWSBusGatewayAuth_DelegatedUsesToolTokenForOutbound(t *testing.T) {
+func TestResolveWSBusGatewayAuth_DelegatedDoesNotUseInboundTokenForOutbound(t *testing.T) {
 	inbound := "eyJhbGciOiJub25lIn0.eyJ0aWQiOiJ0ZW5hbnQtaW5ib3VuZCJ9."
-	tool := "eyJhbGciOiJub25lIn0.eyJ0aWQiOiJ0ZW5hbnQtdG9vbCJ9."
-	t.Setenv("PX_TOOL_TOKEN", tool)
 
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	req := httptest.NewRequest("POST", "/", nil)
@@ -50,13 +44,13 @@ func TestResolveWSBusGatewayAuth_DelegatedUsesToolTokenForOutbound(t *testing.T)
 	c.Request = req
 
 	decision := resolveWSBusGatewayAuth(c, &app.Deps{IAMMode: authx.IAMModeDelegated})
-	if decision.Source != "env:PX_TOOL_TOKEN" {
+	if decision.Source != "none" {
 		t.Fatalf("unexpected source: %s", decision.Source)
 	}
-	if decision.TenantID != "tenant-tool" {
+	if decision.TenantID != "" {
 		t.Fatalf("unexpected tid: %s", decision.TenantID)
 	}
-	if decision.Authorization != "Bearer "+tool {
+	if decision.Authorization != "" {
 		t.Fatalf("unexpected authorization: %s", decision.Authorization)
 	}
 }
@@ -88,7 +82,6 @@ func TestResolveWSBusGatewayAuth_ApiKey(t *testing.T) {
 func TestResolveWSBusGatewayAuth_DefaultsToApiKeyWhenAPIKeyPresent(t *testing.T) {
 	t.Setenv("PX_GATEWAY_AUTH_SCHEME", "")
 	t.Setenv("PX_GATEWAY_API_KEY", "k_test_123")
-	t.Setenv("PX_TOOL_TOKEN", "eyJhbGciOiJub25lIn0.eyJ0aWQiOiJ0ZW5hbnQtdDEifQ.")
 
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request = httptest.NewRequest("POST", "/", nil)

@@ -8,8 +8,8 @@ import (
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models"
 	dbm "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/marketplace"
 	mrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/marketplace"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/recommendation"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -96,7 +96,7 @@ func TestSyncJobRefreshesWeights(t *testing.T) {
 			{ListingID: "l1", ReadyChecklistScore: 90},
 		},
 	}}
-	job := NewSyncJob(nil, repo, provider, logrus.New().WithField("test", "sync"), repo.ListTenantUuids)
+	job := NewSyncJob(nil, repo, provider, pxlogger.WithField("test", "sync"), repo.ListTenantUuids)
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Millisecond)
 	defer cancel()
 

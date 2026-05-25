@@ -49,6 +49,34 @@ func TestLoadAppliesEnvOverrides(t *testing.T) {
 	}
 }
 
+func TestLoadDerivesSchemaFromPowerXDBDSNSearchPath(t *testing.T) {
+	const (
+		schema = "px_com_powerx_plugins_ecommerce"
+		dsn    = "postgres://user:pass@127.0.0.1:5432/powerx?search_path=" + schema + "&sslmode=disable"
+	)
+
+	t.Setenv("POWERX_DB_DSN", dsn)
+	t.Setenv("POWERX_DEV_MODE", "true")
+	t.Setenv("POWERX_CUSTOMER_AUTH_MODE", "local")
+	t.Setenv("POWERX_CUSTOMER_JWT_SECRET", "test-secret")
+
+	tempDir := t.TempDir()
+	configFile := filepath.Join(tempDir, "config.yaml")
+	configContent := "database:\n  schema: \"powerx_plugin_base\"\n"
+	if err := os.WriteFile(configFile, []byte(configContent), 0o644); err != nil {
+		t.Fatalf("写入测试配置失败: %v", err)
+	}
+	t.Setenv("CONFIG_PATH", tempDir)
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("加载配置失败: %v", err)
+	}
+	if cfg.Database.Schema != schema {
+		t.Fatalf("未从 POWERX_DB_DSN search_path 推导 schema，期望 %q 实际 %q", schema, cfg.Database.Schema)
+	}
+}
+
 func TestLoadNormalizesLoggingFromYAML(t *testing.T) {
 	tempDir := t.TempDir()
 	configContent := "logging:\n  level: ERROR\n  format: JSON\n  output: STDERR\n"

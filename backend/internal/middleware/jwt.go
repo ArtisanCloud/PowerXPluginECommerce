@@ -2,10 +2,6 @@ package middleware
 
 import (
 	"bytes"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
 	"strings"
@@ -73,12 +69,6 @@ func ParseFromHeaders(h func(string) string, cfg JWTAuthConfig) (tc TenantContex
 			}
 		}
 	}
-	// 2) 回退 Signed-Context
-	if cfg.AllowSignedContext && cfg.ContextHMACSecret != "" {
-		if t, ok := tryLoadSignedContext(h, cfg.ContextHMACSecret, cfg.MaxCtxAgeSeconds); ok {
-			return t, "", true
-		}
-	}
 	return TenantContext{}, "", false
 }
 
@@ -101,57 +91,4 @@ func parseHS256(raw string, cfg JWTAuthConfig) (TenantContext, error) {
 		TenantUUID: strings.TrimSpace(claims.TenantUUID.String()), UserID: claims.UserID, Roles: claims.Roles,
 		Permissions: claims.Permissions, PolicyVersion: claims.PolicyVersion,
 	}, nil
-}
-
-type signedCtx struct {
-	TenantUUID    string   `json:"tid"`
-	UserID        int64    `json:"uid"`
-	Roles         []string `json:"roles"`
-	Permissions   []string `json:"perms"`
-	PolicyVersion string   `json:"policy_version"`
-	TS            int64    `json:"ts"`
-}
-
-func tryLoadSignedContext(h func(string) string, secret string, maxAgeSec int64) (TenantContext, bool) {
-	ctxB64 := h("X-PowerX-CTX")
-	if ctxB4 := ctxB64; ctxB4 == "" {
-		return TenantContext{}, false
-	}
-	sigHex := h("X-PowerX-CTX-SIG")
-	if sigHex == "" {
-		return TenantContext{}, false
-	}
-	raw, err := base64.StdEncoding.DecodeString(ctxB64)
-	if err != nil {
-		return TenantContext{}, false
-	}
-	mac := hmac.New(sha256.New, []byte(secret))
-	mac.Write([]byte(ctxB64))
-	if !hmac.Equal([]byte(hex.EncodeToString(mac.Sum(nil))), []byte(sigHex)) {
-		return TenantContext{}, false
-	}
-	var sc signedCtx
-	if err := json.Unmarshal(raw, &sc); err != nil {
-		return TenantContext{}, false
-	}
-	if maxAgeSec > 0 && (time.Now().Unix()-sc.TS) > maxAgeSec {
-		return TenantContext{}, false
-	}
-	return TenantContext{TenantUUID: strings.TrimSpace(sc.TenantUUID), UserID: sc.UserID, Roles: sc.Roles,
-		Permissions: sc.Permissions, PolicyVersion: sc.PolicyVersion}, true
-}
-
-// 供客户端出站兜底：把 TenantContext 签成 X-PowerX-CTX / SIG
-func SignContext(tc TenantContext, secret string) (ctxB64, sigHex string, ts int64, err error) {
-	sc := signedCtx{TenantUUID: strings.TrimSpace(tc.TenantUUID), UserID: tc.UserID, Roles: tc.Roles,
-		Permissions: tc.Permissions, PolicyVersion: tc.PolicyVersion, TS: time.Now().Unix()}
-	b, e := json.Marshal(&sc)
-	if e != nil {
-		return "", "", 0, e
-	}
-	ctxB64 = base64.StdEncoding.EncodeToString(b)
-	mac := hmac.New(sha256.New, []byte(secret))
-	mac.Write([]byte(ctxB64))
-	sigHex = hex.EncodeToString(mac.Sum(nil))
-	return ctxB64, sigHex, sc.TS, nil
 }

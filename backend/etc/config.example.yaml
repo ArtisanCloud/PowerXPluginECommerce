@@ -7,10 +7,12 @@
 #   PX_GATEWAY_API_PREFIX     - Gateway API 前缀（默认 /api/v1）
 #   PX_GATEWAY_AUTH_SCHEME    - Gateway 鉴权方案：bearer / apikey
 #   PX_GATEWAY_API_KEY        - ApiKey 鉴权凭证（当 PX_GATEWAY_AUTH_SCHEME=apikey）
-#   PX_TOOL_TOKEN             - 插件向宿主网关/能力出站鉴权 Token（优先）
-#   PX_PLUGIN_TOOL_TOKEN      - 宿主注入的插件出站 Token（次优先）
+#   POWERX_STS_CLIENT_ID      - STS client_id（格式建议 <plugin_id>.<tenant_uuid>）
+#   POWERX_STS_CLIENT_SECRET  - STS client_secret
+#   POWERX_STS_AUDIENCE       - STS audience（默认 powerx:api）
+#   POWERX_STS_SCOPE          - STS scope（默认 access）
 #   PX_GATEWAY_TIMEOUT        - Gateway 调用超时（支持 duration 或秒数，默认 60s）
-#   POWERX_AUTH_TOKEN         - 兼容旧变量（最低优先）
+#   POWERX_AUTH_TOKEN         - Root/Admin 本地调试 Token；宿主业务链路不得依赖
 #   IAM_MODE / POWERX_IAM_MODE - IAM 模式（local / delegated）
 #   PLUGIN_IAM_ADMIN_EMAIL    - Local 模式默认管理员邮箱（用于 migrate/seed）
 #   PLUGIN_IAM_ADMIN_PASSWORD - Local 模式默认管理员密码（用于 migrate/seed）
@@ -24,10 +26,14 @@ server:
 # gRPC 上游（可选，默认关闭）
 grpc_upstream:
   address: "localhost:8079"
-  # tenant_uuid 将优先从 PX_TOOL_TOKEN/PX_PLUGIN_TOOL_TOKEN 的 tid 推导；
-  # 此字段仅作为本地兜底（旧配置兼容）。
+  # tenant_uuid 建议由 POWERX_GRPC_UPSTREAM_TENANT_UUID 或 STS client_id 对应租户提供。
   tenant_uuid: "00000000-0000-0000-0000-000000000001"
   use_tls: false
+  sts_client_id: ""
+  sts_client_secret: ""
+  sts_audience: "powerx:api"
+  sts_scope: "access"
+  sts_ttl: 300s
   connect_mode: "lazy"
   optional: true
 

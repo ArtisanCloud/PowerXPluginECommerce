@@ -1,11 +1,11 @@
 package middleware
 
 import (
-	"log"
 	"net/http"
 	"os"
 	"strings"
 
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -71,24 +71,44 @@ func JWTAuth(cfg authx.JWTAuthConfig) gin.HandlerFunc {
 		}
 
 		// 原有的调试日志 + 401
-		log.Printf("[PLUGIN-JWT-AUTH] JWTAuth failed. cfg{Issuer=%s, AcceptAudiences=%v, Optional=%v}. RawAuth=%s",
-			cfg.Issuer, cfg.AcceptAudiences, cfg.Optional, shorten(rawAuth, 40),
-		)
+		pxlogger.WithFields(pxlogger.Fields{
+			"component":        "http.middleware.jwt_auth",
+			"status":           "unauthorized",
+			"reason":           "jwt_auth_failed",
+			"issuer":           cfg.Issuer,
+			"accept_audiences": cfg.AcceptAudiences,
+			"optional":         cfg.Optional,
+			"auth_head":        shorten(rawAuth, 40),
+			"trace_id":         traceIdentifier(c),
+			"request_id":       traceIdentifier(c),
+		}).Warn("jwt auth failed")
 		if os.Getenv("POWERX_DEBUG_TRAFFIC") == "1" && strings.HasPrefix(strings.ToLower(rawAuth), "bearer ") {
 			tok := strings.TrimSpace(rawAuth[len("Bearer "):])
 			if m, err := decodeJWTClaims(tok); err == nil {
-				log.Printf("[PLUGIN-JWT-AUTH][TOKEN] iss=%v aud=%v sub=%v iat=%v nbf=%v exp=%v",
-					m["iss"], m["aud"], m["sub"], m["iat"], m["nbf"], m["exp"])
+				pxlogger.WithFields(pxlogger.Fields{
+					"component": "http.middleware.jwt_auth",
+					"issuer":    m["iss"],
+					"audience":  m["aud"],
+					"subject":   m["sub"],
+					"iat":       m["iat"],
+					"nbf":       m["nbf"],
+					"exp":       m["exp"],
+					"trace_id":  traceIdentifier(c),
+				}).Debug("jwt token debug claims")
 			}
 			if _, err := jwt.Parse(tok, func(t *jwt.Token) (any, error) {
 				return []byte(cfg.HMACSecret), nil
 			}, jwt.WithAudience(cfg.AcceptAudiences...), jwt.WithIssuer(cfg.Issuer)); err != nil {
-				log.Printf("[PLUGIN-JWT-AUTH][VERIFY] %v", err)
+				pxlogger.WithError(err).WithField("component", "http.middleware.jwt_auth").Debug("jwt verify debug failed")
 			} else {
-				log.Printf("[PLUGIN-JWT-AUTH][VERIFY] ok")
+				pxlogger.WithField("component", "http.middleware.jwt_auth").Debug("jwt verify debug ok")
 			}
-			log.Printf("[PLUGIN-JWT-AUTH][CFG] issuer=%s audiences=%v secret.len=%d",
-				cfg.Issuer, cfg.AcceptAudiences, len(cfg.HMACSecret))
+			pxlogger.WithFields(pxlogger.Fields{
+				"component":         "http.middleware.jwt_auth",
+				"issuer":            cfg.Issuer,
+				"accept_audiences":  cfg.AcceptAudiences,
+				"hmac_secret_bytes": len(cfg.HMACSecret),
+			}).Debug("jwt auth debug config")
 		}
 		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "jwt Unauthorized"})
 	}

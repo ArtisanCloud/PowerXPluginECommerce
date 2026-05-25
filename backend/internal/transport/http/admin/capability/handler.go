@@ -62,7 +62,7 @@ func (h *Handler) ListCatalog(c *gin.Context) {
 	}
 
 	if normalizedSource == "corex" {
-		items, err := fetchCoreXCatalog(c.Request.Context(), "corex")
+		items, err := h.fetchCoreXCatalog(c.Request.Context(), "corex")
 		if err != nil {
 			contracts.ResponseErrorWithDetails(
 				c,
@@ -78,7 +78,7 @@ func (h *Handler) ListCatalog(c *gin.Context) {
 		}
 		// 兼容部分网关未实现 source=corex 过滤：为空时再拉一次全量并做 corex 特征筛选。
 		if len(items) == 0 {
-			if allItems, fallbackErr := fetchCoreXCatalog(c.Request.Context(), ""); fallbackErr == nil && len(allItems) > 0 {
+			if allItems, fallbackErr := h.fetchCoreXCatalog(c.Request.Context(), ""); fallbackErr == nil && len(allItems) > 0 {
 				if filtered := filterCoreXCandidates(allItems); len(filtered) > 0 {
 					items = filtered
 				} else {
@@ -102,7 +102,7 @@ func (h *Handler) ListCatalog(c *gin.Context) {
 	}
 
 	// source=all: 尝试合并 corex + plugin；若 corex 不可达则优先返回本地清单，避免页面空白。
-	corexItems, corexErr := fetchCoreXCatalog(c.Request.Context(), "corex")
+	corexItems, corexErr := h.fetchCoreXCatalog(c.Request.Context(), "corex")
 	if corexErr != nil {
 		c.Header("X-Capability-Source", "all")
 		c.Header("X-Capability-Corex-Warning", strings.TrimSpace(corexErr.Error()))
@@ -110,7 +110,7 @@ func (h *Handler) ListCatalog(c *gin.Context) {
 		return
 	}
 	if len(corexItems) == 0 {
-		if allItems, fallbackErr := fetchCoreXCatalog(c.Request.Context(), ""); fallbackErr == nil && len(allItems) > 0 {
+		if allItems, fallbackErr := h.fetchCoreXCatalog(c.Request.Context(), ""); fallbackErr == nil && len(allItems) > 0 {
 			if filtered := filterCoreXCandidates(allItems); len(filtered) > 0 {
 				corexItems = filtered
 			} else {
@@ -676,7 +676,7 @@ func asBool(v any) bool {
 	return s == "1" || s == "true" || s == "yes" || s == "on"
 }
 
-func fetchCoreXCatalog(ctx context.Context, source string) ([]any, error) {
+func (h *Handler) fetchCoreXCatalog(ctx context.Context, source string) ([]any, error) {
 	base := strings.TrimSpace(os.Getenv("PX_GATEWAY_BASE_URL"))
 	if base == "" {
 		base = strings.TrimSpace(os.Getenv("POWERX_CORE_ENDPOINT"))
@@ -696,7 +696,15 @@ func fetchCoreXCatalog(ctx context.Context, source string) ([]any, error) {
 	u.RawQuery = q.Encode()
 
 	scheme := resolveCoreXGatewayAuthScheme()
-	token := firstNonEmptyEnv("PX_TOOL_TOKEN", "PX_PLUGIN_TOOL_TOKEN", "POWERX_AUTH_TOKEN")
+	token := ""
+	if h != nil && h.deps != nil {
+		if stsToken, err := h.deps.PowerXAccessToken(ctx); err == nil {
+			token = strings.TrimSpace(stsToken)
+		}
+	}
+	if token == "" {
+		token = firstNonEmptyEnv("POWERX_AUTH_TOKEN")
+	}
 	apiKey := strings.TrimSpace(os.Getenv("PX_GATEWAY_API_KEY"))
 	items, statusCode, rawBody, err := fetchCoreXCatalogWithAuth(ctx, u.String(), scheme, token, apiKey)
 	if err == nil {

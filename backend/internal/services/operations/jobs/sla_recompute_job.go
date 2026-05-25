@@ -2,6 +2,7 @@ package jobs
 
 import (
 	"context"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"time"
 
 	operationsvc "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/operations"
@@ -17,7 +18,7 @@ type SLARecomputeJob struct {
 // NewSLARecomputeJob constructs a job instance.
 func NewSLARecomputeJob(service *operationsvc.SLAService, log *logrus.Entry) *SLARecomputeJob {
 	if log == nil {
-		log = logrus.New().WithField("component", "operations.sla_recompute_job")
+		log = pxlogger.WithField("component", "operations.sla_recompute_job")
 	}
 	return &SLARecomputeJob{service: service, log: log}
 }

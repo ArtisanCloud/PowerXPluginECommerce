@@ -2,6 +2,7 @@ package master
 
 import (
 	"context"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 
 	"github.com/sirupsen/logrus"
 )
@@ -14,7 +15,7 @@ type AuditEmitter struct {
 // NewAuditEmitter instantiates an emitter with the provided logger.
 func NewAuditEmitter(logger *logrus.Entry) *AuditEmitter {
 	if logger == nil {
-		logger = logrus.New().WithField("component", "channel-master-audit")
+		logger = pxlogger.WithField("component", "channel-master-audit")
 	}
 	return &AuditEmitter{logger: logger}
 }

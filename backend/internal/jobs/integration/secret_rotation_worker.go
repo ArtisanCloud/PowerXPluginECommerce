@@ -5,6 +5,7 @@ import (
 	"time"
 
 	repo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/integration"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	obs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/integration"
 	service "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/integration"
 	"github.com/sirupsen/logrus"
@@ -24,7 +25,7 @@ func NewSecretRotationWorker(secretSvc *service.SecretService, secretRepo *repo.
 		interval = time.Hour
 	}
 	if logger == nil {
-		logger = logrus.WithField("component", "integration.secret_rotation_worker")
+		logger = pxlogger.WithField("component", "integration.secret_rotation_worker")
 	}
 	return &SecretRotationWorker{
 		service:  secretSvc,

@@ -1,6 +1,7 @@
 import { getCurrentScope, onScopeDispose } from "vue";
 import type { LoginResponse } from "~/composables/api/services/authService";
 import { useAuthService } from "~/composables/api/services/authService";
+import { useUserStore } from "~/stores/user";
 
 const STORAGE_KEYS = [
   "access_token",
@@ -293,7 +294,6 @@ export const useAuth = () => {
     } finally {
       clearAuth();
       try {
-        const { useUserStore } = await import("~/stores/user");
         const userStore = useUserStore();
         userStore?.clearUserState?.();
       } catch (err) {

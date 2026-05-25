@@ -161,6 +161,7 @@ func main() {
 		"iam_mode":                   runtimeDecision.IAMMode,
 		"iam_source":                 runtimeDecision.IAMSource,
 		"powerx_proxy":               runtimeDecision.PowerXProxy,
+		"effective_proxy":            runtimeDecision.EffectiveProxy,
 		"capability_route":           runtimeDecision.CapabilityRoute,
 		"ws_route":                   runtimeDecision.WSRoute,
 		"outbound_token_source":      runtimeDecision.OutboundTokenSource,
@@ -457,10 +458,9 @@ func errorString(err error) string {
 }
 
 func resolveFrameworkGatewayConfig() fwbootstrap.GatewayConfig {
-	toolToken, _ := pluginbootstrap.ResolveToolToken()
 	return fwbootstrap.GatewayConfig{
 		BaseURL:         resolveGatewayBaseURL(),
-		ToolToken:       toolToken,
+		ToolToken:       "",
 		TenantID:        strings.TrimSpace(os.Getenv("PX_TENANT_UUID")),
 		GRPCTarget:      strings.TrimSpace(os.Getenv("PX_GATEWAY_GRPC_TARGET")),
 		Timeout:         resolveGatewayTimeout(),

@@ -7,8 +7,8 @@ import (
 
 	dbm "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/marketplace"
 	mrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/marketplace"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
-	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -178,7 +178,7 @@ func newService(t *testing.T) (*ListingService, *mrepo.ListingRepository, *mrepo
 	db := setupServiceDB(t)
 	listingRepo := mrepo.NewListingRepository(db)
 	checklistRepo := mrepo.NewChecklistRepository(db)
-	svc := NewListingService(listingRepo, checklistRepo, logrus.New().WithField("test", "listing_service"))
+	svc := NewListingService(listingRepo, checklistRepo, pxlogger.WithField("test", "listing_service"))
 	return svc, listingRepo, checklistRepo
 }
 

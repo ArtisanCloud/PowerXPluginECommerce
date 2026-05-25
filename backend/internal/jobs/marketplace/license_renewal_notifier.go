@@ -2,6 +2,7 @@ package marketplace
 
 import (
 	"context"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"time"
 
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/config"
@@ -34,7 +35,7 @@ type RenewalNotifier struct {
 // NewLicenseRenewalNotifier constructs the reminder job.
 func NewLicenseRenewalNotifier(cfg *config.Config, repo ExpiringLicenseLister, logger *logrus.Entry, tenantResolver func(context.Context) ([]string, error), dispatcher RenewalDispatcher) *RenewalNotifier {
 	if logger == nil {
-		logger = logrus.New().WithField("component", "marketplace_license_renewal_notifier")
+		logger = pxlogger.WithField("component", "marketplace_license_renewal_notifier")
 	}
 	if tenantResolver == nil {
 		tenantResolver = func(context.Context) ([]string, error) { return []string{"default"}, nil }

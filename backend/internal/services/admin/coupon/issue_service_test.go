@@ -38,6 +38,10 @@ func TestIssueService_IssueCoupons(t *testing.T) {
 	var total int64
 	require.NoError(t, db.Raw(`SELECT COUNT(1) FROM coupon_assets WHERE tenant_uuid = ? AND template_id = ?`, "tenant-1", "tpl-1").Scan(&total).Error)
 	require.Equal(t, int64(4), total)
+
+	var issueLogs int64
+	require.NoError(t, db.Raw(`SELECT COUNT(1) FROM coupon_usage_logs WHERE tenant_uuid = ? AND action = ? AND action_reason = ?`, "tenant-1", "issue", "manual_issue").Scan(&issueLogs).Error)
+	require.Equal(t, int64(4), issueLogs)
 }
 
 func setupCouponIssueTables(t *testing.T, db *gorm.DB) {
@@ -78,6 +82,18 @@ func setupCouponIssueTables(t *testing.T, db *gorm.DB) {
 			created_at DATETIME,
 			updated_at DATETIME,
 			deleted_at DATETIME
+		)`,
+		`CREATE TABLE IF NOT EXISTS coupon_usage_logs (
+			id TEXT PRIMARY KEY,
+			tenant_uuid TEXT NOT NULL,
+			asset_id TEXT NOT NULL,
+			order_id TEXT,
+			action TEXT NOT NULL,
+			action_reason TEXT NOT NULL,
+			idempotency_key TEXT NOT NULL,
+			request_id TEXT,
+			created_by TEXT,
+			created_at DATETIME
 		)`,
 	}
 	for _, stmt := range stmts {

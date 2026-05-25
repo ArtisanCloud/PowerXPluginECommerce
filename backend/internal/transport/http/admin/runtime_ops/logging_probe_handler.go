@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/contracts"
+	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	runtimelogging "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/runtime/logging"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/gin-gonic/gin"
@@ -63,17 +64,26 @@ func LoggingProbeHandler() gin.HandlerFunc {
 		if fields == nil {
 			fields = runtimelogging.Fields{}
 		}
+		requestID := strings.TrimSpace(c.GetString("request_id"))
 		fields[runtimelogging.FieldTraceID] = traceID
+		fields[runtimelogging.FieldRequestID] = requestID
 		fields[runtimelogging.FieldTenantUUID] = tenantUUID
+		fields[runtimelogging.FieldTenantKey] = tenantUUID
 		fields[runtimelogging.FieldPluginID] = app.PluginID
 		component := strings.TrimSpace(req.Component)
 		if component == "" {
 			component = "admin.runtime.logging.probe"
 		}
 		fields[runtimelogging.FieldComponent] = component
+		if _, ok := fields[runtimelogging.FieldStatus]; !ok {
+			fields[runtimelogging.FieldStatus] = "succeeded"
+		}
 		if req.Event != "" {
 			fields["event"] = req.Event
 		}
+		logger.WithRuntimeFields(app.PluginID, tenantUUID, traceID, component, logger.Fields(fields)).
+			WithField("outcome_probe", true).
+			Info(strings.TrimSpace(req.Message))
 
 		outcomes := router.Route(c.Request.Context(), runtimelogging.Event{
 			Message:   strings.TrimSpace(req.Message),

@@ -2,6 +2,7 @@ package master
 
 import (
 	"context"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 
 	"github.com/sirupsen/logrus"
 )
@@ -14,7 +15,7 @@ type AlertEmitter struct {
 // NewAlertEmitter builds emitter.
 func NewAlertEmitter(logger *logrus.Entry) *AlertEmitter {
 	if logger == nil {
-		logger = logrus.New().WithField("component", "channel-master-alert")
+		logger = pxlogger.WithField("component", "channel-master-alert")
 	}
 	return &AlertEmitter{logger: logger}
 }

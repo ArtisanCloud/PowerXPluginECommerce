@@ -4,10 +4,10 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 	"strings"
 
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	"github.com/gin-gonic/gin"
 )
@@ -67,7 +67,15 @@ func allowPowerXDelegate(c *gin.Context, cfg *authx.RBACConfig) bool {
 	if cfg == nil {
 		return false
 	}
-	log.Printf("[PLUGIN-RBAC] delegate check: need{iss=%s aud=%s}", cfg.PowerXIssuer, cfg.PowerXAudience)
+	pxlogger.WithFields(pxlogger.Fields{
+		"component":         "http.middleware.rbac",
+		"powerx_issuer":     cfg.PowerXIssuer,
+		"powerx_audience":   cfg.PowerXAudience,
+		"trace_id":          traceIdentifier(c),
+		"request_id":        traceIdentifier(c),
+		"delegate_to_host":  true,
+		"authorization_src": "bearer",
+	}).Debug("rbac delegate check")
 	if _, ok := authx.GetTenantContext(c); !ok {
 		return false
 	}
@@ -79,7 +87,12 @@ func allowPowerXDelegate(c *gin.Context, cfg *authx.RBACConfig) bool {
 	if err != nil {
 		return false
 	}
-	log.Printf("[PLUGIN-RBAC] delegate token: iss=%v aud=%v", claims["iss"], claims["aud"])
+	pxlogger.WithFields(pxlogger.Fields{
+		"component": "http.middleware.rbac",
+		"issuer":    claims["iss"],
+		"audience":  claims["aud"],
+		"trace_id":  traceIdentifier(c),
+	}).Debug("rbac delegate token claims")
 
 	if cfg.PowerXIssuer != "" {
 		if iss, _ := claims["iss"].(string); iss != cfg.PowerXIssuer {

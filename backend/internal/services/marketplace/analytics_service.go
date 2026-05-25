@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"math"
 	"strings"
 	"time"
@@ -112,7 +113,7 @@ func NewAnalyticsService(
 	logger *logrus.Entry,
 ) *AnalyticsService {
 	if logger == nil {
-		logger = logrus.New().WithField("component", "marketplace_analytics_service")
+		logger = pxlogger.WithField("component", "marketplace_analytics_service")
 	}
 	svc := &AnalyticsService{
 		cfg:              cfg,

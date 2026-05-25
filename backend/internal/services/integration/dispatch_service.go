@@ -13,6 +13,7 @@ import (
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/config"
 	domain "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/integration"
 	idrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/integration"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	obsintegration "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/integration"
 	"github.com/sirupsen/logrus"
 	"gorm.io/datatypes"
@@ -59,7 +60,7 @@ func NewDispatchService(
 	logger *logrus.Entry,
 ) *DispatchService {
 	if logger == nil {
-		logger = logrus.WithField("component", "integration.dispatch_service")
+		logger = pxlogger.WithField("component", "integration.dispatch_service")
 	}
 	payloadThreshold := int64(1 << 20) // default 1 MB
 	if cfg != nil {

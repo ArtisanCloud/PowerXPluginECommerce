@@ -4,6 +4,7 @@ import (
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/config"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/contracts"
 	mrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/marketplace"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/recommendation"
 	httpmw "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/middleware"
 	"github.com/gin-gonic/gin"
@@ -21,7 +22,7 @@ type RecommendationHandler struct {
 // NewRecommendationHandler constructs a handler instance.
 func NewRecommendationHandler(cfg *config.Config, repo *mrepo.ListingRepository, provider recommendation.MetricsProvider, logger *logrus.Entry) *RecommendationHandler {
 	if logger == nil {
-		logger = logrus.New().WithField("component", "admin_marketplace_recommendation")
+		logger = pxlogger.WithField("component", "admin_marketplace_recommendation")
 	}
 	return &RecommendationHandler{
 		cfg:      cfg,

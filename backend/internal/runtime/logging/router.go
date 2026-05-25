@@ -3,7 +3,6 @@ package logging
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"time"
 )
 
@@ -33,7 +32,11 @@ func (r *Router) Route(ctx context.Context, event Event) []SinkOutcome {
 	outcomes := make([]SinkOutcome, 0, len(r.policy.Sinks))
 	if r.policy.Mode == ModeHost {
 		if err := ValidateHostSinkAuthorization(r.policy); err != nil {
-			slog.Warn("logging router rejected unauthorized sink in host mode", "error", err.Error())
+			FromContext(ctx).With(Fields{
+				FieldComponent: "runtime.logging.router",
+				FieldStatus:    "failed",
+				FieldReason:    "unauthorized_sink",
+			}).Emit("warn", "logging router rejected unauthorized sink in host mode", Fields{"error": err.Error()})
 			for _, sink := range r.policy.Sinks {
 				if sink == SinkStdout {
 					continue

@@ -87,11 +87,9 @@ const envApiBase = joinApiBase(
 );
 const defaultPluginApiBase = `/_p/${pluginId}/api/v1`;
 const defaultLocalApiBase = "http://localhost:8078/api/v1";
-// Host API fallback: when dev + proxy mode, prefer `_p/.../api` to hit Vite proxy
+// Host API fallback: packaged PowerX host builds must call the plugin proxy path.
 const fallbackHostApiBase =
-  process.env.NODE_ENV !== "production" && process.env.POWERX_PROXY === "1"
-    ? defaultPluginApiBase
-    : "/api/v1";
+  process.env.POWERX_PROXY === "1" ? defaultPluginApiBase : "/api/v1";
 const pluginApiBase = envApiBase ?? defaultPluginApiBase;
 const hostApiBase = envApiBase ?? fallbackHostApiBase;
 const localApiBase = envApiBase ?? defaultLocalApiBase;
@@ -168,6 +166,40 @@ const BRIDGE_DEBUG =
     : !INSIDE_POWERX;
 
 const DISABLE_VITE_HMR_OVERLAY = process.env.NUXT_PUBLIC_E2E_HARNESS === "1";
+
+const vendorChunkGroups = [
+  {
+    name: "vendor-vue",
+    pattern:
+      /\/node_modules\/(@vue|vue|vue-router|pinia|@pinia|@unhead|unhead)\//,
+  },
+  {
+    name: "vendor-nuxt",
+    pattern:
+      /\/node_modules\/(nuxt|nuxi|@nuxt|@nuxtjs|ofetch|ufo|defu|hookable|unctx|h3|nitropack)\//,
+  },
+  {
+    name: "vendor-ui",
+    pattern:
+      /\/node_modules\/(@nuxt\/ui|@nuxt\/icon|@iconify|reka-ui|@floating-ui|tailwind-variants|clsx|class-variance-authority)\//,
+  },
+  {
+    name: "vendor-charts",
+    pattern: /\/node_modules\/(echarts|zrender|vue-echarts)\//,
+  },
+] as const;
+
+const resolveManualChunk = (id: string) => {
+  const normalized = id.replace(/\\/g, "/");
+  for (const group of vendorChunkGroups) {
+    if (group.pattern.test(normalized)) {
+      return group.name;
+    }
+  }
+  if (normalized.includes("/node_modules/")) {
+    return "vendor";
+  }
+};
 
 // Dev-time proxy: always forward /api + /api/ws; add /_p/.../api only in proxy mode
 const disableDevProxy = process.env.DISABLE_DEV_PROXY === "1";
@@ -347,6 +379,13 @@ export default defineNuxtConfig({
     },
   },
   vite: {
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: resolveManualChunk,
+        },
+      },
+    },
     server: {
       hmr: {
         overlay: !DISABLE_VITE_HMR_OVERLAY,

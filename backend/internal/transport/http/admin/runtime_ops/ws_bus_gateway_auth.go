@@ -6,7 +6,6 @@ import (
 	"strings"
 	"time"
 
-	pluginbootstrap "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/bootstrap"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/config"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/gin-gonic/gin"
@@ -28,7 +27,6 @@ type wsBusGatewayAuthDecision struct {
 
 func resolveWSBusGatewayAuth(c *gin.Context, deps *app.Deps) wsBusGatewayAuthDecision {
 	scheme := resolveGatewayAuthScheme()
-	toolToken, toolSource := pluginbootstrap.ResolveToolToken()
 	gatewayAPIKey := strings.TrimSpace(os.Getenv("PX_GATEWAY_API_KEY"))
 	decision := wsBusGatewayAuthDecision{
 		Source:            "none",
@@ -38,7 +36,6 @@ func resolveWSBusGatewayAuth(c *gin.Context, deps *app.Deps) wsBusGatewayAuthDec
 		GatewayAPIPrefix:  resolveGatewayAPIPrefix(),
 		GatewayTimeout:    resolveGatewayTimeout(),
 		GatewayAuthScheme: scheme,
-		GatewayToken:      toolToken,
 		GatewayAPIKey:     gatewayAPIKey,
 	}
 
@@ -50,14 +47,15 @@ func resolveWSBusGatewayAuth(c *gin.Context, deps *app.Deps) wsBusGatewayAuthDec
 		return decision
 	}
 
-	toolToken, src := toolToken, toolSource
-	if toolToken == "" {
-		return decision
-	}
-	decision.Authorization = "Bearer " + toolToken
-	decision.Source = src
-	if tid, ok := pluginbootstrap.ParseTenantIDFromJWT(toolToken); ok {
-		decision.TenantID = tid
+	if deps != nil {
+		if token, err := deps.PowerXAccessToken(c.Request.Context()); err == nil && strings.TrimSpace(token) != "" {
+			decision.Authorization = "Bearer " + strings.TrimSpace(token)
+			decision.Source = "sts:exchange"
+			decision.GatewayToken = strings.TrimSpace(token)
+			if deps.Config != nil && deps.Config.GRPCUpstream != nil {
+				decision.TenantID = strings.TrimSpace(deps.Config.GRPCUpstream.TenantUUID)
+			}
+		}
 	}
 	return decision
 }

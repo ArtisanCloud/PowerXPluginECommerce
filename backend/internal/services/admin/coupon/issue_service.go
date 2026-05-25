@@ -39,6 +39,7 @@ type IssueResult struct {
 type IssueService struct {
 	deps      *app.Deps
 	assetRepo *couponrepo.AssetRepository
+	logSvc    *UsageLogService
 }
 
 func NewIssueService(deps *app.Deps) *IssueService {
@@ -48,11 +49,12 @@ func NewIssueService(deps *app.Deps) *IssueService {
 	return &IssueService{
 		deps:      deps,
 		assetRepo: couponrepo.NewAssetRepository(deps.DB),
+		logSvc:    NewUsageLogService(deps),
 	}
 }
 
 func (s *IssueService) Ready() bool {
-	return s != nil && s.deps != nil && s.deps.DB != nil && s.assetRepo != nil
+	return s != nil && s.deps != nil && s.deps.DB != nil && s.assetRepo != nil && s.logSvc != nil && s.logSvc.Ready()
 }
 
 func (s *IssueService) Issue(ctx context.Context, in IssueInput) (*IssueResult, error) {
@@ -123,6 +125,20 @@ func (s *IssueService) Issue(ctx context.Context, in IssueInput) (*IssueResult, 
 					UpdatedAt:  now,
 				}
 				if err := tx.WithContext(ctx).Create(row).Error; err != nil {
+					return err
+				}
+				if _, err := s.logSvc.WriteActionWithTx(
+					ctx,
+					tx,
+					in.TenantUUID,
+					assetID,
+					"",
+					"issue",
+					"manual_issue",
+					in.RequestID,
+					in.Operator,
+					BuildActionIdempotencyKey("issue", "", assetID),
+				); err != nil {
 					return err
 				}
 				res.AssetIDs = append(res.AssetIDs, assetID)

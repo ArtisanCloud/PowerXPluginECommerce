@@ -1,0 +1,5 @@
+agent_tools:
+  - id: com.powerx.plugins.ecommerce.template.create
+    capability: com.powerx.plugins.ecommerce.template.create
+    handler: backend/internal/handlers/capabilities/template/create_handler.go
+    description: 创建示例模板

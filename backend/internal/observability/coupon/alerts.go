@@ -2,6 +2,7 @@ package coupon
 
 import (
 	"context"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"time"
 
 	"github.com/sirupsen/logrus"
@@ -19,7 +20,7 @@ type AlertEvaluator struct {
 
 func NewAlertEvaluator(logger *logrus.Entry) *AlertEvaluator {
 	if logger == nil {
-		logger = logrus.New().WithField("component", "coupon-alert")
+		logger = pxlogger.WithField("component", "coupon-alert")
 	}
 	return &AlertEvaluator{logger: logger}
 }

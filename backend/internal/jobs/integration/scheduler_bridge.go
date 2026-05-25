@@ -9,6 +9,7 @@ import (
 	"time"
 
 	pluginbootstrap "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/bootstrap"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"github.com/sirupsen/logrus"
 )
 
@@ -47,7 +48,7 @@ type SchedulerBridge struct {
 
 func NewSchedulerBridge(mode SchedulerMode, fallbackLocal bool, remote RemoteScheduler, logger *logrus.Entry) *SchedulerBridge {
 	if logger == nil {
-		logger = logrus.WithField("component", "scheduler-bridge")
+		logger = pxlogger.WithField("component", "scheduler-bridge")
 	}
 	if mode == "" {
 		mode = SchedulerModeLocal
@@ -197,7 +198,7 @@ func resolveSchedulerFallbackFromEnv() bool {
 }
 
 func resolveCoreXSchedulerTenantAndToken() (tenantUUID string, token string, err error) {
-	token, _ = pluginbootstrap.ResolveToolToken()
+	token = strings.TrimSpace(os.Getenv("POWERX_AUTH_TOKEN"))
 	if strings.TrimSpace(token) == "" {
 		return "", "", fmt.Errorf("scheduler bridge token missing")
 	}

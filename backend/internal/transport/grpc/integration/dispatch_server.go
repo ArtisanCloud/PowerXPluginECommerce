@@ -3,6 +3,7 @@ package integration
 import (
 	"context"
 
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	integrationService "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/integration"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc/codes"
@@ -18,7 +19,7 @@ type DispatchGRPCServer struct {
 // NewDispatchGRPCServer 构造 gRPC 服务适配器。
 func NewDispatchGRPCServer(service *integrationService.DispatchService, logger *logrus.Entry) *DispatchGRPCServer {
 	if logger == nil {
-		logger = logrus.WithField("component", "integration.grpc.dispatch")
+		logger = pxlogger.WithField("component", "integration.grpc.dispatch")
 	}
 	return &DispatchGRPCServer{
 		service: service,

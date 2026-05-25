@@ -2,6 +2,7 @@ package recommendation
 
 import (
 	"context"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"math"
 	"time"
 
@@ -95,7 +96,7 @@ func NewEngine(repo *mrepo.ListingRepository, provider MetricsProvider, logger *
 		opt(&cfg)
 	}
 	if logger == nil {
-		logger = logrus.New().WithField("component", "marketplace_recommendation_engine")
+		logger = pxlogger.WithField("component", "marketplace_recommendation_engine")
 	}
 	return &Engine{
 		listings: repo,

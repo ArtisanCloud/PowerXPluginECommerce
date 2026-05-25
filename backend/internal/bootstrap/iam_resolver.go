@@ -4,6 +4,8 @@ import (
 	"os"
 	"strings"
 
+	iamcontext "github.com/ArtisanCloud/PowerXPlugin/framework/backend/go/iam/context"
+	iamcontracts "github.com/ArtisanCloud/PowerXPlugin/framework/backend/go/iam/contracts"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/config"
 	iamservice "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/iam"
 )
@@ -16,21 +18,19 @@ type IAMResolver struct {
 }
 
 func NewIAMResolver(cfg *config.Config) *IAMResolver {
-	mode := iamservice.IAMModeLocal
-	source := "auto"
-
-	if cfg != nil && cfg.Context != nil {
-		if parsed, ok := parseIAMMode(cfg.Context.IAMMode); ok {
-			return &IAMResolver{mode: parsed, source: "config"}
-		}
+	input := iamcontext.ResolveInput{
+		ConfigMode:  resolveIAMModeInput(cfg),
+		EnvMode:     strings.TrimSpace(os.Getenv("IAM_MODE")),
+		Environment: strings.TrimSpace(os.Getenv("APP_ENV")),
 	}
-
-	if os.Getenv("POWERX_PROXY") == "1" {
-		mode = iamservice.IAMModeDelegated
-		source = "env:POWERX_PROXY"
+	if input.ConfigMode == "" && input.EnvMode == "" {
+		input.PowerXProxy = strings.TrimSpace(os.Getenv("POWERX_PROXY"))
 	}
-
-	return &IAMResolver{mode: mode, source: source}
+	mode, record, err := (iamcontext.ModeResolver{}).Resolve(input)
+	if err != nil {
+		return &IAMResolver{mode: iamservice.IAMModeLocal, source: "framework:error"}
+	}
+	return &IAMResolver{mode: toServiceIAMMode(mode), source: record.Audit.Source}
 }
 
 func (r *IAMResolver) Mode() iamservice.IAMMode {
@@ -57,4 +57,30 @@ func parseIAMMode(val string) (iamservice.IAMMode, bool) {
 	default:
 		return iamservice.IAMMode(""), false
 	}
+}
+
+func resolveIAMModeInput(cfg *config.Config) string {
+	if cfg == nil || cfg.Context == nil {
+		return ""
+	}
+	return strings.TrimSpace(cfg.Context.IAMMode)
+}
+
+func toServiceIAMMode(mode iamcontracts.IAMMode) iamservice.IAMMode {
+	switch mode {
+	case iamcontracts.IAMModeDelegated:
+		return iamservice.IAMModeDelegated
+	default:
+		return iamservice.IAMModeLocal
+	}
+}
+
+func EffectiveHostMode(cfg *config.Config, iamMode string) bool {
+	if strings.EqualFold(strings.TrimSpace(iamMode), string(iamservice.IAMModeDelegated)) {
+		return true
+	}
+	if cfg != nil && cfg.Context != nil && strings.EqualFold(strings.TrimSpace(cfg.Context.IAMMode), string(iamservice.IAMModeDelegated)) {
+		return true
+	}
+	return envTruthy("POWERX_PROXY")
 }

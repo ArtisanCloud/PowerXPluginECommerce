@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	pluginbootstrap "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/bootstrap"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/config"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
@@ -86,7 +87,7 @@ func (r *Router) setupGlobalMiddleware() {
 
 	// —— 仅在“不在 PowerX 宿主内”且“非生产”时，才启用 DevSwitch —— //
 	// 避免 PowerX 模式被 DevSwitch 绕过鉴权。
-	if !r.cfg.IsProduction() && os.Getenv("POWERX_PROXY") != "1" {
+	if !r.cfg.IsProduction() && !pluginbootstrap.EffectiveHostMode(r.cfg, "") {
 		tenantUUID := "00000000-0000-0000-0000-000000000001"
 		if r.cfg.GRPCUpstream != nil && strings.TrimSpace(r.cfg.GRPCUpstream.TenantUUID) != "" {
 			tenantUUID = strings.TrimSpace(r.cfg.GRPCUpstream.TenantUUID)
@@ -182,7 +183,7 @@ func (r *Router) RegisterMiddleware(m gin.HandlerFunc) {
 
 // —— 从配置构造 JWT 配置（自动区分 PowerX 宿主/本地直连） —— //
 func (r *Router) buildJWT() middleware.JWTAuthConfig {
-	inPX := os.Getenv("POWERX_PROXY") == "1"
+	inPX := pluginbootstrap.EffectiveHostMode(r.cfg, "")
 	if inPX {
 		// PowerX 网关严格模式：使用宿主注入的安全参数
 		pid := strings.TrimSpace(os.Getenv("POWERX_PLUGIN_ID"))
@@ -193,9 +194,9 @@ func (r *Router) buildJWT() middleware.JWTAuthConfig {
 		return middleware.JWTAuthConfig{
 			Issuer:             strings.TrimSpace(os.Getenv("POWERX_SECURITY_JWT_ISSUER")),
 			AcceptAudiences:    []string{aud},
-			HMACSecret:         strings.TrimSpace(os.Getenv("POWERX_SECURITY_JWT_SECRET")), // 可为空：只走签名上下文
-			ContextHMACSecret:  strings.TrimSpace(os.Getenv("POWERX_SECURITY_CTX_HMAC_SECRET")),
-			AllowSignedContext: true,  // 允许 X-PowerX-CTX / X-PowerX-CTX-SIG
+			HMACSecret:         strings.TrimSpace(os.Getenv("POWERX_SECURITY_JWT_SECRET")),
+			ContextHMACSecret:  "",
+			AllowSignedContext: false,
 			Optional:           false, // 严格：失败即 401
 			ClockSkewSeconds:   60,
 			MaxCtxAgeSeconds:   300,
@@ -292,5 +293,5 @@ func shouldDelegateToPowerX(cfg *config.Config) bool {
 			return false
 		}
 	}
-	return os.Getenv("POWERX_PROXY") == "1"
+	return pluginbootstrap.EffectiveHostMode(cfg, "")
 }

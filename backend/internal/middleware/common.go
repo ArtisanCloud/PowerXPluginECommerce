@@ -24,7 +24,7 @@ func CORS() gin.HandlerFunc {
 		c.Header("Access-Control-Allow-Headers",
 			"Content-Type, Content-Length, Accept-Encoding, "+
 				"X-CSRF-Token, Authorization, accept, origin, Cache-Control, "+
-				"X-Requested-With, X-PowerX-CTX, X-PowerX-CTX-SIG, X-PowerX-CTX-JWT, "+
+				"X-Requested-With, "+
 				"Idempotency-Key, X-Request-ID, X-Tenant-UUID, X-PX-Use-Mock",
 		)
 		c.Header("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE, PATCH")

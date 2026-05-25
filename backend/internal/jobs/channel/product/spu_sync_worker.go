@@ -2,6 +2,7 @@ package product
 
 import (
 	"context"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"strings"
 	"sync"
 
@@ -35,7 +36,7 @@ func NewSyncWorker(store *taskcenter.Store, logger *logrus.Entry, metrics *produ
 		store = taskcenter.DefaultStore()
 	}
 	if logger == nil {
-		logger = logrus.New().WithField("component", "spu-sync-worker")
+		logger = pxlogger.WithField("component", "spu-sync-worker")
 	}
 	return &SyncWorker{
 		jobs:    store,

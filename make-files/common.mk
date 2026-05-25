@@ -46,7 +46,7 @@ FRONTEND_OUTPUT := $(FRONTEND_DIR)/.output
 FRONTEND_BUILD_CMD ?= npm --prefix $(FRONTEND_DIR) run build
 
 _RAW_SCHEMA := $(shell echo $(PLUGIN_ID) | tr '[:upper:]' '[:lower:]' | sed 's/[^a-z0-9]/_/g')
-POWERX_DB_SCHEMA ?= px_$(_RAW_SCHEMA)
+POWERX_DB_SCHEMA ?= powerx_plugin_base
 
 RELEASE_ROOT := target
 RELEASE_DIR := $(RELEASE_ROOT)/$(VERSION)

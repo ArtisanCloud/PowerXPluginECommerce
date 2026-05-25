@@ -4,6 +4,7 @@ import (
 	"context"
 	"sync"
 
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"github.com/sirupsen/logrus"
 )
 
@@ -44,7 +45,7 @@ type LocalClient struct {
 // NewLocalClient creates a logging TaskBus client.
 func NewLocalClient(logger *logrus.Entry) *LocalClient {
 	if logger == nil {
-		logger = logrus.New().WithField("component", "taskbus-local")
+		logger = pxlogger.WithField("component", "taskbus-local")
 	}
 	return &LocalClient{logger: logger, handlers: map[string][]Handler{}}
 }

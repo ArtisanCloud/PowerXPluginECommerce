@@ -94,7 +94,7 @@
 <script setup lang="ts">
 import { computed, ref, watch } from "vue";
 import { navigateTo, useI18n } from "#imports";
-import { useApiClient } from "~/composables/api";
+import { useApiClient } from "~/composables/api/_client";
 import { useToastAlert } from "~/composables/useToastAlert";
 import { useCustomerStore } from "~/stores/customer";
 

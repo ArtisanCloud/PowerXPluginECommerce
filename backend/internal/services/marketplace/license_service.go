@@ -5,6 +5,7 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"strconv"
 	"strings"
 	"time"
@@ -106,7 +107,7 @@ type LicenseService struct {
 // NewLicenseService constructs the service with dependencies.
 func NewLicenseService(cfg *config.Config, pricingRepo *mrepo.PricingRepository, licenseRepo *mrepo.LicenseRepository, taxClient *TaxProviderClient, billing BillingClient, authority LicenseAuthority, cache LicenseCache, logger *logrus.Entry) *LicenseService {
 	if logger == nil {
-		logger = logrus.New().WithField("component", "marketplace_license_service")
+		logger = pxlogger.WithField("component", "marketplace_license_service")
 	}
 	return &LicenseService{
 		cfg:           cfg,
