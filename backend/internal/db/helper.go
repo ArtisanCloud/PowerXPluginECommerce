@@ -106,19 +106,6 @@ func DropRLSPolicy(tableName, policyName string) error {
 	return db.Exec(sql).Error
 }
 
-type sqlStateError interface {
-	SQLState() string
-}
-
-func isPermissionDenied(err error) bool {
-	var sqlErr sqlStateError
-	if errors.As(err, &sqlErr) {
-		return sqlErr.SQLState() == "42501"
-	}
-	msg := strings.ToLower(err.Error())
-	return strings.Contains(msg, "42501") || strings.Contains(msg, "permission denied")
-}
-
 func schemaExists(schema string) (bool, error) {
 	if db == nil || db.Dialector == nil || db.Dialector.Name() != "postgres" {
 		return false, errors.New("database not initialized")

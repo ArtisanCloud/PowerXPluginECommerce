@@ -47,18 +47,6 @@ func (r *IAMResolver) Source() string {
 	return r.source
 }
 
-func parseIAMMode(val string) (iamservice.IAMMode, bool) {
-	v := strings.ToLower(strings.TrimSpace(val))
-	switch v {
-	case "delegated":
-		return iamservice.IAMModeDelegated, true
-	case "local":
-		return iamservice.IAMModeLocal, true
-	default:
-		return iamservice.IAMMode(""), false
-	}
-}
-
 func resolveIAMModeInput(cfg *config.Config) string {
 	if cfg == nil || cfg.Context == nil {
 		return ""

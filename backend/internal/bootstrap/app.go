@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"context"
+	"errors"
 
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/config"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/db"
@@ -11,6 +12,13 @@ import (
 )
 
 func BootstrapPlugin(ctx context.Context, cfg *config.Config) (*gorm.DB, error) {
+	if cfg == nil {
+		return nil, errors.New("config is required")
+	}
+	if cfg.Database == nil {
+		return nil, errors.New("database config is required")
+	}
+
 	// 初始化日志
 	logLevel := cfg.LogLevel
 	logFormat := "json"
@@ -20,7 +28,7 @@ func BootstrapPlugin(ctx context.Context, cfg *config.Config) (*gorm.DB, error) 
 	maxBackups := 3
 	maxAge := 28
 	httpAccess := true
-	if cfg != nil && cfg.Logging != nil {
+	if cfg.Logging != nil {
 		if cfg.Logging.Level != "" {
 			logLevel = cfg.Logging.Level
 		}

@@ -24,7 +24,7 @@ require (
 	github.com/ArtisanCloud/PowerLibs/v3 v3.3.2
 	github.com/ArtisanCloud/PowerWeChat/v3 v3.4.38
 	github.com/ArtisanCloud/PowerX/api/grpc/gen/go v0.1.0-alpha
-	github.com/ArtisanCloud/PowerXPlugin/framework/backend/go v0.0.15
+	github.com/ArtisanCloud/PowerXPlugin/framework/backend/go v0.0.17
 	github.com/jackc/pgconn v1.14.3
 	github.com/lib/pq v1.10.9
 	github.com/stretchr/testify v1.11.1

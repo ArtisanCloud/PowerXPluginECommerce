@@ -315,12 +315,12 @@ func main() {
 	licenseRepoGlobal := marketplacerepo.NewLicenseRepository(queryDB)
 	metricsProvider := recommendation.NewListingMetricsProvider(listingRepo)
 	var syncJob *marketplacejobs.SyncJob
-	if cfg == nil || cfg.Marketplace == nil || cfg.Marketplace.Recommendation.Enabled {
+	if cfg.Marketplace == nil || cfg.Marketplace.Recommendation.Enabled {
 		syncJob = marketplacejobs.NewSyncJob(cfg, listingRepo, metricsProvider, logger.WithField("component", "marketplace_recommendation_sync"), listingRepo.ListTenantUuids)
 	}
 
 	var renewalJob *marketplacejobs.RenewalNotifier
-	if cfg != nil && cfg.LicenseReminderLead() > 0 {
+	if cfg.LicenseReminderLead() > 0 {
 		renewalJob = marketplacejobs.NewLicenseRenewalNotifier(cfg, licenseRepoGlobal, logger.WithField("component", "marketplace_license_renewal_notifier"), listingRepo.ListTenantUuids, nil)
 	}
 
@@ -460,6 +460,9 @@ func errorString(err error) string {
 func resolveFrameworkGatewayConfig() fwbootstrap.GatewayConfig {
 	return fwbootstrap.GatewayConfig{
 		BaseURL:         resolveGatewayBaseURL(),
+		APIPrefix:       resolveGatewayAPIPrefix(),
+		AuthScheme:      normalizeGatewayAuthScheme(os.Getenv("PX_GATEWAY_AUTH_SCHEME"), os.Getenv("PX_GATEWAY_API_KEY")),
+		APIKey:          strings.TrimSpace(os.Getenv("PX_GATEWAY_API_KEY")),
 		TenantID:        strings.TrimSpace(os.Getenv("PX_TENANT_UUID")),
 		GRPCTarget:      strings.TrimSpace(os.Getenv("PX_GATEWAY_GRPC_TARGET")),
 		Timeout:         resolveGatewayTimeout(),
@@ -506,7 +509,7 @@ func resolveGatewayTimeout() time.Duration {
 	return fallback
 }
 
-func normalizeGatewayAuthScheme(raw, toolToken, apiKey string) string {
+func normalizeGatewayAuthScheme(raw, apiKey string) string {
 	switch strings.ToLower(strings.TrimSpace(raw)) {
 	case "apikey", "api-key", "api_key":
 		return "apikey"

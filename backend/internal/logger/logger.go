@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"os"
 	"path"
-	"runtime"
 	"strings"
 	"sync"
 
@@ -438,11 +437,4 @@ func HandlerLogger(handler string) *logrus.Entry {
 		"component": "handler",
 		"handler":   handler,
 	})
-}
-
-// callerPrettyForDebug 保留旧行为，便于排错定位。
-func callerPrettyForDebug(f *runtime.Frame) (function string, file string) {
-	funcName := path.Base(f.Function)
-	fileName := path.Base(f.File)
-	return funcName, fmt.Sprintf("%s:%d", fileName, f.Line)
 }
