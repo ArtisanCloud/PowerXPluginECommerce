@@ -9,6 +9,7 @@ import (
 
 	model "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/integration"
 	repo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/integration"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/pkg/utils"
 	"github.com/sirupsen/logrus"
 	"gorm.io/datatypes"
@@ -32,6 +33,9 @@ type ApprovalService struct {
 
 // NewApprovalService 构造审批服务。
 func NewApprovalService(repository *repo.ApprovalRepository, logger *logrus.Entry, hooks ...ApprovalHook) *ApprovalService {
+	if logger == nil {
+		logger = pxlogger.WithField("component", "integration.approval_service")
+	}
 	svc := &ApprovalService{
 		repo:   repository,
 		logger: logger,
@@ -197,5 +201,5 @@ func (s *ApprovalService) log() *logrus.Entry {
 	if s.logger != nil {
 		return s.logger
 	}
-	return logrus.WithField("component", "integration.approval_service")
+	return pxlogger.WithField("component", "integration.approval_service")
 }

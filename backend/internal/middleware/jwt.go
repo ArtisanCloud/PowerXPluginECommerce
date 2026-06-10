@@ -2,12 +2,9 @@ package middleware
 
 import (
 	"bytes"
-	"crypto/hmac"
-	"crypto/sha256"
-	"encoding/base64"
-	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"strconv"
 	"strings"
 	"time"
 
@@ -26,11 +23,20 @@ type JWTAuthConfig struct {
 }
 
 type PowerXClaims struct {
-	TenantUUID    TenantClaim `json:"tid"`
-	UserID        int64       `json:"uid"`
-	Roles         []string    `json:"roles"`
-	Permissions   []string    `json:"perms"`
-	PolicyVersion string      `json:"policy_version"`
+	TenantUUID    TenantClaim   `json:"tid"`
+	TenantID      FlexibleInt   `json:"tid_n,omitempty"`
+	User          IdentityClaim `json:"uid,omitempty"`
+	UserID        FlexibleInt   `json:"uid_n,omitempty"`
+	Member        IdentityClaim `json:"mid,omitempty"`
+	MemberID      FlexibleInt   `json:"mid_n,omitempty"`
+	Email         string        `json:"email,omitempty"`
+	Phone         string        `json:"phone,omitempty"`
+	IsRoot        bool          `json:"is_root,omitempty"`
+	Platforms     []string      `json:"plats,omitempty"`
+	Scope         string        `json:"scope,omitempty"`
+	Roles         []string      `json:"roles"`
+	Permissions   []string      `json:"perms"`
+	PolicyVersion string        `json:"policy_version"`
 	jwt.RegisteredClaims
 }
 
@@ -62,6 +68,97 @@ func (t TenantClaim) String() string {
 	return string(t)
 }
 
+type FlexibleInt int64
+
+func (n *FlexibleInt) UnmarshalJSON(data []byte) error {
+	data = bytes.TrimSpace(data)
+	if len(data) == 0 || bytes.Equal(data, []byte("null")) {
+		*n = 0
+		return nil
+	}
+	if data[0] == '"' {
+		var s string
+		if err := json.Unmarshal(data, &s); err != nil {
+			return err
+		}
+		s = strings.TrimSpace(s)
+		if s == "" {
+			*n = 0
+			return nil
+		}
+		parsed, err := strconv.ParseInt(s, 10, 64)
+		if err != nil {
+			*n = 0
+			return nil
+		}
+		*n = FlexibleInt(parsed)
+		return nil
+	}
+	var num json.Number
+	if err := json.Unmarshal(data, &num); err != nil {
+		return err
+	}
+	parsed, err := strconv.ParseInt(num.String(), 10, 64)
+	if err != nil {
+		return err
+	}
+	*n = FlexibleInt(parsed)
+	return nil
+}
+
+func (n FlexibleInt) Int64() int64 {
+	return int64(n)
+}
+
+type IdentityClaim struct {
+	UUID string
+	ID   FlexibleInt
+}
+
+func (c *IdentityClaim) UnmarshalJSON(data []byte) error {
+	data = bytes.TrimSpace(data)
+	if len(data) == 0 || bytes.Equal(data, []byte("null")) {
+		*c = IdentityClaim{}
+		return nil
+	}
+	if data[0] == '"' {
+		var s string
+		if err := json.Unmarshal(data, &s); err != nil {
+			return err
+		}
+		s = strings.TrimSpace(s)
+		if s == "" {
+			*c = IdentityClaim{}
+			return nil
+		}
+		if parsed, err := strconv.ParseInt(s, 10, 64); err == nil {
+			c.ID = FlexibleInt(parsed)
+			c.UUID = ""
+			return nil
+		}
+		c.UUID = s
+		c.ID = 0
+		return nil
+	}
+	var id FlexibleInt
+	if err := id.UnmarshalJSON(data); err != nil {
+		return err
+	}
+	c.ID = id
+	c.UUID = ""
+	return nil
+}
+
+func (c IdentityClaim) MarshalJSON() ([]byte, error) {
+	if value := strings.TrimSpace(c.UUID); value != "" {
+		return json.Marshal(value)
+	}
+	if c.ID.Int64() > 0 {
+		return json.Marshal(c.ID.Int64())
+	}
+	return []byte("null"), nil
+}
+
 func ParseFromHeaders(h func(string) string, cfg JWTAuthConfig) (tc TenantContext, rawBearer string, ok bool) {
 	// 1) Authorization: Bearer
 	authz := h("Authorization")
@@ -71,12 +168,6 @@ func ParseFromHeaders(h func(string) string, cfg JWTAuthConfig) (tc TenantContex
 			if t, err := parseHS256(raw, cfg); err == nil {
 				return t, raw, true
 			}
-		}
-	}
-	// 2) 回退 Signed-Context
-	if cfg.AllowSignedContext && cfg.ContextHMACSecret != "" {
-		if t, ok := tryLoadSignedContext(h, cfg.ContextHMACSecret, cfg.MaxCtxAgeSeconds); ok {
-			return t, "", true
 		}
 	}
 	return TenantContext{}, "", false
@@ -98,60 +189,27 @@ func parseHS256(raw string, cfg JWTAuthConfig) (TenantContext, error) {
 		return TenantContext{}, errors.New("invalid token")
 	}
 	return TenantContext{
-		TenantUUID: strings.TrimSpace(claims.TenantUUID.String()), UserID: claims.UserID, Roles: claims.Roles,
-		Permissions: claims.Permissions, PolicyVersion: claims.PolicyVersion,
+		TenantUUID:    strings.TrimSpace(claims.TenantUUID.String()),
+		TenantID:      claims.TenantID.Int64(),
+		UserID:        firstInt64(claims.UserID.Int64(), claims.User.ID.Int64()),
+		UserUUID:      strings.TrimSpace(claims.User.UUID),
+		MemberID:      firstInt64(claims.MemberID.Int64(), claims.Member.ID.Int64()),
+		MemberUUID:    strings.TrimSpace(claims.Member.UUID),
+		Email:         strings.ToLower(strings.TrimSpace(claims.Email)),
+		Phone:         strings.TrimSpace(claims.Phone),
+		IsRoot:        claims.IsRoot,
+		Platforms:     claims.Platforms,
+		Roles:         claims.Roles,
+		Permissions:   claims.Permissions,
+		PolicyVersion: claims.PolicyVersion,
 	}, nil
 }
 
-type signedCtx struct {
-	TenantUUID    string   `json:"tid"`
-	UserID        int64    `json:"uid"`
-	Roles         []string `json:"roles"`
-	Permissions   []string `json:"perms"`
-	PolicyVersion string   `json:"policy_version"`
-	TS            int64    `json:"ts"`
-}
-
-func tryLoadSignedContext(h func(string) string, secret string, maxAgeSec int64) (TenantContext, bool) {
-	ctxB64 := h("X-PowerX-CTX")
-	if ctxB4 := ctxB64; ctxB4 == "" {
-		return TenantContext{}, false
+func firstInt64(values ...int64) int64 {
+	for _, value := range values {
+		if value != 0 {
+			return value
+		}
 	}
-	sigHex := h("X-PowerX-CTX-SIG")
-	if sigHex == "" {
-		return TenantContext{}, false
-	}
-	raw, err := base64.StdEncoding.DecodeString(ctxB64)
-	if err != nil {
-		return TenantContext{}, false
-	}
-	mac := hmac.New(sha256.New, []byte(secret))
-	mac.Write([]byte(ctxB64))
-	if !hmac.Equal([]byte(hex.EncodeToString(mac.Sum(nil))), []byte(sigHex)) {
-		return TenantContext{}, false
-	}
-	var sc signedCtx
-	if err := json.Unmarshal(raw, &sc); err != nil {
-		return TenantContext{}, false
-	}
-	if maxAgeSec > 0 && (time.Now().Unix()-sc.TS) > maxAgeSec {
-		return TenantContext{}, false
-	}
-	return TenantContext{TenantUUID: strings.TrimSpace(sc.TenantUUID), UserID: sc.UserID, Roles: sc.Roles,
-		Permissions: sc.Permissions, PolicyVersion: sc.PolicyVersion}, true
-}
-
-// 供客户端出站兜底：把 TenantContext 签成 X-PowerX-CTX / SIG
-func SignContext(tc TenantContext, secret string) (ctxB64, sigHex string, ts int64, err error) {
-	sc := signedCtx{TenantUUID: strings.TrimSpace(tc.TenantUUID), UserID: tc.UserID, Roles: tc.Roles,
-		Permissions: tc.Permissions, PolicyVersion: tc.PolicyVersion, TS: time.Now().Unix()}
-	b, e := json.Marshal(&sc)
-	if e != nil {
-		return "", "", 0, e
-	}
-	ctxB64 = base64.StdEncoding.EncodeToString(b)
-	mac := hmac.New(sha256.New, []byte(secret))
-	mac.Write([]byte(ctxB64))
-	sigHex = hex.EncodeToString(mac.Sum(nil))
-	return ctxB64, sigHex, sc.TS, nil
+	return 0
 }

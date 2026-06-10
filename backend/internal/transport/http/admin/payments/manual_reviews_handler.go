@@ -48,11 +48,11 @@ func (h *ManualReviewHandler) ListLogs(c *gin.Context) {
 	}
 	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
 	tc, ok := authx.GetTenantContext(c)
-	if !ok || tc.UserID <= 0 {
+	if !ok {
 		contracts.ResponseUnauthorized(c, "unauthorized")
 		return
 	}
-	adminID := strconv.FormatInt(tc.UserID, 10)
+	adminID := tc.Actor().ID()
 	orderID := strings.TrimSpace(c.Query("orderId"))
 	ctx := authx.ContextWithRequestID(c.Request.Context(), requestIDFromRequest(c))
 	ctx = authx.ContextWithTenantContext(ctx, tc)
@@ -71,11 +71,11 @@ func (h *ManualReviewHandler) Create(c *gin.Context) {
 	}
 	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
 	tc, ok := authx.GetTenantContext(c)
-	if !ok || tc.UserID <= 0 {
+	if !ok {
 		contracts.ResponseUnauthorized(c, "unauthorized")
 		return
 	}
-	adminID := strconv.FormatInt(tc.UserID, 10)
+	adminID := tc.Actor().ID()
 	var req paymentsvc.ManualPaymentCreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
 		contracts.ResponseError(c, http.StatusBadRequest, contracts.ErrCodeInvalidRequest, err.Error())
@@ -102,11 +102,11 @@ func (h *ManualReviewHandler) Approve(c *gin.Context) {
 	}
 	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
 	tc, ok := authx.GetTenantContext(c)
-	if !ok || tc.UserID <= 0 {
+	if !ok {
 		contracts.ResponseUnauthorized(c, "unauthorized")
 		return
 	}
-	adminID := strconv.FormatInt(tc.UserID, 10)
+	adminID := tc.Actor().ID()
 	id, err := strconv.ParseUint(strings.TrimSpace(c.Param("id")), 10, 64)
 	if err != nil {
 		contracts.ResponseError(c, http.StatusBadRequest, contracts.ErrCodeInvalidRequest, "invalid review id")
@@ -146,11 +146,11 @@ func (h *ManualReviewHandler) Reject(c *gin.Context) {
 	}
 	tenantUUID, _ := httpmw.TenantUUIDFromContext(c)
 	tc, ok := authx.GetTenantContext(c)
-	if !ok || tc.UserID <= 0 {
+	if !ok {
 		contracts.ResponseUnauthorized(c, "unauthorized")
 		return
 	}
-	adminID := strconv.FormatInt(tc.UserID, 10)
+	adminID := tc.Actor().ID()
 	id, err := strconv.ParseUint(strings.TrimSpace(c.Param("id")), 10, 64)
 	if err != nil {
 		contracts.ResponseError(c, http.StatusBadRequest, contracts.ErrCodeInvalidRequest, "invalid review id")

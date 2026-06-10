@@ -2,6 +2,7 @@ package bootstrap
 
 import (
 	"context"
+	"errors"
 
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/config"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/db"
@@ -11,8 +12,39 @@ import (
 )
 
 func BootstrapPlugin(ctx context.Context, cfg *config.Config) (*gorm.DB, error) {
+	if cfg == nil {
+		return nil, errors.New("config is required")
+	}
+	if cfg.Database == nil {
+		return nil, errors.New("database config is required")
+	}
+
 	// 初始化日志
-	logger.Init(cfg.LogLevel)
+	logLevel := cfg.LogLevel
+	logFormat := "json"
+	logOutput := "stdout"
+	logFile := ""
+	maxSize := 100
+	maxBackups := 3
+	maxAge := 28
+	httpAccess := true
+	if cfg.Logging != nil {
+		if cfg.Logging.Level != "" {
+			logLevel = cfg.Logging.Level
+		}
+		if cfg.Logging.Format != "" {
+			logFormat = cfg.Logging.Format
+		}
+		if cfg.Logging.Output != "" {
+			logOutput = cfg.Logging.Output
+		}
+		logFile = cfg.Logging.FilePath
+		maxSize = cfg.Logging.MaxSize
+		maxBackups = cfg.Logging.MaxBackups
+		maxAge = cfg.Logging.MaxAge
+	}
+	iamResolver := NewIAMResolver(cfg)
+	logger.InitWithHostMode(logLevel, logFormat, logOutput, logFile, maxSize, maxBackups, maxAge, httpAccess, EffectiveHostMode(cfg, iamResolver.Mode().String()))
 	logger.Info("Starting PowerX Note Plugin...")
 
 	// 初始化 schema

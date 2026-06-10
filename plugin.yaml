@@ -38,6 +38,13 @@ backend:
 endpoints:
   http_base_path: /api/v1
 
+catalogs:
+  capabilities: ./plugin.d/capabilities.yaml
+  exposure: ./plugin.d/exposure.yaml
+  agent_tools: ./plugin.d/agent_tools.yaml
+  events: ./plugin.d/events.yaml
+  rbac: ./plugin.d/rbac.yaml
+
 frontend:
   admin:
     kind: process
@@ -65,24 +72,22 @@ frontend:
         - en
     menus:
       - id: plugins.com.powerx.plugins.ecommerce
-        title: PowerX Ecommerce Plugin
+        title: 电商中台
         title_i18n:
           namespace: menus
           key: menu.com.powerx.plugins.ecommerce.console
-          default: PowerX Ecommerce Console
+          default: Ecommerce Console
         icon: i-heroicons-clipboard-document-check
-        path: /product
-        route: product
+        path: /dashboard
+        route: dashboard
         order: 20
         slot: group.plugins
-        required_policies:
-          - com.powerx.plugins.ecommerce:product.sku:read
         children:
           - id: plugins.com.powerx.plugins.ecommerce.products
             title: 商品中心
             title_i18n:
               namespace: menus
-              key: menu.com.powerx.plugins.ecommerce.products
+              key: menu.com.powerx.plugins.ecommerce.productCenter
               default: Product Center
             icon: i-heroicons-archive-box
             path: /product
@@ -95,45 +100,130 @@ frontend:
                 title: SKU 管理
                 title_i18n:
                   namespace: menus
-                  key: menu.com.powerx.plugins.ecommerce.products.skus
+                  key: menu.com.powerx.plugins.ecommerce.skuManagement
                   default: SKU Management
                 icon: i-heroicons-squares-2x2
                 path: /product/skus
                 route: product/skus
                 order: 1
                 required_policies:
-                  - com.powerx.plugins.ecommerce:product.sku:manage
-                  - com.powerx.plugins.ecommerce:product.sku.bulk:manage
+                  - com.powerx.plugins.ecommerce:product.sku:read
+              - id: plugins.com.powerx.plugins.ecommerce.products.spus
+                title: SPU 管理
+                title_i18n:
+                  namespace: menus
+                  key: menu.com.powerx.plugins.ecommerce.spuManagement
+                  default: SPU Management
+                icon: i-heroicons-cube
+                path: /product/spus
+                route: product/spus
+                order: 2
+                required_policies:
+                  - com.powerx.plugins.ecommerce:product.sku:read
+              - id: plugins.com.powerx.plugins.ecommerce.products.categories
+                title: 分类管理
+                title_i18n:
+                  namespace: menus
+                  key: menu.com.powerx.plugins.ecommerce.categories
+                  default: Categories
+                icon: i-heroicons-folder
+                path: /product/categories
+                route: product/categories
+                order: 3
+                required_policies:
+                  - com.powerx.plugins.ecommerce:product.category:read
+              - id: plugins.com.powerx.plugins.ecommerce.products.category_templates
+                title: 分类模板
+                title_i18n:
+                  namespace: menus
+                  key: menu.com.powerx.plugins.ecommerce.categoryTemplates
+                  default: Category Templates
+                icon: i-heroicons-document-duplicate
+                path: /product/category-templates
+                route: product/category-templates
+                order: 4
+                required_policies:
+                  - com.powerx.plugins.ecommerce:product.category.template:read
               - id: plugins.com.powerx.plugins.ecommerce.products.inventory
                 title: 库存与变体
                 title_i18n:
                   namespace: menus
-                  key: menu.com.powerx.plugins.ecommerce.products.inventory
+                  key: menu.com.powerx.plugins.ecommerce.inventory
                   default: Inventory & Variants
                 icon: i-heroicons-chart-bar-square
                 path: /product/inventory
                 route: product/inventory
-                order: 2
+                order: 5
                 required_policies:
                   - com.powerx.plugins.ecommerce:product.sku.inventory:read
                   - com.powerx.plugins.ecommerce:product.sku.channel:manage
+          - id: plugins.com.powerx.plugins.ecommerce.customers
+            title: 客户中心
+            title_i18n:
+              namespace: menus
+              key: menu.com.powerx.plugins.ecommerce.customerCenter
+              default: Customer Center
+            icon: i-heroicons-user-group
+            path: /customer
+            route: customer
+            order: 2
+            required_policies:
+              - customer.read:read
+            children:
+              - id: plugins.com.powerx.plugins.ecommerce.customers.list
+                title: 客户列表
+                title_i18n:
+                  namespace: menus
+                  key: menu.com.powerx.plugins.ecommerce.customerList
+                  default: Customers
+                icon: i-heroicons-users
+                path: /customer
+                route: customer
+                order: 1
+                required_policies:
+                  - customer.read:read
+              - id: plugins.com.powerx.plugins.ecommerce.customers.members
+                title: 会员管理
+                title_i18n:
+                  namespace: menus
+                  key: menu.com.powerx.plugins.ecommerce.members
+                  default: Members
+                icon: i-heroicons-identification
+                path: /customer/members
+                route: customer/members
+                order: 2
+                required_policies:
+                  - com.powerx.plugins.ecommerce:membership:read
+              - id: plugins.com.powerx.plugins.ecommerce.customers.membership
+                title: 会员权益
+                title_i18n:
+                  namespace: menus
+                  key: menu.com.powerx.plugins.ecommerce.membershipBenefits
+                  default: Membership Benefits
+                icon: i-heroicons-sparkles
+                path: /customer/membership
+                route: customer/membership
+                order: 3
+                required_policies:
+                  - com.powerx.plugins.ecommerce:membership:read
           - id: plugins.com.powerx.plugins.ecommerce.channels
             title: 渠道中心
             title_i18n:
               namespace: menus
-              key: menu.com.powerx.plugins.ecommerce.channels
+              key: menu.com.powerx.plugins.ecommerce.channelCenter
               default: Channel Center
             icon: i-heroicons-shopping-bag
             path: /channels
             route: channels
-            order: 2
-            required_policies: [com.powerx.plugins.ecommerce:channel.master:read]
+            order: 3
+            required_policies:
+              - com.powerx.plugins.ecommerce:channel.master:read
             children:
               - id: plugins.com.powerx.plugins.ecommerce.channels.list
                 title: 渠道列表
                 title_i18n:
                   namespace: menus
-                  key: menu.com.powerx.plugins.ecommerce.channels.list
+                  key: menu.com.powerx.plugins.ecommerce.channelList
                   default: Channels
                 icon: i-heroicons-rectangle-stack
                 path: /channels
@@ -145,7 +235,7 @@ frontend:
                 title: 渠道审批
                 title_i18n:
                   namespace: menus
-                  key: menu.com.powerx.plugins.ecommerce.channels.approval
+                  key: menu.com.powerx.plugins.ecommerce.channelApprovals
                   default: Channel Approvals
                 icon: i-heroicons-check-badge
                 path: /channels/approval
@@ -153,111 +243,131 @@ frontend:
                 order: 2
                 required_policies:
                   - com.powerx.plugins.ecommerce:channel.master:approve
-
-routes:
-  basePath: /api/v1
-  adminManifest: /api/v1/admin/manifest
-  rbac: /api/v1/admin/rbac
-
-rbac:
-  resources:
-    - resource: com.powerx.plugins.ecommerce:product.sku
-      actions: [read, manage]
-    - resource: com.powerx.plugins.ecommerce:product.sku.bulk
-      actions: [read, manage]
-    - resource: com.powerx.plugins.ecommerce:product.sku.channel
-      actions: [read, manage]
-    - resource: com.powerx.plugins.ecommerce:product.sku.inventory
-      actions: [read, manage]
-    - resource: com.powerx.plugins.ecommerce:product.sku.serial
-      actions: [read, manage]
-    - resource: com.powerx.plugins.ecommerce:product.sku.barcode
-      actions: [read, manage]
-    - resource: com.powerx.plugins.ecommerce:channel.master
-      actions: [read, create, update, approve]
-    - resource: com.powerx.plugins.ecommerce:channel.credential
-      actions: [read, manage]
-    - resource: com.powerx.plugins.ecommerce:channel.alert
-      actions: [read, manage]
-    - resource: com.powerx.plugins.ecommerce:channel.strategy
-      actions: [read, manage]
-    - resource: com.powerx.plugins.ecommerce:channel.sync
-      actions: [read, trigger]
-    - resource: com.powerx.plugins.ecommerce:channel.task
-      actions: [read, manage]
-    - resource: com.powerx.plugins.ecommerce:channel.note
-      actions: [read, create]
-    - resource: com.powerx.plugins.ecommerce:membership
-      actions: [read, write]
-    - resource: com.powerx.plugins.ecommerce:template
-      actions: [read, manage]
-
-permissions:
-  - resource: com.powerx.plugins.ecommerce:product.sku
-    actions: [read, manage]
-  - resource: com.powerx.plugins.ecommerce:product.sku.bulk
-    actions: [read, manage]
-  - resource: com.powerx.plugins.ecommerce:product.sku.channel
-    actions: [read, manage]
-  - resource: com.powerx.plugins.ecommerce:product.sku.inventory
-    actions: [read, manage]
-  - resource: com.powerx.plugins.ecommerce:product.sku.serial
-    actions: [read, manage]
-  - resource: com.powerx.plugins.ecommerce:product.sku.barcode
-    actions: [read, manage]
-  - resource: com.powerx.plugins.ecommerce:channel.master
-    actions: [read, create, update, approve]
-  - resource: com.powerx.plugins.ecommerce:channel.credential
-    actions: [read, manage]
-  - resource: com.powerx.plugins.ecommerce:channel.alert
-    actions: [read, manage]
-  - resource: com.powerx.plugins.ecommerce:channel.strategy
-    actions: [read, manage]
-  - resource: com.powerx.plugins.ecommerce:channel.sync
-    actions: [read, trigger]
-  - resource: com.powerx.plugins.ecommerce:channel.task
-    actions: [read, manage]
-  - resource: com.powerx.plugins.ecommerce:channel.note
-    actions: [read, create]
-  - resource: com.powerx.plugins.ecommerce:membership
-    actions: [read, write]
-  - resource: com.powerx.plugins.ecommerce:template
-    actions: [read, manage]
-
-agents:
-  - id: com.powerx.plugins.ecommerce.assistant
-    plugin_id: com.powerx.plugins.ecommerce
-    name: Powerx Plugin Ecommerce Plugin 助理
-    description: "Powerx Plugin Ecommerce Plugin 内置 Agent"
-    default_tools:
-      - com.powerx.plugins.ecommerce.template.create
-
-capabilities:
-  provides:
-    - id: com.powerx.plugins.ecommerce.template.create
-      version: 1.0.0
-      descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.template.create.yaml
-      schemas:
-        input: schema/input/com.powerx.plugins.ecommerce.template.create.json
-        output: schema/output/com.powerx.plugins.ecommerce.template.create.json
-
-agent_tools:
-  - id: com.powerx.plugins.ecommerce.template.create
-    capability: com.powerx.plugins.ecommerce.template.create
-    handler: backend/internal/handlers/capabilities/template/create_handler.go
-    description: 创建示例模板
-
-exposure:
-  channels:
-    - type: rest
-      capability: com.powerx.plugins.ecommerce.template.create
-      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/resources
-      method: POST
-      auth: jwt
-      rbac: com.powerx.plugins.ecommerce:template
-    - type: agent_tool
-      capability: com.powerx.plugins.ecommerce.template.create
-      agent_tool_id: com.powerx.plugins.ecommerce.template.create
+          - id: plugins.com.powerx.plugins.ecommerce.pricing
+            title: 价格与促销
+            title_i18n:
+              namespace: menus
+              key: menu.com.powerx.plugins.ecommerce.pricingPromotions
+              default: Pricing & Promotions
+            icon: i-heroicons-banknotes
+            path: /pricing
+            route: pricing
+            order: 4
+            required_policies:
+              - com.powerx.plugins.ecommerce:pricing.pricebook:read
+              - com.powerx.plugins.ecommerce:pricing.coupon.template:read
+            children:
+              - id: plugins.com.powerx.plugins.ecommerce.pricing.pricebooks
+                title: 价格手册
+                title_i18n:
+                  namespace: menus
+                  key: menu.com.powerx.plugins.ecommerce.pricebooks
+                  default: Pricebooks
+                icon: i-heroicons-book-open
+                path: /pricing/pricebooks
+                route: pricing/pricebooks
+                order: 1
+                required_policies:
+                  - com.powerx.plugins.ecommerce:pricing.pricebook:read
+              - id: plugins.com.powerx.plugins.ecommerce.pricing.coupons
+                title: 优惠券模板
+                title_i18n:
+                  namespace: menus
+                  key: menu.com.powerx.plugins.ecommerce.couponTemplates
+                  default: Coupon Templates
+                icon: i-heroicons-ticket
+                path: /pricing/coupons
+                route: pricing/coupons
+                order: 2
+                required_policies:
+                  - com.powerx.plugins.ecommerce:pricing.coupon.template:read
+              - id: plugins.com.powerx.plugins.ecommerce.pricing.coupon_usages
+                title: 发券与使用记录
+                title_i18n:
+                  namespace: menus
+                  key: menu.com.powerx.plugins.ecommerce.couponUsages
+                  default: Coupon Assets & Usage
+                icon: i-heroicons-clipboard-document-list
+                path: /pricing/coupon-usages
+                route: pricing/coupon-usages
+                order: 3
+                required_policies:
+                  - com.powerx.plugins.ecommerce:pricing.coupon.usage:read
+          - id: plugins.com.powerx.plugins.ecommerce.orders
+            title: 订单中心
+            title_i18n:
+              namespace: menus
+              key: menu.com.powerx.plugins.ecommerce.orderCenter
+              default: Order Center
+            icon: i-heroicons-shopping-cart
+            path: /market/orders
+            route: market/orders
+            order: 5
+            required_policies:
+              - com.powerx.plugins.ecommerce:order:read
+            children:
+              - id: plugins.com.powerx.plugins.ecommerce.orders.list
+                title: 订单列表
+                title_i18n:
+                  namespace: menus
+                  key: menu.com.powerx.plugins.ecommerce.orderList
+                  default: Orders
+                icon: i-heroicons-list-bullet
+                path: /market/orders
+                route: market/orders
+                order: 1
+                required_policies:
+                  - com.powerx.plugins.ecommerce:order:read
+          - id: plugins.com.powerx.plugins.ecommerce.payments
+            title: 支付中心
+            title_i18n:
+              namespace: menus
+              key: menu.com.powerx.plugins.ecommerce.paymentCenter
+              default: Payments
+            icon: i-heroicons-credit-card
+            path: /payments/providers
+            route: payments/providers
+            order: 6
+            required_policies:
+              - com.powerx.plugins.ecommerce:payments:read
+            children:
+              - id: plugins.com.powerx.plugins.ecommerce.payments.providers
+                title: 支付渠道
+                title_i18n:
+                  namespace: menus
+                  key: menu.com.powerx.plugins.ecommerce.paymentProviders
+                  default: Payment Providers
+                icon: i-heroicons-building-library
+                path: /payments/providers
+                route: payments/providers
+                order: 1
+                required_policies:
+                  - com.powerx.plugins.ecommerce:payments:read
+          - id: plugins.com.powerx.plugins.ecommerce.after_sales
+            title: 售后中心
+            title_i18n:
+              namespace: menus
+              key: menu.com.powerx.plugins.ecommerce.afterSalesCenter
+              default: After-sales
+            icon: i-heroicons-arrow-path-rounded-square
+            path: /market/after-sales
+            route: market/after-sales
+            order: 7
+            required_policies:
+              - com.powerx.plugins.ecommerce:after_sales.dashboard:read
+            children:
+              - id: plugins.com.powerx.plugins.ecommerce.after_sales.workbench
+                title: 售后工作台
+                title_i18n:
+                  namespace: menus
+                  key: menu.com.powerx.plugins.ecommerce.afterSalesWorkbench
+                  default: After-sales Workbench
+                icon: i-heroicons-wrench-screwdriver
+                path: /market/after-sales
+                route: market/after-sales
+                order: 1
+                required_policies:
+                  - com.powerx.plugins.ecommerce:after_sales.dashboard:read
 
 # 工具清单侧重声明接口契约，真实业务参数通过 config.yaml 或环境变量注入
 tools:
@@ -281,30 +391,6 @@ migrations:
   once: true
   timeout: 60s
 
-events:
-  produces:
-    - _topic.template.update
-    - _topic.audit.template.updated
-    - _topic.template.validate.completed
-    - _topic.template.batch_clone.completed
-    - _topic.template.update.completed
-  topics:
-    - key: _topic.template.update
-      description: 模板更新进度事件
-      actions: [publish, subscribe]
-    - key: _topic.audit.template.updated
-      description: 模板审计更新事件
-      actions: [publish, subscribe]
-    - key: _topic.template.validate.completed
-      description: 模板校验完成事件
-      actions: [publish, subscribe]
-    - key: _topic.template.batch_clone.completed
-      description: 模板批量克隆完成事件
-      actions: [publish, subscribe]
-    - key: _topic.template.update.completed
-      description: 模板更新完成事件
-      actions: [publish, subscribe]
-
 assets:
   public_dir: ./web-admin/public
   webAdminPath: ./web-admin/.output
@@ -317,4 +403,5 @@ signature:
 
 metadata:
   author: Powerx Plugin Ecommerce Plugin Team
+  icon: icon.svg
   license: MIT

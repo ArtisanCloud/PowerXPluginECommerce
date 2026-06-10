@@ -8,7 +8,9 @@ import (
 	"strings"
 	"time"
 
-	pluginbootstrap "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/bootstrap"
+	pluginconfig "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/config"
+	powerxclient "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/grpc/client"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"github.com/sirupsen/logrus"
 )
 
@@ -47,7 +49,7 @@ type SchedulerBridge struct {
 
 func NewSchedulerBridge(mode SchedulerMode, fallbackLocal bool, remote RemoteScheduler, logger *logrus.Entry) *SchedulerBridge {
 	if logger == nil {
-		logger = logrus.WithField("component", "scheduler-bridge")
+		logger = pxlogger.WithField("component", "scheduler-bridge")
 	}
 	if mode == "" {
 		mode = SchedulerModeLocal
@@ -196,14 +198,64 @@ func resolveSchedulerFallbackFromEnv() bool {
 	}
 }
 
-func resolveCoreXSchedulerTenantAndToken() (tenantUUID string, token string, err error) {
-	token, _ = pluginbootstrap.ResolveToolToken()
-	if strings.TrimSpace(token) == "" {
-		return "", "", fmt.Errorf("scheduler bridge token missing")
+func resolveCoreXSchedulerAuthorization(ctx context.Context) (string, error) {
+	if apiKey := strings.TrimSpace(os.Getenv("PX_GATEWAY_API_KEY")); apiKey != "" {
+		return "ApiKey " + apiKey, nil
 	}
-	tenantUUID, ok := pluginbootstrap.ParseTenantIDFromJWT(token)
-	if !ok || strings.TrimSpace(tenantUUID) == "" {
-		return "", "", fmt.Errorf("scheduler bridge tenant missing in token tid")
+
+	grpcAddress := strings.TrimSpace(os.Getenv("POWERX_GRPC_UPSTREAM_ADDRESS"))
+	if grpcAddress == "" {
+		grpcAddress = strings.TrimSpace(os.Getenv("PX_GATEWAY_GRPC_TARGET"))
 	}
-	return tenantUUID, token, nil
+	stsClientID := strings.TrimSpace(os.Getenv("POWERX_STS_CLIENT_ID"))
+	stsClientSecret := strings.TrimSpace(os.Getenv("POWERX_STS_CLIENT_SECRET"))
+	if grpcAddress == "" || stsClientID == "" || stsClientSecret == "" {
+		return "", fmt.Errorf("scheduler bridge requires PX_GATEWAY_API_KEY or POWERX_GRPC_UPSTREAM_ADDRESS with POWERX_STS_CLIENT_ID/POWERX_STS_CLIENT_SECRET")
+	}
+
+	client, err := powerxclient.NewPowerXServiceClient(ctx, &pluginconfig.GRPCUpstream{
+		Address:         grpcAddress,
+		TenantUUID:      strings.TrimSpace(os.Getenv("POWERX_GRPC_UPSTREAM_TENANT_UUID")),
+		STSClientID:     stsClientID,
+		STSClientSecret: stsClientSecret,
+		STSAudience:     firstNonEmpty(strings.TrimSpace(os.Getenv("POWERX_STS_AUDIENCE")), "powerx:api"),
+		STSScope:        firstNonEmpty(strings.TrimSpace(os.Getenv("POWERX_STS_SCOPE")), "access"),
+		STSTTL:          resolveSchedulerSTSTTL(),
+		ConnectMode:     "lazy",
+	})
+	if err != nil {
+		return "", err
+	}
+	token, err := client.GetAccessToken(ctx)
+	if err != nil {
+		return "", err
+	}
+	token = strings.TrimSpace(token)
+	if token == "" {
+		return "", fmt.Errorf("scheduler bridge STS token is empty")
+	}
+	return "Bearer " + token, nil
+}
+
+func resolveSchedulerSTSTTL() time.Duration {
+	raw := strings.TrimSpace(os.Getenv("POWERX_STS_TTL"))
+	if raw == "" {
+		return 300 * time.Second
+	}
+	if d, err := time.ParseDuration(raw); err == nil && d > 0 {
+		return d
+	}
+	if seconds, err := strconv.Atoi(raw); err == nil && seconds > 0 {
+		return time.Duration(seconds) * time.Second
+	}
+	return 300 * time.Second
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, v := range values {
+		if strings.TrimSpace(v) != "" {
+			return strings.TrimSpace(v)
+		}
+	}
+	return ""
 }

@@ -6,14 +6,15 @@ import (
 	"fmt"
 	"io"
 	"net"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"github.com/google/uuid"
-	"github.com/sirupsen/logrus"
 	"gopkg.in/yaml.v3"
 )
 
@@ -38,6 +39,9 @@ type Config struct {
 
 	// PowerX 上下文配置
 	Context *ContextConfig `yaml:"context" json:"context"`
+
+	// 宿主标准配置，由 PowerX host-values.yaml 注入。
+	Host *HostConfig `yaml:"host" json:"host"`
 
 	// CustomerAuth 配置迷你应用客户鉴权模式。
 	CustomerAuth *CustomerAuthConfig `yaml:"customer_auth" json:"customer_auth"`
@@ -203,6 +207,10 @@ type SecurityConfig struct {
 	ToolGrantSecret  string          `yaml:"toolgrant_secret" json:"toolgrant_secret"`
 }
 
+type HostConfig struct {
+	WebAdminOrigins []string `yaml:"web_admin_origins" json:"web_admin_origins"`
+}
+
 // RateLimitConfig 限流配置
 type RateLimitConfig struct {
 	Enabled           bool `yaml:"enabled" json:"enabled"`
@@ -339,7 +347,11 @@ func Load() (*Config, error) {
 	// 尝试加载 YAML 配置文件
 	configDir, err := loadYAMLConfig(cfg)
 	if err != nil {
-		logrus.WithError(err).Warn("Failed to load YAML config, using defaults only")
+		pxlogger.WithError(err).WithFields(pxlogger.Fields{
+			"component": "config.loader",
+			"status":    "failed",
+			"reason":    "yaml_load_failed",
+		}).Warn("Failed to load YAML config, using defaults only")
 	}
 
 	loadSecurityBaselineConfig(cfg)
@@ -580,7 +592,11 @@ func loadYAMLConfig(cfg *Config) (string, error) {
 		return "", fmt.Errorf("failed to parse YAML config: %w", err)
 	}
 
-	logrus.WithField("config_file", configFile).Info("YAML config loaded successfully")
+	pxlogger.WithFields(pxlogger.Fields{
+		"component":   "config.loader",
+		"config_file": configFile,
+		"status":      "loaded",
+	}).Info("YAML config loaded successfully")
 	dir := filepath.Dir(configFile)
 	absDir, err := filepath.Abs(dir)
 	if err != nil {
@@ -604,18 +620,32 @@ func loadSecurityBaselineConfig(cfg *Config) {
 
 	data, err := os.ReadFile(baselinePath)
 	if err != nil {
-		logrus.WithError(err).Warnf("Failed to read security baseline config %s", baselinePath)
+		pxlogger.WithError(err).WithFields(pxlogger.Fields{
+			"component":     "config.security_baseline",
+			"baseline_file": baselinePath,
+			"status":        "failed",
+			"reason":        "read_failed",
+		}).Warn("Failed to read security baseline config")
 		return
 	}
 
 	baseline := defaultSecurityBaselineConfig()
 	if err := yaml.Unmarshal(data, baseline); err != nil {
-		logrus.WithError(err).Warnf("Failed to parse security baseline config %s", baselinePath)
+		pxlogger.WithError(err).WithFields(pxlogger.Fields{
+			"component":     "config.security_baseline",
+			"baseline_file": baselinePath,
+			"status":        "failed",
+			"reason":        "parse_failed",
+		}).Warn("Failed to parse security baseline config")
 		return
 	}
 
 	cfg.SecurityBaseline = baseline
-	logrus.WithField("baseline_file", baselinePath).Info("Security baseline config loaded successfully")
+	pxlogger.WithFields(pxlogger.Fields{
+		"component":     "config.security_baseline",
+		"baseline_file": baselinePath,
+		"status":        "loaded",
+	}).Info("Security baseline config loaded successfully")
 }
 
 func locateSecurityBaseline() string {
@@ -778,6 +808,11 @@ func loadEnvConfig(cfg *Config) {
 	}
 	if dsn := resolveConfigValue(os.Getenv("POWERX_DB_DSN")); dsn != "" {
 		cfg.Database.DSN = dsn
+		if strings.TrimSpace(os.Getenv("POWERX_DB_SCHEMA")) == "" {
+			if schema := postgresSearchPathFromDSN(dsn); schema != "" {
+				cfg.Database.Schema = schema
+			}
+		}
 	}
 	if schema := resolveConfigValue(os.Getenv("POWERX_DB_SCHEMA")); schema != "" {
 		cfg.Database.Schema = schema
@@ -870,16 +905,13 @@ func loadEnvConfig(cfg *Config) {
 	if grpcToken := resolveConfigValue(os.Getenv("POWERX_GRPC_UPSTREAM_TOKEN")); grpcToken != "" {
 		cfg.GRPCUpstream.Token = grpcToken
 	}
-	if token, _ := bootstrapToolToken(); token != "" {
-		cfg.GRPCUpstream.Token = token
-	}
 	if grpcTenantUUID := resolveConfigValue(os.Getenv("POWERX_GRPC_UPSTREAM_TENANT_UUID")); grpcTenantUUID != "" {
 		cfg.GRPCUpstream.TenantUUID = grpcTenantUUID
 	} else if grpcTenantUuid := resolveConfigValue(os.Getenv("POWERX_GRPC_UPSTREAM_TENANT_ID")); grpcTenantUuid != "" {
 		// 兼容旧变量 POWERX_GRPC_UPSTREAM_TENANT_ID，后续统一迁移为 *_TENANT_UUID。
 		cfg.GRPCUpstream.TenantUUID = grpcTenantUuid
 	}
-	if token, _ := bootstrapToolToken(); token != "" {
+	if token := strings.TrimSpace(cfg.GRPCUpstream.Token); token != "" {
 		if tid, ok := bootstrapTenantIDFromToken(token); ok {
 			cfg.GRPCUpstream.TenantUUID = tid
 		}
@@ -938,6 +970,28 @@ func loadEnvConfig(cfg *Config) {
 	}
 }
 
+func postgresSearchPathFromDSN(dsn string) string {
+	u, err := url.Parse(strings.TrimSpace(dsn))
+	if err != nil {
+		return ""
+	}
+	switch strings.ToLower(u.Scheme) {
+	case "postgres", "postgresql":
+	default:
+		return ""
+	}
+	schema := strings.TrimSpace(u.Query().Get("search_path"))
+	if schema == "" {
+		return ""
+	}
+	schema = strings.Trim(schema, `"`)
+	if strings.Contains(schema, ",") {
+		schema = strings.TrimSpace(strings.Split(schema, ",")[0])
+		schema = strings.Trim(schema, `"`)
+	}
+	return schema
+}
+
 // syncBackwardCompatibility 同步向后兼容字段
 func syncBackwardCompatibility(cfg *Config) {
 	cfg.BindAddr = cfg.Server.BindAddr
@@ -985,6 +1039,7 @@ func normalizeConfig(cfg *Config) {
 	if cfg == nil {
 		return
 	}
+	applyHostWebAdminOrigins(cfg)
 	if cfg.Server != nil {
 		cfg.Server.BindAddr = resolveConfigValue(cfg.Server.BindAddr)
 		cfg.Server.LogLevel = strings.ToLower(resolveConfigValue(cfg.Server.LogLevel))
@@ -1139,6 +1194,35 @@ func extractPort(addr string) int {
 	return 0
 }
 
+func applyHostWebAdminOrigins(cfg *Config) {
+	if cfg == nil || cfg.Host == nil || len(cfg.Host.WebAdminOrigins) == 0 {
+		return
+	}
+	if cfg.Security == nil {
+		cfg.Security = &SecurityConfig{}
+	}
+	cfg.Security.EnableCORS = true
+	cfg.Security.CORSOrigins = appendUniqueStrings(cfg.Security.CORSOrigins, cfg.Host.WebAdminOrigins...)
+}
+
+func appendUniqueStrings(base []string, values ...string) []string {
+	seen := make(map[string]struct{}, len(base)+len(values))
+	out := make([]string, 0, len(base)+len(values))
+	for _, value := range append(base, values...) {
+		trimmed := strings.TrimSpace(value)
+		if trimmed == "" {
+			continue
+		}
+		key := strings.ToLower(trimmed)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		out = append(out, trimmed)
+	}
+	return out
+}
+
 func resolveConfigValue(value string) string {
 	trimmed := strings.TrimSpace(value)
 	if trimmed == "" {
@@ -1198,19 +1282,6 @@ func truthyEnv(value string) bool {
 	default:
 		return false
 	}
-}
-
-func bootstrapToolToken() (token string, source string) {
-	if v := strings.TrimSpace(os.Getenv("PX_TOOL_TOKEN")); v != "" {
-		return v, "env:PX_TOOL_TOKEN"
-	}
-	if v := strings.TrimSpace(os.Getenv("PX_PLUGIN_TOOL_TOKEN")); v != "" {
-		return v, "env:PX_PLUGIN_TOOL_TOKEN"
-	}
-	if v := strings.TrimSpace(os.Getenv("POWERX_AUTH_TOKEN")); v != "" {
-		return v, "env:POWERX_AUTH_TOKEN"
-	}
-	return "", ""
 }
 
 func bootstrapTenantIDFromToken(token string) (string, bool) {

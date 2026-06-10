@@ -1,3 +1,4 @@
+version: v1
 topics:
   - topic: _topic.template.update
     description: 模板更新进度事件

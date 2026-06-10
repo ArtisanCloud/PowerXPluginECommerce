@@ -1,6 +1,7 @@
 package integration
 
 import (
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	integrationService "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/integration"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
@@ -37,5 +38,5 @@ func (s *Server) log() *logrus.Entry {
 	if s.logger != nil {
 		return s.logger
 	}
-	return logrus.WithField("component", "integration.grpc")
+	return pxlogger.WithField("component", "integration.grpc")
 }

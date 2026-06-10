@@ -2,7 +2,6 @@ package integration
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/contracts"
 	repo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/integration"
@@ -203,10 +202,5 @@ func (h *SecretHandler) GetAuditLog(c *gin.Context) {
 }
 
 func actorFromContext(c *gin.Context) string {
-	if tc, ok := authmw.GetTenantContext(c); ok {
-		if tc.UserID > 0 {
-			return fmt.Sprintf("user:%d", tc.UserID)
-		}
-	}
-	return "admin"
+	return authmw.ActorIDFromGin(c)
 }

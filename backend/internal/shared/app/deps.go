@@ -2,6 +2,7 @@ package app
 
 import (
 	"context"
+	"strings"
 
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/config"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/grpc/client"
@@ -10,6 +11,7 @@ import (
 	adminmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/admin_console"
 	opsmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/operations"
 	productmetrics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/product"
+	runtimelogging "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/runtime/logging"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/authproxy"
 	customerauth "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/customer/auth"
 	iamservice "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/iam"
@@ -57,6 +59,16 @@ func (d *Deps) RuntimeDefaults() *config.RuntimeOpsDefaults {
 	return d.Config.RuntimeOps
 }
 
+func (d *Deps) PowerXAccessToken(ctx context.Context) (string, error) {
+	if d == nil || d.PowerXClient == nil {
+		return "", nil
+	}
+	if ctx == nil {
+		ctx = d.Ctx
+	}
+	return d.PowerXClient.GetAccessToken(ctx)
+}
+
 // RuntimeLogger provides a structured logger enriched with runtime metadata.
 func (d *Deps) RuntimeLogger(ctx context.Context, component string, extra logger.Fields) *logrus.Entry {
 	if extra == nil {
@@ -78,6 +90,12 @@ func (d *Deps) RuntimeLogger(ctx context.Context, component string, extra logger
 				traceID = s
 			}
 		}
+	}
+	if strings.TrimSpace(traceID) != "" {
+		extra[runtimelogging.FieldRequestID] = traceID
+	}
+	if strings.TrimSpace(tenantID) != "" {
+		extra[runtimelogging.FieldTenantKey] = tenantID
 	}
 
 	return logger.WithRuntimeFields(PluginID, tenantID, traceID, component, extra)

@@ -4,6 +4,7 @@ import (
 	"time"
 
 	idrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/integration"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/sirupsen/logrus"
 )
@@ -14,7 +15,7 @@ func BuildDispatchService(deps *app.Deps, logger *logrus.Entry) *DispatchService
 		return nil
 	}
 	if logger == nil {
-		logger = logrus.WithField("component", "integration.dispatch_factory")
+		logger = pxlogger.WithField("component", "integration.dispatch_factory")
 	}
 
 	loader := NewGrantMatrixLoader(

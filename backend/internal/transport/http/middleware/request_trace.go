@@ -1,11 +1,11 @@
 package middleware
 
 import (
-	"log"
 	"os"
 	"strings"
 	"time"
 
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	"github.com/gin-gonic/gin"
 )
@@ -28,19 +28,26 @@ func RequestTrace() gin.HandlerFunc {
 		traceID := traceIdentifier(c)
 		tenantCtx, _ := authx.GetTenantContext(c)
 
-		log.Printf("[PLUGIN-REQ-TRACE] stage=begin mode=%s iam_mode=%s method=%s path=%s auth=%s auth.head=%s tenant_uuid=%s user_id=%d trace=%s ip=%s ua=%s",
-			mode,
-			iamMode,
-			c.Request.Method,
-			c.Request.URL.Path,
-			authMode,
-			authPreview,
-			tenantCtx.TenantUUID,
-			tenantCtx.UserID,
-			traceID,
-			c.ClientIP(),
-			userAgent,
-		)
+		pxlogger.WithFields(pxlogger.Fields{
+			"component":   "http.middleware.request_trace",
+			"stage":       "begin",
+			"mode":        mode,
+			"iam_mode":    iamMode,
+			"method":      c.Request.Method,
+			"path":        c.Request.URL.Path,
+			"auth":        authMode,
+			"auth_head":   authPreview,
+			"tenant_uuid": tenantCtx.TenantUUID,
+			"tenant_id":   tenantCtx.TenantID,
+			"user_id":     tenantCtx.UserID,
+			"user_uuid":   tenantCtx.UserUUID,
+			"member_id":   tenantCtx.MemberID,
+			"member_uuid": tenantCtx.MemberUUID,
+			"trace_id":    traceID,
+			"request_id":  traceID,
+			"ip":          c.ClientIP(),
+			"user_agent":  userAgent,
+		}).Debug("request trace begin")
 
 		c.Next()
 
@@ -51,17 +58,24 @@ func RequestTrace() gin.HandlerFunc {
 			authMode = "bearer(validated)"
 		}
 
-		log.Printf("[PLUGIN-REQ-TRACE] stage=end mode=%s iam_mode=%s status=%d latency=%s auth=%s auth.head=%s tenant_uuid=%s user_id=%d trace=%s",
-			mode,
-			iamMode,
-			status,
-			latency,
-			authMode,
-			authPreview,
-			tenantCtx.TenantUUID,
-			tenantCtx.UserID,
-			traceID,
-		)
+		pxlogger.WithFields(pxlogger.Fields{
+			"component":   "http.middleware.request_trace",
+			"stage":       "end",
+			"mode":        mode,
+			"iam_mode":    iamMode,
+			"status":      status,
+			"latency":     latency.String(),
+			"auth":        authMode,
+			"auth_head":   authPreview,
+			"tenant_uuid": tenantCtx.TenantUUID,
+			"tenant_id":   tenantCtx.TenantID,
+			"user_id":     tenantCtx.UserID,
+			"user_uuid":   tenantCtx.UserUUID,
+			"member_id":   tenantCtx.MemberID,
+			"member_uuid": tenantCtx.MemberUUID,
+			"trace_id":    traceID,
+			"request_id":  traceID,
+		}).Debug("request trace end")
 	}
 }
 
@@ -88,9 +102,6 @@ func detectAuth(c *gin.Context) (mode, preview string) {
 	auth := c.GetHeader("Authorization")
 	if auth != "" {
 		return "bearer", shorten(auth, 40)
-	}
-	if ctx := c.GetHeader("X-PowerX-CTX"); ctx != "" {
-		return "signed_ctx", shorten(ctx, 40)
 	}
 	return "none", ""
 }

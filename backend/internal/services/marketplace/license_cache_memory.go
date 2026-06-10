@@ -3,6 +3,7 @@ package marketplace
 import (
 	"context"
 	"fmt"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"strings"
 	"sync"
 	"time"
@@ -25,7 +26,7 @@ type memoryLicenseCacheEntry struct {
 
 func NewMemoryLicenseCache(logger *logrus.Entry) *MemoryLicenseCache {
 	if logger == nil {
-		logger = logrus.New().WithField("component", "marketplace.license_cache.memory")
+		logger = pxlogger.WithField("component", "marketplace.license_cache.memory")
 	}
 	return &MemoryLicenseCache{
 		entries: map[string]memoryLicenseCacheEntry{},

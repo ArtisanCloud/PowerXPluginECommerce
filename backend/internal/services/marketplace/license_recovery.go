@@ -3,6 +3,7 @@ package marketplace
 import (
 	"context"
 	"errors"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"strings"
 	"time"
 
@@ -34,7 +35,7 @@ type RecoveryRequest struct {
 // NewLicenseRecoveryService constructs a recovery coordinator.
 func NewLicenseRecoveryService(licenseService *LicenseService, licenseRepo *mrepo.LicenseRepository, pricingRepo *mrepo.PricingRepository, logger *logrus.Entry) *LicenseRecoveryService {
 	if logger == nil {
-		logger = logrus.New().WithField("component", "marketplace_license_recovery")
+		logger = pxlogger.WithField("component", "marketplace_license_recovery")
 	}
 	return &LicenseRecoveryService{
 		licenseService: licenseService,

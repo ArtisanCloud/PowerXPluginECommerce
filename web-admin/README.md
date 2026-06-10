@@ -18,8 +18,8 @@ npm run dev
   - 宿主安装默认：`IAM_MODE=delegated` + `POWERX_PROXY=1`。  
   - 本地开发默认：`IAM_MODE=local` + `POWERX_PROXY=0`。  
 - **Capability Lab 判定口径**  
-  - 是否可调用 CoreX 能力取决于网关配置与凭证（`PX_GATEWAY_*` + `PX_TOOL_TOKEN/PX_GATEWAY_API_KEY`），不以 `POWERX_PROXY` 作为功能开关。
+  - 是否可调用 CoreX 能力取决于网关配置与凭证。宿主模式使用 PowerX 注入的 STS 凭证，本地联调使用 `PX_GATEWAY_BASE_URL` + `PX_GATEWAY_API_KEY`，不以 `POWERX_PROXY` 作为功能开关。
 - **STS / 身份交换**  
-  - 使用 PowerX STS（`/_p/_internal/sts/exchange`）获取宿主颁发的短期凭证；本地 mock 场景可开启 `POWERX_DEV_MODE=1` 并在 `.env` 中写入测试 token。
+  - 使用 PowerX STS（`/_p/_internal/sts/exchange`）获取宿主颁发的短期凭证；插件进程只缓存短期 token，不保存长期 bearer token。
 - **任务中心入口**  
   - 客户域批量任务复用宿主任务中心，管理员可在 `/_p/<plugin-id>/admin/console/jobs`（或 web-admin 侧“运维控制台”菜单）追踪导入/导出与批量提醒状态；确保宿主实例开启 `jobs` API。

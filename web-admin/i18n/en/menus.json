@@ -1,0 +1,36 @@
+{
+  "menu": {
+    "com": {
+      "powerx": {
+        "plugins": {
+          "ecommerce": {
+            "console": "Ecommerce Console",
+            "productCenter": "Product Center",
+            "skuManagement": "SKU Management",
+            "spuManagement": "SPU Management",
+            "categories": "Categories",
+            "categoryTemplates": "Category Templates",
+            "inventory": "Inventory & Variants",
+            "customerCenter": "Customer Center",
+            "customerList": "Customers",
+            "members": "Members",
+            "membershipBenefits": "Membership Benefits",
+            "channelCenter": "Channel Center",
+            "channelList": "Channels",
+            "channelApprovals": "Channel Approvals",
+            "pricingPromotions": "Pricing & Promotions",
+            "pricebooks": "Pricebooks",
+            "couponTemplates": "Coupon Templates",
+            "couponUsages": "Coupon Assets & Usage",
+            "orderCenter": "Order Center",
+            "orderList": "Orders",
+            "paymentCenter": "Payments",
+            "paymentProviders": "Payment Providers",
+            "afterSalesCenter": "After-sales",
+            "afterSalesWorkbench": "After-sales Workbench"
+          }
+        }
+      }
+    }
+  }
+}

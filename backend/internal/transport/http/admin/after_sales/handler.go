@@ -162,12 +162,12 @@ func (h *Handler) transitionCase(c *gin.Context, action string) {
 }
 
 func adminUserID(c *gin.Context) (string, bool) {
-	tc, ok := authx.GetTenantContext(c)
-	if !ok || tc.UserID <= 0 {
+	actor, ok := authx.RequireActorFromGin(c)
+	if !ok {
 		contracts.ResponseUnauthorized(c, "unauthorized")
 		return "", false
 	}
-	return strconv.FormatInt(tc.UserID, 10), true
+	return actor.ID(), true
 }
 
 func respondAdminError(c *gin.Context, err error) {

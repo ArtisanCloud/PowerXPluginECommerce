@@ -7,8 +7,9 @@ import (
 	"strings"
 	"time"
 
-	frameworkevent "github.com/ArtisanCloud/PowerXPlugin/framework/event"
-	"github.com/ArtisanCloud/PowerXPlugin/framework/eventbridge"
+	frameworkevent "github.com/ArtisanCloud/PowerXPlugin/framework/backend/go/event"
+	"github.com/ArtisanCloud/PowerXPlugin/framework/backend/go/eventbridge"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	"github.com/sirupsen/logrus"
 )
@@ -37,7 +38,7 @@ type FrameworkClient struct {
 
 func NewFrameworkClient(cfg FrameworkClientConfig, logger *logrus.Entry) (*FrameworkClient, error) {
 	if logger == nil {
-		logger = logrus.New().WithField("component", "taskbus-framework")
+		logger = pxlogger.WithField("component", "taskbus-framework")
 	}
 
 	normalized := normalizeFrameworkConfig(cfg)
@@ -146,15 +147,6 @@ func normalizeFrameworkConfig(cfg FrameworkClientConfig) FrameworkClientConfig {
 	}
 
 	token := strings.TrimSpace(cfg.Token)
-	if token == "" {
-		if v := strings.TrimSpace(os.Getenv("PX_TOOL_TOKEN")); v != "" {
-			token = v
-		} else if v := strings.TrimSpace(os.Getenv("PX_PLUGIN_TOOL_TOKEN")); v != "" {
-			token = v
-		} else {
-			token = strings.TrimSpace(os.Getenv("POWERX_AUTH_TOKEN"))
-		}
-	}
 
 	baseURL := strings.TrimSpace(cfg.BaseURL)
 	if baseURL == "" {

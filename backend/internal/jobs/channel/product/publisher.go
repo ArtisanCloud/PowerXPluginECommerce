@@ -3,6 +3,7 @@ package product
 import (
 	"context"
 	"fmt"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"strings"
 	"time"
 
@@ -34,7 +35,7 @@ type AsyncPublisher struct {
 // NewAsyncPublisher builds an async publisher backed by structured logging.
 func NewAsyncPublisher(logger *logrus.Entry) *AsyncPublisher {
 	if logger == nil {
-		logger = logrus.New().WithField("component", "channels-publisher")
+		logger = pxlogger.WithField("component", "channels-publisher")
 	}
 	return &AsyncPublisher{logger: logger}
 }

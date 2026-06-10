@@ -16,7 +16,8 @@ func TestServiceDashboard_AggregatesWithFilters(t *testing.T) {
 	tenantUUID := "69f7695d-38e9-4132-a188-dcb4fcb5dc9e"
 	ctx := authx.ContextWithTenantUUID(context.Background(), tenantUUID)
 
-	now := time.Now().UTC().Format(time.RFC3339Nano)
+	// 使用固定时间，避免随当前日期漂移导致过滤区间外数据被排除。
+	now := time.Date(2026, time.March, 31, 12, 0, 0, 0, time.UTC).Format(time.RFC3339Nano)
 	require.NoError(t, db.Exec(`INSERT INTO subscription_reconciliation_batches
 		(id, tenant_uuid, billing_cycle, run_type, expected_amount_minor, actual_amount_minor, delta_amount_minor, delta_count, status, started_at, finished_at, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,

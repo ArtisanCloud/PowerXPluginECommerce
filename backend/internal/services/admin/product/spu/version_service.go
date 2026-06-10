@@ -503,13 +503,5 @@ func actorFromContext(ctx context.Context) string {
 	if ctx == nil {
 		return "system"
 	}
-	if tc, ok := authx.TenantContextFromContext(ctx); ok {
-		if tc.UserID > 0 {
-			return fmt.Sprintf("user:%d", tc.UserID)
-		}
-	}
-	if tid, ok := authx.TenantUUIDFromContext(ctx); ok && tid != "" {
-		return "tenant:" + tid
-	}
-	return "system"
+	return authx.ActorIDFromContext(ctx)
 }

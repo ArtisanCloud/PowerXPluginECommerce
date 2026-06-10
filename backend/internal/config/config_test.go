@@ -3,6 +3,7 @@ package config
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 )
 
@@ -46,6 +47,71 @@ func TestLoadAppliesEnvOverrides(t *testing.T) {
 	}
 	if cfg.Logging.Format != "text" || cfg.Logging.Output != "stdout" {
 		t.Fatalf("日志配置未归一化: format=%q output=%q", cfg.Logging.Format, cfg.Logging.Output)
+	}
+}
+
+func TestLoadDerivesSchemaFromPowerXDBDSNSearchPath(t *testing.T) {
+	const (
+		schema = "px_com_powerx_plugins_ecommerce"
+		dsn    = "postgres://user:pass@127.0.0.1:5432/powerx?search_path=" + schema + "&sslmode=disable"
+	)
+
+	t.Setenv("POWERX_DB_DSN", dsn)
+	t.Setenv("POWERX_DEV_MODE", "true")
+	t.Setenv("POWERX_CUSTOMER_AUTH_MODE", "local")
+	t.Setenv("POWERX_CUSTOMER_JWT_SECRET", "test-secret")
+
+	tempDir := t.TempDir()
+	configFile := filepath.Join(tempDir, "config.yaml")
+	configContent := "database:\n  schema: \"powerx_plugin_base\"\n"
+	if err := os.WriteFile(configFile, []byte(configContent), 0o644); err != nil {
+		t.Fatalf("写入测试配置失败: %v", err)
+	}
+	t.Setenv("CONFIG_PATH", tempDir)
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("加载配置失败: %v", err)
+	}
+	if cfg.Database.Schema != schema {
+		t.Fatalf("未从 POWERX_DB_DSN search_path 推导 schema，期望 %q 实际 %q", schema, cfg.Database.Schema)
+	}
+}
+
+func TestLoadMapsHostWebAdminOriginsToCORS(t *testing.T) {
+	tempDir := t.TempDir()
+	configContent := strings.Join([]string{
+		"database:",
+		"  dsn: postgres://user:pass@127.0.0.1:5432/powerx_test?sslmode=disable",
+		"  schema: px_test",
+		"customer_auth:",
+		"  jwt_secret: test-secret",
+		"security:",
+		"  enable_cors: false",
+		"  cors_origins:",
+		"    - http://localhost:3031",
+		"host:",
+		"  web_admin_origins:",
+		"    - https://admin.example.com",
+		"    - http://localhost:3031",
+	}, "\n")
+	configFile := filepath.Join(tempDir, "config.yaml")
+	if err := os.WriteFile(configFile, []byte(configContent), 0o644); err != nil {
+		t.Fatalf("写入测试配置失败: %v", err)
+	}
+	t.Setenv("CONFIG_PATH", tempDir)
+	t.Setenv("POWERX_DEV_MODE", "true")
+
+	cfg, err := Load()
+	if err != nil {
+		t.Fatalf("加载配置失败: %v", err)
+	}
+	if cfg.Security == nil || !cfg.Security.EnableCORS {
+		t.Fatal("host.web_admin_origins 未启用 CORS")
+	}
+	want := []string{"http://localhost:3031", "https://admin.example.com"}
+	if strings.Join(cfg.Security.CORSOrigins, ",") != strings.Join(want, ",") {
+		t.Fatalf("CORS origins 未合并 host.web_admin_origins, got=%v want=%v", cfg.Security.CORSOrigins, want)
 	}
 }
 

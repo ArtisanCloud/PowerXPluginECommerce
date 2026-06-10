@@ -1,6 +1,7 @@
 package master
 
 import (
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"sync/atomic"
 	"time"
 
@@ -42,7 +43,7 @@ type KPILoadHistogram struct {
 // NewMetrics constructs a collector with optional logger enrichment.
 func NewMetrics(logger *logrus.Entry) *Metrics {
 	if logger == nil {
-		logger = logrus.New().WithField("component", "channel-master-metrics")
+		logger = pxlogger.WithField("component", "channel-master-metrics")
 	}
 	return &Metrics{logger: logger}
 }

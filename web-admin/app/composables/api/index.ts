@@ -8,6 +8,7 @@ export * from "./useCategoryMapping";
 export * from "./useCustomer";
 export * from "./useOrder";
 export * from "./usePricebook";
+export * from "./useCoupons";
 export * from "./useProductSpec";
 export * from "./usePayments";
 export * from "./useCapabilityCatalog";

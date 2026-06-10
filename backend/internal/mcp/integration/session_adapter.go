@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	domain "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/integration"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	integrationService "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/integration"
 	"github.com/sirupsen/logrus"
 )
@@ -19,7 +20,7 @@ type SessionAdapter struct {
 // NewSessionAdapter 构造 MCP 适配器。
 func NewSessionAdapter(dispatch *integrationService.DispatchService, logger *logrus.Entry) *SessionAdapter {
 	if logger == nil {
-		logger = logrus.WithField("component", "integration.mcp.adapter")
+		logger = pxlogger.WithField("component", "integration.mcp.adapter")
 	}
 	return &SessionAdapter{
 		dispatch: dispatch,

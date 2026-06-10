@@ -26,6 +26,8 @@ export interface SkuListParams {
 	spuId?: string
 	status?: string
 	channel?: string
+	keyword?: string
+	q?: string
 	locale?: string
 	page?: number
 	pageSize?: number

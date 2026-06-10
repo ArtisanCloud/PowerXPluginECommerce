@@ -3,6 +3,7 @@ package product
 import (
 	"context"
 	"errors"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"time"
 
 	productmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product"
@@ -27,7 +28,7 @@ type ApprovalSLAWorker struct {
 // NewApprovalSLAWorker constructs a worker with optional notifier/logger.
 func NewApprovalSLAWorker(db *gorm.DB, notifier ApprovalReminder, logger *logrus.Entry) *ApprovalSLAWorker {
 	if logger == nil {
-		logger = logrus.New().WithField("component", "approval-sla-worker")
+		logger = pxlogger.WithField("component", "approval-sla-worker")
 	}
 	return &ApprovalSLAWorker{
 		db:        db,

@@ -14,6 +14,12 @@ func TestWithRuntimeFields(t *testing.T) {
 	if fields["trace_id"] != "trace-abc" {
 		t.Fatalf("trace_id not set")
 	}
+	if fields["request_id"] != "trace-abc" {
+		t.Fatalf("request_id not set")
+	}
+	if fields["tenant_key"] != "tenant-1" {
+		t.Fatalf("tenant_key not set")
+	}
 	if fields["component"] != "component" {
 		t.Fatalf("component not set")
 	}

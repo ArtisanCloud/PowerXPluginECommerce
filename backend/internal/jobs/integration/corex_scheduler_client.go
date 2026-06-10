@@ -13,15 +13,14 @@ import (
 )
 
 type CoreXSchedulerClient struct {
-	baseURL    string
-	token      string
-	tenantUUID string
-	ownerID    string
-	httpClient *http.Client
+	baseURL       string
+	authorization string
+	ownerID       string
+	httpClient    *http.Client
 }
 
 func NewCoreXSchedulerClientFromEnv(timeout time.Duration) (*CoreXSchedulerClient, error) {
-	tenantUUID, token, err := resolveCoreXSchedulerTenantAndToken()
+	authorization, err := resolveCoreXSchedulerAuthorization(context.Background())
 	if err != nil {
 		return nil, err
 	}
@@ -41,11 +40,10 @@ func NewCoreXSchedulerClientFromEnv(timeout time.Duration) (*CoreXSchedulerClien
 		timeout = 10 * time.Second
 	}
 	return &CoreXSchedulerClient{
-		baseURL:    baseURL,
-		token:      token,
-		tenantUUID: tenantUUID,
-		ownerID:    ownerID,
-		httpClient: &http.Client{Timeout: timeout},
+		baseURL:       baseURL,
+		authorization: authorization,
+		ownerID:       ownerID,
+		httpClient:    &http.Client{Timeout: timeout},
 	}, nil
 }
 
@@ -67,7 +65,6 @@ func (c *CoreXSchedulerClient) Upsert(ctx context.Context, spec RemoteJobSpec) e
 	}
 
 	body := map[string]any{
-		"tenant_uuid":   c.tenantUUID,
 		"owner_type":    "plugin",
 		"owner_id":      c.ownerID,
 		"name":          name,
@@ -85,10 +82,9 @@ func (c *CoreXSchedulerClient) Upsert(ctx context.Context, spec RemoteJobSpec) e
 	if err != nil {
 		return err
 	}
-	req.Header.Set("Authorization", "Bearer "+c.token)
+	req.Header.Set("Authorization", c.authorization)
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Accept", "application/json")
-	req.Header.Set("X-PowerX-Tenant", c.tenantUUID)
 
 	resp, err := c.httpClient.Do(req)
 	if err != nil {

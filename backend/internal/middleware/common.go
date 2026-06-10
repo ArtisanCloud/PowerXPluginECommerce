@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"os"
 	"runtime/debug"
-	"strings"
 	"sync"
 	"time"
 
@@ -24,7 +23,7 @@ func CORS() gin.HandlerFunc {
 		c.Header("Access-Control-Allow-Headers",
 			"Content-Type, Content-Length, Accept-Encoding, "+
 				"X-CSRF-Token, Authorization, accept, origin, Cache-Control, "+
-				"X-Requested-With, X-PowerX-CTX, X-PowerX-CTX-SIG, X-PowerX-CTX-JWT, "+
+				"X-Requested-With, "+
 				"Idempotency-Key, X-Request-ID, X-Tenant-UUID, X-PX-Use-Mock",
 		)
 		c.Header("Access-Control-Allow-Methods", "POST, OPTIONS, GET, PUT, DELETE, PATCH")
@@ -54,10 +53,10 @@ func RequestLogger() gin.HandlerFunc {
 		// 获取客户端IP
 		clientIP := c.ClientIP()
 
-		// 获取租户信息
-		var tenantUUID string
+		// 获取租户与操作者信息
+		var actor ActorContext
 		if tenantCtx, exists := GetTenantContext(c); exists {
-			tenantUUID = tenantCtx.TenantUUID
+			actor = tenantCtx.Actor()
 		}
 
 		// 构建日志字段
@@ -74,8 +73,8 @@ func RequestLogger() gin.HandlerFunc {
 			fields["query"] = raw
 		}
 
-		if strings.TrimSpace(tenantUUID) != "" {
-			fields["tenant_uuid"] = tenantUUID
+		for k, v := range actor.Fields() {
+			fields[k] = v
 		}
 
 		// 根据状态码选择日志级别

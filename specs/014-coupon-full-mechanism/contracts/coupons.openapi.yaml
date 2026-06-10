@@ -1,0 +1,600 @@
+openapi: 3.0.3
+info:
+  title: PowerX Plugin - Coupon Full Mechanism API
+  version: 0.2.0
+  description: |
+    对齐当前实现的优惠券接口契约（miniapp 试算 + admin 模板/发券/资产流水查询）。
+servers:
+  - url: /api/v1
+paths:
+  /v1/coupons/quote:
+    post:
+      summary: 订单优惠试算
+      tags: [MiniAppCoupon]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CouponQuoteRequest'
+      responses:
+        '200':
+          description: 试算成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeCouponQuoteResponse'
+
+  /admin/coupons/templates:
+    get:
+      summary: 列表查询券模板
+      tags: [AdminCoupon]
+      parameters:
+        - in: query
+          name: keyword
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeTemplateListResponse'
+    post:
+      summary: 创建券模板
+      tags: [AdminCoupon]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CouponTemplateCreateRequest'
+      responses:
+        '200':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeCouponTemplate'
+
+  /admin/coupons/templates/{id}:
+    patch:
+      summary: 更新券模板
+      tags: [AdminCoupon]
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CouponTemplateUpdateRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeCouponTemplate'
+
+  /admin/coupons/issues:
+    post:
+      summary: 批量发券
+      tags: [AdminCoupon]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CouponIssueRequest'
+      responses:
+        '200':
+          description: 发券成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeCouponIssueResponse'
+
+  /admin/coupons/assets:
+    get:
+      summary: 查询券资产
+      tags: [AdminCoupon]
+      parameters:
+        - in: query
+          name: templateId
+          schema:
+            type: string
+        - in: query
+          name: userId
+          schema:
+            type: string
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [available, reserved, redeemed, refunded, expired]
+        - in: query
+          name: orderId
+          schema:
+            type: string
+        - in: query
+          name: couponCode
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeCouponAssetListResponse'
+
+  /admin/coupons/usage-logs:
+    get:
+      summary: 查询券动作流水
+      tags: [AdminCoupon]
+      parameters:
+        - in: query
+          name: assetId
+          schema:
+            type: string
+        - in: query
+          name: orderId
+          schema:
+            type: string
+        - in: query
+          name: action
+          schema:
+            type: string
+            enum: [reserve, redeem, release, refund]
+        - in: query
+          name: couponCode
+          schema:
+            type: string
+        - in: query
+          name: userId
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+        - in: query
+          name: pageSize
+          schema:
+            type: integer
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopeCouponUsageLogListResponse'
+
+components:
+  schemas:
+    ApiEnvelopeBase:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+          nullable: true
+        request_id:
+          type: string
+          nullable: true
+        timestamp:
+          type: string
+          format: date-time
+
+    Money:
+      type: object
+      properties:
+        amount_minor:
+          type: integer
+          format: int64
+        currency:
+          type: string
+      required: [amount_minor, currency]
+
+    QuoteItem:
+      type: object
+      properties:
+        line_id:
+          type: string
+        sku_id:
+          type: string
+        qty:
+          type: integer
+        unit_price_minor:
+          type: integer
+          format: int64
+      required: [sku_id, qty, unit_price_minor]
+
+    CouponQuoteRequest:
+      type: object
+      properties:
+        user_id:
+          type: string
+        channel:
+          type: string
+        coupon_ids:
+          type: array
+          items:
+            type: string
+        currency:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuoteItem'
+      required: [user_id, channel, items]
+
+    AppliedCoupon:
+      type: object
+      properties:
+        coupon_id:
+          type: string
+        coupon_code:
+          type: string
+        template_id:
+          type: string
+        discount_minor:
+          type: integer
+          format: int64
+        level:
+          type: string
+      required: [coupon_id, coupon_code, template_id, discount_minor, level]
+
+    RejectedCoupon:
+      type: object
+      properties:
+        coupon_id:
+          type: string
+        reason:
+          type: string
+      required: [coupon_id, reason]
+
+    CouponQuoteResponse:
+      type: object
+      properties:
+        base_total:
+          $ref: '#/components/schemas/Money'
+        discount_total:
+          $ref: '#/components/schemas/Money'
+        payable_total:
+          $ref: '#/components/schemas/Money'
+        applied_coupons:
+          type: array
+          items:
+            $ref: '#/components/schemas/AppliedCoupon'
+        rejected_coupons:
+          type: array
+          items:
+            $ref: '#/components/schemas/RejectedCoupon'
+      required: [base_total, discount_total, payable_total, applied_coupons, rejected_coupons]
+
+    CouponTemplate:
+      type: object
+      properties:
+        id:
+          type: string
+        tenant_uuid:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        coupon_type:
+          type: string
+        threshold_rule:
+          type: object
+          additionalProperties: true
+        scope_rule:
+          type: object
+          additionalProperties: true
+        stacking_rule:
+          type: object
+          additionalProperties: true
+        refund_rule:
+          type: object
+          additionalProperties: true
+        valid_from:
+          type: string
+          format: date-time
+        valid_to:
+          type: string
+          format: date-time
+        status:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required: [id, tenant_uuid, code, name, coupon_type, valid_from, valid_to, status]
+
+    CouponTemplateCreateRequest:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        coupon_type:
+          type: string
+        threshold_rule:
+          type: object
+          additionalProperties: true
+        scope_rule:
+          type: object
+          additionalProperties: true
+        stacking_rule:
+          type: object
+          additionalProperties: true
+        refund_rule:
+          type: object
+          additionalProperties: true
+        valid_from:
+          type: string
+          format: date-time
+        valid_to:
+          type: string
+          format: date-time
+        status:
+          type: string
+      required: [code, name, coupon_type, valid_from, valid_to]
+
+    CouponTemplateUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+        coupon_type:
+          type: string
+        threshold_rule:
+          type: object
+          additionalProperties: true
+        scope_rule:
+          type: object
+          additionalProperties: true
+        stacking_rule:
+          type: object
+          additionalProperties: true
+        refund_rule:
+          type: object
+          additionalProperties: true
+        valid_from:
+          type: string
+          format: date-time
+        valid_to:
+          type: string
+          format: date-time
+
+    CouponIssueRequest:
+      type: object
+      properties:
+        template_id:
+          type: string
+        user_ids:
+          type: array
+          items:
+            type: string
+        quantity_per_user:
+          type: integer
+        valid_from:
+          type: string
+          format: date-time
+        valid_to:
+          type: string
+          format: date-time
+        meta:
+          type: object
+          additionalProperties: true
+      required: [template_id, user_ids]
+
+    CouponIssueResponse:
+      type: object
+      properties:
+        issued:
+          type: integer
+        asset_ids:
+          type: array
+          items:
+            type: string
+      required: [issued, asset_ids]
+
+    CouponAsset:
+      type: object
+      properties:
+        id:
+          type: string
+        tenant_uuid:
+          type: string
+        template_id:
+          type: string
+        user_id:
+          type: string
+        coupon_code:
+          type: string
+        status:
+          type: string
+        reserved_order_id:
+          type: string
+          nullable: true
+        reserved_at:
+          type: string
+          format: date-time
+          nullable: true
+        redeemed_at:
+          type: string
+          format: date-time
+          nullable: true
+        valid_from:
+          type: string
+          format: date-time
+          nullable: true
+        valid_to:
+          type: string
+          format: date-time
+          nullable: true
+        updated_at:
+          type: string
+          format: date-time
+      required: [id, tenant_uuid, template_id, user_id, coupon_code, status]
+
+    CouponAssetListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CouponAsset'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+        page_size:
+          type: integer
+      required: [items, total, page, page_size]
+
+    CouponUsageLog:
+      type: object
+      properties:
+        id:
+          type: string
+        tenant_uuid:
+          type: string
+        asset_id:
+          type: string
+        order_id:
+          type: string
+          nullable: true
+        coupon_code:
+          type: string
+        user_id:
+          type: string
+        action:
+          type: string
+        action_reason:
+          type: string
+        idempotency_key:
+          type: string
+        request_id:
+          type: string
+        created_by:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+      required: [id, tenant_uuid, asset_id, action, action_reason, idempotency_key, created_at]
+
+    CouponUsageLogListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CouponUsageLog'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+        page_size:
+          type: integer
+      required: [items, total, page, page_size]
+
+    ApiEnvelopeCouponQuoteResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/CouponQuoteResponse'
+
+    ApiEnvelopeCouponTemplate:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/CouponTemplate'
+
+    ApiEnvelopeTemplateListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/TemplateListResponse'
+
+    TemplateListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CouponTemplate'
+        total:
+          type: integer
+          format: int64
+        page:
+          type: integer
+        page_size:
+          type: integer
+      required: [items, total, page, page_size]
+
+    ApiEnvelopeCouponIssueResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/CouponIssueResponse'
+
+    ApiEnvelopeCouponAssetListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/CouponAssetListResponse'
+
+    ApiEnvelopeCouponUsageLogListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/CouponUsageLogListResponse'

@@ -11,6 +11,7 @@ import (
 	paymentrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	paymentslogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/payments"
+	couponsvc "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/coupon"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"gorm.io/gorm"
 )
@@ -21,10 +22,11 @@ var (
 )
 
 type RefundService struct {
-	deps          *app.Deps
-	refundRepo    *paymentrepo.PaymentRefundRepository
+	deps            *app.Deps
+	refundRepo      *paymentrepo.PaymentRefundRepository
 	transactionRepo *paymentrepo.PaymentTransactionRepository
-	logger        *paymentslogger.Logger
+	couponRefundSvc *couponsvc.RefundService
+	logger          *paymentslogger.Logger
 }
 
 func NewRefundService(deps *app.Deps) *RefundService {
@@ -36,10 +38,11 @@ func NewRefundService(deps *app.Deps) *RefundService {
 		obsLogger = paymentslogger.NewLogger(entry)
 	}
 	return &RefundService{
-		deps:             deps,
-		refundRepo:       paymentrepo.NewPaymentRefundRepository(deps.DB),
-		transactionRepo:  paymentrepo.NewPaymentTransactionRepository(deps.DB),
-		logger:           obsLogger,
+		deps:            deps,
+		refundRepo:      paymentrepo.NewPaymentRefundRepository(deps.DB),
+		transactionRepo: paymentrepo.NewPaymentTransactionRepository(deps.DB),
+		couponRefundSvc: couponsvc.NewRefundService(deps),
+		logger:          obsLogger,
 	}
 }
 
@@ -76,6 +79,17 @@ func (s *RefundService) CreateRefund(ctx context.Context, tenantUUID, adminID st
 	err := s.refundRepo.WithTenantTx(ctx, tenantUUID, func(tx *gorm.DB) error {
 		if err := tx.WithContext(ctx).Create(row).Error; err != nil {
 			return err
+		}
+		if s.couponRefundSvc != nil && s.couponRefundSvc.Ready() && strings.TrimSpace(txRow.OrderID) != "" {
+			if _, err := s.couponRefundSvc.RefundWithTx(ctx, tx, couponsvc.RefundInput{
+				TenantUUID: tenantUUID,
+				OrderID:    txRow.OrderID,
+				RefundNo:   refundNo,
+				Operator:   adminID,
+				Reason:     "payment_refund",
+			}); err != nil {
+				return err
+			}
 		}
 		created = row
 		return nil

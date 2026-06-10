@@ -335,11 +335,14 @@ func mapUserContext(uc *iamservice.UserContext) gin.H {
 		"is_root":             isRoot,
 		"current_tenant_uuid": tenantUUID,
 		"current_member_id":   uc.MemberID,
+		"current_member_uuid": strings.TrimSpace(uc.MemberUUID),
 		"tenant":              tenant,
 		"user": gin.H{
 			"id":           uc.UserID,
+			"uuid":         strings.TrimSpace(uc.UserUUID),
 			"username":     uc.Username,
 			"email":        uc.Email,
+			"phone":        uc.Phone,
 			"display_name": uc.DisplayName,
 		},
 		"members": []gin.H{
@@ -347,6 +350,7 @@ func mapUserContext(uc *iamservice.UserContext) gin.H {
 				"tenant_uuid": tenantUUID,
 				"tenant_name": uc.TenantName,
 				"member_id":   uc.MemberID,
+				"member_uuid": strings.TrimSpace(uc.MemberUUID),
 				"is_admin":    canManageTemplates,
 			},
 		},

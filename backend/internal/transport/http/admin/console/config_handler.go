@@ -2,7 +2,6 @@ package console
 
 import (
 	"errors"
-	"fmt"
 	"net/http"
 	"strings"
 
@@ -113,11 +112,7 @@ func (h *ConfigHandler) UpdateSection(c *gin.Context) {
 }
 
 func resolveActor(c *gin.Context) consolesvc.Actor {
-	tc, _ := authx.GetTenantContext(c)
-	actorID := "system"
-	if tc.UserID > 0 {
-		actorID = fmt.Sprintf("user:%d", tc.UserID)
-	}
+	actorID := authx.ActorIDFromGin(c)
 	name := strings.TrimSpace(c.GetHeader("X-User-Name"))
 	email := strings.TrimSpace(c.GetHeader("X-User-Email"))
 	return consolesvc.Actor{

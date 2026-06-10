@@ -106,3 +106,25 @@ func TestSchedulerBridge_CoreXModeFallbackStartsLocal(t *testing.T) {
 		t.Fatalf("expected local run by fallback, got %d", got)
 	}
 }
+
+func TestResolveCoreXSchedulerAuthorization_APIKey(t *testing.T) {
+	t.Setenv("PX_GATEWAY_API_KEY", "k_test_123")
+	got, err := resolveCoreXSchedulerAuthorization(context.Background())
+	if err != nil {
+		t.Fatalf("resolveCoreXSchedulerAuthorization returned error: %v", err)
+	}
+	if got != "ApiKey k_test_123" {
+		t.Fatalf("unexpected authorization: %s", got)
+	}
+}
+
+func TestResolveCoreXSchedulerAuthorization_MissingCredentials(t *testing.T) {
+	t.Setenv("PX_GATEWAY_API_KEY", "")
+	t.Setenv("POWERX_GRPC_UPSTREAM_ADDRESS", "")
+	t.Setenv("PX_GATEWAY_GRPC_TARGET", "")
+	t.Setenv("POWERX_STS_CLIENT_ID", "")
+	t.Setenv("POWERX_STS_CLIENT_SECRET", "")
+	if _, err := resolveCoreXSchedulerAuthorization(context.Background()); err == nil {
+		t.Fatal("expected missing credential error")
+	}
+}

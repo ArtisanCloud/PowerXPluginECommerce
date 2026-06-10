@@ -25,17 +25,20 @@ import (
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	paymentslogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/payments"
+	couponsvc "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/coupon"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
 )
 
 type TransactionService struct {
-	deps         *app.Deps
-	transactions *paymentrepo.PaymentTransactionRepository
-	providers    *paymentrepo.PaymentProviderRepository
-	orders       *orderrepo.OrderRepository
-	identities   *customerrepo.IdentityRepository
+	deps          *app.Deps
+	transactions  *paymentrepo.PaymentTransactionRepository
+	providers     *paymentrepo.PaymentProviderRepository
+	orders        *orderrepo.OrderRepository
+	identities    *customerrepo.IdentityRepository
+	couponRedeem  *couponsvc.RedeemService
+	couponRelease *couponsvc.ReleaseService
 }
 
 func NewTransactionService(deps *app.Deps) *TransactionService {
@@ -43,16 +46,18 @@ func NewTransactionService(deps *app.Deps) *TransactionService {
 		return &TransactionService{deps: deps}
 	}
 	return &TransactionService{
-		deps:         deps,
-		transactions: paymentrepo.NewPaymentTransactionRepository(deps.DB),
-		providers:    paymentrepo.NewPaymentProviderRepository(deps.DB),
-		orders:       orderrepo.NewOrderRepository(deps.DB),
-		identities:   customerrepo.NewIdentityRepository(deps.DB),
+		deps:          deps,
+		transactions:  paymentrepo.NewPaymentTransactionRepository(deps.DB),
+		providers:     paymentrepo.NewPaymentProviderRepository(deps.DB),
+		orders:        orderrepo.NewOrderRepository(deps.DB),
+		identities:    customerrepo.NewIdentityRepository(deps.DB),
+		couponRedeem:  couponsvc.NewRedeemService(deps),
+		couponRelease: couponsvc.NewReleaseService(deps),
 	}
 }
 
 func (s *TransactionService) Ready() bool {
-	return s != nil && s.deps != nil && s.deps.DB != nil && s.transactions != nil && s.orders != nil && s.identities != nil
+	return s != nil && s.deps != nil && s.deps.DB != nil && s.transactions != nil && s.orders != nil && s.identities != nil && s.couponRedeem != nil && s.couponRelease != nil
 }
 
 func (s *TransactionService) CreateTransaction(ctx context.Context, tenantUUID string, req CreateTransactionRequest) (*CreateTransactionResponse, error) {
@@ -431,6 +436,36 @@ func (s *TransactionService) applyStatusUpdate(ctx context.Context, tenantUUID s
 				Where("tenant_uuid = ? AND id = ?", tenantUUID, row.OrderID).
 				Updates(map[string]any{"status": "paid", "updated_at": now}).Error; err != nil {
 				return err
+			}
+			if s.couponRedeem != nil && s.couponRedeem.Ready() {
+				if _, err := s.couponRedeem.RedeemWithTx(ctx, db, couponsvc.RedeemInput{
+					TenantUUID: tenantUUID,
+					OrderID:    strings.TrimSpace(row.OrderID),
+					RequestID:  requestIDFromContext(ctx),
+					Operator:   "payment_callback",
+					Reason:     "payment_success",
+				}); err != nil {
+					return err
+				}
+			}
+		}
+		if status == "failed" || status == "canceled" || status == "timeout" {
+			if err := db.WithContext(ctx).
+				Model(&ordermodel.Order{}).
+				Where("tenant_uuid = ? AND id = ? AND status = ?", tenantUUID, row.OrderID, "pending_payment").
+				Updates(map[string]any{"status": "cancelled", "updated_at": time.Now().UTC()}).Error; err != nil {
+				return err
+			}
+			if s.couponRelease != nil && s.couponRelease.Ready() {
+				if _, err := s.couponRelease.ReleaseWithTx(ctx, db, couponsvc.ReleaseInput{
+					TenantUUID: tenantUUID,
+					OrderID:    strings.TrimSpace(row.OrderID),
+					RequestID:  requestIDFromContext(ctx),
+					Operator:   "payment_callback",
+					Reason:     "payment_failed_or_closed",
+				}); err != nil {
+					return err
+				}
 			}
 		}
 		if err := db.WithContext(ctx).

@@ -16,6 +16,7 @@ import (
 	iamm "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/iam"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -113,12 +114,16 @@ func (d *LocalDirectory) Login(ctx context.Context, req LoginRequest) (*AuthToke
 	userCtx := &UserContext{
 		TenantUUID:    tenantUUID,
 		TenantUuid:    tenantUUID,
+		TenantID:      tenant.ID,
 		TenantKey:     tenant.Key,
 		TenantName:    tenant.Name,
 		MemberID:      member.ID,
+		MemberUUID:    stableLocalPrincipalUUID(tenantUUID, "member", member.ID),
 		UserID:        user.ID,
+		UserUUID:      stableLocalPrincipalUUID("", "user", user.ID),
 		Username:      member.Username,
 		Email:         user.Email,
+		Phone:         user.Phone,
 		DisplayName:   valueOrDefault(member.DisplayName, user.DisplayName),
 		Roles:         roles,
 		Permissions:   perms,
@@ -159,12 +164,16 @@ func (d *LocalDirectory) Refresh(ctx context.Context, refreshToken string) (*Aut
 	userCtx := &UserContext{
 		TenantUUID:    tenantUUID,
 		TenantUuid:    tenantUUID,
+		TenantID:      tenant.ID,
 		TenantKey:     tenant.Key,
 		TenantName:    tenant.Name,
 		MemberID:      member.ID,
+		MemberUUID:    stableLocalPrincipalUUID(tenantUUID, "member", member.ID),
 		UserID:        user.ID,
+		UserUUID:      stableLocalPrincipalUUID("", "user", user.ID),
 		Username:      member.Username,
 		Email:         user.Email,
+		Phone:         user.Phone,
 		DisplayName:   valueOrDefault(member.DisplayName, user.DisplayName),
 		Roles:         roles,
 		Permissions:   perms,
@@ -282,7 +291,10 @@ func (d *LocalDirectory) UserContextFromToken(ctx context.Context, bearer string
 		return nil, err
 	}
 	resolvedTenant := tenantIdentifier(tenant)
-	userID := uint64(claims.UserID)
+	userID := uint64(firstPositiveInt64(claims.UserID.Int64(), claims.User.ID.Int64()))
+	if userID == 0 {
+		return nil, ErrUnauthorized
+	}
 	var user iamm.User
 	if err := d.db.WithContext(ctx).Where("id = ?", userID).First(&user).Error; err != nil {
 		return nil, err
@@ -298,12 +310,16 @@ func (d *LocalDirectory) UserContextFromToken(ctx context.Context, bearer string
 	return &UserContext{
 		TenantUUID:    resolvedTenant,
 		TenantUuid:    resolvedTenant,
+		TenantID:      tenant.ID,
 		TenantKey:     tenant.Key,
 		TenantName:    tenant.Name,
 		MemberID:      member.ID,
+		MemberUUID:    stableLocalPrincipalUUID(resolvedTenant, "member", member.ID),
 		UserID:        userID,
+		UserUUID:      stableLocalPrincipalUUID("", "user", userID),
 		Username:      member.Username,
 		Email:         user.Email,
+		Phone:         user.Phone,
 		DisplayName:   valueOrDefault(member.DisplayName, user.DisplayName),
 		Roles:         claims.Roles,
 		Permissions:   claims.Permissions,
@@ -388,14 +404,23 @@ func (d *LocalDirectory) issueTokens(userCtx *UserContext) (*AuthTokens, error) 
 	expires := now.Add(d.accessTTL)
 	claims := authx.PowerXClaims{
 		TenantUUID:    authx.TenantClaim(strings.TrimSpace(userCtx.TenantUUID)),
-		UserID:        int64(userCtx.UserID),
+		TenantID:      authx.FlexibleInt(userCtx.TenantID),
+		User:          authx.IdentityClaim{UUID: stableLocalPrincipalUUID("", "user", userCtx.UserID)},
+		UserID:        authx.FlexibleInt(userCtx.UserID),
+		Member:        authx.IdentityClaim{UUID: stableLocalPrincipalUUID(userCtx.TenantUUID, "member", userCtx.MemberID)},
+		MemberID:      authx.FlexibleInt(userCtx.MemberID),
+		Email:         strings.ToLower(strings.TrimSpace(userCtx.Email)),
+		Phone:         strings.TrimSpace(userCtx.Phone),
+		Scope:         "access",
 		Roles:         userCtx.Roles,
 		Permissions:   userCtx.Permissions,
 		PolicyVersion: userCtx.PolicyVersion,
 		RegisteredClaims: jwt.RegisteredClaims{
 			Issuer:    d.issuer,
+			Subject:   stableLocalPrincipalUUID(userCtx.TenantUUID, "member", userCtx.MemberID),
 			Audience:  jwt.ClaimStrings{d.audience},
 			IssuedAt:  jwt.NewNumericDate(now),
+			NotBefore: jwt.NewNumericDate(now),
 			ExpiresAt: jwt.NewNumericDate(expires),
 		},
 	}
@@ -458,6 +483,23 @@ func tenantIdentifier(tenant *iamm.Tenant) string {
 		return strings.ToLower(key)
 	}
 	return fmt.Sprintf("%d", tenant.ID)
+}
+
+func stableLocalPrincipalUUID(tenantUUID, kind string, id uint64) string {
+	parts := []string{"com.powerx.plugin.ecommerce", "local-iam", strings.TrimSpace(kind), strconv.FormatUint(id, 10)}
+	if strings.TrimSpace(tenantUUID) != "" {
+		parts = append(parts, strings.ToLower(strings.TrimSpace(tenantUUID)))
+	}
+	return uuid.NewSHA1(uuid.NameSpaceURL, []byte(strings.Join(parts, ":"))).String()
+}
+
+func firstPositiveInt64(values ...int64) int64 {
+	for _, value := range values {
+		if value > 0 {
+			return value
+		}
+	}
+	return 0
 }
 
 func (d *LocalDirectory) findTenantByIdentifier(ctx context.Context, identifier string) (*iamm.Tenant, error) {

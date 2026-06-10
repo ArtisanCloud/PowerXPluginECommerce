@@ -1,4 +1,4 @@
-import { useApiClient } from "../index";
+import { useApiClient } from "../_client";
 
 export type ShippingAddress = {
   label?: string;

@@ -15,6 +15,7 @@ type RuntimeModeDecision struct {
 	IAMMode             string
 	IAMSource           string
 	PowerXProxy         bool
+	EffectiveProxy      bool
 	CapabilityRoute     string
 	WSRoute             string
 	OutboundTokenSource string
@@ -23,12 +24,16 @@ type RuntimeModeDecision struct {
 }
 
 func ResolveRuntimeModeDecision(cfg *config.Config, iamMode string, iamSource string) RuntimeModeDecision {
-	token, tokenSource := ResolveToolToken()
-	tenantID, _ := ParseTenantIDFromJWT(token)
+	token, tokenSource := ResolvePowerXAccessTokenBootstrap(cfg, EffectiveHostMode(cfg, iamMode))
+	tenantID := resolveSTSTenantID(cfg)
+	if tenantID == "" {
+		tenantID, _ = ParseTenantIDFromJWT(token)
+	}
 	proxy := envTruthy("POWERX_PROXY")
+	effectiveProxy := EffectiveHostMode(cfg, iamMode)
 	capRoute := "local"
 	wsRoute := "local"
-	if proxy {
+	if effectiveProxy {
 		capRoute = "host"
 		wsRoute = "host"
 	}
@@ -37,10 +42,11 @@ func ResolveRuntimeModeDecision(cfg *config.Config, iamMode string, iamSource st
 		IAMMode:             strings.ToLower(strings.TrimSpace(iamMode)),
 		IAMSource:           strings.TrimSpace(iamSource),
 		PowerXProxy:         proxy,
+		EffectiveProxy:      effectiveProxy,
 		CapabilityRoute:     capRoute,
 		WSRoute:             wsRoute,
 		OutboundTokenSource: tokenSource,
-		GatewayReady:        strings.TrimSpace(token) != "",
+		GatewayReady:        PowerXSTSConfigured(cfg) || strings.TrimSpace(token) != "",
 		TokenTenantID:       tenantID,
 	}
 }
@@ -52,19 +58,42 @@ func resolveIAMInput(cfg *config.Config) string {
 	return strings.TrimSpace(cfg.Context.IAMMode)
 }
 
-// ResolveToolToken returns outbound tool token by new precedence.
-// Priority: PX_TOOL_TOKEN > PX_PLUGIN_TOOL_TOKEN > POWERX_AUTH_TOKEN.
-func ResolveToolToken() (token string, source string) {
-	if v := strings.TrimSpace(os.Getenv("PX_TOOL_TOKEN")); v != "" {
-		return v, "env:PX_TOOL_TOKEN"
+func ResolvePowerXAccessTokenBootstrap(cfg *config.Config, hostMode bool) (token string, source string) {
+	if hostMode {
+		if PowerXSTSConfigured(cfg) {
+			return "", "sts:configured"
+		}
+		return "", "sts:missing"
 	}
-	if v := strings.TrimSpace(os.Getenv("PX_PLUGIN_TOOL_TOKEN")); v != "" {
-		return v, "env:PX_PLUGIN_TOOL_TOKEN"
+	return ResolveDebugToken()
+}
+
+// PowerXSTSConfigured reports whether the plugin can exchange a short-lived
+// powerx:api access token for outbound PowerX calls.
+func PowerXSTSConfigured(cfg *config.Config) bool {
+	if cfg == nil || cfg.GRPCUpstream == nil {
+		return false
+	}
+	return strings.TrimSpace(cfg.GRPCUpstream.STSClientID) != "" &&
+		strings.TrimSpace(cfg.GRPCUpstream.STSClientSecret) != ""
+}
+
+// ResolveDebugToken returns a local-only debug token. Host mode must use STS.
+func ResolveDebugToken() (token string, source string) {
+	if v := strings.TrimSpace(os.Getenv("POWERX_GRPC_UPSTREAM_TOKEN")); v != "" {
+		return v, "env:POWERX_GRPC_UPSTREAM_TOKEN"
 	}
 	if v := strings.TrimSpace(os.Getenv("POWERX_AUTH_TOKEN")); v != "" {
 		return v, "env:POWERX_AUTH_TOKEN"
 	}
 	return "", ""
+}
+
+func resolveSTSTenantID(cfg *config.Config) string {
+	if cfg == nil || cfg.GRPCUpstream == nil {
+		return ""
+	}
+	return strings.TrimSpace(cfg.GRPCUpstream.TenantUUID)
 }
 
 // ParseTenantIDFromJWT extracts tid claim from JWT payload without signature validation.

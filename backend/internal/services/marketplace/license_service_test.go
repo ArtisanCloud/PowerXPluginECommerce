@@ -10,6 +10,7 @@ import (
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models"
 	dbm "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/marketplace"
 	mrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/marketplace"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
@@ -612,7 +613,5 @@ func TestLicenseService_TaxFailureRecordsTransaction(t *testing.T) {
 }
 
 func testLogger() *logrus.Entry {
-	logger := logrus.New()
-	logger.SetLevel(logrus.WarnLevel)
-	return logger.WithField("suite", "license_service_test")
+	return pxlogger.WithField("suite", "license_service_test")
 }

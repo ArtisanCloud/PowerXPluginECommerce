@@ -11,7 +11,6 @@ import (
 func TestFetchCoreXCatalog_APIKeyModeSetsAPIKeyAuthorizationHeader(t *testing.T) {
 	t.Setenv("PX_GATEWAY_AUTH_SCHEME", "apikey")
 	t.Setenv("PX_GATEWAY_API_KEY", "k_test_123")
-	t.Setenv("PX_TOOL_TOKEN", "replace-me-with-tool-token")
 
 	var gotAuthorization string
 	var gotServiceToken string
@@ -32,7 +31,8 @@ func TestFetchCoreXCatalog_APIKeyModeSetsAPIKeyAuthorizationHeader(t *testing.T)
 
 	t.Setenv("PX_GATEWAY_BASE_URL", "http://gateway.example")
 
-	_, err := fetchCoreXCatalog(context.Background(), "corex")
+	h := NewHandler(nil)
+	_, err := h.fetchCoreXCatalog(context.Background(), "corex")
 	if err != nil {
 		t.Fatalf("fetchCoreXCatalog returned error: %v", err)
 	}
@@ -47,10 +47,10 @@ func TestFetchCoreXCatalog_APIKeyModeSetsAPIKeyAuthorizationHeader(t *testing.T)
 	}
 }
 
-func TestFetchCoreXCatalog_BearerModeUsesToolToken(t *testing.T) {
+func TestFetchCoreXCatalog_BearerModeUsesRuntimeBearer(t *testing.T) {
 	t.Setenv("PX_GATEWAY_AUTH_SCHEME", "bearer")
 	t.Setenv("PX_GATEWAY_API_KEY", "")
-	t.Setenv("PX_TOOL_TOKEN", "token-demo")
+	t.Setenv("POWERX_AUTH_TOKEN", "token-demo")
 
 	var gotAuthorization string
 	var gotServiceToken string
@@ -71,7 +71,8 @@ func TestFetchCoreXCatalog_BearerModeUsesToolToken(t *testing.T) {
 
 	t.Setenv("PX_GATEWAY_BASE_URL", "http://gateway.example")
 
-	_, err := fetchCoreXCatalog(context.Background(), "corex")
+	h := NewHandler(nil)
+	_, err := h.fetchCoreXCatalog(context.Background(), "corex")
 	if err != nil {
 		t.Fatalf("fetchCoreXCatalog returned error: %v", err)
 	}

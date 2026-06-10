@@ -1,0 +1,9 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="PowerX Ecommerce">
+  <rect width="256" height="256" rx="56" fill="#102033"/>
+  <path d="M64 82H79.8L92.6 151.2C94.5 161.5 103.5 169 114 169H176.5C186.2 169 194.7 162.7 197.5 153.4L210 112H96.4" stroke="#F8FAFC" stroke-width="16" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M113 112H210L197.5 153.4C194.7 162.7 186.2 169 176.5 169H114C103.5 169 94.5 161.5 92.6 151.2L85.4 112H113Z" fill="#1D9BF0" fill-opacity="0.28"/>
+  <path d="M121 103L141 75L161 103" stroke="#22D3EE" stroke-width="14" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M126 199.5C126 207.5 119.5 214 111.5 214C103.5 214 97 207.5 97 199.5C97 191.5 103.5 185 111.5 185C119.5 185 126 191.5 126 199.5Z" fill="#F8FAFC"/>
+  <path d="M193 199.5C193 207.5 186.5 214 178.5 214C170.5 214 164 207.5 164 199.5C164 191.5 170.5 185 178.5 185C186.5 185 193 191.5 193 199.5Z" fill="#F8FAFC"/>
+  <path d="M58 57H91" stroke="#22D3EE" stroke-width="14" stroke-linecap="round"/>
+</svg>

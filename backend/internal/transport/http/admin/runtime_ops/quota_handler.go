@@ -9,7 +9,6 @@ import (
 	runtimeops "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/runtime_ops"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/gin-gonic/gin"
-	"github.com/sirupsen/logrus"
 	"gorm.io/gorm"
 )
 
@@ -53,7 +52,7 @@ func (h *QuotaHandler) GetStatus(c *gin.Context) {
 	start := time.Now().Add(-window)
 	entries, err := h.svc.ListUsage(c.Request.Context(), "tenant", tenantID, start, time.Now())
 	if err != nil {
-		h.log(c, logrus.ErrorLevel, "failed to list quota ledger", logger.Fields{
+		h.log(c, "error", "failed to list quota ledger", logger.Fields{
 			"tenant_uuid": tenantID,
 			"plugin_id":   pluginID,
 			"error":       err.Error(),
@@ -62,7 +61,7 @@ func (h *QuotaHandler) GetStatus(c *gin.Context) {
 		return
 	}
 
-	h.log(c, logrus.InfoLevel, "quota ledger retrieved", logger.Fields{
+	h.log(c, "info", "quota ledger retrieved", logger.Fields{
 		"tenant_uuid": tenantID,
 		"plugin_id":   pluginID,
 		"entries":     len(entries),
@@ -90,7 +89,7 @@ func (h *QuotaHandler) SetOverride(c *gin.Context) {
 	}
 
 	if err := c.ShouldBindJSON(&req); err != nil {
-		h.log(c, logrus.WarnLevel, "invalid quota override payload", logger.Fields{
+		h.log(c, "warn", "invalid quota override payload", logger.Fields{
 			"error": err.Error(),
 		})
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -98,7 +97,7 @@ func (h *QuotaHandler) SetOverride(c *gin.Context) {
 	}
 
 	h.svc.HandleBreach(c.Request.Context(), req.PluginID, req.TenantUuid, req.Capability, req.Action)
-	h.log(c, logrus.InfoLevel, "manual quota override accepted", logger.Fields{
+	h.log(c, "info", "manual quota override accepted", logger.Fields{
 		"plugin_id":   req.PluginID,
 		"tenant_uuid": req.TenantUuid,
 		"action":      req.Action,
@@ -108,7 +107,7 @@ func (h *QuotaHandler) SetOverride(c *gin.Context) {
 	c.JSON(http.StatusAccepted, gin.H{"status": "override accepted"})
 }
 
-func (h *QuotaHandler) log(c *gin.Context, level logrus.Level, msg string, fields logger.Fields) {
+func (h *QuotaHandler) log(c *gin.Context, level, msg string, fields logger.Fields) {
 	if h.deps == nil {
 		return
 	}
@@ -122,9 +121,9 @@ func (h *QuotaHandler) log(c *gin.Context, level logrus.Level, msg string, field
 	}
 	entry := h.deps.RuntimeLogger(c.Request.Context(), "admin.runtime.quota", fields)
 	switch level {
-	case logrus.ErrorLevel:
+	case "error":
 		entry.Error(msg)
-	case logrus.WarnLevel:
+	case "warn":
 		entry.Warn(msg)
 	default:
 		entry.Info(msg)

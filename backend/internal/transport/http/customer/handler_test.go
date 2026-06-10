@@ -3,6 +3,7 @@ package customer
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"mime/multipart"
 	"net/http"
 	"net/http/httptest"
@@ -168,7 +169,8 @@ func parseResponse(t *testing.T, raw []byte) map[string]any {
 func newHandlerDeps(t *testing.T) *app.Deps {
 	t.Helper()
 	models.ForceSchemaForTests("")
-	db, err := gorm.Open(sqlite.Open("file:customer_handler?mode=memory&cache=shared"), &gorm.Config{DisableForeignKeyConstraintWhenMigrating: true})
+	dsn := fmt.Sprintf("file:customer_handler_%d?mode=memory&cache=shared", time.Now().UnixNano())
+	db, err := gorm.Open(sqlite.Open(dsn), &gorm.Config{DisableForeignKeyConstraintWhenMigrating: true})
 	require.NoError(t, err)
 	require.NoError(t, db.AutoMigrate(&customermodel.Customer{}))
 	return &app.Deps{DB: db}

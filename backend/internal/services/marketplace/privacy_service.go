@@ -3,6 +3,7 @@ package marketplace
 import (
 	"context"
 	"errors"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"strings"
 	"time"
 
@@ -24,7 +25,7 @@ type PurgeResult struct {
 // NewPrivacyService constructs the service.
 func NewPrivacyService(usageRepo UsageDataRepository, logger *logrus.Entry) *PrivacyService {
 	if logger == nil {
-		logger = logrus.New().WithField("component", "marketplace_privacy_service")
+		logger = pxlogger.WithField("component", "marketplace_privacy_service")
 	}
 	return &PrivacyService{
 		usageRepo: usageRepo,

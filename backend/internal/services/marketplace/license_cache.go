@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"strings"
 	"time"
 
@@ -43,7 +44,7 @@ func NewRedisLicenseCache(redisURL, keyPrefix string, logger *logrus.Entry) (*Re
 		keyPrefix = defaultLicenseCachePrefix
 	}
 	if logger == nil {
-		logger = logrus.New().WithField("component", "marketplace.license_cache")
+		logger = pxlogger.WithField("component", "marketplace.license_cache")
 	}
 	return &RedisLicenseCache{
 		client: client,

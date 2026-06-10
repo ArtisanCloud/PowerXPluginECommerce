@@ -1,4 +1,4 @@
-import { apiDel, apiGet, apiPatch, apiPost } from '~/composables/api'
+import { apiDel, apiGet, apiPatch, apiPost } from '~/composables/api/_client'
 import type {
   ChannelAlert,
   ChannelAlertUpdatePayload,

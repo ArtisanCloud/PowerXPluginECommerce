@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
-import { useApiClient, useCustomerApi } from "~/composables/api";
+import { useCustomerApi } from "~/composables/api";
+import { useApiClient } from "~/composables/api/_client";
 import { useCustomerMetrics } from "~/composables/useCustomerMetrics";
 import { useMembershipInsights } from "~/composables/useMembershipInsights";
 import { useCustomerBulkActions } from "~/composables/useCustomerBulkActions";

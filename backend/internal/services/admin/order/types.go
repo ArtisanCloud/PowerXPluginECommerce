@@ -10,6 +10,7 @@ type CreateOrderItemInput struct {
 type CreateOrderRequest struct {
 	CustomerID        string                 `json:"customerId"`
 	Channel           string                 `json:"channel"`
+	CouponIDs         []string               `json:"couponIds,omitempty"`
 	ShippingAddressID string                 `json:"shippingAddressId,omitempty"`
 	ShippingAddress   *ShippingAddress       `json:"shippingAddress,omitempty"`
 	Items             []CreateOrderItemInput `json:"items"`
@@ -37,15 +38,16 @@ type MoneyDTO struct {
 }
 
 type OrderSummaryDTO struct {
-	OrderID                 string           `json:"orderId"`
-	OrderNo                 string           `json:"orderNo"`
-	CustomerID              string           `json:"customerId"`
-	Channel                 string           `json:"channel"`
-	CreatedByType           string           `json:"createdByType"`
-	Status                  string           `json:"status"`
-	Amounts                 MoneyDTO         `json:"amounts"`
-	ShippingAddressSnapshot *ShippingAddress `json:"shippingAddressSnapshot,omitempty"`
-	CreatedAt               time.Time        `json:"createdAt"`
+	OrderID                 string            `json:"orderId"`
+	OrderNo                 string            `json:"orderNo"`
+	CustomerID              string            `json:"customerId"`
+	Channel                 string            `json:"channel"`
+	CreatedByType           string            `json:"createdByType"`
+	Status                  string            `json:"status"`
+	Amounts                 MoneyDTO          `json:"amounts"`
+	Coupon                  *CouponSummaryDTO `json:"coupon,omitempty"`
+	ShippingAddressSnapshot *ShippingAddress  `json:"shippingAddressSnapshot,omitempty"`
+	CreatedAt               time.Time         `json:"createdAt"`
 }
 
 type OrderListResponse struct {
@@ -56,10 +58,10 @@ type OrderListResponse struct {
 }
 
 type OrderItemDTO struct {
-	SKUID      string `json:"skuId"`
-	Qty        int64  `json:"qty"`
-	UnitPrice  int64  `json:"unitPrice"`
-	LineAmount int64  `json:"lineAmount"`
+	SKUID       string `json:"skuId"`
+	Qty         int64  `json:"qty"`
+	UnitPrice   int64  `json:"unitPrice"`
+	LineAmount  int64  `json:"lineAmount"`
 	PriceSource string `json:"priceSource,omitempty"`
 }
 
@@ -74,6 +76,36 @@ type OrderDetailDTO struct {
 	Summary OrderSummaryDTO `json:"summary"`
 	Items   []OrderItemDTO  `json:"items"`
 	Events  []OrderEventDTO `json:"events"`
+}
+
+type CouponLineAllocationDTO struct {
+	LineID        string `json:"line_id"`
+	BaseMinor     int64  `json:"base_minor"`
+	DiscountMinor int64  `json:"discount_minor"`
+}
+
+type CouponAppliedDTO struct {
+	AssetID       string `json:"asset_id"`
+	TemplateID    string `json:"template_id"`
+	CouponCode    string `json:"coupon_code"`
+	DiscountMinor int64  `json:"discount_minor"`
+	Level         string `json:"level"`
+}
+
+type CouponRejectedDTO struct {
+	AssetID string `json:"asset_id"`
+	Reason  string `json:"reason"`
+}
+
+type CouponSummaryDTO struct {
+	Currency           string                    `json:"currency"`
+	BaseTotalMinor     int64                     `json:"base_total_minor"`
+	DiscountTotalMinor int64                     `json:"discount_total_minor"`
+	PayableTotalMinor  int64                     `json:"payable_total_minor"`
+	LineAllocations    []CouponLineAllocationDTO `json:"line_allocations"`
+	AppliedCoupons     []CouponAppliedDTO        `json:"applied_coupons"`
+	RejectedCoupons    []CouponRejectedDTO       `json:"rejected_coupons"`
+	PricedAt           time.Time                 `json:"priced_at"`
 }
 
 type CancelOrderRequest struct {

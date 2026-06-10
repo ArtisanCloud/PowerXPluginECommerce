@@ -58,9 +58,6 @@ func NewFrameworkTaskClient(baseURL, token string) *FrameworkTaskClient {
 		base = strings.TrimSpace(resolveFrameworkBaseURL())
 	}
 	tok := strings.TrimSpace(token)
-	if tok == "" {
-		tok, _ = pluginbootstrap.ResolveToolToken()
-	}
 	return &FrameworkTaskClient{
 		BaseURL: strings.TrimRight(base, "/"),
 		Token:   tok,

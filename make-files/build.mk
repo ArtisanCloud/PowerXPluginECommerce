@@ -10,6 +10,8 @@
 PLUGIN_ID           ?= com.powerx.plugins.ecommerce
 # 从 plugin.yaml 读取版本（若失败则默认 0.1.0）
 VERSION             ?= $(shell awk -F': *' '/^version:/ {print $$2; exit}' plugin.yaml 2>/dev/null || echo "0.1.0")
+PLATFORM            ?= host
+TARGET_ARCH         ?= amd64
 
 # ===== 目录结构（可按项目调整）=====
 # 后端代码在仓库根；如你的 cmd/plugin 在 repo/cmd/plugin，请保持 BACKEND_DIR = .
@@ -25,14 +27,15 @@ FRONTEND_OUTPUT     ?= $(FRONTEND_DIR)/.output
 # Dist（install/local 用）
 DIST_ROOT           ?= dist
 DIST_DIR            ?= $(DIST_ROOT)/$(VERSION)
-DIST_BACKEND_BIN    ?= $(DIST_DIR)/bin
+DIST_BACKEND_BIN    ?= $(DIST_DIR)/backend/bin
 DIST_WEBADMIN_DIR   ?= $(DIST_DIR)/web-admin
 DIST_WEBADMIN_OUTPUT?= $(DIST_WEBADMIN_DIR)/.output
+DIST_VERIFY         ?= 1
 
 # Release（完整发布包）
 RELEASE_ROOT        ?= target
 RELEASE_DIR         ?= $(RELEASE_ROOT)/$(VERSION)
-RELEASE_BACKEND_BIN ?= $(RELEASE_DIR)/bin
+RELEASE_BACKEND_BIN ?= $(RELEASE_DIR)/backend/bin
 RELEASE_WEBADMIN_DIR?= $(RELEASE_DIR)/web-admin
 RELEASE_WEBADMIN_OUTPUT ?= $(RELEASE_WEBADMIN_DIR)/.output
 
@@ -49,6 +52,7 @@ build: ## 构建后端（本机平台）
 	@echo "==> 构建后端二进制（本机平台）..."
 	@mkdir -p $(ABS_BUILD_DIR)
 	@mkdir -p $(GO_BUILD_CACHE)
+	@rm -f $(ABS_BUILD_DIR)/plugin $(ABS_BUILD_DIR)/migrate
 	GOCACHE=$(GO_BUILD_CACHE) go build -C $(ABS_BACKEND_DIR) -o $(ABS_BUILD_DIR)/plugin ./cmd/plugin
 	@if [ -d "$(ABS_BACKEND_DIR)/cmd/database" ]; then \
 	  echo "   构建 migrate（如存在）..."; \
@@ -59,15 +63,28 @@ build: ## 构建后端（本机平台）
 
 .PHONY: build-linux
 build-linux: ## 构建后端（Linux amd64）
-	@echo "==> 构建后端二进制（Linux/amd64）..."
+	@echo "==> 构建后端二进制（Linux/$(TARGET_ARCH)）..."
 	@mkdir -p $(ABS_BUILD_DIR)
 	@mkdir -p $(GO_BUILD_CACHE)
-	GOOS=linux GOARCH=amd64 GOCACHE=$(GO_BUILD_CACHE) go build -C $(ABS_BACKEND_DIR) -o $(ABS_BUILD_DIR)/plugin ./cmd/plugin
+	@rm -f $(ABS_BUILD_DIR)/plugin $(ABS_BUILD_DIR)/migrate
+	GOOS=linux GOARCH=$(TARGET_ARCH) GOCACHE=$(GO_BUILD_CACHE) go build -C $(ABS_BACKEND_DIR) -o $(ABS_BUILD_DIR)/plugin ./cmd/plugin
 	@if [ -d "$(ABS_BACKEND_DIR)/cmd/database" ]; then \
-	  echo "   构建 migrate（Linux/amd64）..."; \
-	  GOOS=linux GOARCH=amd64 GOCACHE=$(GO_BUILD_CACHE) go build -C $(ABS_BACKEND_DIR) -o $(ABS_BUILD_DIR)/migrate ./cmd/database; \
+	  echo "   构建 migrate（Linux/$(TARGET_ARCH)）..."; \
+	  GOOS=linux GOARCH=$(TARGET_ARCH) GOCACHE=$(GO_BUILD_CACHE) go build -C $(ABS_BACKEND_DIR) -o $(ABS_BUILD_DIR)/migrate ./cmd/database; \
 	else \
 	  echo "   跳过 migrate（未找到 cmd/database）"; \
+	fi
+
+.PHONY: dist-backend
+dist-backend:
+	@if [ "$(PLATFORM)" = "linux" ]; then \
+	  $(MAKE) --no-print-directory build-linux BUILD_DIR="$(BUILD_DIR)" TARGET_ARCH="$(TARGET_ARCH)" GO_BUILD_CACHE="$(GO_BUILD_CACHE)"; \
+	else \
+	  $(MAKE) --no-print-directory build BUILD_DIR="$(BUILD_DIR)" GO_BUILD_CACHE="$(GO_BUILD_CACHE)"; \
+	fi
+	@if [ ! -s "$(BUILD_DIR)/plugin" ]; then \
+	  echo "❌ dist-backend 失败：未生成有效后端二进制 $(BUILD_DIR)/plugin"; \
+	  exit 1; \
 	fi
 
 # ===== 前端构建（Host / 被 PowerX 反代）=====
@@ -76,11 +93,16 @@ frontend-build: ## 构建 Host 包（POWERX_PROXY=1, baseURL=$(POWERX_ADMIN_BASE
 	@echo "==> 构建 web-admin（Host 包） POWERX_PROXY=1 baseURL=$(POWERX_ADMIN_BASE)"
 	cd $(FRONTEND_DIR) && \
 	  POWERX_PROXY=1 \
+	  NUXT_PUBLIC_INSIDE_POWERX=1 \
+	  POWERX_PLUGIN_ID="$(PLUGIN_ID)" \
+	  POWERX_PLUGIN_VERSION="$(VERSION)" \
+	  NUXT_PUBLIC_POWERX_PLUGIN_ID="$(PLUGIN_ID)" \
+	  NUXT_PUBLIC_POWERX_PLUGIN_VERSION="$(VERSION)" \
 	  NUXT_PUBLIC_API_BASE= \
 	  NUXT_PUBLIC_API_PREFIX= \
 	  POWERX_ADMIN_BASE="$(POWERX_ADMIN_BASE)" \
 	  NODE_ENV=production \
-	  npx nuxi build
+	  npm run build
 
 # ===== 前端构建（Standalone / 独立部署）=====
 .PHONY: frontend-build-standalone
@@ -88,8 +110,13 @@ frontend-build-standalone: ## 构建 Standalone 包（POWERX_PROXY=0, baseURL=/�
 	@echo "==> 构建 web-admin（Standalone 包） POWERX_PROXY=0 baseURL=/"
 	cd $(FRONTEND_DIR) && \
 	  POWERX_PROXY=0 \
+	  NUXT_PUBLIC_INSIDE_POWERX=0 \
+	  POWERX_PLUGIN_ID="$(PLUGIN_ID)" \
+	  POWERX_PLUGIN_VERSION="$(VERSION)" \
+	  NUXT_PUBLIC_POWERX_PLUGIN_ID="$(PLUGIN_ID)" \
+	  NUXT_PUBLIC_POWERX_PLUGIN_VERSION="$(VERSION)" \
 	  NODE_ENV=production \
-	  npx nuxi build
+	  npm run build
 
 # ===== 运行已编译的前端产物（Host）=====
 .PHONY: run-frontend
@@ -149,7 +176,7 @@ check-base-standalone: frontend-build-standalone
 
 # ===== 生成 dist（目录安装包，给 PowerX 的 install/local 用）=====
 .PHONY: dist
-dist: build frontend-build
+dist: plugin-yaml-check dist-backend frontend-build
 	@echo "==> 生成 dist 安装包目录：$(DIST_DIR)"
 	@rm -rf $(DIST_DIR)
 	@mkdir -p $(DIST_BACKEND_BIN) $(DIST_WEBADMIN_OUTPUT)
@@ -157,6 +184,8 @@ dist: build frontend-build
 	@awk -v ver="$(VERSION)" 'BEGIN{patched=0} /^[[:space:]]*version:[[:space:]]*/ && !patched {print "version: " ver; patched=1; next} {print} END{if(!patched) print "version: " ver}' plugin.yaml > $(DIST_DIR)/plugin.yaml
 	@cp $(BUILD_DIR)/plugin $(DIST_BACKEND_BIN)/
 	@if [ -f "$(BUILD_DIR)/migrate" ]; then cp $(BUILD_DIR)/migrate $(DIST_BACKEND_BIN)/; fi
+	@chmod 0755 $(DIST_BACKEND_BIN)/plugin
+	@if [ -f "$(DIST_BACKEND_BIN)/migrate" ]; then chmod 0755 $(DIST_BACKEND_BIN)/migrate; fi
 	@if [ -d "backend/etc" ]; then \
 	  mkdir -p $(DIST_DIR)/backend/etc; \
 	  cp -R backend/etc/. $(DIST_DIR)/backend/etc/; \
@@ -184,6 +213,38 @@ dist: build frontend-build
 	  cp -R contracts/. $(DIST_DIR)/contracts/; \
 	fi
 	@if [ -f README.md ]; then cp README.md $(DIST_DIR)/; fi
+	@if [ "$(DIST_VERIFY)" = "1" ]; then \
+	  $(MAKE) --no-print-directory dist-verify DIST_DIR="$(DIST_DIR)" DIST_BACKEND_BIN="$(DIST_BACKEND_BIN)" DIST_WEBADMIN_OUTPUT="$(DIST_WEBADMIN_OUTPUT)"; \
+	fi
+
+.PHONY: dist-verify
+dist-verify: ## 校验 dist 安装包必需结构与核心权限注册
+	@echo "==> dist 验证（$(DIST_DIR)）"
+	@test -f "$(DIST_DIR)/plugin.yaml" || { echo "❌ 缺少 $(DIST_DIR)/plugin.yaml"; exit 1; }
+	@test -s "$(DIST_BACKEND_BIN)/plugin" || { echo "❌ 缺少后端二进制 $(DIST_BACKEND_BIN)/plugin"; exit 1; }
+	@test -s "$(DIST_BACKEND_BIN)/migrate" || { echo "❌ 缺少迁移二进制 $(DIST_BACKEND_BIN)/migrate"; exit 1; }
+	@test -x "$(DIST_BACKEND_BIN)/plugin" || { echo "❌ 后端二进制不可执行 $(DIST_BACKEND_BIN)/plugin"; exit 1; }
+	@test -x "$(DIST_BACKEND_BIN)/migrate" || { echo "❌ 迁移二进制不可执行 $(DIST_BACKEND_BIN)/migrate"; exit 1; }
+	@awk '/^[[:space:]]*runtime:[[:space:]]*$$/{in_runtime=1; next} in_runtime && /^[^[:space:]]/ {in_runtime=0} in_runtime && /^[[:space:]]*entry:[[:space:]]*backend\/bin\/plugin[[:space:]]*$$/ {found=1} END{exit found?0:1}' "$(DIST_DIR)/plugin.yaml" || { echo "❌ plugin.yaml runtime.entry 必须是 backend/bin/plugin"; exit 1; }
+	@awk '/^[[:space:]]*migrations:[[:space:]]*$$/{in_migrations=1; next} in_migrations && /^[^[:space:]]/ {in_migrations=0} in_migrations && /^[[:space:]]*entry:[[:space:]]*backend\/bin\/migrate[[:space:]]*$$/ {found=1} END{exit found?0:1}' "$(DIST_DIR)/plugin.yaml" || { echo "❌ plugin.yaml migrations.entry 必须是 backend/bin/migrate"; exit 1; }
+	@test -f "$(DIST_WEBADMIN_OUTPUT)/server/index.mjs" || { echo "❌ 缺少前端服务入口 $(DIST_WEBADMIN_OUTPUT)/server/index.mjs"; exit 1; }
+	@test -f "$(DIST_WEBADMIN_OUTPUT)/public/icon.svg" || { echo "❌ 缺少插件市场图标 $(DIST_WEBADMIN_OUTPUT)/public/icon.svg"; exit 1; }
+	@awk '/^[[:space:]]*metadata:[[:space:]]*$$/{in_metadata=1; next} in_metadata && /^[^[:space:]]/ {in_metadata=0} in_metadata && /^[[:space:]]*icon:[[:space:]]*icon\.svg[[:space:]]*$$/ {found=1} END{exit found?0:1}' "$(DIST_DIR)/plugin.yaml" || { echo "❌ plugin.yaml metadata.icon 必须是 icon.svg"; exit 1; }
+	@test -f "$(DIST_WEBADMIN_DIR)/i18n/zh-CN/menus.json" || { echo "❌ 缺少宿主菜单中文多语言 $(DIST_WEBADMIN_DIR)/i18n/zh-CN/menus.json"; exit 1; }
+	@test -f "$(DIST_WEBADMIN_DIR)/i18n/en/menus.json" || { echo "❌ 缺少宿主菜单英文多语言 $(DIST_WEBADMIN_DIR)/i18n/en/menus.json"; exit 1; }
+	@test -f "$(DIST_DIR)/config/event_fabric.yaml" || { echo "❌ 缺少 $(DIST_DIR)/config/event_fabric.yaml"; exit 1; }
+	@for f in plugin.d/capabilities.yaml plugin.d/exposure.yaml plugin.d/rbac.yaml; do \
+	  test -f "$(DIST_DIR)/$$f" || { echo "❌ 缺少 $(DIST_DIR)/$$f"; exit 1; }; \
+	done
+	@test -d "$(DIST_DIR)/contracts/capabilities" || { echo "❌ 缺少 $(DIST_DIR)/contracts/capabilities"; exit 1; }
+	@for key in capabilities exposure rbac; do \
+	  awk -v key="$$key" '/^[[:space:]]*catalogs:[[:space:]]*$$/{in_catalogs=1; next} in_catalogs && /^[^[:space:]]/ {in_catalogs=0} in_catalogs && $$0 ~ "^[[:space:]]*" key ":" {found=1} END{exit found?0:1}' "$(DIST_DIR)/plugin.yaml" || { echo "❌ plugin.yaml 缺少 catalogs.$$key"; exit 1; }; \
+	done
+	@rg -q "resource: com.powerx.plugins.ecommerce:pricing.coupon.template" "$(DIST_DIR)/plugin.d/rbac.yaml" || { echo "❌ rbac 缺少优惠券模板权限"; exit 1; }
+	@rg -q "path: /admin/coupons/templates" "$(DIST_DIR)/plugin.d/rbac.yaml" || { echo "❌ rbac 缺少优惠券模板接口路径"; exit 1; }
+	@rg -q "path: /admin/coupons/usage-logs" "$(DIST_DIR)/plugin.d/rbac.yaml" || { echo "❌ rbac 缺少优惠券流水接口路径"; exit 1; }
+	@rg -q "path: /admin/pricing/pricebooks" "$(DIST_DIR)/plugin.d/rbac.yaml" || { echo "❌ rbac 缺少价格手册接口路径"; exit 1; }
+	@echo "✅ dist 验证通过"
 
 # ===== 生成 release（完整发布包）=====
 .PHONY: release
@@ -195,6 +256,8 @@ release: build frontend-build
 	@awk -v ver="$(VERSION)" 'BEGIN{patched=0} /^[[:space:]]*version:[[:space:]]*/ && !patched {print "version: " ver; patched=1; next} {print} END{if(!patched) print "version: " ver}' plugin.yaml > $(RELEASE_DIR)/plugin.yaml
 	@cp $(BUILD_DIR)/plugin $(RELEASE_BACKEND_BIN)/
 	@if [ -f "$(BUILD_DIR)/migrate" ]; then cp $(BUILD_DIR)/migrate $(RELEASE_BACKEND_BIN)/; fi
+	@chmod 0755 $(RELEASE_BACKEND_BIN)/plugin
+	@if [ -f "$(RELEASE_BACKEND_BIN)/migrate" ]; then chmod 0755 $(RELEASE_BACKEND_BIN)/migrate; fi
 	@if [ -d "backend/etc" ]; then \
 	  mkdir -p $(RELEASE_DIR)/backend/etc; \
 	  cp -R backend/etc/. $(RELEASE_DIR)/backend/etc/; \

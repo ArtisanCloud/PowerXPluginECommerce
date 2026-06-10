@@ -5,6 +5,7 @@ import (
 	"sync"
 	"time"
 
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"github.com/sirupsen/logrus"
 )
 
@@ -55,7 +56,7 @@ type Scheduler struct {
 // NewScheduler 构造 Scheduler。
 func NewScheduler(logger *logrus.Entry) *Scheduler {
 	if logger == nil {
-		logger = logrus.WithField("component", "integration.scheduler")
+		logger = pxlogger.WithField("component", "integration.scheduler")
 	}
 	return &Scheduler{
 		logger: logger,

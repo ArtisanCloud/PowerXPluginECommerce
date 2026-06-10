@@ -2,21 +2,18 @@ package security
 
 import (
 	"context"
-	"io"
 	"testing"
 	"time"
 
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models"
 	secmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/security"
-	"github.com/sirupsen/logrus"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
-func newTestLogger() *logrus.Entry {
-	logger := logrus.New()
-	logger.SetOutput(io.Discard)
-	return logger.WithField("component", "test")
+func newTestLogger() *pxlogger.Entry {
+	return pxlogger.WithField("component", "test")
 }
 
 func setupTestDB(t *testing.T) *gorm.DB {

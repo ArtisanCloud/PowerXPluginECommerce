@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"github.com/sirupsen/logrus"
 )
 
@@ -32,7 +33,7 @@ type RandomSecretProvider struct {
 // NewRandomSecretProvider constructs a default provider.
 func NewRandomSecretProvider(logger *logrus.Entry) *RandomSecretProvider {
 	if logger == nil {
-		logger = logrus.WithField("component", "integration.secret_provider.random")
+		logger = pxlogger.WithField("component", "integration.secret_provider.random")
 	}
 	return &RandomSecretProvider{logger: logger}
 }

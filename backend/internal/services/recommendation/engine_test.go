@@ -8,7 +8,7 @@ import (
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models"
 	dbm "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/marketplace"
 	mrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/marketplace"
-	"github.com/sirupsen/logrus"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -110,7 +110,7 @@ func TestRefreshRecommendations(t *testing.T) {
 		},
 	}}
 
-	engine := NewEngine(repo, provider, logrus.New().WithField("test", "recommendation"))
+	engine := NewEngine(repo, provider, pxlogger.WithField("test", "recommendation"))
 	result, err := engine.RefreshRecommendations(context.Background(), "tenant-1")
 	require.NoError(t, err)
 	require.Equal(t, 1, result.UpdatedCount)
@@ -137,7 +137,7 @@ func TestExplorationShare(t *testing.T) {
 		},
 	}}
 
-	engine := NewEngine(repo, provider, logrus.New().WithField("test", "exploration"))
+	engine := NewEngine(repo, provider, pxlogger.WithField("test", "exploration"))
 	result, err := engine.RefreshRecommendations(context.Background(), "tenant-1")
 	require.NoError(t, err)
 	require.Equal(t, 1, result.UpdatedCount)

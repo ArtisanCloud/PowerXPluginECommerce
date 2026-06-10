@@ -10,6 +10,7 @@ import (
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/config"
 	model "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/integration"
 	repo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/integration"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	obs "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/observability/integration"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/sirupsen/logrus"
@@ -34,7 +35,7 @@ func NewSecretService(
 	provider SecretProvider,
 	approvalRepo *repo.ApprovalRepository,
 ) *SecretService {
-	log := logrus.WithField("component", "integration.secret_service")
+	log := pxlogger.WithField("component", "integration.secret_service")
 	var approvalSvc *ApprovalService
 	if approvalRepo != nil {
 		approvalSvc = NewApprovalService(approvalRepo, log.WithField("subcomponent", "approval"))

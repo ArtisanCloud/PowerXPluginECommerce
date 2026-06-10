@@ -7,8 +7,10 @@ import (
 
 func TestResolveFrameworkGatewayConfig_BasicFields(t *testing.T) {
 	t.Setenv("PX_GATEWAY_BASE_URL", "http://127.0.0.1:8077")
-	t.Setenv("PX_TOOL_TOKEN", "token-demo")
 	t.Setenv("PX_TENANT_UUID", "tenant-001")
+	t.Setenv("PX_GATEWAY_API_PREFIX", "/api")
+	t.Setenv("PX_GATEWAY_AUTH_SCHEME", "")
+	t.Setenv("PX_GATEWAY_API_KEY", "key-001")
 	t.Setenv("PX_GATEWAY_GRPC_TARGET", "127.0.0.1:50051")
 	t.Setenv("PX_GATEWAY_TIMEOUT", "75")
 	t.Setenv("PX_GATEWAY_USER_AGENT", "plugin-ecommerce/ci")
@@ -18,11 +20,17 @@ func TestResolveFrameworkGatewayConfig_BasicFields(t *testing.T) {
 	if cfg.BaseURL != "http://127.0.0.1:8077" {
 		t.Fatalf("unexpected base url: %s", cfg.BaseURL)
 	}
-	if cfg.ToolToken != "token-demo" {
-		t.Fatalf("unexpected tool token: %s", cfg.ToolToken)
-	}
 	if cfg.TenantID != "tenant-001" {
 		t.Fatalf("unexpected tenant id: %s", cfg.TenantID)
+	}
+	if cfg.APIPrefix != "/api" {
+		t.Fatalf("unexpected api prefix: %s", cfg.APIPrefix)
+	}
+	if cfg.AuthScheme != "apikey" {
+		t.Fatalf("unexpected auth scheme: %s", cfg.AuthScheme)
+	}
+	if cfg.APIKey != "key-001" {
+		t.Fatalf("unexpected api key: %s", cfg.APIKey)
 	}
 	if cfg.GRPCTarget != "127.0.0.1:50051" {
 		t.Fatalf("unexpected grpc target: %s", cfg.GRPCTarget)
@@ -71,15 +79,15 @@ func TestResolveGatewayAPIPrefix(t *testing.T) {
 
 func TestNormalizeGatewayAuthScheme(t *testing.T) {
 	t.Setenv("PX_GATEWAY_AUTH_SCHEME", "")
-	if got := normalizeGatewayAuthScheme("", "token-demo", ""); got != "bearer" {
+	if got := normalizeGatewayAuthScheme("", ""); got != "bearer" {
 		t.Fatalf("unexpected bearer default: %s", got)
 	}
 
-	if got := normalizeGatewayAuthScheme("apikey", "", ""); got != "apikey" {
+	if got := normalizeGatewayAuthScheme("apikey", ""); got != "apikey" {
 		t.Fatalf("unexpected explicit apikey normalization: %s", got)
 	}
 
-	if got := normalizeGatewayAuthScheme("", "", "key-123"); got != "apikey" {
+	if got := normalizeGatewayAuthScheme("", "key-123"); got != "apikey" {
 		t.Fatalf("unexpected api key fallback normalization: %s", got)
 	}
 }

@@ -7,7 +7,7 @@ import (
 
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/config"
 	dbm "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/marketplace"
-	"github.com/sirupsen/logrus"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"github.com/stretchr/testify/require"
 )
 
@@ -68,7 +68,7 @@ func TestLicenseRenewalNotifier_ExecuteDispatchesReminders(t *testing.T) {
 	}
 	dispatcher := &stubDispatcher{}
 
-	notifier := NewLicenseRenewalNotifier(cfg, repo, logrus.New().WithField("component", "test"), func(context.Context) ([]string, error) {
+	notifier := NewLicenseRenewalNotifier(cfg, repo, pxlogger.WithField("component", "test"), func(context.Context) ([]string, error) {
 		return []string{"tenant-1"}, nil
 	}, dispatcher)
 	notifier.clock = func() time.Time { return baseTime }

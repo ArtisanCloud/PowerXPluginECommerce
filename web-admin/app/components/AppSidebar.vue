@@ -627,6 +627,20 @@
           </UButton>
 
           <UButton
+            to="/pricing/coupon-usages"
+            variant="ghost"
+            color="neutral"
+            class="w-full justify-start"
+            :class="{
+              'bg-primary-50 text-primary-600 dark:bg-primary-950 dark:text-primary-400':
+                $route.path === '/pricing/coupon-usages',
+            }"
+          >
+            <UIcon name="i-heroicons-clipboard-document-list" class="w-4 h-4 mr-3"/>
+            券资产与流水
+          </UButton>
+
+          <UButton
             to="/pricing/giftcards"
             variant="ghost"
             color="neutral"

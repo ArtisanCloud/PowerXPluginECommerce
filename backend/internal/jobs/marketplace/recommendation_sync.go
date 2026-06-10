@@ -2,6 +2,7 @@ package marketplace
 
 import (
 	"context"
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"time"
 
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/config"
@@ -28,7 +29,7 @@ type SyncJob struct {
 // NewSyncJob constructs a new recommendation synchronization job.
 func NewSyncJob(cfg *config.Config, repo *mrepo.ListingRepository, provider MetricsProvider, logger *logrus.Entry, tenantResolver func(context.Context) ([]string, error)) *SyncJob {
 	if logger == nil {
-		logger = logrus.New().WithField("component", "marketplace_recommendation_sync")
+		logger = pxlogger.WithField("component", "marketplace_recommendation_sync")
 	}
 	interval := time.Hour
 	if cfg != nil {

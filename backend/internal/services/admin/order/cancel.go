@@ -8,6 +8,7 @@ import (
 	"time"
 
 	ordermodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/order"
+	couponsvc "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/coupon"
 	"github.com/google/uuid"
 	"gorm.io/datatypes"
 	"gorm.io/gorm"
@@ -59,6 +60,16 @@ func (s *Service) CancelOrder(ctx context.Context, tenantUUID, adminID, orderID,
 				return err
 			}
 		}
+		releaseResult, err := s.CouponReleaseSvc.ReleaseWithTx(ctx, tx, couponsvc.ReleaseInput{
+			TenantUUID: tenantUUID,
+			OrderID:    orderID,
+			RequestID:  requestIDFromContext(ctx),
+			Operator:   adminID,
+			Reason:     "order_cancelled",
+		})
+		if err != nil {
+			return err
+		}
 
 		now := time.Now().UTC()
 		if err := tx.WithContext(ctx).
@@ -72,8 +83,9 @@ func (s *Service) CancelOrder(ctx context.Context, tenantUUID, adminID, orderID,
 		}
 
 		eventPayload, _ := json.Marshal(map[string]any{
-			"requestId": requestIDFromContext(ctx),
-			"reason":    reason,
+			"requestId":        requestIDFromContext(ctx),
+			"reason":           reason,
+			"releasedAssetIDs": releaseResult.ReleasedAssetIDs,
 		})
 		event := &ordermodel.OrderEvent{
 			ID:           uuid.NewString(),

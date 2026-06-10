@@ -1,6 +1,7 @@
 package product_sku
 
 import (
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"strings"
 	"time"
 
@@ -57,7 +58,7 @@ type AuditEvent struct {
 // NewLogger constructs a logger with sane defaults.
 func NewLogger(entry *logrus.Entry) *Logger {
 	if entry == nil {
-		entry = logrus.New().WithField("component", "product-sku")
+		entry = pxlogger.WithField("component", "product-sku")
 	}
 	return &Logger{entry: entry}
 }

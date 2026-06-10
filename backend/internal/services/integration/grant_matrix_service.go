@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"strings"
 
+	pxlogger "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"github.com/sirupsen/logrus"
 )
 
@@ -24,7 +25,7 @@ type GrantMatrixService struct {
 // NewGrantMatrixService 构造服务。
 func NewGrantMatrixService(loader *GrantMatrixLoader, logger *logrus.Entry) *GrantMatrixService {
 	if logger == nil {
-		logger = logrus.WithField("component", "integration.grant_matrix_service")
+		logger = pxlogger.WithField("component", "integration.grant_matrix_service")
 	}
 	return &GrantMatrixService{
 		loader: loader,
