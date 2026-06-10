@@ -2,7 +2,7 @@
 
 **Feature Branch**: `014-coupon-full-mechanism`  
 **Created**: 2026-04-03  
-**Status**: Draft  
+**Status**: Implemented  
 **Input**: User description: "基于 docs/plan/pricing/coupons.md、docs/plan/pricing/README.md、docs/plan/pricing/promotions.md，生成完整优惠券机制实施计划（对齐执行版）对应 specs 文档"
 
 ## Clarifications
@@ -17,6 +17,7 @@
 - Q: 券过期时间边界如何判定？ → A: 到秒级，订单提交时刻小于等于过期时刻视为可用（含边界）。
 - Q: 预占券自动释放时机如何定义？ → A: 与订单支付超时保持一致，由订单关闭事件触发释放。
 - Q: 叠加计算顺序如何定义？ → A: 先商品级券，再订单级券（同层按优先级）。
+- Q: 退款返券当前接入点如何定义？ → A: 管理端创建支付退款时按模板 `refund_rule` 判定；默认不返券，明确返券时执行 `redeemed -> refunded` 并记录 `refund` 流水。
 
 ## User Scenarios & Testing *(mandatory)*
 

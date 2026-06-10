@@ -460,7 +460,6 @@ func errorString(err error) string {
 func resolveFrameworkGatewayConfig() fwbootstrap.GatewayConfig {
 	return fwbootstrap.GatewayConfig{
 		BaseURL:         resolveGatewayBaseURL(),
-		ToolToken:       "",
 		TenantID:        strings.TrimSpace(os.Getenv("PX_TENANT_UUID")),
 		GRPCTarget:      strings.TrimSpace(os.Getenv("PX_GATEWAY_GRPC_TARGET")),
 		Timeout:         resolveGatewayTimeout(),

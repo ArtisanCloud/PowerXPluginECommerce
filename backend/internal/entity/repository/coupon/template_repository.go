@@ -2,6 +2,7 @@ package coupon
 
 import (
 	"context"
+	"errors"
 	"strings"
 	"time"
 
@@ -58,6 +59,40 @@ func (r *TemplateRepository) MapByID(ctx context.Context, tenantUUID string, ids
 	}
 	out := make(map[string]couponmodel.CouponTemplate, len(list))
 	for _, row := range list {
+		out[strings.TrimSpace(row.ID)] = row
+	}
+	return out, nil
+}
+
+func (r *TemplateRepository) MapByIDAnyWithTx(ctx context.Context, tx *gorm.DB, tenantUUID string, ids []string) (map[string]couponmodel.CouponTemplate, error) {
+	if r == nil || r.DB == nil {
+		return nil, gorm.ErrInvalidDB
+	}
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
+	tenantUUID = strings.TrimSpace(tenantUUID)
+	if tenantUUID == "" {
+		return nil, repository.ErrTenantUuidRequired
+	}
+	trimmed := make([]string, 0, len(ids))
+	for _, id := range ids {
+		if v := strings.TrimSpace(id); v != "" {
+			trimmed = append(trimmed, v)
+		}
+	}
+	if len(trimmed) == 0 {
+		return map[string]couponmodel.CouponTemplate{}, nil
+	}
+	var rows []couponmodel.CouponTemplate
+	err := tx.WithContext(ctx).
+		Where("tenant_uuid = ? AND id IN ?", tenantUUID, trimmed).
+		Find(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]couponmodel.CouponTemplate, len(rows))
+	for _, row := range rows {
 		out[strings.TrimSpace(row.ID)] = row
 	}
 	return out, nil

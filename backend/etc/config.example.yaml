@@ -93,6 +93,11 @@ context:
   iam_mode: ""
   ttl: "5m"
 
+host:
+  web_admin_origins:
+    - "http://localhost:3030"
+    - "http://127.0.0.1:3030"
+
 customer_auth:
   mode: "local" # local / delegate / auto
   delegate_endpoint: "https://core.powerx.dev/api/v1/customer/auth/validate"

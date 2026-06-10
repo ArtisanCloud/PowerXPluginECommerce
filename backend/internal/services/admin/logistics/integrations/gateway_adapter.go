@@ -312,12 +312,9 @@ func applyAuthHeaders(req *http.Request, cfg map[string]any) {
 	if apiKey == "" {
 		apiKey = strings.TrimSpace(anyString(cfg["gateway_api_key"]))
 	}
-	token := strings.TrimSpace(anyString(cfg["token"]))
+	token := strings.TrimSpace(anyString(cfg["gateway_bearer_token"]))
 	if token == "" {
-		token = strings.TrimSpace(anyString(cfg["tool_token"]))
-	}
-	if token == "" {
-		token = strings.TrimSpace(anyString(cfg["gateway_token"]))
+		token = strings.TrimSpace(anyString(cfg["bearer_token"]))
 	}
 
 	switch authScheme {

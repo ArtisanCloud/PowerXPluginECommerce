@@ -128,3 +128,29 @@ func (r *AssetRepository) LockReservedByOrderForUpdate(ctx context.Context, tx *
 	}
 	return rows, nil
 }
+
+func (r *AssetRepository) LockRedeemedByOrderForUpdate(ctx context.Context, tx *gorm.DB, tenantUUID, orderID string) ([]couponmodel.CouponAsset, error) {
+	if r == nil || r.DB == nil {
+		return nil, gorm.ErrInvalidDB
+	}
+	if tx == nil {
+		return nil, errors.New("transaction is required")
+	}
+	tenantUUID = strings.TrimSpace(tenantUUID)
+	orderID = strings.TrimSpace(orderID)
+	if tenantUUID == "" {
+		return nil, repository.ErrTenantUuidRequired
+	}
+	if orderID == "" {
+		return nil, errors.New("order id is required")
+	}
+	query := tx.WithContext(ctx).Where("tenant_uuid = ? AND reserved_order_id = ? AND status = ?", tenantUUID, orderID, "redeemed")
+	if tx.Dialector != nil && tx.Dialector.Name() != "sqlite" {
+		query = query.Clauses(clause.Locking{Strength: "UPDATE"})
+	}
+	var rows []couponmodel.CouponAsset
+	if err := query.Find(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}

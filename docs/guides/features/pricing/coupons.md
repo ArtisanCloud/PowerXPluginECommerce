@@ -6,7 +6,7 @@
 
 - 交易侧：`/api/v1/v1/coupons/quote` 优惠试算。
 - 管理侧：模板管理、批量发券、资产查询、流水查询。
-- 订单支付联动：预占、核销、释放。
+- 订单支付联动：预占、核销、释放、退款返券。
 
 ## 2. 业务流程
 
@@ -16,6 +16,7 @@
 4. 订单创建后预占券（`available -> reserved`）。
 5. 支付成功触发核销（`reserved -> redeemed`）。
 6. 支付失败/取消/超时触发释放（`reserved -> available`）。
+7. 管理端创建支付退款时按模板 `refund_rule` 判定是否返券；默认不返券，开启返券时更新为 `refunded` 并写入 `refund` 流水。
 
 ## 3. 管理端 API
 
@@ -80,6 +81,14 @@
 - `coupon_usage_logs` 唯一键 `(tenant_uuid, action, idempotency_key)` 是否生效。
 - 幂等键是否按 `action:orderId:assetId` 生成。
 
+### 5.4 退款后未返券
+
+检查：
+
+- 券资产是否为 `redeemed`，且 `reserved_order_id = 订单ID`。
+- 模板 `refund_rule` 是否明确开启返券（如 `return_coupon=true`）。
+- `coupon_usage_logs` 是否有 `action=refund` 记录。
+
 ## 6. 观测与告警
 
 - 指标：发放、预占、核销、释放、返券总量与失败总量。
@@ -92,5 +101,5 @@
 ```bash
 cd backend
 mkdir -p ../tmp/gocache ../tmp/gomodcache
-GOCACHE=$PWD/../tmp/gocache GOMODCACHE=$PWD/../tmp/gomodcache go test ./internal/services/admin/coupon ./internal/transport/http/admin/coupon
+GOCACHE=$PWD/../tmp/gocache GOMODCACHE=$PWD/../tmp/gomodcache go test ./internal/services/admin/coupon ./internal/transport/http/admin/coupon ./internal/services/admin/payments
 ```

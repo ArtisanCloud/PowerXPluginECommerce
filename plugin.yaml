@@ -126,7 +126,7 @@ frontend:
                   namespace: menus
                   key: menu.com.powerx.plugins.ecommerce.categories
                   default: Categories
-                icon: i-heroicons-folder-tree
+                icon: i-heroicons-folder
                 path: /product/categories
                 route: product/categories
                 order: 3
@@ -168,7 +168,7 @@ frontend:
             route: customer
             order: 2
             required_policies:
-              - customer.read
+              - customer.read:read
             children:
               - id: plugins.com.powerx.plugins.ecommerce.customers.list
                 title: 客户列表
@@ -181,7 +181,7 @@ frontend:
                 route: customer
                 order: 1
                 required_policies:
-                  - customer.read
+                  - customer.read:read
               - id: plugins.com.powerx.plugins.ecommerce.customers.members
                 title: 会员管理
                 title_i18n:
@@ -216,7 +216,8 @@ frontend:
             path: /channels
             route: channels
             order: 3
-            required_policies: [com.powerx.plugins.ecommerce:channel.master:read]
+            required_policies:
+              - com.powerx.plugins.ecommerce:channel.master:read
             children:
               - id: plugins.com.powerx.plugins.ecommerce.channels.list
                 title: 渠道列表

@@ -47,7 +47,7 @@ func TestFetchCoreXCatalog_APIKeyModeSetsAPIKeyAuthorizationHeader(t *testing.T)
 	}
 }
 
-func TestFetchCoreXCatalog_BearerModeUsesToolToken(t *testing.T) {
+func TestFetchCoreXCatalog_BearerModeUsesRuntimeBearer(t *testing.T) {
 	t.Setenv("PX_GATEWAY_AUTH_SCHEME", "bearer")
 	t.Setenv("PX_GATEWAY_API_KEY", "")
 	t.Setenv("POWERX_AUTH_TOKEN", "token-demo")

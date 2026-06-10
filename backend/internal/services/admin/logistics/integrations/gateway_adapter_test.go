@@ -23,7 +23,7 @@ func TestApplyAuthHeaders_DefaultAPIKey(t *testing.T) {
 
 func TestApplyAuthHeaders_BearerAndBasic(t *testing.T) {
 	reqBearer := httptest.NewRequest(http.MethodGet, "http://example.com", nil)
-	applyAuthHeaders(reqBearer, map[string]any{"auth_scheme": "bearer", "tool_token": "t-abc"})
+	applyAuthHeaders(reqBearer, map[string]any{"auth_scheme": "bearer", "gateway_bearer_token": "t-abc"})
 	require.Equal(t, "Bearer t-abc", reqBearer.Header.Get("Authorization"))
 
 	reqBasic := httptest.NewRequest(http.MethodGet, "http://example.com", nil)
@@ -57,7 +57,7 @@ func TestGatewayAdapter_CreateWaybillRetryAndParse(t *testing.T) {
 			"gateway_base_url":"http://gateway.local",
 			"gateway_retry_count":1,
 			"auth_scheme":"bearer",
-			"tool_token":"tok-1"
+			"gateway_bearer_token":"tok-1"
 		}`)),
 	}
 

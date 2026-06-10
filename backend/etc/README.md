@@ -70,7 +70,7 @@ Skeleton 与 Base 插件保持相同的字段结构，可直接复用宿主侧�
 | `PLUGIN_IAM_ADMIN_EMAIL` | Local 模式默认管理员邮箱，`go run ./cmd/database setup` 时必填 |
 | `PLUGIN_IAM_ADMIN_PASSWORD` | Local 模式默认管理员密码，配合上方邮箱使用 |
 
-> 统一口径：插件主动调用 PowerX 底座时使用 STS Exchange 获取短期 `powerx:api` token。`PX_TOOL_TOKEN` / `PX_PLUGIN_TOOL_TOKEN` 已废弃，宿主业务链路不得注入、读取或依赖。
+> 统一口径：插件主动调用 PowerX 底座时使用 STS Exchange 获取短期 `powerx:api` token，宿主业务链路不得注入、读取或依赖静态 Bearer token。
 >
 > 建议在生产环境通过配置文件写入敏感信息，仅在必要时才使用环境变量覆盖。
 

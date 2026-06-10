@@ -20,7 +20,7 @@
 4. 提交订单并携带券，确认券资产状态变为 `reserved`。
 5. 触发支付成功，确认状态变为 `redeemed`，并生成核销流水。
 6. 触发支付失败/订单关闭场景，确认 `reserved` 券被释放回 `available`。
-7. 触发部分退款，确认返券行为符合模板策略（默认不返券）。
+7. 触发支付退款，确认返券行为符合模板策略（默认不返券；模板开启返券时 `redeemed -> refunded` 并生成 `refund` 流水）。
 8. 查询订单优惠快照，确认订单行分摊金额与总优惠一致。
 
 ## 4. 验收检查点
@@ -54,3 +54,21 @@ npm run -s build
 
 - miniapp 路由当前实际路径为 `/api/v1/v1/coupons/quote`，契约与路由矩阵已按实现记录。
 - 建议在后续 API 整理阶段统一 miniapp 子路径前缀，避免 `/v1/v1` 认知负担。
+
+## 6. 收尾回归记录（2026-06-09）
+
+### 6.1 执行命令
+
+```bash
+cd backend
+GOCACHE=$PWD/../tmp/gocache GOMODCACHE=$PWD/../tmp/gomodcache go test ./internal/services/admin/coupon ./internal/transport/http/admin/coupon ./internal/transport/http/miniapp/coupon ./internal/services/admin/payment ./internal/services/admin/payments ./internal/services/admin/order ./tests/performance
+
+cd ../web-admin
+npm run -s build
+```
+
+### 6.2 结果摘要
+
+- 优惠券域服务、管理端/交易端处理器、订单/支付接入与性能测试通过。
+- 支付退款创建时已接入优惠券返券策略：默认不返券，模板开启返券时写入 `refund` 流水并更新资产为 `refunded`。
+- 前端构建通过。

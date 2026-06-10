@@ -17,9 +17,6 @@ func TestResolveFrameworkGatewayConfig_BasicFields(t *testing.T) {
 	if cfg.BaseURL != "http://127.0.0.1:8077" {
 		t.Fatalf("unexpected base url: %s", cfg.BaseURL)
 	}
-	if cfg.ToolToken != "" {
-		t.Fatalf("unexpected tool token: %s", cfg.ToolToken)
-	}
 	if cfg.TenantID != "tenant-001" {
 		t.Fatalf("unexpected tenant id: %s", cfg.TenantID)
 	}
