@@ -26,6 +26,12 @@ func (s *Service) ListOrders(ctx context.Context, tenantUUID string, filter orde
 
 	items := make([]OrderSummaryDTO, 0, len(result.Items))
 	for _, it := range result.Items {
+		promotionSummary := (*PromotionSummaryDTO)(nil)
+		if s.PromotionSnapshotRepo != nil {
+			if snapshot, err := s.PromotionSnapshotRepo.FindByOrderID(ctx, tenantUUID, it.ID); err == nil {
+				promotionSummary = promotionSummaryFromSnapshotRow(snapshot)
+			}
+		}
 		couponSummary := (*CouponSummaryDTO)(nil)
 		if s.CouponSnapshotRepo != nil {
 			if snapshot, err := s.CouponSnapshotRepo.GetByOrderID(ctx, tenantUUID, it.ID); err == nil {
@@ -47,6 +53,7 @@ func (s *Service) ListOrders(ctx context.Context, tenantUUID string, filter orde
 			CreatedByType:           it.CreatedByType,
 			Status:                  it.Status,
 			Amounts:                 MoneyDTO{Currency: it.Currency, Subtotal: it.SubtotalAmount, Total: it.TotalAmount},
+			Promotion:               promotionSummary,
 			Coupon:                  couponSummary,
 			ShippingAddressSnapshot: shippingSnap,
 			CreatedAt:               it.CreatedAt,
@@ -120,6 +127,12 @@ func (s *Service) GetOrderDetail(ctx context.Context, tenantUUID, orderID string
 			shippingSnap = &snap
 		}
 	}
+	var promotionSummary *PromotionSummaryDTO
+	if s.PromotionSnapshotRepo != nil {
+		if snapshot, err := s.PromotionSnapshotRepo.FindByOrderID(ctx, tenantUUID, orderID); err == nil {
+			promotionSummary = promotionSummaryFromSnapshotRow(snapshot)
+		}
+	}
 	var couponSummary *CouponSummaryDTO
 	if s.CouponSnapshotRepo != nil {
 		if snapshot, err := s.CouponSnapshotRepo.GetByOrderID(ctx, tenantUUID, orderID); err == nil {
@@ -136,6 +149,7 @@ func (s *Service) GetOrderDetail(ctx context.Context, tenantUUID, orderID string
 			CreatedByType:           ord.CreatedByType,
 			Status:                  ord.Status,
 			Amounts:                 MoneyDTO{Currency: ord.Currency, Subtotal: ord.SubtotalAmount, Total: ord.TotalAmount},
+			Promotion:               promotionSummary,
 			Coupon:                  couponSummary,
 			ShippingAddressSnapshot: shippingSnap,
 			CreatedAt:               ord.CreatedAt,

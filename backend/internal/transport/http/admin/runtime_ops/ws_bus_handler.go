@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"strings"
 
+	frameworkwsbus "github.com/ArtisanCloud/PowerXPlugin/framework/backend/go/runtime/wsbus"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/websocket/bus"
@@ -107,7 +108,14 @@ func (h *WSBusHandler) Publish(c *gin.Context) {
 		c.JSON(http.StatusForbidden, gin.H{"error": "publish not granted", "topic": req.Topic, "tenant_uuid": tenant})
 		return
 	}
-	bus.DefaultHub.Publish(tenant, req.Topic, req.Payload, traceID)
+	result := bus.DefaultPublisher.Publish(c.Request.Context(), req.Topic, req.Payload, frameworkwsbus.PublishOptions{
+		TenantUUID: tenant,
+		TraceID:    traceID,
+	})
+	if !result.OK {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": result.ErrorMessage, "code": result.ErrorCode})
+		return
+	}
 
 	c.JSON(http.StatusAccepted, gin.H{
 		"ok":                   true,

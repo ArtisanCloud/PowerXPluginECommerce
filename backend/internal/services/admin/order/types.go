@@ -38,16 +38,17 @@ type MoneyDTO struct {
 }
 
 type OrderSummaryDTO struct {
-	OrderID                 string            `json:"orderId"`
-	OrderNo                 string            `json:"orderNo"`
-	CustomerID              string            `json:"customerId"`
-	Channel                 string            `json:"channel"`
-	CreatedByType           string            `json:"createdByType"`
-	Status                  string            `json:"status"`
-	Amounts                 MoneyDTO          `json:"amounts"`
-	Coupon                  *CouponSummaryDTO `json:"coupon,omitempty"`
-	ShippingAddressSnapshot *ShippingAddress  `json:"shippingAddressSnapshot,omitempty"`
-	CreatedAt               time.Time         `json:"createdAt"`
+	OrderID                 string               `json:"orderId"`
+	OrderNo                 string               `json:"orderNo"`
+	CustomerID              string               `json:"customerId"`
+	Channel                 string               `json:"channel"`
+	CreatedByType           string               `json:"createdByType"`
+	Status                  string               `json:"status"`
+	Amounts                 MoneyDTO             `json:"amounts"`
+	Promotion               *PromotionSummaryDTO `json:"promotion,omitempty"`
+	Coupon                  *CouponSummaryDTO    `json:"coupon,omitempty"`
+	ShippingAddressSnapshot *ShippingAddress     `json:"shippingAddressSnapshot,omitempty"`
+	CreatedAt               time.Time            `json:"createdAt"`
 }
 
 type OrderListResponse struct {
@@ -82,6 +83,43 @@ type CouponLineAllocationDTO struct {
 	LineID        string `json:"line_id"`
 	BaseMinor     int64  `json:"base_minor"`
 	DiscountMinor int64  `json:"discount_minor"`
+}
+
+type PromotionLineAllocationDTO struct {
+	LineID                    string `json:"line_id,omitempty"`
+	SKUID                     string `json:"sku_id"`
+	BaseAmountMinor           int64  `json:"base_amount_minor"`
+	PromotionDiscountMinor    int64  `json:"promotion_discount_minor"`
+	AfterPromotionAmountMinor int64  `json:"after_promotion_amount_minor"`
+}
+
+type PromotionAppliedDTO struct {
+	PromotionID         string `json:"promotion_id"`
+	Code                string `json:"code"`
+	Name                string `json:"name"`
+	PromotionType       string `json:"promotion_type"`
+	DiscountMinor       int64  `json:"discount_minor"`
+	Priority            int    `json:"priority"`
+	ExclusionGroup      string `json:"exclusion_group,omitempty"`
+	StackableWithCoupon bool   `json:"stackable_with_coupon"`
+}
+
+type PromotionRejectedDTO struct {
+	PromotionID string `json:"promotion_id,omitempty"`
+	Code        string `json:"code,omitempty"`
+	Reason      string `json:"reason"`
+}
+
+type PromotionSummaryDTO struct {
+	Currency                 string                       `json:"currency"`
+	BaseTotalMinor           int64                        `json:"base_total_minor"`
+	PromotionDiscountMinor   int64                        `json:"promotion_discount_minor"`
+	AfterPromotionTotalMinor int64                        `json:"after_promotion_total_minor"`
+	CouponStackingAllowed    bool                         `json:"coupon_stacking_allowed"`
+	LineAllocations          []PromotionLineAllocationDTO `json:"line_allocations"`
+	AppliedPromotions        []PromotionAppliedDTO        `json:"applied_promotions"`
+	RejectedPromotions       []PromotionRejectedDTO       `json:"rejected_promotions"`
+	PricedAt                 time.Time                    `json:"priced_at"`
 }
 
 type CouponAppliedDTO struct {

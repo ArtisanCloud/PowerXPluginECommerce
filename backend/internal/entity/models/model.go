@@ -128,6 +128,11 @@ const (
 	TableCouponUsageLogs      = "coupon_usage_logs"
 	TableOrderCouponSnapshots = "order_coupon_snapshots"
 
+	// Promotions
+	TablePromotionCampaigns      = "promotion_campaigns"
+	TablePromotionAuditLogs      = "promotion_audit_logs"
+	TableOrderPromotionSnapshots = "order_promotion_snapshots"
+
 	// Customer Address Book (Checkout MVP)
 	TableCustomerAddresses = "customer_addresses"
 

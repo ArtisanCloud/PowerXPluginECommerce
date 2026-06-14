@@ -14,6 +14,7 @@ import (
 	middleware2 "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/middleware"
 	miniappapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/miniapp"
 	miniappcoupon "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/miniapp/coupon"
+	miniapppromotion "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/miniapp/promotion"
 	pricingapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/pricing"
 	publicauth "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/public"
 	wstransport "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/websocket"
@@ -141,6 +142,7 @@ func (r *Router) setupRoutes() {
 	v1.Use(middleware2.RBAC(rbacCfg, nil, nil))
 	_ = pricingapi.RegisterRoutes(v1, r.deps)
 	_ = miniappcoupon.RegisterRoutes(v1, r.deps)
+	_ = miniapppromotion.RegisterRoutes(v1, r.deps)
 
 	// 如需调试：打印已注册路由
 	wstransport.RegisterWSRoutes(r.engine, middleware2.JWTAuth(jwtCfg), r.cfg)

@@ -1,6 +1,12 @@
 package bus
 
-import "sync"
+import (
+	"context"
+	"strings"
+	"sync"
+
+	frameworkwsbus "github.com/ArtisanCloud/PowerXPlugin/framework/backend/go/runtime/wsbus"
+)
 
 type Hub struct {
 	mu          sync.RWMutex
@@ -16,6 +22,7 @@ func NewHub() *Hub {
 }
 
 var DefaultHub = NewHub()
+var DefaultPublisher frameworkwsbus.Publisher = frameworkwsbus.NewLocalPublisher(DefaultHub, nil)
 
 func (h *Hub) Register(client *Client) {
 	if client == nil {
@@ -69,7 +76,12 @@ func (h *Hub) Unsubscribe(client *Client, topic string) {
 	client.removeTopic(topic)
 }
 
-func (h *Hub) Publish(tenantUUID, topic string, payload any, traceID string) {
+func (h *Hub) Publish(_ context.Context, topic string, payload any, opts frameworkwsbus.PublishOptions) error {
+	h.publishToSubscribers(strings.TrimSpace(opts.TenantUUID), strings.TrimSpace(topic), payload, strings.TrimSpace(opts.TraceID))
+	return nil
+}
+
+func (h *Hub) publishToSubscribers(tenantUUID, topic string, payload any, traceID string) {
 	if topic == "" {
 		return
 	}

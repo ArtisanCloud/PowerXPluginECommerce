@@ -1,23 +1,34 @@
-import { resolveApiBase } from "./_base";
+import { createPluginSSEClient, createPluginWsClient } from "@artisan-cloud/plugin-framework-client";
+import { resolveApiBase, getAuthToken, getTenantUuid } from "./_base";
+import { PLUGIN_ID } from "~/utils/powerx-bridge";
+
+const frameworkStreamOptions = () => {
+  const cfg = typeof useRuntimeConfig === "function" ? useRuntimeConfig() : undefined;
+  const publicCfg = (cfg?.public || {}) as Record<string, any>;
+  return {
+    pluginId: PLUGIN_ID,
+    apiBaseURL: resolveApiBase(),
+    hostBaseURL: String(publicCfg.powerxCoreBase || publicCfg.apiBaseUrl || ""),
+    insidePowerX: Boolean(publicCfg.insidePowerX),
+    token: getAuthToken(),
+    tenantUuid: getTenantUuid(),
+    withCredentials: false,
+  };
+};
 
 export function createSSE(path: string, params?: Record<string, any>) {
-  const base = resolveApiBase();
-  const url = new URL(path.replace(/^\/+/, ""), base + "/");
-  if (params) {
-    for (const [k, v] of Object.entries(params)) {
-      if (v != null) url.searchParams.set(k, String(v));
-    }
-  }
-  return new EventSource(url.toString(), { withCredentials: false });
+  return createPluginSSEClient(frameworkStreamOptions()).connect({
+    path,
+    params,
+    withCredentials: false,
+  });
 }
 
 export function createWS(path: string) {
-  const base = resolveApiBase();
-  const a = document.createElement("a");
-  a.href = base; // 解析协议/主机
-  const wsProto = a.protocol === "https:" ? "wss:" : "ws:";
-  const wsUrl = `${wsProto}//${a.host}${a.pathname.replace(/\/+$/, "")}/${path.replace(/^\/+/, "")}`;
-  return new WebSocket(wsUrl);
+  return createPluginWsClient({
+    ...frameworkStreamOptions(),
+    wsPath: path,
+  }).connect();
 }
 
 // 便捷的实时数据流组合式函数

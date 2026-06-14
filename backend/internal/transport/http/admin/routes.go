@@ -19,6 +19,7 @@ import (
 	adminpricing "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/pricing"
 	adminproduct "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/product"
 	adminproductcategory "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/product_category"
+	adminpromotion "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/promotion"
 	adminreverse "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/reverse"
 	adminruntime "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/runtime_ops"
 	adminsecurity "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/security"
@@ -51,6 +52,7 @@ func RegisterAPIRoutes(rg *gin.RouterGroup, deps *app.Deps) {
 		admincapability.RegisterRoutes(admin, deps)
 		adminpricing.RegisterRoutes(admin, deps)
 		admincoupon.RegisterRoutes(admin, deps)
+		adminpromotion.RegisterRoutes(admin, deps)
 		adminorder.RegisterRoutes(admin, deps)
 		adminpayments.RegisterRoutes(admin, deps)
 		admincustomeraddress.RegisterRoutes(admin, deps)

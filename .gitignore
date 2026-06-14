@@ -43,6 +43,9 @@ backend/.cache/
 backend/logs/
 backend/tmp/
 backend/coverage.out
+*.test
+*.out
+vendor/
 backend/etc/config.yaml
 backend/etc/host-values.yaml
 

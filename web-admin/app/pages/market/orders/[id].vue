@@ -224,6 +224,77 @@
       </UTable>
     </UCard>
 
+    <UCard title="自动促销">
+      <div v-if="!detail?.summary?.promotion" class="text-sm text-gray-500 dark:text-gray-400">
+        当前订单暂无促销快照。
+      </div>
+      <div v-else class="space-y-3">
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-4">
+          <div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">促销前金额</div>
+            <div class="text-sm tabular-nums">
+              {{ formatMoney(detail.summary.promotion.currency, detail.summary.promotion.base_total_minor) }}
+            </div>
+          </div>
+          <div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">促销优惠</div>
+            <div class="text-sm tabular-nums text-green-600">
+              -{{ formatMoney(detail.summary.promotion.currency, detail.summary.promotion.promotion_discount_minor) }}
+            </div>
+          </div>
+          <div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">促销后金额</div>
+            <div class="text-sm tabular-nums">
+              {{ formatMoney(detail.summary.promotion.currency, detail.summary.promotion.after_promotion_total_minor) }}
+            </div>
+          </div>
+          <div>
+            <div class="text-xs text-gray-500 dark:text-gray-400">与券叠加</div>
+            <UBadge :color="detail.summary.promotion.coupon_stacking_allowed ? 'success' : 'warning'" variant="soft">
+              {{ detail.summary.promotion.coupon_stacking_allowed ? "允许" : "不允许" }}
+            </UBadge>
+          </div>
+        </div>
+
+        <div class="grid gap-3 md:grid-cols-2">
+          <div>
+            <div class="mb-2 text-xs text-gray-500 dark:text-gray-400">命中促销</div>
+            <div v-if="!detail.summary.promotion.applied_promotions?.length" class="text-sm text-gray-500 dark:text-gray-400">
+              无
+            </div>
+            <div v-else class="space-y-2">
+              <div
+                v-for="item in detail.summary.promotion.applied_promotions"
+                :key="item.promotion_id"
+                class="rounded border border-gray-200 p-2 text-sm dark:border-gray-700"
+              >
+                <div class="font-medium">{{ item.name }} · {{ item.code }}</div>
+                <div class="text-xs text-gray-500 dark:text-gray-400">
+                  {{ item.promotion_type }} / {{ formatMoney(detail.summary.promotion.currency, item.discount_minor) }}
+                </div>
+              </div>
+            </div>
+          </div>
+          <div>
+            <div class="mb-2 text-xs text-gray-500 dark:text-gray-400">未命中原因</div>
+            <div v-if="!detail.summary.promotion.rejected_promotions?.length" class="text-sm text-gray-500 dark:text-gray-400">
+              无
+            </div>
+            <div v-else class="space-y-2">
+              <div
+                v-for="(item, idx) in detail.summary.promotion.rejected_promotions"
+                :key="`${item.promotion_id || item.code || idx}`"
+                class="rounded border border-gray-200 p-2 text-sm dark:border-gray-700"
+              >
+                <span class="font-medium">{{ item.code || item.promotion_id || "-" }}</span>
+                <span class="ml-2 text-xs text-gray-500 dark:text-gray-400">{{ item.reason }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </UCard>
+
     <UCard title="优惠券与礼品卡">
       <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div class="text-sm text-gray-500 dark:text-gray-400">

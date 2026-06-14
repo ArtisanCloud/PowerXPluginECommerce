@@ -4,7 +4,7 @@ import { usePowerXCapability } from '~/composables/usePowerXCapability'
 import {
   PowerXCapabilityBridgeError,
   type PowerXCapabilityResponse
-} from '~/plugins/powerx-capability.client'
+} from '~/composables/powerxCapabilityTypes'
 
 export interface CapabilityLabHistoryEntry {
   id: string

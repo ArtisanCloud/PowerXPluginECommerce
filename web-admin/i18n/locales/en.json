@@ -356,7 +356,79 @@
     "marginAnalysis": "Margin Analysis",
     "priceCalculation": "Price Calculation",
     "priceTrace": "Price Trace",
-    "priceHistory": "Price History"
+    "priceHistory": "Price History",
+    "promotions": {
+      "title": "Promotion Rules",
+      "subtitle": "Order-level amount-off and percent-off promotions",
+      "dialogDescription": "Create or edit promotion basics, scope, and stacking rules.",
+      "fields": {
+        "code": "Code",
+        "name": "Name",
+        "type": "Type",
+        "status": "Status",
+        "validFrom": "Start Time",
+        "validTo": "End Time",
+        "priority": "Priority",
+        "minOrderAmount": "Minimum Order Amount (cent)",
+        "discountAmount": "Discount Amount (cent)",
+        "discountBps": "Discount BPS",
+        "maxDiscount": "Max Discount (cent)",
+        "scope": "Scope",
+        "channel": "Channel",
+        "skuIds": "SKU IDs (comma-separated)",
+        "exclusionGroup": "Exclusion Groups",
+        "stackable": "Stackable",
+        "stackableWithCoupon": "Stackable With Coupon",
+        "actions": "Actions"
+      },
+      "actions": {
+        "create": "Create Promotion",
+        "edit": "Edit Promotion",
+        "search": "Search",
+        "reset": "Reset",
+        "cancel": "Cancel",
+        "saveDraft": "Save Draft",
+        "saveAndActivate": "Save & Activate",
+        "generate": "Generate",
+        "editShort": "Edit",
+        "activate": "Activate",
+        "pause": "Pause",
+        "clone": "Copy"
+      },
+      "placeholders": {
+        "keyword": "Search code/name",
+        "channels": "Select channels",
+        "exclusionGroups": "Select exclusion groups",
+        "search": "Search..."
+      },
+      "options": {
+        "allTypes": "All Types",
+        "amountOff": "Amount Off",
+        "percentOff": "Percent Off",
+        "allStatuses": "All Statuses",
+        "draft": "Draft",
+        "active": "Active",
+        "paused": "Paused",
+        "expired": "Expired",
+        "allScope": "All",
+        "skuScope": "Specific SKU"
+      },
+      "channels": {
+        "official": "Official Store",
+        "miniapp": "Mini App",
+        "h5": "H5 Store"
+      },
+      "exclusionGroups": {
+        "orderDiscount": "Order Discount",
+        "amountOffCampaign": "Amount-off Campaign",
+        "percentOffCampaign": "Percent-off Campaign",
+        "channelCampaign": "Channel Campaign"
+      },
+      "validation": {
+        "validTimeRequired": "Enter valid start and end times.",
+        "validTimeOrder": "Start time cannot be later than end time."
+      }
+    }
   },
   "product": {
     "category": "Category",

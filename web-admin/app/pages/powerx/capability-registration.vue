@@ -1462,6 +1462,7 @@
 </template>
 
 <script setup lang="ts">
+import { createPluginSSEClient } from "@artisan-cloud/plugin-framework-client";
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import { useDebounceFn } from "@vueuse/core";
 import { useI18n, useRoute, useRouter, useToast } from "#imports";
@@ -2666,10 +2667,17 @@ function connectMcpStream(sessionId: string) {
     return;
   }
   disconnectMcpStream();
-  const endpoint = buildApiUrl("mcp/sse");
-  const url = new URL(endpoint);
-  url.searchParams.set("session_id", sessionId);
-  const source = new EventSource(url.toString());
+  const source = createPluginSSEClient({
+    pluginId: "com.powerx.plugins.ecommerce",
+    apiBaseURL: resolveApiBase(),
+    hostBaseURL: String(runtimeConfig.public?.powerxCoreBase || runtimeConfig.public?.apiBaseUrl || ""),
+    insidePowerX: Boolean(runtimeConfig.public?.insidePowerX),
+    withCredentials: false,
+  }).connect({
+    path: "mcp/sse",
+    params: { session_id: sessionId },
+    withCredentials: false,
+  });
   mcpEventSource.value = source;
   source.onopen = () => {
     mcpStreamConnected.value = true;

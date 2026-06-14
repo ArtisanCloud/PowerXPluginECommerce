@@ -293,6 +293,18 @@ frontend:
                 order: 3
                 required_policies:
                   - com.powerx.plugins.ecommerce:pricing.coupon.usage:read
+              - id: plugins.com.powerx.plugins.ecommerce.pricing.promotions
+                title: 促销规则
+                title_i18n:
+                  namespace: menus
+                  key: menu.com.powerx.plugins.ecommerce.promotionRules
+                  default: Promotion Rules
+                icon: i-heroicons-sparkles
+                path: /pricing/promotions
+                route: pricing/promotions
+                order: 4
+                required_policies:
+                  - com.powerx.plugins.ecommerce:pricing.promotion:read
           - id: plugins.com.powerx.plugins.ecommerce.orders
             title: 订单中心
             title_i18n:

@@ -12,6 +12,7 @@ export type OrderSummary = {
   createdByType?: string;
   status: string;
   amounts: Money;
+  promotion?: PromotionSummary;
   shippingAddressSnapshot?: ShippingAddress;
   createdAt: string;
 };
@@ -36,6 +37,43 @@ export type OrderEvent = {
   operatorType: string;
   operator?: string;
   createdAt: string;
+};
+
+export type PromotionLineAllocation = {
+  line_id?: string;
+  sku_id: string;
+  base_amount_minor: number;
+  promotion_discount_minor: number;
+  after_promotion_amount_minor: number;
+};
+
+export type PromotionApplied = {
+  promotion_id: string;
+  code: string;
+  name: string;
+  promotion_type: string;
+  discount_minor: number;
+  priority: number;
+  exclusion_group?: string;
+  stackable_with_coupon: boolean;
+};
+
+export type PromotionRejected = {
+  promotion_id?: string;
+  code?: string;
+  reason: string;
+};
+
+export type PromotionSummary = {
+  currency: string;
+  base_total_minor: number;
+  promotion_discount_minor: number;
+  after_promotion_total_minor: number;
+  coupon_stacking_allowed: boolean;
+  line_allocations: PromotionLineAllocation[];
+  applied_promotions: PromotionApplied[];
+  rejected_promotions: PromotionRejected[];
+  priced_at: string;
 };
 
 export type OrderBenefitReview = {

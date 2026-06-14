@@ -2,7 +2,7 @@ import type {
   PowerXCapabilityBridge,
   PowerXCapabilityRequest,
   PowerXCapabilityResponse,
-} from "~/plugins/powerx-capability.client";
+} from "~/composables/powerxCapabilityTypes";
 
 export function usePowerXCapability() {
   const nuxtApp = useNuxtApp();

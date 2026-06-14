@@ -1755,6 +1755,78 @@
     "marginAnalysis": "毛利分析",
     "priceCalculation": "价格计算",
     "priceTrace": "查价轨迹",
-    "priceHistory": "价格历史"
+    "priceHistory": "价格历史",
+    "promotions": {
+      "title": "促销规则",
+      "subtitle": "订单级满减与折扣促销",
+      "dialogDescription": "创建或编辑促销规则的基础信息、适用范围与叠加策略。",
+      "fields": {
+        "code": "编码",
+        "name": "名称",
+        "type": "类型",
+        "status": "状态",
+        "validFrom": "开始时间",
+        "validTo": "结束时间",
+        "priority": "优先级",
+        "minOrderAmount": "最低订单金额（分）",
+        "discountAmount": "减免金额（分）",
+        "discountBps": "折扣 BPS",
+        "maxDiscount": "最大优惠（分）",
+        "scope": "适用范围",
+        "channel": "渠道",
+        "skuIds": "SKU ID（逗号分隔）",
+        "exclusionGroup": "互斥组",
+        "stackable": "可叠加促销",
+        "stackableWithCoupon": "可与优惠券叠加",
+        "actions": "操作"
+      },
+      "actions": {
+        "create": "新建促销",
+        "edit": "编辑促销",
+        "search": "查询",
+        "reset": "重置",
+        "cancel": "取消",
+        "saveDraft": "保存草稿",
+        "saveAndActivate": "保存并启用",
+        "generate": "生成",
+        "editShort": "编辑",
+        "activate": "启用",
+        "pause": "停用",
+        "clone": "复制"
+      },
+      "placeholders": {
+        "keyword": "搜索编码/名称",
+        "channels": "选择渠道",
+        "exclusionGroups": "选择互斥组",
+        "search": "搜索..."
+      },
+      "options": {
+        "allTypes": "全部类型",
+        "amountOff": "满减",
+        "percentOff": "折扣",
+        "allStatuses": "全部状态",
+        "draft": "草稿",
+        "active": "启用",
+        "paused": "停用",
+        "expired": "过期",
+        "allScope": "全场",
+        "skuScope": "指定 SKU"
+      },
+      "channels": {
+        "official": "官方商城",
+        "miniapp": "小程序",
+        "h5": "H5 商城"
+      },
+      "exclusionGroups": {
+        "orderDiscount": "订单级优惠",
+        "amountOffCampaign": "满减活动",
+        "percentOffCampaign": "折扣活动",
+        "channelCampaign": "渠道专属活动"
+      },
+      "validation": {
+        "validTimeRequired": "请填写有效的开始时间和结束时间。",
+        "validTimeOrder": "开始时间不能晚于结束时间。"
+      }
+    }
   }
 }

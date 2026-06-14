@@ -13,6 +13,7 @@ import (
 	miniapporder "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/miniapp/order"
 	miniapppayments "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/miniapp/payments"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/miniapp/product"
+	miniapppromotion "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/miniapp/promotion"
 	"github.com/gin-gonic/gin"
 )
 
@@ -39,6 +40,7 @@ func RegisterRoutes(rg *gin.RouterGroup, deps *app.Deps) *gin.RouterGroup {
 	protected.Use(httpmw.EnsureTenant())
 	miniappcart.RegisterRoutes(protected, deps)
 	miniapporder.RegisterRoutes(protected, deps)
+	miniapppromotion.RegisterRoutes(protected, deps)
 	miniappaddress.RegisterRoutes(protected, deps)
 	miniappmembership.RegisterRoutes(protected, deps)
 	miniappaftersales.RegisterRoutes(protected, deps)

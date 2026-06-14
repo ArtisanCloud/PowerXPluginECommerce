@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 
+	frameworkwsbus "github.com/ArtisanCloud/PowerXPlugin/framework/backend/go/runtime/wsbus"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/logger"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/taskbus"
@@ -35,12 +36,16 @@ func RegisterTaskBusBridge(client taskbus.Client) {
 				traceID = strings.TrimSpace(evt.Metadata["request_id"])
 			}
 			topic := strings.TrimSpace(evt.Topic)
-			bus.DefaultHub.Publish(tenantUUID, topic, evt.Payload, traceID)
+			result := bus.DefaultPublisher.Publish(ctx, topic, evt.Payload, frameworkwsbus.PublishOptions{
+				TenantUUID: tenantUUID,
+				TraceID:    traceID,
+			})
 			logger.WithFields(logger.Fields{
 				"component":   "taskbus-ws-bridge",
 				"topic":       topic,
 				"tenant_uuid": tenantUUID,
 				"trace_id":    traceID,
+				"publish_ok":  result.OK,
 				"subscribers": bus.DefaultHub.TopicSubscribers(topic),
 			}).Info("taskbus event bridged to ws")
 			return nil

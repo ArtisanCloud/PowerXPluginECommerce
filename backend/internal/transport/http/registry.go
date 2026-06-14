@@ -23,6 +23,7 @@ import (
 	adminpayments "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/payments"
 	adminpricing "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/pricing"
 	adminproduct "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/product"
+	adminpromotion "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/promotion"
 	adminruntime "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/runtime_ops"
 	adminsecurity "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/security"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/templates"
@@ -76,6 +77,7 @@ func StaticRBACEntries(prefix string) map[string]authx.Permission {
 	merge(admincapability.RBACEntries(prefix))
 	merge(adminpricing.RBACEntries(prefix))
 	merge(admincoupon.RBACEntries(prefix))
+	merge(adminpromotion.RBACEntries(prefix))
 	merge(adminorder.RBACEntries(prefix))
 	merge(adminpayments.RBACEntries(prefix))
 	merge(admincustomeraddress.RBACEntries(prefix))

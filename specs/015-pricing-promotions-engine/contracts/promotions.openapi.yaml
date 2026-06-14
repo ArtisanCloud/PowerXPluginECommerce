@@ -1,0 +1,605 @@
+openapi: 3.0.3
+info:
+  title: PowerX Plugin - Pricing Promotions Engine API
+  version: 0.1.0
+  description: |
+    促销规则引擎 MVP 接口契约：管理端促销规则 CRUD/启停/复制/审计，以及交易端促销试算。
+servers:
+  - url: /api/v1
+paths:
+  /admin/promotions:
+    get:
+      summary: 列表查询促销规则
+      tags: [AdminPromotion]
+      parameters:
+        - in: query
+          name: keyword
+          schema:
+            type: string
+        - in: query
+          name: promotion_type
+          schema:
+            type: string
+            enum: [amount_off, percent_off]
+        - in: query
+          name: status
+          schema:
+            type: string
+            enum: [draft, active, paused, expired]
+        - in: query
+          name: channel
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: page_size
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopePromotionListResponse'
+    post:
+      summary: 创建促销规则
+      tags: [AdminPromotion]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromotionCreateRequest'
+      responses:
+        '200':
+          description: 创建成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopePromotionCampaign'
+
+  /admin/promotions/{id}:
+    patch:
+      summary: 更新促销规则
+      tags: [AdminPromotion]
+      parameters:
+        - $ref: '#/components/parameters/PromotionID'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromotionUpdateRequest'
+      responses:
+        '200':
+          description: 更新成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopePromotionCampaign'
+
+  /admin/promotions/{id}/activate:
+    post:
+      summary: 启用促销规则
+      tags: [AdminPromotion]
+      parameters:
+        - $ref: '#/components/parameters/PromotionID'
+      responses:
+        '200':
+          description: 启用成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopePromotionCampaign'
+
+  /admin/promotions/{id}/pause:
+    post:
+      summary: 停用促销规则
+      tags: [AdminPromotion]
+      parameters:
+        - $ref: '#/components/parameters/PromotionID'
+      responses:
+        '200':
+          description: 停用成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopePromotionCampaign'
+
+  /admin/promotions/{id}/clone:
+    post:
+      summary: 复制促销规则为草稿
+      tags: [AdminPromotion]
+      parameters:
+        - $ref: '#/components/parameters/PromotionID'
+      responses:
+        '200':
+          description: 复制成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopePromotionCampaign'
+
+  /admin/promotions/{id}/audit-logs:
+    get:
+      summary: 查询促销审计日志
+      tags: [AdminPromotion]
+      parameters:
+        - $ref: '#/components/parameters/PromotionID'
+        - in: query
+          name: action
+          schema:
+            type: string
+        - in: query
+          name: page
+          schema:
+            type: integer
+            minimum: 1
+        - in: query
+          name: page_size
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+      responses:
+        '200':
+          description: 查询成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopePromotionAuditLogListResponse'
+
+  /v1/promotions/quote:
+    post:
+      summary: 促销试算
+      tags: [MiniAppPromotion]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PromotionQuoteRequest'
+      responses:
+        '200':
+          description: 试算成功
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiEnvelopePromotionQuoteResponse'
+
+components:
+  parameters:
+    PromotionID:
+      in: path
+      name: id
+      required: true
+      schema:
+        type: string
+
+  schemas:
+    ApiEnvelopeBase:
+      type: object
+      properties:
+        success:
+          type: boolean
+        message:
+          type: string
+          nullable: true
+        request_id:
+          type: string
+          nullable: true
+        timestamp:
+          type: string
+          format: date-time
+
+    Pagination:
+      type: object
+      properties:
+        page:
+          type: integer
+        page_size:
+          type: integer
+        total:
+          type: integer
+          format: int64
+
+    PromotionConditionRule:
+      type: object
+      properties:
+        min_order_amount_minor:
+          type: integer
+          format: int64
+          minimum: 0
+
+    PromotionScopeRule:
+      type: object
+      properties:
+        scope_type:
+          type: string
+          enum: [all, sku]
+        sku_ids:
+          type: array
+          items:
+            type: string
+        channels:
+          type: array
+          items:
+            type: string
+      required: [scope_type]
+
+    PromotionActionRule:
+      type: object
+      properties:
+        discount_amount_minor:
+          type: integer
+          format: int64
+          minimum: 1
+        discount_percent_bps:
+          type: integer
+          minimum: 1
+          maximum: 10000
+        max_discount_minor:
+          type: integer
+          format: int64
+          minimum: 0
+
+    PromotionStackingRule:
+      type: object
+      properties:
+        priority:
+          type: integer
+        stackable:
+          type: boolean
+        stackable_with_coupon:
+          type: boolean
+        exclusion_group:
+          type: string
+          nullable: true
+      required: [priority, stackable, stackable_with_coupon]
+
+    PromotionCampaign:
+      type: object
+      properties:
+        id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        promotion_type:
+          type: string
+          enum: [amount_off, percent_off]
+        condition_rule:
+          $ref: '#/components/schemas/PromotionConditionRule'
+        scope_rule:
+          $ref: '#/components/schemas/PromotionScopeRule'
+        action_rule:
+          $ref: '#/components/schemas/PromotionActionRule'
+        stacking_rule:
+          $ref: '#/components/schemas/PromotionStackingRule'
+        valid_from:
+          type: string
+          format: date-time
+        valid_to:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [draft, active, paused, expired]
+        created_by:
+          type: string
+          nullable: true
+        updated_by:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+      required:
+        - id
+        - code
+        - name
+        - promotion_type
+        - condition_rule
+        - scope_rule
+        - action_rule
+        - stacking_rule
+        - valid_from
+        - valid_to
+        - status
+
+    PromotionCreateRequest:
+      type: object
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        promotion_type:
+          type: string
+          enum: [amount_off, percent_off]
+        condition_rule:
+          $ref: '#/components/schemas/PromotionConditionRule'
+        scope_rule:
+          $ref: '#/components/schemas/PromotionScopeRule'
+        action_rule:
+          $ref: '#/components/schemas/PromotionActionRule'
+        stacking_rule:
+          $ref: '#/components/schemas/PromotionStackingRule'
+        valid_from:
+          type: string
+          format: date-time
+        valid_to:
+          type: string
+          format: date-time
+        save_action:
+          type: string
+          enum: [draft, activate]
+          default: draft
+      required:
+        - code
+        - name
+        - promotion_type
+        - condition_rule
+        - scope_rule
+        - action_rule
+        - stacking_rule
+        - valid_from
+        - valid_to
+
+    PromotionUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        condition_rule:
+          $ref: '#/components/schemas/PromotionConditionRule'
+        scope_rule:
+          $ref: '#/components/schemas/PromotionScopeRule'
+        action_rule:
+          $ref: '#/components/schemas/PromotionActionRule'
+        stacking_rule:
+          $ref: '#/components/schemas/PromotionStackingRule'
+        valid_from:
+          type: string
+          format: date-time
+        valid_to:
+          type: string
+          format: date-time
+
+    PromotionQuoteItem:
+      type: object
+      properties:
+        line_id:
+          type: string
+        sku_id:
+          type: string
+        qty:
+          type: integer
+          minimum: 1
+        unit_price_minor:
+          type: integer
+          format: int64
+          minimum: 0
+      required: [sku_id, qty, unit_price_minor]
+
+    PromotionQuoteRequest:
+      type: object
+      properties:
+        channel:
+          type: string
+        currency:
+          type: string
+        submitted_at:
+          type: string
+          format: date-time
+          nullable: true
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PromotionQuoteItem'
+      required: [currency, items]
+
+    AppliedPromotion:
+      type: object
+      properties:
+        promotion_id:
+          type: string
+        code:
+          type: string
+        name:
+          type: string
+        promotion_type:
+          type: string
+        discount_minor:
+          type: integer
+          format: int64
+        priority:
+          type: integer
+        exclusion_group:
+          type: string
+          nullable: true
+        stackable_with_coupon:
+          type: boolean
+      required: [promotion_id, code, name, promotion_type, discount_minor]
+
+    RejectedPromotion:
+      type: object
+      properties:
+        promotion_id:
+          type: string
+          nullable: true
+        code:
+          type: string
+          nullable: true
+        reason:
+          type: string
+          enum:
+            - not_started
+            - expired
+            - paused
+            - threshold_not_met
+            - scope_mismatch
+            - exclusive_conflict
+            - not_stackable
+            - invalid_rule
+            - promotion_excludes_coupon
+      required: [reason]
+
+    PromotionLineAllocation:
+      type: object
+      properties:
+        line_id:
+          type: string
+        sku_id:
+          type: string
+        base_amount_minor:
+          type: integer
+          format: int64
+        promotion_discount_minor:
+          type: integer
+          format: int64
+        after_promotion_amount_minor:
+          type: integer
+          format: int64
+      required: [sku_id, base_amount_minor, promotion_discount_minor, after_promotion_amount_minor]
+
+    PromotionQuoteResponse:
+      type: object
+      properties:
+        currency:
+          type: string
+        base_total_minor:
+          type: integer
+          format: int64
+        promotion_discount_minor:
+          type: integer
+          format: int64
+        after_promotion_total_minor:
+          type: integer
+          format: int64
+        coupon_stacking_allowed:
+          type: boolean
+        applied_promotions:
+          type: array
+          items:
+            $ref: '#/components/schemas/AppliedPromotion'
+        rejected_promotions:
+          type: array
+          items:
+            $ref: '#/components/schemas/RejectedPromotion'
+        line_allocations:
+          type: array
+          items:
+            $ref: '#/components/schemas/PromotionLineAllocation'
+        priced_at:
+          type: string
+          format: date-time
+      required:
+        - currency
+        - base_total_minor
+        - promotion_discount_minor
+        - after_promotion_total_minor
+        - coupon_stacking_allowed
+        - applied_promotions
+        - rejected_promotions
+        - line_allocations
+        - priced_at
+
+    PromotionAuditLog:
+      type: object
+      properties:
+        id:
+          type: string
+        promotion_id:
+          type: string
+        order_id:
+          type: string
+          nullable: true
+        action:
+          type: string
+        action_reason:
+          type: string
+          nullable: true
+        request_id:
+          type: string
+          nullable: true
+        created_by:
+          type: string
+          nullable: true
+        payload:
+          type: object
+          additionalProperties: true
+        created_at:
+          type: string
+          format: date-time
+
+    PromotionListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PromotionCampaign'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    PromotionAuditLogListResponse:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/PromotionAuditLog'
+        pagination:
+          $ref: '#/components/schemas/Pagination'
+
+    ApiEnvelopePromotionCampaign:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PromotionCampaign'
+
+    ApiEnvelopePromotionListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PromotionListResponse'
+
+    ApiEnvelopePromotionAuditLogListResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PromotionAuditLogListResponse'
+
+    ApiEnvelopePromotionQuoteResponse:
+      allOf:
+        - $ref: '#/components/schemas/ApiEnvelopeBase'
+        - type: object
+          properties:
+            data:
+              $ref: '#/components/schemas/PromotionQuoteResponse'

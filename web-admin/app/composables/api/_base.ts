@@ -56,8 +56,43 @@ export function getAuthToken(): string | undefined {
   return undefined;
 }
 
+const decodeBase64Url = (input: string) => {
+  if (!input) return "";
+  let output = input.replace(/-/g, "+").replace(/_/g, "/");
+  while (output.length % 4 !== 0) {
+    output += "=";
+  }
+  if (typeof atob === "function") {
+    return atob(output);
+  }
+  if (typeof globalThis !== "undefined" && (globalThis as any).Buffer) {
+    return (globalThis as any).Buffer.from(output, "base64").toString("utf-8");
+  }
+  return "";
+};
+
+const extractTenantUuidFromToken = (token?: string | null) => {
+  if (!token) return undefined;
+  const parts = token.split(".");
+  if (parts.length < 2) return undefined;
+  try {
+    const payload = JSON.parse(decodeBase64Url(parts[1]));
+    const candidate =
+      payload?.tid ??
+      payload?.tenant_uuid ??
+      payload?.tenantUuid ??
+      payload?.tenantID ??
+      payload?.tenantId;
+    if (typeof candidate === "string" && candidate.trim() !== "") {
+      return candidate.trim();
+    }
+  } catch (error) {
+    console.warn("[PowerXPlugin] failed to parse tenant uuid from token", error);
+  }
+  return undefined;
+};
+
 export function getTenantUuid(): string | undefined {
-  // TODO: 换成你的 Pinia/Cookie 逻辑
   if (typeof document !== "undefined") {
     const m = document.cookie.match(/(?:^|;\s*)tenant_uuid=([^;]+)/);
     if (m) return decodeURIComponent(m[1]);
@@ -65,7 +100,11 @@ export function getTenantUuid(): string | undefined {
   const cfg =
     typeof useRuntimeConfig === "function" ? useRuntimeConfig() : ({} as any);
   const publicCfg = cfg.public as any;
-  return publicCfg?.defaultTenantUuid || publicCfg?.defaultTenantId;
+  return (
+    publicCfg?.defaultTenantUuid ||
+    publicCfg?.defaultTenantId ||
+    extractTenantUuidFromToken(getAuthToken())
+  );
 }
 
 // 通用类型定义
