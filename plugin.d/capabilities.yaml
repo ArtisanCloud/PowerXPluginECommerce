@@ -1,9 +1,1479 @@
 capabilities:
   imports:
+    - contracts/capabilities/com.powerx.plugins.ecommerce.admin.security.advisory.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.admin.security.advisory.write.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.admin.security.audit.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.admin.security.consent.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.admin.security.consent.write.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.admin.security.lifecycle.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.admin.security.toolgrant.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.admin.security.toolgrant.write.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.after.sales.case.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.after.sales.case.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.after.sales.dashboard.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.after.sales.reverse.link.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.capability.management.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.capability.management.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.capability.management.write.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.channel.alert.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.channel.alert.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.channel.credential.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.channel.credential.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.channel.master.approve.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.channel.master.create.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.channel.master.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.channel.master.update.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.channel.note.create.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.channel.note.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.channel.strategy.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.channel.strategy.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.channel.sync.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.channel.sync.trigger.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.channel.task.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.channel.task.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.customer.addresses.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.customer.addresses.write.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.customer.delete.delete.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.customer.manage.write.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.customer.read.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.fulfillment.exception.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.fulfillment.exception.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.fulfillment.task.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.fulfillment.task.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.fulfillment.warehouse.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.fulfillment.warehouse.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.fulfillment.wave.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.fulfillment.wave.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.fulfillment.wave.strategy.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.fulfillment.wave.strategy.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.integration.approvals.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.integration.approvals.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.integration.dispatch.invoke.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.integration.grant.matrix.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.integration.grant.matrix.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.integration.secrets.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.integration.secrets.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.integration.webhooks.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.integration.webhooks.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.address.validation.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.address.validation.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.allocation.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.allocation.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.billing.case.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.billing.case.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.billing.export.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.billing.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.billing.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.capacity.forecast.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.capacity.forecast.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.carrier.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.carrier.profile.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.carrier.profile.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.carrier.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.compliance.kb.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.compliance.kb.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.control.tower.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.control.tower.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.crossborder.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.crossborder.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.customs.rule.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.customs.rule.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.eta.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.finance.risk.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.finance.risk.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.fulfillment.sandbox.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.fulfillment.sandbox.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.gateway.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.gateway.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.interwarehouse.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.interwarehouse.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.kpi.dashboard.export.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.kpi.dashboard.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.label.print.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.label.print.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.lastmile.recovery.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.lastmile.recovery.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.notification.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.notification.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.ops.automation.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.ops.automation.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.orchestration.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.orchestration.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.policy.orchestration.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.policy.orchestration.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.quality.audit.export.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.quality.audit.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.quality.audit.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.reconciliation.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.reconciliation.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.redelivery.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.redelivery.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.risk.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.risk.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.routing.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.routing.optimizer.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.routing.optimizer.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.routing.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.settlement.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.settlement.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.sla.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.slo.guard.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.slo.guard.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.template.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.template.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.tracking.root.cause.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.tracking.root.cause.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.tracking.sync.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.tracking.sync.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.waybill.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.waybill.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.logistics.webhook.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.marketplace.license.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.marketplace.license.purchase.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.marketplace.license.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.marketplace.listings.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.marketplace.listings.review.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.marketplace.listings.write.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.marketplace.recommendation.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.marketplace.recommendation.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.marketplace.revenue.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.marketplace.sla.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.marketplace.usage.ingest.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.marketplace.usage.view.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.membership.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.membership.write.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.operations.incident.command.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.operations.incident.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.operations.plugin.admin.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.operations.plugin.admin.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.operations.plugin.audit.export.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.operations.plugin.audit.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.operations.plugin.ops.execute.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.operations.plugin.ops.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.operations.sla.command.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.operations.sla.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.operations.sla.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.operations.support.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.operations.support.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.order.cancel.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.order.create.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.order.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.order.update.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.payments.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.payments.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.payments.refund.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.payments.risk.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.pricing.coupon.asset.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.pricing.coupon.issue.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.pricing.coupon.template.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.pricing.coupon.template.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.pricing.coupon.usage.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.pricing.pricebook.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.pricing.pricebook.publish.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.pricing.pricebook.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.pricing.promotion.audit.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.pricing.promotion.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.pricing.promotion.publish.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.pricing.promotion.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.product.category.import.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.product.category.import.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.product.category.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.product.category.mapping.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.product.category.mapping.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.product.category.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.product.category.template.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.product.category.template.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.product.sku.barcode.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.product.sku.bulk.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.product.sku.bulk.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.product.sku.channel.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.product.sku.channel.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.product.sku.inventory.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.product.sku.inventory.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.product.sku.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.product.sku.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.product.sku.serial.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.product.sku.serial.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.reverse.inspection.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.reverse.inspection.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.reverse.waybill.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.reverse.waybill.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.runtime.ops.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.runtime.ops.observe.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.runtime.ops.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.subscription.reconciliation.batch.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.subscription.reconciliation.batch.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.subscription.reconciliation.dashboard.export.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.subscription.reconciliation.dashboard.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.subscription.reconciliation.delta.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.subscription.reconciliation.delta.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.subscription.reconciliation.governance.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.subscription.reconciliation.task.manage.yaml
     - contracts/capabilities/com.powerx.plugins.ecommerce.template.create.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.template.prepare.yaml
   provides:
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.admin.security.advisory.read.yaml
+      id: com.powerx.plugins.ecommerce.admin.security.advisory.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.admin.security.advisory.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.admin.security.advisory.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.admin.security.advisory.write.yaml
+      id: com.powerx.plugins.ecommerce.admin.security.advisory.write
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.admin.security.advisory.write.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.admin.security.advisory.write.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.admin.security.audit.read.yaml
+      id: com.powerx.plugins.ecommerce.admin.security.audit.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.admin.security.audit.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.admin.security.audit.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.admin.security.consent.read.yaml
+      id: com.powerx.plugins.ecommerce.admin.security.consent.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.admin.security.consent.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.admin.security.consent.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.admin.security.consent.write.yaml
+      id: com.powerx.plugins.ecommerce.admin.security.consent.write
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.admin.security.consent.write.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.admin.security.consent.write.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.admin.security.lifecycle.read.yaml
+      id: com.powerx.plugins.ecommerce.admin.security.lifecycle.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.admin.security.lifecycle.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.admin.security.lifecycle.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.admin.security.toolgrant.read.yaml
+      id: com.powerx.plugins.ecommerce.admin.security.toolgrant.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.admin.security.toolgrant.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.admin.security.toolgrant.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.admin.security.toolgrant.write.yaml
+      id: com.powerx.plugins.ecommerce.admin.security.toolgrant.write
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.admin.security.toolgrant.write.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.admin.security.toolgrant.write.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.after.sales.case.manage.yaml
+      id: com.powerx.plugins.ecommerce.after.sales.case.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.after.sales.case.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.after.sales.case.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.after.sales.case.read.yaml
+      id: com.powerx.plugins.ecommerce.after.sales.case.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.after.sales.case.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.after.sales.case.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.after.sales.dashboard.read.yaml
+      id: com.powerx.plugins.ecommerce.after.sales.dashboard.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.after.sales.dashboard.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.after.sales.dashboard.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.after.sales.reverse.link.manage.yaml
+      id: com.powerx.plugins.ecommerce.after.sales.reverse.link.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.after.sales.reverse.link.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.after.sales.reverse.link.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.capability.management.manage.yaml
+      id: com.powerx.plugins.ecommerce.capability.management.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.capability.management.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.capability.management.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.capability.management.read.yaml
+      id: com.powerx.plugins.ecommerce.capability.management.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.capability.management.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.capability.management.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.capability.management.write.yaml
+      id: com.powerx.plugins.ecommerce.capability.management.write
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.capability.management.write.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.capability.management.write.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.channel.alert.manage.yaml
+      id: com.powerx.plugins.ecommerce.channel.alert.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.channel.alert.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.channel.alert.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.channel.alert.read.yaml
+      id: com.powerx.plugins.ecommerce.channel.alert.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.channel.alert.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.channel.alert.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.channel.credential.manage.yaml
+      id: com.powerx.plugins.ecommerce.channel.credential.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.channel.credential.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.channel.credential.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.channel.credential.read.yaml
+      id: com.powerx.plugins.ecommerce.channel.credential.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.channel.credential.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.channel.credential.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.channel.master.approve.yaml
+      id: com.powerx.plugins.ecommerce.channel.master.approve
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.channel.master.approve.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.channel.master.approve.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.channel.master.create.yaml
+      id: com.powerx.plugins.ecommerce.channel.master.create
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.channel.master.create.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.channel.master.create.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.channel.master.read.yaml
+      id: com.powerx.plugins.ecommerce.channel.master.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.channel.master.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.channel.master.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.channel.master.update.yaml
+      id: com.powerx.plugins.ecommerce.channel.master.update
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.channel.master.update.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.channel.master.update.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.channel.note.create.yaml
+      id: com.powerx.plugins.ecommerce.channel.note.create
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.channel.note.create.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.channel.note.create.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.channel.note.read.yaml
+      id: com.powerx.plugins.ecommerce.channel.note.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.channel.note.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.channel.note.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.channel.strategy.manage.yaml
+      id: com.powerx.plugins.ecommerce.channel.strategy.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.channel.strategy.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.channel.strategy.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.channel.strategy.read.yaml
+      id: com.powerx.plugins.ecommerce.channel.strategy.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.channel.strategy.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.channel.strategy.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.channel.sync.read.yaml
+      id: com.powerx.plugins.ecommerce.channel.sync.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.channel.sync.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.channel.sync.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.channel.sync.trigger.yaml
+      id: com.powerx.plugins.ecommerce.channel.sync.trigger
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.channel.sync.trigger.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.channel.sync.trigger.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.channel.task.manage.yaml
+      id: com.powerx.plugins.ecommerce.channel.task.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.channel.task.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.channel.task.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.channel.task.read.yaml
+      id: com.powerx.plugins.ecommerce.channel.task.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.channel.task.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.channel.task.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.customer.addresses.read.yaml
+      id: com.powerx.plugins.ecommerce.customer.addresses.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.customer.addresses.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.customer.addresses.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.customer.addresses.write.yaml
+      id: com.powerx.plugins.ecommerce.customer.addresses.write
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.customer.addresses.write.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.customer.addresses.write.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.customer.delete.delete.yaml
+      id: com.powerx.plugins.ecommerce.customer.delete.delete
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.customer.delete.delete.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.customer.delete.delete.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.customer.manage.write.yaml
+      id: com.powerx.plugins.ecommerce.customer.manage.write
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.customer.manage.write.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.customer.manage.write.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.customer.read.read.yaml
+      id: com.powerx.plugins.ecommerce.customer.read.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.customer.read.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.customer.read.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.fulfillment.exception.manage.yaml
+      id: com.powerx.plugins.ecommerce.fulfillment.exception.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.fulfillment.exception.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.fulfillment.exception.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.fulfillment.exception.read.yaml
+      id: com.powerx.plugins.ecommerce.fulfillment.exception.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.fulfillment.exception.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.fulfillment.exception.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.fulfillment.task.manage.yaml
+      id: com.powerx.plugins.ecommerce.fulfillment.task.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.fulfillment.task.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.fulfillment.task.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.fulfillment.task.read.yaml
+      id: com.powerx.plugins.ecommerce.fulfillment.task.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.fulfillment.task.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.fulfillment.task.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.fulfillment.warehouse.manage.yaml
+      id: com.powerx.plugins.ecommerce.fulfillment.warehouse.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.fulfillment.warehouse.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.fulfillment.warehouse.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.fulfillment.warehouse.read.yaml
+      id: com.powerx.plugins.ecommerce.fulfillment.warehouse.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.fulfillment.warehouse.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.fulfillment.warehouse.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.fulfillment.wave.manage.yaml
+      id: com.powerx.plugins.ecommerce.fulfillment.wave.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.fulfillment.wave.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.fulfillment.wave.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.fulfillment.wave.read.yaml
+      id: com.powerx.plugins.ecommerce.fulfillment.wave.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.fulfillment.wave.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.fulfillment.wave.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.fulfillment.wave.strategy.manage.yaml
+      id: com.powerx.plugins.ecommerce.fulfillment.wave.strategy.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.fulfillment.wave.strategy.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.fulfillment.wave.strategy.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.fulfillment.wave.strategy.read.yaml
+      id: com.powerx.plugins.ecommerce.fulfillment.wave.strategy.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.fulfillment.wave.strategy.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.fulfillment.wave.strategy.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.integration.approvals.manage.yaml
+      id: com.powerx.plugins.ecommerce.integration.approvals.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.integration.approvals.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.integration.approvals.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.integration.approvals.read.yaml
+      id: com.powerx.plugins.ecommerce.integration.approvals.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.integration.approvals.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.integration.approvals.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.integration.dispatch.invoke.yaml
+      id: com.powerx.plugins.ecommerce.integration.dispatch.invoke
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.integration.dispatch.invoke.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.integration.dispatch.invoke.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.integration.grant.matrix.manage.yaml
+      id: com.powerx.plugins.ecommerce.integration.grant.matrix.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.integration.grant.matrix.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.integration.grant.matrix.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.integration.grant.matrix.read.yaml
+      id: com.powerx.plugins.ecommerce.integration.grant.matrix.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.integration.grant.matrix.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.integration.grant.matrix.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.integration.secrets.manage.yaml
+      id: com.powerx.plugins.ecommerce.integration.secrets.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.integration.secrets.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.integration.secrets.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.integration.secrets.read.yaml
+      id: com.powerx.plugins.ecommerce.integration.secrets.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.integration.secrets.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.integration.secrets.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.integration.webhooks.manage.yaml
+      id: com.powerx.plugins.ecommerce.integration.webhooks.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.integration.webhooks.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.integration.webhooks.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.integration.webhooks.read.yaml
+      id: com.powerx.plugins.ecommerce.integration.webhooks.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.integration.webhooks.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.integration.webhooks.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.address.validation.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.address.validation.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.address.validation.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.address.validation.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.address.validation.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.address.validation.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.address.validation.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.address.validation.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.allocation.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.allocation.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.allocation.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.allocation.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.allocation.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.allocation.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.allocation.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.allocation.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.billing.case.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.billing.case.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.billing.case.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.billing.case.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.billing.case.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.billing.case.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.billing.case.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.billing.case.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.billing.export.yaml
+      id: com.powerx.plugins.ecommerce.logistics.billing.export
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.billing.export.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.billing.export.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.billing.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.billing.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.billing.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.billing.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.billing.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.billing.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.billing.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.billing.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.capacity.forecast.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.capacity.forecast.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.capacity.forecast.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.capacity.forecast.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.capacity.forecast.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.capacity.forecast.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.capacity.forecast.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.capacity.forecast.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.carrier.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.carrier.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.carrier.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.carrier.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.carrier.profile.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.carrier.profile.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.carrier.profile.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.carrier.profile.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.carrier.profile.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.carrier.profile.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.carrier.profile.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.carrier.profile.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.carrier.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.carrier.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.carrier.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.carrier.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.compliance.kb.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.compliance.kb.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.compliance.kb.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.compliance.kb.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.compliance.kb.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.compliance.kb.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.compliance.kb.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.compliance.kb.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.control.tower.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.control.tower.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.control.tower.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.control.tower.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.control.tower.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.control.tower.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.control.tower.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.control.tower.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.crossborder.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.crossborder.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.crossborder.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.crossborder.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.crossborder.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.crossborder.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.crossborder.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.crossborder.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.customs.rule.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.customs.rule.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.customs.rule.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.customs.rule.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.customs.rule.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.customs.rule.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.customs.rule.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.customs.rule.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.eta.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.eta.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.eta.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.eta.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.finance.risk.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.finance.risk.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.finance.risk.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.finance.risk.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.finance.risk.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.finance.risk.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.finance.risk.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.finance.risk.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.fulfillment.sandbox.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.fulfillment.sandbox.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.fulfillment.sandbox.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.fulfillment.sandbox.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.fulfillment.sandbox.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.fulfillment.sandbox.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.fulfillment.sandbox.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.fulfillment.sandbox.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.gateway.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.gateway.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.gateway.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.gateway.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.gateway.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.gateway.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.gateway.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.gateway.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.interwarehouse.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.interwarehouse.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.interwarehouse.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.interwarehouse.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.interwarehouse.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.interwarehouse.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.interwarehouse.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.interwarehouse.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.kpi.dashboard.export.yaml
+      id: com.powerx.plugins.ecommerce.logistics.kpi.dashboard.export
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.kpi.dashboard.export.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.kpi.dashboard.export.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.kpi.dashboard.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.kpi.dashboard.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.kpi.dashboard.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.kpi.dashboard.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.label.print.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.label.print.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.label.print.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.label.print.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.label.print.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.label.print.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.label.print.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.label.print.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.lastmile.recovery.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.lastmile.recovery.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.lastmile.recovery.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.lastmile.recovery.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.lastmile.recovery.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.lastmile.recovery.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.lastmile.recovery.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.lastmile.recovery.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.notification.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.notification.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.notification.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.notification.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.notification.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.notification.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.notification.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.notification.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.ops.automation.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.ops.automation.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.ops.automation.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.ops.automation.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.ops.automation.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.ops.automation.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.ops.automation.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.ops.automation.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.orchestration.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.orchestration.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.orchestration.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.orchestration.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.orchestration.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.orchestration.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.orchestration.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.orchestration.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.policy.orchestration.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.policy.orchestration.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.policy.orchestration.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.policy.orchestration.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.policy.orchestration.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.policy.orchestration.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.policy.orchestration.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.policy.orchestration.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.quality.audit.export.yaml
+      id: com.powerx.plugins.ecommerce.logistics.quality.audit.export
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.quality.audit.export.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.quality.audit.export.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.quality.audit.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.quality.audit.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.quality.audit.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.quality.audit.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.quality.audit.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.quality.audit.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.quality.audit.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.quality.audit.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.reconciliation.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.reconciliation.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.reconciliation.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.reconciliation.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.reconciliation.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.reconciliation.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.reconciliation.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.reconciliation.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.redelivery.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.redelivery.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.redelivery.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.redelivery.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.redelivery.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.redelivery.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.redelivery.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.redelivery.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.risk.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.risk.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.risk.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.risk.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.risk.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.risk.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.risk.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.risk.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.routing.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.routing.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.routing.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.routing.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.routing.optimizer.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.routing.optimizer.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.routing.optimizer.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.routing.optimizer.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.routing.optimizer.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.routing.optimizer.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.routing.optimizer.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.routing.optimizer.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.routing.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.routing.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.routing.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.routing.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.settlement.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.settlement.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.settlement.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.settlement.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.settlement.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.settlement.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.settlement.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.settlement.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.sla.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.sla.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.sla.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.sla.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.slo.guard.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.slo.guard.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.slo.guard.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.slo.guard.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.slo.guard.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.slo.guard.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.slo.guard.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.slo.guard.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.template.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.template.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.template.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.template.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.template.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.template.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.template.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.template.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.tracking.root.cause.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.tracking.root.cause.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.tracking.root.cause.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.tracking.root.cause.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.tracking.root.cause.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.tracking.root.cause.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.tracking.root.cause.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.tracking.root.cause.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.tracking.sync.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.tracking.sync.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.tracking.sync.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.tracking.sync.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.tracking.sync.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.tracking.sync.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.tracking.sync.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.tracking.sync.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.waybill.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.waybill.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.waybill.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.waybill.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.waybill.read.yaml
+      id: com.powerx.plugins.ecommerce.logistics.waybill.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.waybill.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.waybill.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.logistics.webhook.manage.yaml
+      id: com.powerx.plugins.ecommerce.logistics.webhook.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.logistics.webhook.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.logistics.webhook.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.marketplace.license.manage.yaml
+      id: com.powerx.plugins.ecommerce.marketplace.license.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.marketplace.license.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.marketplace.license.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.marketplace.license.purchase.yaml
+      id: com.powerx.plugins.ecommerce.marketplace.license.purchase
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.marketplace.license.purchase.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.marketplace.license.purchase.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.marketplace.license.read.yaml
+      id: com.powerx.plugins.ecommerce.marketplace.license.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.marketplace.license.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.marketplace.license.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.marketplace.listings.read.yaml
+      id: com.powerx.plugins.ecommerce.marketplace.listings.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.marketplace.listings.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.marketplace.listings.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.marketplace.listings.review.yaml
+      id: com.powerx.plugins.ecommerce.marketplace.listings.review
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.marketplace.listings.review.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.marketplace.listings.review.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.marketplace.listings.write.yaml
+      id: com.powerx.plugins.ecommerce.marketplace.listings.write
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.marketplace.listings.write.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.marketplace.listings.write.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.marketplace.recommendation.manage.yaml
+      id: com.powerx.plugins.ecommerce.marketplace.recommendation.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.marketplace.recommendation.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.marketplace.recommendation.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.marketplace.recommendation.read.yaml
+      id: com.powerx.plugins.ecommerce.marketplace.recommendation.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.marketplace.recommendation.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.marketplace.recommendation.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.marketplace.revenue.read.yaml
+      id: com.powerx.plugins.ecommerce.marketplace.revenue.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.marketplace.revenue.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.marketplace.revenue.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.marketplace.sla.read.yaml
+      id: com.powerx.plugins.ecommerce.marketplace.sla.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.marketplace.sla.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.marketplace.sla.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.marketplace.usage.ingest.yaml
+      id: com.powerx.plugins.ecommerce.marketplace.usage.ingest
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.marketplace.usage.ingest.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.marketplace.usage.ingest.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.marketplace.usage.view.yaml
+      id: com.powerx.plugins.ecommerce.marketplace.usage.view
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.marketplace.usage.view.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.marketplace.usage.view.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.membership.read.yaml
+      id: com.powerx.plugins.ecommerce.membership.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.membership.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.membership.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.membership.write.yaml
+      id: com.powerx.plugins.ecommerce.membership.write
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.membership.write.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.membership.write.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.operations.incident.command.yaml
+      id: com.powerx.plugins.ecommerce.operations.incident.command
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.operations.incident.command.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.operations.incident.command.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.operations.incident.read.yaml
+      id: com.powerx.plugins.ecommerce.operations.incident.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.operations.incident.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.operations.incident.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.operations.plugin.admin.manage.yaml
+      id: com.powerx.plugins.ecommerce.operations.plugin.admin.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.operations.plugin.admin.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.operations.plugin.admin.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.operations.plugin.admin.read.yaml
+      id: com.powerx.plugins.ecommerce.operations.plugin.admin.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.operations.plugin.admin.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.operations.plugin.admin.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.operations.plugin.audit.export.yaml
+      id: com.powerx.plugins.ecommerce.operations.plugin.audit.export
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.operations.plugin.audit.export.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.operations.plugin.audit.export.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.operations.plugin.audit.read.yaml
+      id: com.powerx.plugins.ecommerce.operations.plugin.audit.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.operations.plugin.audit.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.operations.plugin.audit.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.operations.plugin.ops.execute.yaml
+      id: com.powerx.plugins.ecommerce.operations.plugin.ops.execute
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.operations.plugin.ops.execute.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.operations.plugin.ops.execute.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.operations.plugin.ops.read.yaml
+      id: com.powerx.plugins.ecommerce.operations.plugin.ops.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.operations.plugin.ops.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.operations.plugin.ops.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.operations.sla.command.yaml
+      id: com.powerx.plugins.ecommerce.operations.sla.command
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.operations.sla.command.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.operations.sla.command.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.operations.sla.manage.yaml
+      id: com.powerx.plugins.ecommerce.operations.sla.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.operations.sla.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.operations.sla.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.operations.sla.read.yaml
+      id: com.powerx.plugins.ecommerce.operations.sla.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.operations.sla.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.operations.sla.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.operations.support.manage.yaml
+      id: com.powerx.plugins.ecommerce.operations.support.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.operations.support.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.operations.support.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.operations.support.read.yaml
+      id: com.powerx.plugins.ecommerce.operations.support.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.operations.support.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.operations.support.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.order.cancel.yaml
+      id: com.powerx.plugins.ecommerce.order.cancel
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.order.cancel.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.order.cancel.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.order.create.yaml
+      id: com.powerx.plugins.ecommerce.order.create
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.order.create.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.order.create.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.order.read.yaml
+      id: com.powerx.plugins.ecommerce.order.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.order.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.order.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.order.update.yaml
+      id: com.powerx.plugins.ecommerce.order.update
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.order.update.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.order.update.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.payments.manage.yaml
+      id: com.powerx.plugins.ecommerce.payments.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.payments.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.payments.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.payments.read.yaml
+      id: com.powerx.plugins.ecommerce.payments.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.payments.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.payments.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.payments.refund.yaml
+      id: com.powerx.plugins.ecommerce.payments.refund
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.payments.refund.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.payments.refund.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.payments.risk.yaml
+      id: com.powerx.plugins.ecommerce.payments.risk
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.payments.risk.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.payments.risk.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.pricing.coupon.asset.read.yaml
+      id: com.powerx.plugins.ecommerce.pricing.coupon.asset.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.pricing.coupon.asset.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.pricing.coupon.asset.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.pricing.coupon.issue.manage.yaml
+      id: com.powerx.plugins.ecommerce.pricing.coupon.issue.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.pricing.coupon.issue.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.pricing.coupon.issue.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.pricing.coupon.template.manage.yaml
+      id: com.powerx.plugins.ecommerce.pricing.coupon.template.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.pricing.coupon.template.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.pricing.coupon.template.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.pricing.coupon.template.read.yaml
+      id: com.powerx.plugins.ecommerce.pricing.coupon.template.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.pricing.coupon.template.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.pricing.coupon.template.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.pricing.coupon.usage.read.yaml
+      id: com.powerx.plugins.ecommerce.pricing.coupon.usage.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.pricing.coupon.usage.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.pricing.coupon.usage.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.pricing.pricebook.manage.yaml
+      id: com.powerx.plugins.ecommerce.pricing.pricebook.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.pricing.pricebook.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.pricing.pricebook.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.pricing.pricebook.publish.yaml
+      id: com.powerx.plugins.ecommerce.pricing.pricebook.publish
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.pricing.pricebook.publish.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.pricing.pricebook.publish.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.pricing.pricebook.read.yaml
+      id: com.powerx.plugins.ecommerce.pricing.pricebook.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.pricing.pricebook.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.pricing.pricebook.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.pricing.promotion.audit.read.yaml
+      id: com.powerx.plugins.ecommerce.pricing.promotion.audit.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.pricing.promotion.audit.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.pricing.promotion.audit.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.pricing.promotion.manage.yaml
+      id: com.powerx.plugins.ecommerce.pricing.promotion.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.pricing.promotion.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.pricing.promotion.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.pricing.promotion.publish.yaml
+      id: com.powerx.plugins.ecommerce.pricing.promotion.publish
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.pricing.promotion.publish.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.pricing.promotion.publish.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.pricing.promotion.read.yaml
+      id: com.powerx.plugins.ecommerce.pricing.promotion.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.pricing.promotion.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.pricing.promotion.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.product.category.import.manage.yaml
+      id: com.powerx.plugins.ecommerce.product.category.import.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.product.category.import.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.product.category.import.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.product.category.import.read.yaml
+      id: com.powerx.plugins.ecommerce.product.category.import.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.product.category.import.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.product.category.import.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.product.category.manage.yaml
+      id: com.powerx.plugins.ecommerce.product.category.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.product.category.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.product.category.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.product.category.mapping.manage.yaml
+      id: com.powerx.plugins.ecommerce.product.category.mapping.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.product.category.mapping.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.product.category.mapping.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.product.category.mapping.read.yaml
+      id: com.powerx.plugins.ecommerce.product.category.mapping.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.product.category.mapping.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.product.category.mapping.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.product.category.read.yaml
+      id: com.powerx.plugins.ecommerce.product.category.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.product.category.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.product.category.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.product.category.template.manage.yaml
+      id: com.powerx.plugins.ecommerce.product.category.template.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.product.category.template.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.product.category.template.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.product.category.template.read.yaml
+      id: com.powerx.plugins.ecommerce.product.category.template.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.product.category.template.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.product.category.template.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.product.sku.barcode.manage.yaml
+      id: com.powerx.plugins.ecommerce.product.sku.barcode.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.product.sku.barcode.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.product.sku.barcode.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.product.sku.bulk.manage.yaml
+      id: com.powerx.plugins.ecommerce.product.sku.bulk.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.product.sku.bulk.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.product.sku.bulk.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.product.sku.bulk.read.yaml
+      id: com.powerx.plugins.ecommerce.product.sku.bulk.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.product.sku.bulk.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.product.sku.bulk.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.product.sku.channel.manage.yaml
+      id: com.powerx.plugins.ecommerce.product.sku.channel.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.product.sku.channel.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.product.sku.channel.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.product.sku.channel.read.yaml
+      id: com.powerx.plugins.ecommerce.product.sku.channel.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.product.sku.channel.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.product.sku.channel.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.product.sku.inventory.manage.yaml
+      id: com.powerx.plugins.ecommerce.product.sku.inventory.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.product.sku.inventory.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.product.sku.inventory.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.product.sku.inventory.read.yaml
+      id: com.powerx.plugins.ecommerce.product.sku.inventory.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.product.sku.inventory.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.product.sku.inventory.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.product.sku.manage.yaml
+      id: com.powerx.plugins.ecommerce.product.sku.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.product.sku.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.product.sku.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.product.sku.read.yaml
+      id: com.powerx.plugins.ecommerce.product.sku.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.product.sku.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.product.sku.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.product.sku.serial.manage.yaml
+      id: com.powerx.plugins.ecommerce.product.sku.serial.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.product.sku.serial.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.product.sku.serial.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.product.sku.serial.read.yaml
+      id: com.powerx.plugins.ecommerce.product.sku.serial.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.product.sku.serial.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.product.sku.serial.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.reverse.inspection.manage.yaml
+      id: com.powerx.plugins.ecommerce.reverse.inspection.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.reverse.inspection.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.reverse.inspection.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.reverse.inspection.read.yaml
+      id: com.powerx.plugins.ecommerce.reverse.inspection.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.reverse.inspection.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.reverse.inspection.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.reverse.waybill.manage.yaml
+      id: com.powerx.plugins.ecommerce.reverse.waybill.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.reverse.waybill.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.reverse.waybill.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.reverse.waybill.read.yaml
+      id: com.powerx.plugins.ecommerce.reverse.waybill.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.reverse.waybill.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.reverse.waybill.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.runtime.ops.manage.yaml
+      id: com.powerx.plugins.ecommerce.runtime.ops.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.runtime.ops.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.runtime.ops.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.runtime.ops.observe.yaml
+      id: com.powerx.plugins.ecommerce.runtime.ops.observe
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.runtime.ops.observe.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.runtime.ops.observe.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.runtime.ops.read.yaml
+      id: com.powerx.plugins.ecommerce.runtime.ops.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.runtime.ops.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.runtime.ops.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.subscription.reconciliation.batch.manage.yaml
+      id: com.powerx.plugins.ecommerce.subscription.reconciliation.batch.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.subscription.reconciliation.batch.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.subscription.reconciliation.batch.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.subscription.reconciliation.batch.read.yaml
+      id: com.powerx.plugins.ecommerce.subscription.reconciliation.batch.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.subscription.reconciliation.batch.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.subscription.reconciliation.batch.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.subscription.reconciliation.dashboard.export.yaml
+      id: com.powerx.plugins.ecommerce.subscription.reconciliation.dashboard.export
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.subscription.reconciliation.dashboard.export.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.subscription.reconciliation.dashboard.export.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.subscription.reconciliation.dashboard.read.yaml
+      id: com.powerx.plugins.ecommerce.subscription.reconciliation.dashboard.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.subscription.reconciliation.dashboard.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.subscription.reconciliation.dashboard.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.subscription.reconciliation.delta.manage.yaml
+      id: com.powerx.plugins.ecommerce.subscription.reconciliation.delta.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.subscription.reconciliation.delta.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.subscription.reconciliation.delta.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.subscription.reconciliation.delta.read.yaml
+      id: com.powerx.plugins.ecommerce.subscription.reconciliation.delta.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.subscription.reconciliation.delta.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.subscription.reconciliation.delta.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.subscription.reconciliation.governance.manage.yaml
+      id: com.powerx.plugins.ecommerce.subscription.reconciliation.governance.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.subscription.reconciliation.governance.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.subscription.reconciliation.governance.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.subscription.reconciliation.task.manage.yaml
+      id: com.powerx.plugins.ecommerce.subscription.reconciliation.task.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.subscription.reconciliation.task.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.subscription.reconciliation.task.manage.json
+      version: 1.0.0
     - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.template.create.yaml
       id: com.powerx.plugins.ecommerce.template.create
+      schemas:
+        input: ""
+        output: ""
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.template.prepare.yaml
+      id: com.powerx.plugins.ecommerce.template.prepare
       schemas:
         input: ""
         output: ""

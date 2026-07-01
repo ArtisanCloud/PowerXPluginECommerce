@@ -108,6 +108,9 @@
 - [X] T052 [US2] 将促销后金额传递给优惠券计算 `backend/internal/services/admin/order/coupon_mapper.go`
 - [X] T053 [US2] 在优惠券互斥路径返回 `promotion_excludes_coupon` `backend/internal/services/admin/coupon/quote_service.go`
 - [X] T054 [US2] 保证未命中促销订单金额不变并补回归路径 `backend/internal/services/admin/order/service.go`
+- [X] T054a [US2] 扩展小程序订单 API 类型与促销试算调用 `mini-app/src/services/miniapp-order.ts`
+- [X] T054b [US2] 在小程序确认订单页接入促销试算并展示自动促销优惠、已享活动和促销后合计 `mini-app/src/pages/order/confirm.vue`
+- [X] T054c [US2] 在小程序下单服务端重新计算促销并以服务端结果更新订单金额 `backend/internal/services/miniapp/order/service.go`
 
 **Checkpoint**: US2 可独立验证，促销进入交易金额链路
 
@@ -135,6 +138,10 @@
 - [X] T064 [US3] 为 quote 命中和拒绝写入聚合审计 `backend/internal/services/admin/promotion/quote_service.go`
 - [X] T065 [US3] 在管理端订单详情展示促销优惠与分摊信息 `web-admin/app/pages/market/orders/[id].vue`
 - [X] T066 [US3] 在促销页面提供按规则查看审计日志的抽屉 `web-admin/app/pages/pricing/promotions.vue`
+- [X] T066a [US3] 在小程序订单查询服务加载促销快照并返回促销摘要 `backend/internal/services/miniapp/order/query.go`、`backend/internal/services/miniapp/order/types.go`
+- [X] T066b [US3] 增加小程序订单促销快照 mapper `backend/internal/services/miniapp/order/promotion_mapper.go`
+- [X] T066c [US3] 在小程序订单详情页展示自动促销优惠和已享活动 `mini-app/src/pages/order/detail.vue`
+- [X] T066d [US3] 补充小程序订单服务测试 fixture，覆盖促销快照表结构 `backend/internal/services/miniapp/order/service_test.go`
 
 **Checkpoint**: 全量用户故事独立可测，历史订单促销解释闭环完成
 
@@ -156,6 +163,10 @@
 - [X] T076 [P] 增加促销索引命中与查询计划校验 `backend/internal/entity/repository/promotion/query_index_validation_test.go`
 - [X] T077 执行后端目标测试并修复失败 `backend/`
 - [X] T078 执行前端 lint/build 并修复失败 `web-admin/`
+- [ ] T079 执行小程序 H5 build 与类型检查，记录既有失败和促销链路结果 `mini-app/`
+- [ ] T080 在真实页面完成小程序确认订单到订单详情的手工验证，确认促销金额、快照和展示一致
+- [ ] T081 [P] 增强商品详情页活动提示 `mini-app/src/pages/product/detail.vue`
+- [ ] T082 [P] 增强购物车页促销提示、预计优惠和凑单提醒 `mini-app/src/pages/cart/index.vue`
 
 ---
 

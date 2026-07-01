@@ -1,0 +1,30 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.logistics.policy.orchestration.read.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.logistics.policy.orchestration.read.json
+description: com.powerx.plugins.ecommerce:logistics.policy_orchestration read capability
+id: com.powerx.plugins.ecommerce.logistics.policy.orchestration.read
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/policy-orchestration/conflicts/preview
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/policy-orchestration/flows
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/policy-orchestration/flows/:id/versions
+    source:
+        action: read
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:logistics.policy_orchestration
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.logistics.policy.orchestration.read.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.logistics.policy.orchestration.read.json
+rbac:
+    actions:
+        - read
+    resource: com.powerx.plugins.ecommerce:logistics.policy_orchestration
+status: active
+type: API
+version: 1.0.0

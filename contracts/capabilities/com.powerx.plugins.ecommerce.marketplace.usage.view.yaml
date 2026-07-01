@@ -1,0 +1,28 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.marketplace.usage.view.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.marketplace.usage.view.json
+description: marketplace.usage view capability
+id: com.powerx.plugins.ecommerce.marketplace.usage.view
+metadata:
+    protocols:
+        rest:
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/marketplace/usage/tenants/:tenantId/licenses/:licenseId/metrics
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/marketplace/usage/tenants/*/licenses/*/metrics
+    source:
+        action: view
+        generated_from: route_rbac
+        resource: marketplace.usage
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.marketplace.usage.view.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.marketplace.usage.view.json
+rbac:
+    actions:
+        - view
+    resource: marketplace.usage
+status: active
+type: API
+version: 1.0.0

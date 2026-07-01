@@ -1,0 +1,26 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.after.sales.reverse.link.manage.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.after.sales.reverse.link.manage.json
+description: com.powerx.plugins.ecommerce:after_sales.reverse_link manage capability
+id: com.powerx.plugins.ecommerce.after.sales.reverse.link.manage
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/after-sales/cases/:id/reverse-logistics
+    source:
+        action: manage
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:after_sales.reverse_link
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.after.sales.reverse.link.manage.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.after.sales.reverse.link.manage.json
+rbac:
+    actions:
+        - manage
+    resource: com.powerx.plugins.ecommerce:after_sales.reverse_link
+status: active
+type: API
+version: 1.0.0

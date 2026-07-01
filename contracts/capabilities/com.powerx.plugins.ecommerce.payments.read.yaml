@@ -1,0 +1,44 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.payments.read.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.payments.read.json
+description: com.powerx.plugins.ecommerce:payments read capability
+id: com.powerx.plugins.ecommerce.payments.read
+metadata:
+    protocols:
+        rest:
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/manual-payments
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/manual-payments/logs
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/providers
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/providers/:id
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/reconciliations
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/reconciliations/:id/items
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/split-results
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/split-rules
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/transactions
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/transactions/:id
+    source:
+        action: read
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:payments
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.payments.read.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.payments.read.json
+rbac:
+    actions:
+        - read
+    resource: com.powerx.plugins.ecommerce:payments
+status: active
+type: API
+version: 1.0.0

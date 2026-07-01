@@ -1,0 +1,40 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.runtime.ops.manage.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.runtime.ops.manage.json
+description: runtime.ops manage capability
+id: com.powerx.plugins.ecommerce.runtime.ops.manage
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/runtime/bootstrap
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/runtime/internal/event-fabric/topics
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/runtime/internal/ws-bus/grant
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/runtime/internal/ws-bus/publish
+            - method: PUT
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/runtime/logging/policy
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/runtime/logging/probe
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/runtime/quota/overrides
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/runtime/sessions/register
+    source:
+        action: manage
+        generated_from: route_rbac
+        resource: runtime.ops
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.runtime.ops.manage.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.runtime.ops.manage.json
+rbac:
+    actions:
+        - manage
+    resource: runtime.ops
+status: active
+type: API
+version: 1.0.0

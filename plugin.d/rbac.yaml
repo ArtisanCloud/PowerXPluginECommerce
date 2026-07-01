@@ -63,6 +63,173 @@ permissions:
       - read
     resource: com.powerx.plugins.ecommerce:channel.task
   - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:fulfillment.exception
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:fulfillment.task
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:fulfillment.warehouse
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:fulfillment.wave
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:fulfillment.wave.strategy
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.address_validation
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.allocation
+  - actions:
+      - export
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.billing
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.billing.case
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.capacity_forecast
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.carrier
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.carrier_profile
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.compliance_kb
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.control_tower
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.crossborder
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.customs_rule
+  - actions:
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.eta
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.finance_risk
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.fulfillment_sandbox
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.gateway
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.interwarehouse
+  - actions:
+      - export
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.kpi_dashboard
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.label_print
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.lastmile_recovery
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.notification
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.ops_automation
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.orchestration
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.policy_orchestration
+  - actions:
+      - export
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.quality_audit
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.reconciliation
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.redelivery
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.risk
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.routing
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.routing_optimizer
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.settlement
+  - actions:
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.sla
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.slo_guard
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.template
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.tracking_root_cause
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.tracking_sync
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:logistics.waybill
+  - actions:
+      - manage
+    resource: com.powerx.plugins.ecommerce:logistics.webhook
+  - actions:
       - read
       - write
     resource: com.powerx.plugins.ecommerce:membership
@@ -96,6 +263,14 @@ permissions:
       - publish
       - read
     resource: com.powerx.plugins.ecommerce:pricing.pricebook
+  - actions:
+      - manage
+      - publish
+      - read
+    resource: com.powerx.plugins.ecommerce:pricing.promotion
+  - actions:
+      - read
+    resource: com.powerx.plugins.ecommerce:pricing.promotion.audit
   - actions:
       - manage
       - read
@@ -135,6 +310,32 @@ permissions:
       - manage
       - read
     resource: com.powerx.plugins.ecommerce:product.sku.serial
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:reverse.inspection
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:reverse.waybill
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:subscription.reconciliation.batch
+  - actions:
+      - export
+      - read
+    resource: com.powerx.plugins.ecommerce:subscription.reconciliation.dashboard
+  - actions:
+      - manage
+      - read
+    resource: com.powerx.plugins.ecommerce:subscription.reconciliation.delta
+  - actions:
+      - manage
+    resource: com.powerx.plugins.ecommerce:subscription.reconciliation.governance
+  - actions:
+      - manage
+    resource: com.powerx.plugins.ecommerce:subscription.reconciliation.task
   - actions:
       - manage
       - read
@@ -291,6 +492,173 @@ rbac:
         - read
       resource: com.powerx.plugins.ecommerce:channel.task
     - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:fulfillment.exception
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:fulfillment.task
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:fulfillment.warehouse
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:fulfillment.wave
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:fulfillment.wave.strategy
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.address_validation
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.allocation
+    - actions:
+        - export
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.billing
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.billing.case
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.capacity_forecast
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.carrier
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.carrier_profile
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.compliance_kb
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.control_tower
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.crossborder
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.customs_rule
+    - actions:
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.eta
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.finance_risk
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.fulfillment_sandbox
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.gateway
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.interwarehouse
+    - actions:
+        - export
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.kpi_dashboard
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.label_print
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.lastmile_recovery
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.notification
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.ops_automation
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.orchestration
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.policy_orchestration
+    - actions:
+        - export
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.quality_audit
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.reconciliation
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.redelivery
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.risk
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.routing
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.routing_optimizer
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.settlement
+    - actions:
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.sla
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.slo_guard
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.template
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.tracking_root_cause
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.tracking_sync
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:logistics.waybill
+    - actions:
+        - manage
+      resource: com.powerx.plugins.ecommerce:logistics.webhook
+    - actions:
         - read
         - write
       resource: com.powerx.plugins.ecommerce:membership
@@ -324,6 +692,14 @@ rbac:
         - publish
         - read
       resource: com.powerx.plugins.ecommerce:pricing.pricebook
+    - actions:
+        - manage
+        - publish
+        - read
+      resource: com.powerx.plugins.ecommerce:pricing.promotion
+    - actions:
+        - read
+      resource: com.powerx.plugins.ecommerce:pricing.promotion.audit
     - actions:
         - manage
         - read
@@ -363,6 +739,32 @@ rbac:
         - manage
         - read
       resource: com.powerx.plugins.ecommerce:product.sku.serial
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:reverse.inspection
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:reverse.waybill
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:subscription.reconciliation.batch
+    - actions:
+        - export
+        - read
+      resource: com.powerx.plugins.ecommerce:subscription.reconciliation.dashboard
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:subscription.reconciliation.delta
+    - actions:
+        - manage
+      resource: com.powerx.plugins.ecommerce:subscription.reconciliation.governance
+    - actions:
+        - manage
+      resource: com.powerx.plugins.ecommerce:subscription.reconciliation.task
     - actions:
         - manage
         - read
@@ -843,6 +1245,91 @@ routes:
         action: read
         resource: operations.plugin.ops
     - method: GET
+      path: /admin/fulfillment/exceptions
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:fulfillment.exception
+    - method: POST
+      path: /admin/fulfillment/exceptions
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:fulfillment.exception
+    - method: GET
+      path: /admin/fulfillment/tasks
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:fulfillment.task
+    - method: POST
+      path: /admin/fulfillment/tasks
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:fulfillment.task
+    - method: PATCH
+      path: /admin/fulfillment/tasks/:id/complete
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:fulfillment.task
+    - method: GET
+      path: /admin/fulfillment/warehouse/outbounds
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:fulfillment.warehouse
+    - method: POST
+      path: /admin/fulfillment/warehouse/outbounds
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:fulfillment.warehouse
+    - method: POST
+      path: /admin/fulfillment/warehouse/outbounds/:id/execute
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:fulfillment.warehouse
+    - method: POST
+      path: /admin/fulfillment/warehouse/outbounds/:id/rollback
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:fulfillment.warehouse
+    - method: GET
+      path: /admin/fulfillment/wave-strategies
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:fulfillment.wave.strategy
+    - method: POST
+      path: /admin/fulfillment/wave-strategies
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:fulfillment.wave.strategy
+    - method: POST
+      path: /admin/fulfillment/wave-strategies/preview
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:fulfillment.wave.strategy
+    - method: GET
+      path: /admin/fulfillment/waves
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:fulfillment.wave
+    - method: POST
+      path: /admin/fulfillment/waves
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:fulfillment.wave
+    - method: GET
+      path: /admin/fulfillment/waves/:id
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:fulfillment.wave
+    - method: PATCH
+      path: /admin/fulfillment/waves/:id/advance
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:fulfillment.wave
+    - method: PATCH
+      path: /admin/fulfillment/waves/:id/tasks/:task_id/reassign
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:fulfillment.wave
+    - method: GET
       path: /admin/integration/approvals
       permission:
         action: read
@@ -922,6 +1409,871 @@ routes:
       permission:
         action: manage
         resource: integration.webhooks
+    - method: POST
+      path: /admin/logistics/address-validation/check
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.address_validation
+    - method: GET
+      path: /admin/logistics/address-validation/records
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.address_validation
+    - method: POST
+      path: /admin/logistics/allocation/allocate
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.allocation
+    - method: GET
+      path: /admin/logistics/allocation/forecasts
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.capacity_forecast
+    - method: POST
+      path: /admin/logistics/allocation/forecasts/:id/apply
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.capacity_forecast
+    - method: POST
+      path: /admin/logistics/allocation/forecasts/generate
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.capacity_forecast
+    - method: GET
+      path: /admin/logistics/allocation/interwarehouse/candidates
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.interwarehouse
+    - method: POST
+      path: /admin/logistics/allocation/interwarehouse/confirm
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.interwarehouse
+    - method: POST
+      path: /admin/logistics/allocation/interwarehouse/suggest
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.interwarehouse
+    - method: POST
+      path: /admin/logistics/allocation/override
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.allocation
+    - method: GET
+      path: /admin/logistics/allocation/plans
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.allocation
+    - method: POST
+      path: /admin/logistics/allocation/plans
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.allocation
+    - method: PATCH
+      path: /admin/logistics/allocation/plans/:id
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.allocation
+    - method: GET
+      path: /admin/logistics/billing/cases
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.billing.case
+    - method: POST
+      path: /admin/logistics/billing/cases
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.billing.case
+    - method: PATCH
+      path: /admin/logistics/billing/cases/:id/transition
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.billing.case
+    - method: GET
+      path: /admin/logistics/billing/export
+      permission:
+        action: export
+        resource: com.powerx.plugins.ecommerce:logistics.billing
+    - method: GET
+      path: /admin/logistics/billing/finance-risks
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.finance_risk
+    - method: POST
+      path: /admin/logistics/billing/finance-risks/:id/actions
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.finance_risk
+    - method: GET
+      path: /admin/logistics/billing/finance-risks/audits
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.finance_risk
+    - method: POST
+      path: /admin/logistics/billing/finance-risks/evaluate
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.finance_risk
+    - method: GET
+      path: /admin/logistics/billing/summary
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.billing
+    - method: GET
+      path: /admin/logistics/carriers
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.carrier
+    - method: POST
+      path: /admin/logistics/carriers
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.carrier
+    - method: PATCH
+      path: /admin/logistics/carriers/:id
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.carrier
+    - method: POST
+      path: /admin/logistics/carriers/:id/test
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.carrier
+    - method: GET
+      path: /admin/logistics/carriers/profiles
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.carrier_profile
+    - method: POST
+      path: /admin/logistics/carriers/profiles/:id/confirm-rating
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.carrier_profile
+    - method: POST
+      path: /admin/logistics/carriers/profiles/:id/restore
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.carrier_profile
+    - method: POST
+      path: /admin/logistics/carriers/profiles/:id/retire
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.carrier_profile
+    - method: POST
+      path: /admin/logistics/carriers/profiles/evaluate
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.carrier_profile
+    - method: GET
+      path: /admin/logistics/control-tower/drilldown
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.control_tower
+    - method: GET
+      path: /admin/logistics/control-tower/overview
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.control_tower
+    - method: GET
+      path: /admin/logistics/control-tower/subscriptions
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.control_tower
+    - method: POST
+      path: /admin/logistics/control-tower/subscriptions
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.control_tower
+    - method: PATCH
+      path: /admin/logistics/control-tower/subscriptions/:id
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.control_tower
+    - method: GET
+      path: /admin/logistics/crossborder/documents
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.crossborder
+    - method: POST
+      path: /admin/logistics/crossborder/documents
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.crossborder
+    - method: PATCH
+      path: /admin/logistics/crossborder/documents/:id
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.crossborder
+    - method: POST
+      path: /admin/logistics/crossborder/tax-quote
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.crossborder
+    - method: GET
+      path: /admin/logistics/crossborder/tracking-maps
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.crossborder
+    - method: POST
+      path: /admin/logistics/crossborder/tracking-maps
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.crossborder
+    - method: PATCH
+      path: /admin/logistics/crossborder/tracking-maps/:id
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.crossborder
+    - method: POST
+      path: /admin/logistics/crossborder/tracking-maps/normalize
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.crossborder
+    - method: POST
+      path: /admin/logistics/customs/compliance-kb/:id/publish
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.compliance_kb
+    - method: POST
+      path: /admin/logistics/customs/compliance-kb/diff
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.compliance_kb
+    - method: POST
+      path: /admin/logistics/customs/compliance-kb/sync
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.compliance_kb
+    - method: GET
+      path: /admin/logistics/customs/compliance-kb/versions
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.compliance_kb
+    - method: POST
+      path: /admin/logistics/customs/precheck
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.customs_rule
+    - method: GET
+      path: /admin/logistics/customs/rule-packs
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.customs_rule
+    - method: POST
+      path: /admin/logistics/customs/rule-packs
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.customs_rule
+    - method: PATCH
+      path: /admin/logistics/customs/rule-packs/:id
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.customs_rule
+    - method: GET
+      path: /admin/logistics/customs/rule-packs/:id/versions
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.customs_rule
+    - method: POST
+      path: /admin/logistics/customs/rule-packs/:id/versions
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.customs_rule
+    - method: GET
+      path: /admin/logistics/eta
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.eta
+    - method: GET
+      path: /admin/logistics/eta/:waybill_id
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.eta
+    - method: POST
+      path: /admin/logistics/exceptions/orchestration/execute
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.orchestration
+    - method: GET
+      path: /admin/logistics/exceptions/orchestration/rules
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.orchestration
+    - method: POST
+      path: /admin/logistics/exceptions/orchestration/rules
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.orchestration
+    - method: PATCH
+      path: /admin/logistics/exceptions/orchestration/rules/:id
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.orchestration
+    - method: GET
+      path: /admin/logistics/exceptions/orchestration/runs
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.orchestration
+    - method: GET
+      path: /admin/logistics/gateway/cost-alerts
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.gateway
+    - method: GET
+      path: /admin/logistics/gateway/costs
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.gateway
+    - method: GET
+      path: /admin/logistics/gateway/failures
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.gateway
+    - method: POST
+      path: /admin/logistics/gateway/failures/:id/compensate
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.gateway
+    - method: POST
+      path: /admin/logistics/gateway/failures/ingest
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.gateway
+    - method: GET
+      path: /admin/logistics/gateway/health
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.gateway
+    - method: GET
+      path: /admin/logistics/kpi-dashboard/drilldown
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.kpi_dashboard
+    - method: GET
+      path: /admin/logistics/kpi-dashboard/export
+      permission:
+        action: export
+        resource: com.powerx.plugins.ecommerce:logistics.kpi_dashboard
+    - method: GET
+      path: /admin/logistics/kpi-dashboard/overview
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.kpi_dashboard
+    - method: GET
+      path: /admin/logistics/kpi-dashboard/trends
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.kpi_dashboard
+    - method: GET
+      path: /admin/logistics/labels/prints
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.label_print
+    - method: POST
+      path: /admin/logistics/labels/prints
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.label_print
+    - method: POST
+      path: /admin/logistics/labels/prints/retry
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.label_print
+    - method: POST
+      path: /admin/logistics/lastmile-recovery/execute
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.lastmile_recovery
+    - method: GET
+      path: /admin/logistics/lastmile-recovery/rules
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.lastmile_recovery
+    - method: POST
+      path: /admin/logistics/lastmile-recovery/rules
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.lastmile_recovery
+    - method: PATCH
+      path: /admin/logistics/lastmile-recovery/rules/:id
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.lastmile_recovery
+    - method: GET
+      path: /admin/logistics/lastmile-recovery/runs
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.lastmile_recovery
+    - method: POST
+      path: /admin/logistics/lastmile-recovery/runs/:id/takeover
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.lastmile_recovery
+    - method: GET
+      path: /admin/logistics/notifications/records
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.notification
+    - method: POST
+      path: /admin/logistics/notifications/records/:id/retry
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.notification
+    - method: POST
+      path: /admin/logistics/notifications/send
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.notification
+    - method: GET
+      path: /admin/logistics/notifications/templates
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.notification
+    - method: POST
+      path: /admin/logistics/notifications/templates
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.notification
+    - method: POST
+      path: /admin/logistics/ops-automation/evaluate
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.ops_automation
+    - method: GET
+      path: /admin/logistics/ops-automation/policies
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.ops_automation
+    - method: POST
+      path: /admin/logistics/ops-automation/policies
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.ops_automation
+    - method: PATCH
+      path: /admin/logistics/ops-automation/policies/:id
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.ops_automation
+    - method: GET
+      path: /admin/logistics/ops-automation/runs
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.ops_automation
+    - method: POST
+      path: /admin/logistics/ops-automation/runs/:id/takeover
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.ops_automation
+    - method: POST
+      path: /admin/logistics/policy-orchestration/conflicts/preview
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.policy_orchestration
+    - method: GET
+      path: /admin/logistics/policy-orchestration/flows
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.policy_orchestration
+    - method: POST
+      path: /admin/logistics/policy-orchestration/flows
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.policy_orchestration
+    - method: PATCH
+      path: /admin/logistics/policy-orchestration/flows/:id
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.policy_orchestration
+    - method: POST
+      path: /admin/logistics/policy-orchestration/flows/:id/publish
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.policy_orchestration
+    - method: POST
+      path: /admin/logistics/policy-orchestration/flows/:id/rollback
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.policy_orchestration
+    - method: GET
+      path: /admin/logistics/policy-orchestration/flows/:id/versions
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.policy_orchestration
+    - method: GET
+      path: /admin/logistics/quality-reports
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.quality_audit
+    - method: GET
+      path: /admin/logistics/quality-reports/:id
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.quality_audit
+    - method: GET
+      path: /admin/logistics/quality-reports/export
+      permission:
+        action: export
+        resource: com.powerx.plugins.ecommerce:logistics.quality_audit
+    - method: POST
+      path: /admin/logistics/quality-reports/generate
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.quality_audit
+    - method: GET
+      path: /admin/logistics/reconciliation/batches
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.reconciliation
+    - method: POST
+      path: /admin/logistics/reconciliation/batches
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.reconciliation
+    - method: GET
+      path: /admin/logistics/reconciliation/cases
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.reconciliation
+    - method: POST
+      path: /admin/logistics/reconciliation/cases/:id/handle
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.reconciliation
+    - method: GET
+      path: /admin/logistics/reconciliation/records
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.reconciliation
+    - method: GET
+      path: /admin/logistics/redelivery/tasks
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.redelivery
+    - method: POST
+      path: /admin/logistics/redelivery/tasks/:id/address
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.redelivery
+    - method: POST
+      path: /admin/logistics/redelivery/tasks/:id/close
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.redelivery
+    - method: POST
+      path: /admin/logistics/redelivery/tasks/:id/redispatch
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.redelivery
+    - method: POST
+      path: /admin/logistics/redelivery/tasks/initiate
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.redelivery
+    - method: GET
+      path: /admin/logistics/risk/blacklist
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.risk
+    - method: POST
+      path: /admin/logistics/risk/blacklist
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.risk
+    - method: PATCH
+      path: /admin/logistics/risk/blacklist/:id
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.risk
+    - method: POST
+      path: /admin/logistics/risk/evaluate
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.risk
+    - method: GET
+      path: /admin/logistics/risk/hits
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.risk
+    - method: POST
+      path: /admin/logistics/risk/hits/:id/release
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.risk
+    - method: GET
+      path: /admin/logistics/risk/rules
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.risk
+    - method: POST
+      path: /admin/logistics/risk/rules
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.risk
+    - method: PATCH
+      path: /admin/logistics/risk/rules/:id
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.risk
+    - method: POST
+      path: /admin/logistics/routing/optimizer/simulate
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.routing_optimizer
+    - method: GET
+      path: /admin/logistics/routing/optimizer/strategy
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.routing_optimizer
+    - method: POST
+      path: /admin/logistics/routing/optimizer/strategy
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.routing_optimizer
+    - method: POST
+      path: /admin/logistics/routing/preview
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.routing
+    - method: GET
+      path: /admin/logistics/routing/rules
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.routing
+    - method: POST
+      path: /admin/logistics/routing/rules
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.routing
+    - method: DELETE
+      path: /admin/logistics/routing/rules/:id
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.routing
+    - method: PATCH
+      path: /admin/logistics/routing/rules/:id
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.routing
+    - method: POST
+      path: /admin/logistics/sandbox/compare
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.fulfillment_sandbox
+    - method: POST
+      path: /admin/logistics/sandbox/run
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.fulfillment_sandbox
+    - method: GET
+      path: /admin/logistics/sandbox/runs
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.fulfillment_sandbox
+    - method: GET
+      path: /admin/logistics/sandbox/scenarios
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.fulfillment_sandbox
+    - method: POST
+      path: /admin/logistics/sandbox/scenarios
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.fulfillment_sandbox
+    - method: PATCH
+      path: /admin/logistics/sandbox/scenarios/:id
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.fulfillment_sandbox
+    - method: GET
+      path: /admin/logistics/settlement/batches
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.settlement
+    - method: POST
+      path: /admin/logistics/settlement/batches
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.settlement
+    - method: POST
+      path: /admin/logistics/settlement/batches/:id/confirm
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.settlement
+    - method: GET
+      path: /admin/logistics/settlement/diffs
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.settlement
+    - method: POST
+      path: /admin/logistics/settlement/diffs/:id/handle
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.settlement
+    - method: GET
+      path: /admin/logistics/sla/dashboard
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.sla
+    - method: POST
+      path: /admin/logistics/slo-guard/evaluate
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.slo_guard
+    - method: GET
+      path: /admin/logistics/slo-guard/policies
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.slo_guard
+    - method: POST
+      path: /admin/logistics/slo-guard/policies
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.slo_guard
+    - method: PATCH
+      path: /admin/logistics/slo-guard/policies/:id
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.slo_guard
+    - method: POST
+      path: /admin/logistics/slo-guard/policies/:id/release
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.slo_guard
+    - method: GET
+      path: /admin/logistics/slo-guard/status
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.slo_guard
+    - method: GET
+      path: /admin/logistics/templates
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.template
+    - method: POST
+      path: /admin/logistics/templates
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.template
+    - method: PATCH
+      path: /admin/logistics/templates/:id
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.template
+    - method: POST
+      path: /admin/logistics/templates/:id/publish
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.template
+    - method: POST
+      path: /admin/logistics/templates/:id/quote
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.template
+    - method: POST
+      path: /admin/logistics/tracking-root-causes/:id/handle
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.tracking_root_cause
+    - method: POST
+      path: /admin/logistics/tracking-root-causes/analyze
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.tracking_root_cause
+    - method: GET
+      path: /admin/logistics/tracking-root-causes/items
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.tracking_root_cause
+    - method: GET
+      path: /admin/logistics/tracking-root-causes/summary
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.tracking_root_cause
+    - method: GET
+      path: /admin/logistics/tracking-sync/jobs
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.tracking_sync
+    - method: POST
+      path: /admin/logistics/tracking-sync/jobs
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.tracking_sync
+    - method: POST
+      path: /admin/logistics/tracking-sync/jobs/:id/cancel
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.tracking_sync
+    - method: POST
+      path: /admin/logistics/tracking-sync/jobs/:id/retry
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.tracking_sync
+    - method: GET
+      path: /admin/logistics/tracking-sync/schedules
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.tracking_sync
+    - method: POST
+      path: /admin/logistics/tracking-sync/schedules
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.tracking_sync
+    - method: PATCH
+      path: /admin/logistics/tracking-sync/schedules/:id
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.tracking_sync
+    - method: POST
+      path: /admin/logistics/tracking-sync/schedules/:id/toggle
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.tracking_sync
+    - method: POST
+      path: /admin/logistics/tracking-sync/schedules/:id/trigger
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.tracking_sync
+    - method: POST
+      path: /admin/logistics/tracking-sync/schedules/run-due
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.tracking_sync
+    - method: POST
+      path: /admin/logistics/waybills
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.waybill
+    - method: GET
+      path: /admin/logistics/waybills/:id
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:logistics.waybill
+    - method: POST
+      path: /admin/logistics/waybills/:id/cancel
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.waybill
+    - method: PATCH
+      path: /admin/logistics/waybills/:id/cost
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.billing
+    - method: POST
+      path: /admin/logistics/waybills/:id/sync-track
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.waybill
+    - method: POST
+      path: /admin/logistics/waybills/:id/track
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.waybill
+    - method: POST
+      path: /admin/logistics/webhook
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:logistics.webhook
     - method: POST
       path: /admin/marketplace/checklist/graphql
       permission:
@@ -1397,10 +2749,30 @@ routes:
       permission:
         action: manage
         resource: com.powerx.plugins.ecommerce:product.category.template
+    - method: GET
+      path: /admin/product/category-templates/:id
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:product.category.template
     - method: PATCH
       path: /admin/product/category-templates/:id
       permission:
         action: manage
+        resource: com.powerx.plugins.ecommerce:product.category.template
+    - method: GET
+      path: /admin/product/category-templates/:id/impact
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:product.category.template
+    - method: POST
+      path: /admin/product/category-templates/:id/impact/recheck
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:product.category.template
+    - method: GET
+      path: /admin/product/category-templates/:id/preview
+      permission:
+        action: read
         resource: com.powerx.plugins.ecommerce:product.category.template
     - method: POST
       path: /admin/product/category-templates/:id/publish
@@ -1411,6 +2783,21 @@ routes:
       path: /admin/product/category-templates/:id/rollback
       permission:
         action: manage
+        resource: com.powerx.plugins.ecommerce:product.category.template
+    - method: POST
+      path: /admin/product/category-templates/:id/simulate
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:product.category.template
+    - method: GET
+      path: /admin/product/category-templates/:id/versions
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:product.category.template
+    - method: GET
+      path: /admin/product/category-templates/effective
+      permission:
+        action: read
         resource: com.powerx.plugins.ecommerce:product.category.template
     - method: GET
       path: /admin/product/skus
@@ -1512,6 +2899,81 @@ routes:
       permission:
         action: manage
         resource: com.powerx.plugins.ecommerce:product.sku
+    - method: GET
+      path: /admin/promotions
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:pricing.promotion
+    - method: POST
+      path: /admin/promotions
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:pricing.promotion
+    - method: PATCH
+      path: /admin/promotions/:id
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:pricing.promotion
+    - method: POST
+      path: /admin/promotions/:id/activate
+      permission:
+        action: publish
+        resource: com.powerx.plugins.ecommerce:pricing.promotion
+    - method: GET
+      path: /admin/promotions/:id/audit-logs
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:pricing.promotion.audit
+    - method: POST
+      path: /admin/promotions/:id/clone
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:pricing.promotion
+    - method: POST
+      path: /admin/promotions/:id/pause
+      permission:
+        action: publish
+        resource: com.powerx.plugins.ecommerce:pricing.promotion
+    - method: GET
+      path: /admin/reverse/inspection/rules
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:reverse.inspection
+    - method: POST
+      path: /admin/reverse/inspection/rules
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:reverse.inspection
+    - method: GET
+      path: /admin/reverse/waybills
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:reverse.waybill
+    - method: POST
+      path: /admin/reverse/waybills
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:reverse.waybill
+    - method: GET
+      path: /admin/reverse/waybills/:id
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:reverse.waybill
+    - method: POST
+      path: /admin/reverse/waybills/:id/inspection
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:reverse.inspection
+    - method: POST
+      path: /admin/reverse/waybills/:id/track
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:reverse.waybill
+    - method: POST
+      path: /admin/reverse/waybills/:id/warehouse-result
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:reverse.waybill
     - method: POST
       path: /admin/runtime/bootstrap
       permission:
@@ -1617,6 +3079,51 @@ routes:
       permission:
         action: read
         resource: admin.security.toolgrant
+    - method: GET
+      path: /admin/subscription-reconciliation/batches
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:subscription.reconciliation.batch
+    - method: POST
+      path: /admin/subscription-reconciliation/batches
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:subscription.reconciliation.batch
+    - method: GET
+      path: /admin/subscription-reconciliation/batches/:id/deltas
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:subscription.reconciliation.delta
+    - method: GET
+      path: /admin/subscription-reconciliation/dashboard
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:subscription.reconciliation.dashboard
+    - method: GET
+      path: /admin/subscription-reconciliation/dashboard/export
+      permission:
+        action: export
+        resource: com.powerx.plugins.ecommerce:subscription.reconciliation.dashboard
+    - method: POST
+      path: /admin/subscription-reconciliation/deltas/:id/adjust
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:subscription.reconciliation.delta
+    - method: POST
+      path: /admin/subscription-reconciliation/deltas/:id/tasks
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:subscription.reconciliation.task
+    - method: POST
+      path: /admin/subscription-reconciliation/governance/run
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:subscription.reconciliation.governance
+    - method: POST
+      path: /admin/subscription-reconciliation/tasks/:id/close
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:subscription.reconciliation.task
     - method: POST
       path: /integration/capabilities/invoke
       permission:

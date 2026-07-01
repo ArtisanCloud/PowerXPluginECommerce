@@ -17,7 +17,8 @@ runtime:
   kind: process
   entry: backend/bin/plugin
   env:
-    POWERX_BIND_ADDR: ${POWERX_BIND_ADDR:-:__POWERX_DYNAMIC_PORT__}
+    POWERX_BIND_ADDR: ":__POWERX_DYNAMIC_PORT__"
+    POWERX_PLUGIN_REGISTRATION_MODE: installed
     IAMMode: "delegated"
     IAM_MODE: "delegated"
     POWERX_PROXY: "1"
@@ -32,7 +33,7 @@ runtime:
 
 backend:
   entry: backend/bin/plugin
-  port: 8086
+  port: 0
   health: /healthz
 
 endpoints:

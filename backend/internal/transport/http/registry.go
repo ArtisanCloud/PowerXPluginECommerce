@@ -15,7 +15,9 @@ import (
 	adminconsole "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/console"
 	admincoupon "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/coupon"
 	admincustomeraddress "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/customer_address"
+	adminfulfillment "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/fulfillment"
 	adminintegration "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/integration"
+	adminlogistics "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/logistics"
 	adminmarketplace "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/marketplace"
 	adminmembership "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/membership"
 	adminoperations "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/operations"
@@ -24,13 +26,16 @@ import (
 	adminpricing "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/pricing"
 	adminproduct "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/product"
 	adminpromotion "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/promotion"
+	adminreverse "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/reverse"
 	adminruntime "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/runtime_ops"
 	adminsecurity "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/security"
+	adminsubscriptionreconciliation "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/subscription_reconciliation"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/admin/templates"
 	agentapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/agent"
 	customerapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/customer"
 	integrationapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/integration"
 	jobapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/jobs"
+	pluginskills "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/plugin/skills"
 	pricingapi "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/pricing"
 	publicassets "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/public/assets"
 	publicmarketplace "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/transport/http/public/marketplace"
@@ -83,6 +88,10 @@ func StaticRBACEntries(prefix string) map[string]authx.Permission {
 	merge(admincustomeraddress.RBACEntries(prefix))
 	merge(adminmembership.RBACEntries(prefix))
 	merge(adminaftersales.RBACEntries(prefix))
+	merge(adminlogistics.RBACEntries(prefix))
+	merge(adminfulfillment.RBACEntries(prefix))
+	merge(adminreverse.RBACEntries(prefix))
+	merge(adminsubscriptionreconciliation.RBACEntries(prefix))
 	merge(templates.RBACEntries(prefix))
 	merge(integrationRBACEntries(prefix))
 	merge(marketplacePublicRBACEntries(prefix))
@@ -96,6 +105,7 @@ func (r *Registry) RegisterAPIRoutes(gApi *gin.RouterGroup) {
 	adminGroup := gApi.Group("/admin")
 	admin.RegisterAPIRoutes(gApi, r.deps)
 	agentapi.RegisterAPIRoutes(gApi, r.deps)
+	pluginskills.RegisterAPIRoutes(gApi, r.deps)
 	templates.RegisterAPIRoutes(gApi, r.deps)
 	integrationapi.RegisterAPIRoutes(gApi, r.deps)
 	customerapi.RegisterRoutes(adminGroup, r.deps)

@@ -1,0 +1,28 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.marketplace.license.manage.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.marketplace.license.manage.json
+description: marketplace.license manage capability
+id: com.powerx.plugins.ecommerce.marketplace.license.manage
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/marketplace/licenses/*
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/marketplace/licenses/*/offline-extend
+    source:
+        action: manage
+        generated_from: route_rbac
+        resource: marketplace.license
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.marketplace.license.manage.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.marketplace.license.manage.json
+rbac:
+    actions:
+        - manage
+    resource: marketplace.license
+status: active
+type: API
+version: 1.0.0

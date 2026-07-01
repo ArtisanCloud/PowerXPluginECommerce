@@ -110,6 +110,18 @@
           <text class="text-muted">优惠</text>
           <text class="text-primary font-semibold">{{ discountText }}</text>
         </view>
+        <view v-if="promotionLoading" class="flex justify-between text-xs">
+          <text class="text-muted">自动促销</text>
+          <text class="text-muted">计算中...</text>
+        </view>
+        <view v-else-if="appliedPromotionNames" class="flex justify-between text-xs" style="gap: 12px;">
+          <text class="text-muted shrink-0">已享活动</text>
+          <text class="text-primary font-semibold text-right" :number-of-lines="2">{{ appliedPromotionNames }}</text>
+        </view>
+        <view v-else-if="promotionError" class="flex justify-between text-xs" style="gap: 12px;">
+          <text class="text-muted shrink-0">自动促销</text>
+          <text class="text-muted text-right" :number-of-lines="2">{{ promotionError }}</text>
+        </view>
         <view class="pt-3 border-t flex justify-end" style="border-color: rgba(0,0,0,0.04);">
           <text class="text-sm font-extrabold">合计：{{ payableText }}</text>
         </view>
@@ -144,7 +156,7 @@
 <script setup lang="ts">
 		import { computed, onMounted, ref } from "vue";
 		import { onLoad, onShow } from "@dcloudio/uni-app";
-		import { createOrder } from "@/services/miniapp-order";
+		import { createOrder, quotePromotions, type PromotionSummary } from "@/services/miniapp-order";
 		import { isLoggedIn } from "@/services/session";
 		import { clearLocalCart, getLocalCart } from "@/services/cart";
 		import { formatFullAddress, getSelectedAddressId, maskPhone, miniAppListMyAddresses, setSelectedAddressId, type MiniAppCustomerAddress } from "@/services/miniapp-address";
@@ -183,6 +195,9 @@ type DraftPayload = {
 
 	const draft = ref<DraftPayload | null>(null);
 	const brokenThumbSkuIds = ref<Set<string>>(new Set());
+const promotionQuote = ref<PromotionSummary | null>(null);
+const promotionLoading = ref(false);
+const promotionError = ref("");
 
 function formatMoney(currency: string, amountMajor: number) {
   const c = String(currency || "CNY").trim().toUpperCase() || "CNY";
@@ -239,10 +254,24 @@ const totalAmount = computed(() => {
 
 const totalText = computed(() => formatMoney(currency.value, totalAmount.value));
 const shippingText = computed(() => formatMoney(currency.value, 0));
-const discountText = computed(() => `-${formatMoney(currency.value, 0)}`);
-const payableText = computed(() => formatMoney(currency.value, totalAmount.value));
-const savedText = computed(() => "");
+const totalAmountMinor = computed(() => Math.max(0, Math.round(totalAmount.value * 100)));
+const promotionDiscountMinor = computed(() => Number(promotionQuote.value?.promotion_discount_minor || 0));
+const payableAmountMinor = computed(() => {
+  const quoted = Number(promotionQuote.value?.after_promotion_total_minor || 0);
+  return quoted > 0 || promotionDiscountMinor.value > 0 ? quoted : totalAmountMinor.value;
+});
+const discountText = computed(() => `-${formatMoneyFromMinor(currency.value, promotionDiscountMinor.value)}`);
+const payableText = computed(() => formatMoneyFromMinor(currency.value, payableAmountMinor.value));
+const savedText = computed(() => promotionDiscountMinor.value > 0 ? `已优惠 ${formatMoneyFromMinor(currency.value, promotionDiscountMinor.value)}` : "");
+const appliedPromotionNames = computed(() => {
+  const list = promotionQuote.value?.applied_promotions || [];
+  return list.map((item) => item.name || item.code).filter(Boolean).join("、");
+});
 const isVirtualOrder = computed(() => String(draft.value?.from || "").trim() === "membership");
+
+function formatMoneyFromMinor(currency: string, amountMinor: number) {
+  return formatMoney(currency, Math.max(0, Number(amountMinor || 0)) / 100);
+}
 
 function ensureTopInset() {
   try {
@@ -348,6 +377,35 @@ function loadDraft(options?: any) {
   };
 }
 
+async function refreshPromotionQuote() {
+  promotionQuote.value = null;
+  promotionError.value = "";
+  const payload = draft.value;
+  if (!payload || !payload.items?.length || isVirtualOrder.value) return;
+  if (!isLoggedIn()) return;
+  const quoteItems = items.value
+    .map((item) => ({
+      line_id: item.skuId,
+      sku_id: item.skuId,
+      qty: Number(item.qty || 0),
+      unit_price_minor: Math.round(Number(item.unitPrice || 0) * 100),
+    }))
+    .filter((item) => item.sku_id && item.qty > 0 && item.unit_price_minor >= 0);
+  if (!quoteItems.length) return;
+  promotionLoading.value = true;
+  try {
+    promotionQuote.value = await quotePromotions({
+      channel: payload.channel,
+      currency: currency.value,
+      items: quoteItems,
+    });
+  } catch (error: any) {
+    promotionError.value = error?.message || "暂未匹配可用活动";
+  } finally {
+    promotionLoading.value = false;
+  }
+}
+
 		async function submitOrder() {
 		  if (submitting.value) return;
 		  if (!items.value.length) return;
@@ -391,6 +449,7 @@ function loadDraft(options?: any) {
 		onLoad((options) => {
 		  ensureTopInset();
 		  loadDraft(options);
+		  void refreshPromotionQuote();
 		  if (!isVirtualOrder.value) {
 		    void loadSelectedAddress();
 		  }
@@ -398,6 +457,7 @@ function loadDraft(options?: any) {
 
 	onMounted(() => {
 	  ensureTopInset();
+	  void refreshPromotionQuote();
 	});
 
 		onShow(() => {

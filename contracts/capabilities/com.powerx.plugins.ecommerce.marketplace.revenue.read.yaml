@@ -1,0 +1,28 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.marketplace.revenue.read.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.marketplace.revenue.read.json
+description: marketplace.revenue read capability
+id: com.powerx.plugins.ecommerce.marketplace.revenue.read
+metadata:
+    protocols:
+        rest:
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/marketplace/revenue-share/reports
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/marketplace/revenue-share/reports
+    source:
+        action: read
+        generated_from: route_rbac
+        resource: marketplace.revenue
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.marketplace.revenue.read.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.marketplace.revenue.read.json
+rbac:
+    actions:
+        - read
+    resource: marketplace.revenue
+status: active
+type: API
+version: 1.0.0

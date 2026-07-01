@@ -1,0 +1,32 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.order.read.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.order.read.json
+description: com.powerx.plugins.ecommerce:order read capability
+id: com.powerx.plugins.ecommerce.order.read
+metadata:
+    protocols:
+        rest:
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/orders
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/orders/:id
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/orders/:id/benefit-reviews
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/orders/benefit-codes
+    source:
+        action: read
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:order
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.order.read.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.order.read.json
+rbac:
+    actions:
+        - read
+    resource: com.powerx.plugins.ecommerce:order
+status: active
+type: API
+version: 1.0.0

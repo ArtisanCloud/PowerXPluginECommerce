@@ -1,0 +1,28 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.after.sales.case.read.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.after.sales.case.read.json
+description: com.powerx.plugins.ecommerce:after_sales.case read capability
+id: com.powerx.plugins.ecommerce.after.sales.case.read
+metadata:
+    protocols:
+        rest:
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/after-sales/cases
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/after-sales/cases/:id
+    source:
+        action: read
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:after_sales.case
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.after.sales.case.read.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.after.sales.case.read.json
+rbac:
+    actions:
+        - read
+    resource: com.powerx.plugins.ecommerce:after_sales.case
+status: active
+type: API
+version: 1.0.0

@@ -1,0 +1,26 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.channel.master.create.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.channel.master.create.json
+description: com.powerx.plugins.ecommerce:channel.master create capability
+id: com.powerx.plugins.ecommerce.channel.master.create
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels
+    source:
+        action: create
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:channel.master
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.channel.master.create.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.channel.master.create.json
+rbac:
+    actions:
+        - create
+    resource: com.powerx.plugins.ecommerce:channel.master
+status: active
+type: API
+version: 1.0.0

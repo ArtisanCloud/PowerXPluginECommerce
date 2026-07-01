@@ -1,0 +1,28 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.logistics.label.print.manage.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.logistics.label.print.manage.json
+description: com.powerx.plugins.ecommerce:logistics.label_print manage capability
+id: com.powerx.plugins.ecommerce.logistics.label.print.manage
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/labels/prints
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/labels/prints/retry
+    source:
+        action: manage
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:logistics.label_print
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.logistics.label.print.manage.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.logistics.label.print.manage.json
+rbac:
+    actions:
+        - manage
+    resource: com.powerx.plugins.ecommerce:logistics.label_print
+status: active
+type: API
+version: 1.0.0

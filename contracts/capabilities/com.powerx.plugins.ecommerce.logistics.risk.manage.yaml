@@ -1,0 +1,36 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.logistics.risk.manage.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.logistics.risk.manage.json
+description: com.powerx.plugins.ecommerce:logistics.risk manage capability
+id: com.powerx.plugins.ecommerce.logistics.risk.manage
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/risk/blacklist
+            - method: PATCH
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/risk/blacklist/:id
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/risk/evaluate
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/risk/hits/:id/release
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/risk/rules
+            - method: PATCH
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/risk/rules/:id
+    source:
+        action: manage
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:logistics.risk
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.logistics.risk.manage.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.logistics.risk.manage.json
+rbac:
+    actions:
+        - manage
+    resource: com.powerx.plugins.ecommerce:logistics.risk
+status: active
+type: API
+version: 1.0.0

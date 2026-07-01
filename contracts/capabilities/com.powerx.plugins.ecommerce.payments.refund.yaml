@@ -1,0 +1,26 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.payments.refund.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.payments.refund.json
+description: com.powerx.plugins.ecommerce:payments refund capability
+id: com.powerx.plugins.ecommerce.payments.refund
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/transactions/:id/refund
+    source:
+        action: refund
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:payments
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.payments.refund.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.payments.refund.json
+rbac:
+    actions:
+        - refund
+    resource: com.powerx.plugins.ecommerce:payments
+status: active
+type: API
+version: 1.0.0

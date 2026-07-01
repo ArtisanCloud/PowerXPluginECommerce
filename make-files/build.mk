@@ -30,6 +30,8 @@ DIST_DIR            ?= $(DIST_ROOT)/$(VERSION)
 DIST_BACKEND_BIN    ?= $(DIST_DIR)/backend/bin
 DIST_WEBADMIN_DIR   ?= $(DIST_DIR)/web-admin
 DIST_WEBADMIN_OUTPUT?= $(DIST_WEBADMIN_DIR)/.output
+DIST_COMPACT        ?= auto
+DIST_COMPACT_MAX_FILES ?= 900
 DIST_VERIFY         ?= 1
 
 # Release（完整发布包）
@@ -208,14 +210,31 @@ dist: plugin-yaml-check dist-backend frontend-build
 	  mkdir -p $(DIST_DIR)/plugin.d; \
 	  cp -R plugin.d/. $(DIST_DIR)/plugin.d/; \
 	fi
+	@if [ -d "skills" ]; then \
+	  mkdir -p $(DIST_DIR)/skills; \
+	  cp -R skills/. $(DIST_DIR)/skills/; \
+	fi
 	@if [ -d "contracts" ]; then \
 	  mkdir -p $(DIST_DIR)/contracts; \
 	  cp -R contracts/. $(DIST_DIR)/contracts/; \
 	fi
 	@if [ -f README.md ]; then cp README.md $(DIST_DIR)/; fi
-	@if [ "$(DIST_VERIFY)" = "1" ]; then \
-	  $(MAKE) --no-print-directory dist-verify DIST_DIR="$(DIST_DIR)" DIST_BACKEND_BIN="$(DIST_BACKEND_BIN)" DIST_WEBADMIN_OUTPUT="$(DIST_WEBADMIN_OUTPUT)"; \
-	fi
+		@if [ "$(DIST_VERIFY)" = "1" ]; then \
+		  $(MAKE) --no-print-directory dist-verify DIST_DIR="$(DIST_DIR)" DIST_BACKEND_BIN="$(DIST_BACKEND_BIN)" DIST_WEBADMIN_OUTPUT="$(DIST_WEBADMIN_OUTPUT)"; \
+		fi
+		@if [ "$(DIST_COMPACT)" != "0" ]; then \
+		  FILE_COUNT=$$(find "$(DIST_DIR)" -type f | wc -l | tr -d ' '); \
+		  if [ "$(DIST_COMPACT)" = "1" ] || { [ "$(DIST_COMPACT)" = "auto" ] && [ "$$FILE_COUNT" -gt "$(DIST_COMPACT_MAX_FILES)" ]; }; then \
+		    echo "==> dist 文件数 $$FILE_COUNT 超过目录上传阈值，压缩为 PowerX package.tar.gz"; \
+		    TMP_DIR=$$(mktemp -d); \
+		    mkdir -p "$$TMP_DIR/payload"; \
+		    find "$(DIST_DIR)" -mindepth 1 -maxdepth 1 -exec mv {} "$$TMP_DIR/payload/" \; ; \
+		    (cd "$$TMP_DIR" && tar -czf "$(abspath $(DIST_DIR))/package.tar.gz" payload); \
+		    tar -tzf "$(DIST_DIR)/package.tar.gz" payload/plugin.yaml >/dev/null || { echo "❌ package.tar.gz 缺少 payload/plugin.yaml"; rm -rf "$$TMP_DIR"; exit 1; }; \
+		    rm -rf "$$TMP_DIR"; \
+		    echo "✅ compact dist ready: $(DIST_DIR)/package.tar.gz"; \
+		  fi; \
+		fi
 
 .PHONY: dist-verify
 dist-verify: ## 校验 dist 安装包必需结构与核心权限注册
@@ -226,6 +245,10 @@ dist-verify: ## 校验 dist 安装包必需结构与核心权限注册
 	@test -x "$(DIST_BACKEND_BIN)/plugin" || { echo "❌ 后端二进制不可执行 $(DIST_BACKEND_BIN)/plugin"; exit 1; }
 	@test -x "$(DIST_BACKEND_BIN)/migrate" || { echo "❌ 迁移二进制不可执行 $(DIST_BACKEND_BIN)/migrate"; exit 1; }
 	@awk '/^[[:space:]]*runtime:[[:space:]]*$$/{in_runtime=1; next} in_runtime && /^[^[:space:]]/ {in_runtime=0} in_runtime && /^[[:space:]]*entry:[[:space:]]*backend\/bin\/plugin[[:space:]]*$$/ {found=1} END{exit found?0:1}' "$(DIST_DIR)/plugin.yaml" || { echo "❌ plugin.yaml runtime.entry 必须是 backend/bin/plugin"; exit 1; }
+	@rg -q 'POWERX_BIND_ADDR:[[:space:]]*":__POWERX_DYNAMIC_PORT__"' "$(DIST_DIR)/plugin.yaml" || { echo "❌ plugin.yaml 必须使用 POWERX_BIND_ADDR 动态端口占位符"; exit 1; }
+	@rg -q 'POWERX_PLUGIN_REGISTRATION_MODE:[[:space:]]*installed' "$(DIST_DIR)/plugin.yaml" || { echo "❌ plugin.yaml 必须设置 POWERX_PLUGIN_REGISTRATION_MODE: installed"; exit 1; }
+	@awk '/^[[:space:]]*backend:[[:space:]]*$$/{in_backend=1; next} in_backend && /^[^[:space:]]/ {in_backend=0} in_backend && /^[[:space:]]*port:[[:space:]]*0[[:space:]]*$$/ {found=1} END{exit found?0:1}' "$(DIST_DIR)/plugin.yaml" || { echo "❌ plugin.yaml backend.port 必须是 0"; exit 1; }
+	@! rg -q 'port:[[:space:]]*(8078|8086)[[:space:]]*$$' "$(DIST_DIR)/plugin.yaml" || { echo "❌ plugin.yaml 不应固化旧 backend port"; exit 1; }
 	@awk '/^[[:space:]]*migrations:[[:space:]]*$$/{in_migrations=1; next} in_migrations && /^[^[:space:]]/ {in_migrations=0} in_migrations && /^[[:space:]]*entry:[[:space:]]*backend\/bin\/migrate[[:space:]]*$$/ {found=1} END{exit found?0:1}' "$(DIST_DIR)/plugin.yaml" || { echo "❌ plugin.yaml migrations.entry 必须是 backend/bin/migrate"; exit 1; }
 	@test -f "$(DIST_WEBADMIN_OUTPUT)/server/index.mjs" || { echo "❌ 缺少前端服务入口 $(DIST_WEBADMIN_OUTPUT)/server/index.mjs"; exit 1; }
 	@test -f "$(DIST_WEBADMIN_OUTPUT)/public/icon.svg" || { echo "❌ 缺少插件市场图标 $(DIST_WEBADMIN_OUTPUT)/public/icon.svg"; exit 1; }
@@ -236,6 +259,9 @@ dist-verify: ## 校验 dist 安装包必需结构与核心权限注册
 	@for f in plugin.d/capabilities.yaml plugin.d/exposure.yaml plugin.d/rbac.yaml; do \
 	  test -f "$(DIST_DIR)/$$f" || { echo "❌ 缺少 $(DIST_DIR)/$$f"; exit 1; }; \
 	done
+	@test -d "$(DIST_DIR)/skills" || { echo "❌ 缺少 $(DIST_DIR)/skills"; exit 1; }
+	@find "$(DIST_DIR)/skills" -mindepth 2 -maxdepth 2 -name SKILL.md -print -quit | rg -q . || { echo "❌ skills 目录没有标准 SKILL.md 包"; exit 1; }
+	@cd $(BACKEND_DIR) && GOCACHE=$(GO_BUILD_CACHE) go run ./cmd/skillcheck --root "$(abspath $(DIST_DIR))"
 	@test -d "$(DIST_DIR)/contracts/capabilities" || { echo "❌ 缺少 $(DIST_DIR)/contracts/capabilities"; exit 1; }
 	@for key in capabilities exposure rbac; do \
 	  awk -v key="$$key" '/^[[:space:]]*catalogs:[[:space:]]*$$/{in_catalogs=1; next} in_catalogs && /^[^[:space:]]/ {in_catalogs=0} in_catalogs && $$0 ~ "^[[:space:]]*" key ":" {found=1} END{exit found?0:1}' "$(DIST_DIR)/plugin.yaml" || { echo "❌ plugin.yaml 缺少 catalogs.$$key"; exit 1; }; \
@@ -275,11 +301,21 @@ release: build frontend-build
 	  mkdir -p $(RELEASE_DIR)/plugin.d; \
 	  cp -R plugin.d/. $(RELEASE_DIR)/plugin.d/; \
 	fi
+	@if [ -d "skills" ]; then \
+	  mkdir -p $(RELEASE_DIR)/skills; \
+	  cp -R skills/. $(RELEASE_DIR)/skills/; \
+	fi
 	@if [ -d "contracts" ]; then \
 	  mkdir -p $(RELEASE_DIR)/contracts; \
 	  cp -R contracts/. $(RELEASE_DIR)/contracts/; \
 	fi
 	@if [ -f README.md ]; then cp README.md $(RELEASE_DIR)/; fi
+	@rg -q 'POWERX_BIND_ADDR:[[:space:]]*":__POWERX_DYNAMIC_PORT__"' "$(RELEASE_DIR)/plugin.yaml" || { echo "❌ release 验证失败：plugin.yaml 必须使用 POWERX_BIND_ADDR 动态端口占位符"; exit 1; }
+	@rg -q 'POWERX_PLUGIN_REGISTRATION_MODE:[[:space:]]*installed' "$(RELEASE_DIR)/plugin.yaml" || { echo "❌ release 验证失败：plugin.yaml 必须设置 POWERX_PLUGIN_REGISTRATION_MODE: installed"; exit 1; }
+	@awk '/^[[:space:]]*backend:[[:space:]]*$$/{in_backend=1; next} in_backend && /^[^[:space:]]/ {in_backend=0} in_backend && /^[[:space:]]*port:[[:space:]]*0[[:space:]]*$$/ {found=1} END{exit found?0:1}' "$(RELEASE_DIR)/plugin.yaml" || { echo "❌ release 验证失败：plugin.yaml backend.port 必须是 0"; exit 1; }
+	@! rg -q 'port:[[:space:]]*(8078|8086)[[:space:]]*$$' "$(RELEASE_DIR)/plugin.yaml" || { echo "❌ release 验证失败：plugin.yaml 不应固化旧 backend port"; exit 1; }
+	@test -d "$(RELEASE_DIR)/skills" || { echo "❌ release 验证失败：缺少 $(RELEASE_DIR)/skills"; exit 1; }
+	@find "$(RELEASE_DIR)/skills" -mindepth 2 -maxdepth 2 -name SKILL.md -print -quit | rg -q . || { echo "❌ release 验证失败：skills 目录没有标准 SKILL.md 包"; exit 1; }
 
 # ===== 打包 zip =====
 .PHONY: package

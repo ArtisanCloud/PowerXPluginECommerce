@@ -16,11 +16,14 @@ import (
 	ordermodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/order"
 	productmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product"
 	productskumodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product_sku"
+	promotionmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/promotion"
 	customerrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/customer"
 	idrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/integration"
 	orderrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/order"
 	skurepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/product_sku"
+	promotionrepo "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/repository/promotion"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
+	promotionsvc "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/admin/promotion"
 	sellabilitysvc "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/miniapp/sellability"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/shared/app"
 	"github.com/google/uuid"
@@ -53,15 +56,17 @@ var (
 )
 
 type Service struct {
-	deps            *app.Deps
-	idempotencyTTL  time.Duration
-	OrderRepo       *orderrepo.OrderRepository
-	ItemRepo        *orderrepo.OrderItemRepository
-	EventRepo       *orderrepo.OrderEventRepository
-	InventoryRepo   *skurepo.InventoryRepository
-	IdempotencyRepo *idrepo.IdempotencyRepository
-	SellabilitySvc  *sellabilitysvc.Service
-	AddressRepo     *customerrepo.CustomerAddressRepository
+	deps                  *app.Deps
+	idempotencyTTL        time.Duration
+	OrderRepo             *orderrepo.OrderRepository
+	ItemRepo              *orderrepo.OrderItemRepository
+	EventRepo             *orderrepo.OrderEventRepository
+	InventoryRepo         *skurepo.InventoryRepository
+	IdempotencyRepo       *idrepo.IdempotencyRepository
+	SellabilitySvc        *sellabilitysvc.Service
+	AddressRepo           *customerrepo.CustomerAddressRepository
+	PromotionSnapshotRepo *promotionrepo.OrderSnapshotRepository
+	PromotionQuoteSvc     *promotionsvc.QuoteService
 }
 
 func NewService(deps *app.Deps) *Service {
@@ -75,20 +80,22 @@ func NewService(deps *app.Deps) *Service {
 	fallback := idrepo.NewPostgresIdempotencyProvider(deps.DB, ttl)
 	repository := idrepo.NewIdempotencyRepository(deps.DB, nil, fallback, nil)
 	return &Service{
-		deps:            deps,
-		idempotencyTTL:  ttl,
-		OrderRepo:       orderrepo.NewOrderRepository(deps.DB),
-		ItemRepo:        orderrepo.NewOrderItemRepository(deps.DB),
-		EventRepo:       orderrepo.NewOrderEventRepository(deps.DB),
-		InventoryRepo:   skurepo.NewInventoryRepository(deps.DB),
-		IdempotencyRepo: repository,
-		SellabilitySvc:  sellabilitysvc.NewService(deps.DB),
-		AddressRepo:     customerrepo.NewCustomerAddressRepository(deps.DB),
+		deps:                  deps,
+		idempotencyTTL:        ttl,
+		OrderRepo:             orderrepo.NewOrderRepository(deps.DB),
+		ItemRepo:              orderrepo.NewOrderItemRepository(deps.DB),
+		EventRepo:             orderrepo.NewOrderEventRepository(deps.DB),
+		InventoryRepo:         skurepo.NewInventoryRepository(deps.DB),
+		IdempotencyRepo:       repository,
+		SellabilitySvc:        sellabilitysvc.NewService(deps.DB),
+		AddressRepo:           customerrepo.NewCustomerAddressRepository(deps.DB),
+		PromotionSnapshotRepo: promotionrepo.NewOrderSnapshotRepository(deps.DB),
+		PromotionQuoteSvc:     promotionsvc.NewQuoteService(deps),
 	}
 }
 
 func (s *Service) Ready() bool {
-	return s != nil && s.deps != nil && s.deps.DB != nil && s.OrderRepo != nil && s.InventoryRepo != nil && s.IdempotencyRepo != nil && s.SellabilitySvc != nil && s.AddressRepo != nil
+	return s != nil && s.deps != nil && s.deps.DB != nil && s.OrderRepo != nil && s.InventoryRepo != nil && s.IdempotencyRepo != nil && s.SellabilitySvc != nil && s.AddressRepo != nil && s.PromotionSnapshotRepo != nil && s.PromotionQuoteSvc != nil
 }
 
 func (s *Service) CreateOrder(ctx context.Context, tenantUUID, customerID, idempotencyKey string, req CreateOrderRequest) (*OrderSummaryDTO, error) {
@@ -241,6 +248,21 @@ func (s *Service) createOrderWithIdempotencyTx(
 		subtotal += price * it.Qty
 	}
 	total := subtotal
+	promotionItems := make([]promotionsvc.QuoteItemInput, 0, len(req.Items))
+	for _, it := range req.Items {
+		skuID := strings.TrimSpace(it.SKUID)
+		promotionItems = append(promotionItems, promotionsvc.QuoteItemInput{
+			LineID: skuID, SKUID: skuID, Qty: it.Qty, UnitPriceMinor: unitPriceMinor[skuID],
+		})
+	}
+	promotionResult, err := s.PromotionQuoteSvc.Quote(ctx, promotionsvc.QuoteInput{
+		TenantUUID: tenantUUID, UserID: customerID, Channel: req.Channel, Currency: currency,
+		Items: promotionItems,
+	})
+	if err != nil {
+		return nil, err
+	}
+	total = promotionResult.AfterPromotionTotalMinor
 
 	now := time.Now().UTC()
 	orderID := uuid.NewString()
@@ -252,6 +274,9 @@ func (s *Service) createOrderWithIdempotencyTx(
 		"total":    total,
 		"items":    req.Items,
 		"pricedAt": now.Format(time.RFC3339Nano),
+	}
+	if promotionResult != nil {
+		priceSnapshot["promotion"] = promotionResult
 	}
 	priceSnapJSON, _ := json.Marshal(priceSnapshot)
 
@@ -324,6 +349,26 @@ func (s *Service) createOrderWithIdempotencyTx(
 		if err := s.ItemRepo.CreateBatchWithTx(ctx, tx, items); err != nil {
 			return err
 		}
+		if promotionResult != nil {
+			lineAllocRaw, _ := json.Marshal(promotionResult.LineAllocations)
+			appliedRaw, _ := json.Marshal(promotionResult.AppliedPromotions)
+			rejectedRaw, _ := json.Marshal(promotionResult.RejectedPromotions)
+			if err := s.PromotionSnapshotRepo.UpsertWithTx(ctx, tx, &promotionmodel.OrderSnapshot{
+				ID:                       uuid.NewString(),
+				TenantUUID:               tenantUUID,
+				OrderID:                  orderID,
+				Currency:                 promotionResult.Currency,
+				BaseTotalMinor:           promotionResult.BaseTotalMinor,
+				PromotionDiscountMinor:   promotionResult.PromotionDiscountMinor,
+				AfterPromotionTotalMinor: promotionResult.AfterPromotionTotalMinor,
+				LineAllocations:          datatypes.JSON(lineAllocRaw),
+				AppliedPromotions:        datatypes.JSON(appliedRaw),
+				RejectedPromotions:       datatypes.JSON(rejectedRaw),
+				PricedAt:                 promotionResult.PricedAt,
+			}); err != nil {
+				return err
+			}
+		}
 
 		eventPayload, _ := json.Marshal(map[string]any{
 			"requestId":         requestIDFromContext(ctx),
@@ -349,6 +394,7 @@ func (s *Service) createOrderWithIdempotencyTx(
 			OrderNo:                 orderNo,
 			Status:                  order.Status,
 			Amounts:                 MoneyDTO{Currency: currency, Subtotal: subtotal, Total: total},
+			Promotion:               toPromotionSummaryDTO(promotionResult),
 			ShippingAddressSnapshot: shippingSnap,
 			// CreatedAt is not the DB-created timestamp, but deterministic enough for API response.
 			CreatedAt: now,
@@ -413,9 +459,9 @@ func (s *Service) requiresShipping(ctx context.Context, tenantUUID string, skuID
 	}
 	var rows []row
 	if err := s.deps.DB.WithContext(ctx).
-		Table(productskumodel.ProductSKU{}.TableName() + " AS skus").
+		Table(productskumodel.ProductSKU{}.TableName()+" AS skus").
 		Select("spus.type").
-		Joins("JOIN " + productmodel.SPU{}.TableName() + " AS spus ON spus.id = skus.spu_id").
+		Joins("JOIN "+productmodel.SPU{}.TableName()+" AS spus ON spus.id = skus.spu_id").
 		Where("skus.tenant_uuid = ? AND skus.id IN ?", tenantUUID, cleanIDs).
 		Find(&rows).Error; err != nil {
 		return true

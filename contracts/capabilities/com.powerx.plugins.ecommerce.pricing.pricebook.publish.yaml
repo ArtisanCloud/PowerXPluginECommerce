@@ -1,0 +1,28 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.pricing.pricebook.publish.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.pricing.pricebook.publish.json
+description: com.powerx.plugins.ecommerce:pricing.pricebook publish capability
+id: com.powerx.plugins.ecommerce.pricing.pricebook.publish
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/pricing/pricebooks/:pricebookId/versions/:versionId/archive
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/pricing/pricebooks/:pricebookId/versions/:versionId/publish
+    source:
+        action: publish
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:pricing.pricebook
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.pricing.pricebook.publish.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.pricing.pricebook.publish.json
+rbac:
+    actions:
+        - publish
+    resource: com.powerx.plugins.ecommerce:pricing.pricebook
+status: active
+type: API
+version: 1.0.0

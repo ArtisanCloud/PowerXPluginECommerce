@@ -1,0 +1,30 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.logistics.fulfillment.sandbox.read.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.logistics.fulfillment.sandbox.read.json
+description: com.powerx.plugins.ecommerce:logistics.fulfillment_sandbox read capability
+id: com.powerx.plugins.ecommerce.logistics.fulfillment.sandbox.read
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/sandbox/compare
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/sandbox/runs
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/sandbox/scenarios
+    source:
+        action: read
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:logistics.fulfillment_sandbox
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.logistics.fulfillment.sandbox.read.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.logistics.fulfillment.sandbox.read.json
+rbac:
+    actions:
+        - read
+    resource: com.powerx.plugins.ecommerce:logistics.fulfillment_sandbox
+status: active
+type: API
+version: 1.0.0

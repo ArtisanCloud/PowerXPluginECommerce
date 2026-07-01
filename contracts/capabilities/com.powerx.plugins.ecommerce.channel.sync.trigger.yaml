@@ -1,0 +1,26 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.channel.sync.trigger.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.channel.sync.trigger.json
+description: com.powerx.plugins.ecommerce:channel.sync trigger capability
+id: com.powerx.plugins.ecommerce.channel.sync.trigger
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels/:channelId/sync
+    source:
+        action: trigger
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:channel.sync
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.channel.sync.trigger.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.channel.sync.trigger.json
+rbac:
+    actions:
+        - trigger
+    resource: com.powerx.plugins.ecommerce:channel.sync
+status: active
+type: API
+version: 1.0.0

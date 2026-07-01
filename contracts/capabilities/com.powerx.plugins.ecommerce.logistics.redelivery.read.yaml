@@ -1,0 +1,26 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.logistics.redelivery.read.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.logistics.redelivery.read.json
+description: com.powerx.plugins.ecommerce:logistics.redelivery read capability
+id: com.powerx.plugins.ecommerce.logistics.redelivery.read
+metadata:
+    protocols:
+        rest:
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/redelivery/tasks
+    source:
+        action: read
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:logistics.redelivery
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.logistics.redelivery.read.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.logistics.redelivery.read.json
+rbac:
+    actions:
+        - read
+    resource: com.powerx.plugins.ecommerce:logistics.redelivery
+status: active
+type: API
+version: 1.0.0

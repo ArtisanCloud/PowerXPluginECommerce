@@ -1,0 +1,26 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.admin.security.toolgrant.write.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.admin.security.toolgrant.write.json
+description: admin.security.toolgrant write capability
+id: com.powerx.plugins.ecommerce.admin.security.toolgrant.write
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/security/toolgrants/revoke
+    source:
+        action: write
+        generated_from: route_rbac
+        resource: admin.security.toolgrant
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.admin.security.toolgrant.write.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.admin.security.toolgrant.write.json
+rbac:
+    actions:
+        - write
+    resource: admin.security.toolgrant
+status: active
+type: API
+version: 1.0.0

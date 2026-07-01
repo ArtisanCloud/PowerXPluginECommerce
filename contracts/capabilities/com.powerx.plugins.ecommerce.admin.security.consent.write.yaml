@@ -1,0 +1,26 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.admin.security.consent.write.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.admin.security.consent.write.json
+description: admin.security.consent write capability
+id: com.powerx.plugins.ecommerce.admin.security.consent.write
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/security/consent-tokens/:tokenId/revoke
+    source:
+        action: write
+        generated_from: route_rbac
+        resource: admin.security.consent
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.admin.security.consent.write.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.admin.security.consent.write.json
+rbac:
+    actions:
+        - write
+    resource: admin.security.consent
+status: active
+type: API
+version: 1.0.0

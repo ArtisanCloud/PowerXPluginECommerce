@@ -21,13 +21,14 @@ EVENT_FABRIC_FILE ?= config/event_fabric.yaml
 ABS_EVENT_FABRIC_FILE := $(abspath $(EVENT_FABRIC_FILE))
 MANIFESTCHECK_DIR := $(BACKEND_DIR)/cmd/manifestcheck
 RBAC_CATALOG_DIR := $(BACKEND_DIR)/cmd/rbac_catalog
+CAPABILITY_CATALOG_DIR := $(BACKEND_DIR)/cmd/capability_catalog
 RBAC_CATALOG_FILE ?= plugin.d/rbac.yaml
 BACKEND_GOCACHE := $(abspath $(BACKEND_DIR)/.cache/go-build)
 MANIFEST_ALIGN_SKILL_DIR ?= .codex/skills/ci/manifest-align
 MANIFEST_ALIGN_SCRIPT := $(MANIFEST_ALIGN_SKILL_DIR)/scripts/manifest-align-check.mjs
 
 .PHONY: plugin-yaml-sync
-plugin-yaml-sync: plugin-rbac-sync ## 根据 contracts/capabilities 自动同步 plugin.d/capabilities.yaml 与 exposure.yaml
+plugin-yaml-sync: plugin-rbac-sync plugin-capability-contracts-sync ## 根据 contracts/capabilities 自动同步 plugin.d/capabilities.yaml 与 exposure.yaml
 	@echo "[manifest] syncing plugin catalogs from contracts/capabilities"
 	@if [ ! -d "$(MANIFESTCHECK_DIR)" ]; then \
 		echo "❌ 未找到 $(MANIFESTCHECK_DIR)，无法执行 plugin catalog 同步"; \
@@ -52,6 +53,19 @@ plugin-rbac-sync: ## 从后端 route-level RBAC 声明生成 plugin.d/rbac.yaml
 	@cd $(BACKEND_DIR) && GOCACHE=$(BACKEND_GOCACHE) go run ./cmd/rbac_catalog \
 		--prefix "/api/v1" \
 		--output "$(abspath $(RBAC_CATALOG_FILE))"
+
+.PHONY: plugin-capability-contracts-sync
+plugin-capability-contracts-sync: ## 从后端 route-level RBAC 声明生成 capability contracts
+	@echo "[manifest] syncing capability contracts from route RBAC"
+	@if [ ! -d "$(CAPABILITY_CATALOG_DIR)" ]; then \
+		echo "❌ 未找到 $(CAPABILITY_CATALOG_DIR)，无法生成 capability contracts"; \
+		echo "   当前 BACKEND_DIR=$(BACKEND_DIR)"; \
+		exit 1; \
+	fi
+	@mkdir -p $(BACKEND_GOCACHE) contracts/capabilities contracts/schema/input contracts/schema/output
+	@cd $(BACKEND_DIR) && GOCACHE=$(BACKEND_GOCACHE) go run ./cmd/capability_catalog \
+		--root "$(abspath .)" \
+		--prefix "/api/v1"
 
 .PHONY: verify-manifest
 verify-manifest:

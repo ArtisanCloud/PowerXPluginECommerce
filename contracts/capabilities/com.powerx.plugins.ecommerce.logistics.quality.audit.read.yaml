@@ -1,0 +1,28 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.logistics.quality.audit.read.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.logistics.quality.audit.read.json
+description: com.powerx.plugins.ecommerce:logistics.quality_audit read capability
+id: com.powerx.plugins.ecommerce.logistics.quality.audit.read
+metadata:
+    protocols:
+        rest:
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/quality-reports
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/quality-reports/:id
+    source:
+        action: read
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:logistics.quality_audit
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.logistics.quality.audit.read.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.logistics.quality.audit.read.json
+rbac:
+    actions:
+        - read
+    resource: com.powerx.plugins.ecommerce:logistics.quality_audit
+status: active
+type: API
+version: 1.0.0

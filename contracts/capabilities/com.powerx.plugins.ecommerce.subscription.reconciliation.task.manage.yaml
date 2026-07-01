@@ -1,0 +1,28 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.subscription.reconciliation.task.manage.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.subscription.reconciliation.task.manage.json
+description: com.powerx.plugins.ecommerce:subscription.reconciliation.task manage capability
+id: com.powerx.plugins.ecommerce.subscription.reconciliation.task.manage
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/subscription-reconciliation/deltas/:id/tasks
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/subscription-reconciliation/tasks/:id/close
+    source:
+        action: manage
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:subscription.reconciliation.task
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.subscription.reconciliation.task.manage.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.subscription.reconciliation.task.manage.json
+rbac:
+    actions:
+        - manage
+    resource: com.powerx.plugins.ecommerce:subscription.reconciliation.task
+status: active
+type: API
+version: 1.0.0

@@ -1,0 +1,28 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.fulfillment.task.manage.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.fulfillment.task.manage.json
+description: com.powerx.plugins.ecommerce:fulfillment.task manage capability
+id: com.powerx.plugins.ecommerce.fulfillment.task.manage
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/fulfillment/tasks
+            - method: PATCH
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/fulfillment/tasks/:id/complete
+    source:
+        action: manage
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:fulfillment.task
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.fulfillment.task.manage.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.fulfillment.task.manage.json
+rbac:
+    actions:
+        - manage
+    resource: com.powerx.plugins.ecommerce:fulfillment.task
+status: active
+type: API
+version: 1.0.0

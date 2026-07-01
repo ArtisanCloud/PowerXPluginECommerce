@@ -1,0 +1,44 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.payments.manage.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.payments.manage.json
+description: com.powerx.plugins.ecommerce:payments manage capability
+id: com.powerx.plugins.ecommerce.payments.manage
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/manual-payments
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/manual-payments/:id/approve
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/manual-payments/:id/reject
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/providers
+            - method: PATCH
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/providers/:id
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/providers/:id/cert/test
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/providers/:id/miniapp/test
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/providers/:id/test
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/reconciliations
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/reconciliations/:id/items/:itemId/resolve
+    source:
+        action: manage
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:payments
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.payments.manage.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.payments.manage.json
+rbac:
+    actions:
+        - manage
+    resource: com.powerx.plugins.ecommerce:payments
+status: active
+type: API
+version: 1.0.0

@@ -1,0 +1,26 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.integration.grant.matrix.manage.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.integration.grant.matrix.manage.json
+description: integration.grant_matrix manage capability
+id: com.powerx.plugins.ecommerce.integration.grant.matrix.manage
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/integration/grant-matrix
+    source:
+        action: manage
+        generated_from: route_rbac
+        resource: integration.grant_matrix
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.integration.grant.matrix.manage.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.integration.grant.matrix.manage.json
+rbac:
+    actions:
+        - manage
+    resource: integration.grant_matrix
+status: active
+type: API
+version: 1.0.0

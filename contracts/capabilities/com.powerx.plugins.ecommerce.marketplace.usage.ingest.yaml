@@ -1,0 +1,28 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.marketplace.usage.ingest.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.marketplace.usage.ingest.json
+description: marketplace.usage ingest capability
+id: com.powerx.plugins.ecommerce.marketplace.usage.ingest
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/marketplace/usage
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/marketplace/usage
+    source:
+        action: ingest
+        generated_from: route_rbac
+        resource: marketplace.usage
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.marketplace.usage.ingest.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.marketplace.usage.ingest.json
+rbac:
+    actions:
+        - ingest
+    resource: marketplace.usage
+status: active
+type: API
+version: 1.0.0

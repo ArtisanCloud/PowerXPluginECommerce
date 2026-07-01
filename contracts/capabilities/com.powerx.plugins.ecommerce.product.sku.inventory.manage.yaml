@@ -1,0 +1,26 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.product.sku.inventory.manage.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.product.sku.inventory.manage.json
+description: com.powerx.plugins.ecommerce:product.sku.inventory manage capability
+id: com.powerx.plugins.ecommerce.product.sku.inventory.manage
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/skus/:id/inventory/adjust
+    source:
+        action: manage
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:product.sku.inventory
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.product.sku.inventory.manage.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.product.sku.inventory.manage.json
+rbac:
+    actions:
+        - manage
+    resource: com.powerx.plugins.ecommerce:product.sku.inventory
+status: active
+type: API
+version: 1.0.0

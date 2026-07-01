@@ -1,0 +1,40 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.membership.write.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.membership.write.json
+description: com.powerx.plugins.ecommerce:membership write capability
+id: com.powerx.plugins.ecommerce.membership.write
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/membership/benefits
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/membership/entitlements/grant
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/membership/entitlements/revoke
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/membership/points/redeem
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/membership/tiers
+            - method: DELETE
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/membership/tiers/:id
+            - method: PATCH
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/membership/tiers/:id/status
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/membership/tokens/adjust
+    source:
+        action: write
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:membership
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.membership.write.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.membership.write.json
+rbac:
+    actions:
+        - write
+    resource: com.powerx.plugins.ecommerce:membership
+status: active
+type: API
+version: 1.0.0

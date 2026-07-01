@@ -1,0 +1,26 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.marketplace.recommendation.read.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.marketplace.recommendation.read.json
+description: marketplace.recommendation read capability
+id: com.powerx.plugins.ecommerce.marketplace.recommendation.read
+metadata:
+    protocols:
+        rest:
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/marketplace/recommendation/experiments
+    source:
+        action: read
+        generated_from: route_rbac
+        resource: marketplace.recommendation
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.marketplace.recommendation.read.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.marketplace.recommendation.read.json
+rbac:
+    actions:
+        - read
+    resource: marketplace.recommendation
+status: active
+type: API
+version: 1.0.0

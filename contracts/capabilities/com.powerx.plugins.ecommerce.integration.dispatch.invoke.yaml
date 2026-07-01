@@ -1,0 +1,28 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.integration.dispatch.invoke.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.integration.dispatch.invoke.json
+description: integration.dispatch invoke capability
+id: com.powerx.plugins.ecommerce.integration.dispatch.invoke
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/integration/capabilities/invoke
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/integration/dispatch
+    source:
+        action: invoke
+        generated_from: route_rbac
+        resource: integration.dispatch
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.integration.dispatch.invoke.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.integration.dispatch.invoke.json
+rbac:
+    actions:
+        - invoke
+    resource: integration.dispatch
+status: active
+type: API
+version: 1.0.0

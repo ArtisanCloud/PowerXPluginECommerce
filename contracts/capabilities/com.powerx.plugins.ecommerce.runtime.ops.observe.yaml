@@ -1,0 +1,26 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.runtime.ops.observe.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.runtime.ops.observe.json
+description: runtime.ops observe capability
+id: com.powerx.plugins.ecommerce.runtime.ops.observe
+metadata:
+    protocols:
+        rest:
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/runtime/metrics
+    source:
+        action: observe
+        generated_from: route_rbac
+        resource: runtime.ops
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.runtime.ops.observe.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.runtime.ops.observe.json
+rbac:
+    actions:
+        - observe
+    resource: runtime.ops
+status: active
+type: API
+version: 1.0.0

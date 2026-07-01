@@ -1,0 +1,32 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.customer.addresses.write.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.customer.addresses.write.json
+description: customer.addresses write capability
+id: com.powerx.plugins.ecommerce.customer.addresses.write
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/customers/*/addresses
+            - method: DELETE
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/customers/*/addresses/*
+            - method: PATCH
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/customers/*/addresses/*
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/customers/*/addresses/*/default
+    source:
+        action: write
+        generated_from: route_rbac
+        resource: customer.addresses
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.customer.addresses.write.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.customer.addresses.write.json
+rbac:
+    actions:
+        - write
+    resource: customer.addresses
+status: active
+type: API
+version: 1.0.0

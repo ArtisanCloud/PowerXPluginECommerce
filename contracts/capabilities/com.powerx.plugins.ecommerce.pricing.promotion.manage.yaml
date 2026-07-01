@@ -1,0 +1,30 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.pricing.promotion.manage.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.pricing.promotion.manage.json
+description: com.powerx.plugins.ecommerce:pricing.promotion manage capability
+id: com.powerx.plugins.ecommerce.pricing.promotion.manage
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/promotions
+            - method: PATCH
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/promotions/:id
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/promotions/:id/clone
+    source:
+        action: manage
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:pricing.promotion
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.pricing.promotion.manage.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.pricing.promotion.manage.json
+rbac:
+    actions:
+        - manage
+    resource: com.powerx.plugins.ecommerce:pricing.promotion
+status: active
+type: API
+version: 1.0.0

@@ -1,0 +1,30 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.logistics.settlement.manage.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.logistics.settlement.manage.json
+description: com.powerx.plugins.ecommerce:logistics.settlement manage capability
+id: com.powerx.plugins.ecommerce.logistics.settlement.manage
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/settlement/batches
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/settlement/batches/:id/confirm
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/settlement/diffs/:id/handle
+    source:
+        action: manage
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:logistics.settlement
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.logistics.settlement.manage.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.logistics.settlement.manage.json
+rbac:
+    actions:
+        - manage
+    resource: com.powerx.plugins.ecommerce:logistics.settlement
+status: active
+type: API
+version: 1.0.0

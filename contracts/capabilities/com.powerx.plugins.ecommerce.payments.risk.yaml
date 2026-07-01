@@ -1,0 +1,26 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.payments.risk.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.payments.risk.json
+description: com.powerx.plugins.ecommerce:payments risk capability
+id: com.powerx.plugins.ecommerce.payments.risk
+metadata:
+    protocols:
+        rest:
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/risk-events
+    source:
+        action: risk
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:payments
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.payments.risk.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.payments.risk.json
+rbac:
+    actions:
+        - risk
+    resource: com.powerx.plugins.ecommerce:payments
+status: active
+type: API
+version: 1.0.0

@@ -1,0 +1,40 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.logistics.tracking.sync.manage.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.logistics.tracking.sync.manage.json
+description: com.powerx.plugins.ecommerce:logistics.tracking_sync manage capability
+id: com.powerx.plugins.ecommerce.logistics.tracking.sync.manage
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/tracking-sync/jobs
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/tracking-sync/jobs/:id/cancel
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/tracking-sync/jobs/:id/retry
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/tracking-sync/schedules
+            - method: PATCH
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/tracking-sync/schedules/:id
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/tracking-sync/schedules/:id/toggle
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/tracking-sync/schedules/:id/trigger
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/tracking-sync/schedules/run-due
+    source:
+        action: manage
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:logistics.tracking_sync
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.logistics.tracking.sync.manage.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.logistics.tracking.sync.manage.json
+rbac:
+    actions:
+        - manage
+    resource: com.powerx.plugins.ecommerce:logistics.tracking_sync
+status: active
+type: API
+version: 1.0.0

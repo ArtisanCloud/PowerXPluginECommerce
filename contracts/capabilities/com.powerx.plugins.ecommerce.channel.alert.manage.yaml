@@ -1,0 +1,26 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.channel.alert.manage.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.channel.alert.manage.json
+description: com.powerx.plugins.ecommerce:channel.alert manage capability
+id: com.powerx.plugins.ecommerce.channel.alert.manage
+metadata:
+    protocols:
+        rest:
+            - method: PATCH
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels/:channelId/alerts/:alertId
+    source:
+        action: manage
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:channel.alert
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.channel.alert.manage.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.channel.alert.manage.json
+rbac:
+    actions:
+        - manage
+    resource: com.powerx.plugins.ecommerce:channel.alert
+status: active
+type: API
+version: 1.0.0

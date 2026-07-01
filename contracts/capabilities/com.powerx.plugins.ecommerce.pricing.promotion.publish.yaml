@@ -1,0 +1,28 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.pricing.promotion.publish.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.pricing.promotion.publish.json
+description: com.powerx.plugins.ecommerce:pricing.promotion publish capability
+id: com.powerx.plugins.ecommerce.pricing.promotion.publish
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/promotions/:id/activate
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/promotions/:id/pause
+    source:
+        action: publish
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:pricing.promotion
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.pricing.promotion.publish.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.pricing.promotion.publish.json
+rbac:
+    actions:
+        - publish
+    resource: com.powerx.plugins.ecommerce:pricing.promotion
+status: active
+type: API
+version: 1.0.0

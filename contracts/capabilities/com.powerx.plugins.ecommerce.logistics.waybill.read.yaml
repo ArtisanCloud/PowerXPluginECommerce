@@ -1,0 +1,26 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.logistics.waybill.read.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.logistics.waybill.read.json
+description: com.powerx.plugins.ecommerce:logistics.waybill read capability
+id: com.powerx.plugins.ecommerce.logistics.waybill.read
+metadata:
+    protocols:
+        rest:
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/waybills/:id
+    source:
+        action: read
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:logistics.waybill
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.logistics.waybill.read.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.logistics.waybill.read.json
+rbac:
+    actions:
+        - read
+    resource: com.powerx.plugins.ecommerce:logistics.waybill
+status: active
+type: API
+version: 1.0.0

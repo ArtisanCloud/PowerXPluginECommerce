@@ -1,0 +1,28 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.integration.approvals.manage.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.integration.approvals.manage.json
+description: integration.approvals manage capability
+id: com.powerx.plugins.ecommerce.integration.approvals.manage
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/integration/approvals/:id/approve
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/integration/approvals/:id/reject
+    source:
+        action: manage
+        generated_from: route_rbac
+        resource: integration.approvals
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.integration.approvals.manage.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.integration.approvals.manage.json
+rbac:
+    actions:
+        - manage
+    resource: integration.approvals
+status: active
+type: API
+version: 1.0.0

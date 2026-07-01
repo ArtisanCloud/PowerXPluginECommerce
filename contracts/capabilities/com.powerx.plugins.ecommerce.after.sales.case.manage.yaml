@@ -1,0 +1,36 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.after.sales.case.manage.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.after.sales.case.manage.json
+description: com.powerx.plugins.ecommerce:after_sales.case manage capability
+id: com.powerx.plugins.ecommerce.after.sales.case.manage
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/after-sales/cases/:id/accept
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/after-sales/cases/:id/approve
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/after-sales/cases/:id/close
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/after-sales/cases/:id/complete
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/after-sales/cases/:id/reject
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/after-sales/cases/:id/review
+    source:
+        action: manage
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:after_sales.case
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.after.sales.case.manage.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.after.sales.case.manage.json
+rbac:
+    actions:
+        - manage
+    resource: com.powerx.plugins.ecommerce:after_sales.case
+status: active
+type: API
+version: 1.0.0

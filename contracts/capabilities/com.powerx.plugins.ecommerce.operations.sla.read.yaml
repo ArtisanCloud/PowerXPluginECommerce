@@ -1,0 +1,26 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.operations.sla.read.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.operations.sla.read.json
+description: operations.sla read capability
+id: com.powerx.plugins.ecommerce.operations.sla.read
+metadata:
+    protocols:
+        rest:
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/operations/sla/profiles
+    source:
+        action: read
+        generated_from: route_rbac
+        resource: operations.sla
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.operations.sla.read.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.operations.sla.read.json
+rbac:
+    actions:
+        - read
+    resource: operations.sla
+status: active
+type: API
+version: 1.0.0

@@ -1,0 +1,28 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.admin.security.advisory.write.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.admin.security.advisory.write.json
+description: admin.security.advisory write capability
+id: com.powerx.plugins.ecommerce.admin.security.advisory.write
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/security/advisories
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/security/advisories/:advisoryId/publish
+    source:
+        action: write
+        generated_from: route_rbac
+        resource: admin.security.advisory
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.admin.security.advisory.write.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.admin.security.advisory.write.json
+rbac:
+    actions:
+        - write
+    resource: admin.security.advisory
+status: active
+type: API
+version: 1.0.0

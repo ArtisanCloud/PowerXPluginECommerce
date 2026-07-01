@@ -1,0 +1,28 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.logistics.settlement.read.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.logistics.settlement.read.json
+description: com.powerx.plugins.ecommerce:logistics.settlement read capability
+id: com.powerx.plugins.ecommerce.logistics.settlement.read
+metadata:
+    protocols:
+        rest:
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/settlement/batches
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/settlement/diffs
+    source:
+        action: read
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:logistics.settlement
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.logistics.settlement.read.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.logistics.settlement.read.json
+rbac:
+    actions:
+        - read
+    resource: com.powerx.plugins.ecommerce:logistics.settlement
+status: active
+type: API
+version: 1.0.0

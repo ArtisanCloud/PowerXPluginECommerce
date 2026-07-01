@@ -343,6 +343,43 @@ func createOrderTables(t *testing.T, db *gorm.DB) {
 			payload TEXT,
 			created_at DATETIME
 		)`,
+		`CREATE TABLE IF NOT EXISTS promotion_campaigns (
+			id TEXT PRIMARY KEY,
+			tenant_uuid TEXT NOT NULL,
+			code TEXT NOT NULL,
+			name TEXT NOT NULL,
+			description TEXT,
+			promotion_type TEXT NOT NULL,
+			condition_rule TEXT NOT NULL,
+			scope_rule TEXT NOT NULL,
+			action_rule TEXT NOT NULL,
+			stacking_rule TEXT NOT NULL,
+			valid_from DATETIME NOT NULL,
+			valid_to DATETIME NOT NULL,
+			status TEXT NOT NULL,
+			created_by TEXT,
+			updated_by TEXT,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME
+		)`,
+		`CREATE TABLE IF NOT EXISTS order_promotion_snapshots (
+			id TEXT PRIMARY KEY,
+			tenant_uuid TEXT NOT NULL,
+			order_id TEXT NOT NULL,
+			currency TEXT NOT NULL,
+			base_total_minor BIGINT NOT NULL DEFAULT 0,
+			promotion_discount_minor BIGINT NOT NULL DEFAULT 0,
+			after_promotion_total_minor BIGINT NOT NULL DEFAULT 0,
+			applied_promotions TEXT NOT NULL,
+			rejected_promotions TEXT NOT NULL,
+			line_allocations TEXT NOT NULL,
+			priced_at DATETIME NOT NULL,
+			created_at DATETIME,
+			updated_at DATETIME,
+			deleted_at DATETIME,
+			UNIQUE(tenant_uuid, order_id)
+		)`,
 	}
 	for _, stmt := range stmts {
 		require.NoError(t, db.Exec(stmt).Error)

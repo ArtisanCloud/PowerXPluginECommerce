@@ -1,0 +1,32 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.marketplace.listings.write.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.marketplace.listings.write.json
+description: marketplace.listings write capability
+id: com.powerx.plugins.ecommerce.marketplace.listings.write
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/marketplace/listings
+            - method: PATCH
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/marketplace/listings/:id
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/marketplace/listings
+            - method: PATCH
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/marketplace/listings/*
+    source:
+        action: write
+        generated_from: route_rbac
+        resource: marketplace.listings
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.marketplace.listings.write.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.marketplace.listings.write.json
+rbac:
+    actions:
+        - write
+    resource: marketplace.listings
+status: active
+type: API
+version: 1.0.0

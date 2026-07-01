@@ -1,0 +1,32 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.logistics.crossborder.read.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.logistics.crossborder.read.json
+description: com.powerx.plugins.ecommerce:logistics.crossborder read capability
+id: com.powerx.plugins.ecommerce.logistics.crossborder.read
+metadata:
+    protocols:
+        rest:
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/crossborder/documents
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/crossborder/tax-quote
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/crossborder/tracking-maps
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/crossborder/tracking-maps/normalize
+    source:
+        action: read
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:logistics.crossborder
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.logistics.crossborder.read.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.logistics.crossborder.read.json
+rbac:
+    actions:
+        - read
+    resource: com.powerx.plugins.ecommerce:logistics.crossborder
+status: active
+type: API
+version: 1.0.0

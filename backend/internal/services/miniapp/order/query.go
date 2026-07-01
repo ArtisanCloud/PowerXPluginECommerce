@@ -37,11 +37,18 @@ func (s *Service) ListOrders(ctx context.Context, tenantUUID, customerID string,
 				shippingSnap = &snap
 			}
 		}
+		var promotionSummary *PromotionSummaryDTO
+		if s.PromotionSnapshotRepo != nil {
+			if snapshot, err := s.PromotionSnapshotRepo.FindByOrderID(ctx, tenantUUID, it.ID); err == nil {
+				promotionSummary = promotionSummaryFromSnapshotRow(snapshot)
+			}
+		}
 		items = append(items, OrderSummaryDTO{
 			OrderID:                 it.ID,
 			OrderNo:                 it.OrderNo,
 			Status:                  it.Status,
 			Amounts:                 MoneyDTO{Currency: it.Currency, Subtotal: it.SubtotalAmount, Total: it.TotalAmount},
+			Promotion:               promotionSummary,
 			ShippingAddressSnapshot: shippingSnap,
 			CreatedAt:               it.CreatedAt,
 		})
@@ -118,6 +125,12 @@ func (s *Service) GetOrderDetail(ctx context.Context, tenantUUID, customerID, or
 			shippingSnap = &snap
 		}
 	}
+	var promotionSummary *PromotionSummaryDTO
+	if s.PromotionSnapshotRepo != nil {
+		if snapshot, err := s.PromotionSnapshotRepo.FindByOrderID(ctx, tenantUUID, orderID); err == nil {
+			promotionSummary = promotionSummaryFromSnapshotRow(snapshot)
+		}
+	}
 
 	return &OrderDetailDTO{
 		Summary: OrderSummaryDTO{
@@ -125,6 +138,7 @@ func (s *Service) GetOrderDetail(ctx context.Context, tenantUUID, customerID, or
 			OrderNo:                 ord.OrderNo,
 			Status:                  ord.Status,
 			Amounts:                 MoneyDTO{Currency: ord.Currency, Subtotal: ord.SubtotalAmount, Total: ord.TotalAmount},
+			Promotion:               promotionSummary,
 			ShippingAddressSnapshot: shippingSnap,
 			CreatedAt:               ord.CreatedAt,
 		},

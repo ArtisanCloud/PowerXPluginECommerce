@@ -1,0 +1,26 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.order.create.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.order.create.json
+description: com.powerx.plugins.ecommerce:order create capability
+id: com.powerx.plugins.ecommerce.order.create
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/orders
+    source:
+        action: create
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:order
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.order.create.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.order.create.json
+rbac:
+    actions:
+        - create
+    resource: com.powerx.plugins.ecommerce:order
+status: active
+type: API
+version: 1.0.0

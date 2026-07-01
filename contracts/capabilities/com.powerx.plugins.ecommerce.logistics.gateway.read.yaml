@@ -1,0 +1,32 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.logistics.gateway.read.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.logistics.gateway.read.json
+description: com.powerx.plugins.ecommerce:logistics.gateway read capability
+id: com.powerx.plugins.ecommerce.logistics.gateway.read
+metadata:
+    protocols:
+        rest:
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/gateway/cost-alerts
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/gateway/costs
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/gateway/failures
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/gateway/health
+    source:
+        action: read
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:logistics.gateway
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.logistics.gateway.read.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.logistics.gateway.read.json
+rbac:
+    actions:
+        - read
+    resource: com.powerx.plugins.ecommerce:logistics.gateway
+status: active
+type: API
+version: 1.0.0

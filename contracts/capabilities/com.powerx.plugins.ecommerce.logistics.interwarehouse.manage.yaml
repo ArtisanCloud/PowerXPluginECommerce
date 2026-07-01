@@ -1,0 +1,28 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.logistics.interwarehouse.manage.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.logistics.interwarehouse.manage.json
+description: com.powerx.plugins.ecommerce:logistics.interwarehouse manage capability
+id: com.powerx.plugins.ecommerce.logistics.interwarehouse.manage
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/allocation/interwarehouse/confirm
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/allocation/interwarehouse/suggest
+    source:
+        action: manage
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:logistics.interwarehouse
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.logistics.interwarehouse.manage.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.logistics.interwarehouse.manage.json
+rbac:
+    actions:
+        - manage
+    resource: com.powerx.plugins.ecommerce:logistics.interwarehouse
+status: active
+type: API
+version: 1.0.0

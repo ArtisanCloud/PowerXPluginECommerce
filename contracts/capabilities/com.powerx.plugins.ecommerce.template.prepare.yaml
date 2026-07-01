@@ -1,0 +1,19 @@
+id: com.powerx.plugins.ecommerce.template.prepare
+type: API
+version: 1.0.0
+status: active
+description: 电商模板 Skill 的执行准备能力，负责判断缺参并生成后续能力调用请求。
+rbac:
+  resource: com.powerx.plugins.ecommerce:template
+  actions: [read]
+provides:
+  - id: schema/output/com.powerx.plugins.ecommerce.template.prepare.json
+    path: schema/output/com.powerx.plugins.ecommerce.template.prepare.json
+consumes:
+  - id: schema/input/com.powerx.plugins.ecommerce.template.prepare.json
+    path: schema/input/com.powerx.plugins.ecommerce.template.prepare.json
+metadata:
+  protocols:
+    rest:
+      method: POST
+      path: /api/v1/integration/capabilities/invoke

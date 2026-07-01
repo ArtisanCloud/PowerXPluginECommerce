@@ -32,6 +32,7 @@ export type OrderSummary = {
   orderNo: string;
   status: string;
   amounts: MoneyMinor;
+  promotion?: PromotionSummary;
   createdAt: string;
   shippingAddressSnapshot?: ShippingAddress;
 };
@@ -64,6 +65,57 @@ export type OrderDetail = {
   events: OrderEvent[];
 };
 
+export type PromotionQuoteItem = {
+  line_id?: string;
+  sku_id: string;
+  qty: number;
+  unit_price_minor: number;
+};
+
+export type PromotionLineAllocation = {
+  line_id?: string;
+  sku_id: string;
+  base_amount_minor: number;
+  promotion_discount_minor: number;
+  after_promotion_amount_minor: number;
+};
+
+export type PromotionApplied = {
+  promotion_id: string;
+  code: string;
+  name: string;
+  promotion_type: string;
+  discount_minor: number;
+  priority: number;
+  exclusion_group?: string;
+  stackable_with_coupon: boolean;
+};
+
+export type PromotionRejected = {
+  promotion_id?: string;
+  code?: string;
+  reason: string;
+};
+
+export type PromotionSummary = {
+  currency: string;
+  base_total_minor: number;
+  promotion_discount_minor: number;
+  after_promotion_total_minor: number;
+  coupon_stacking_allowed: boolean;
+  line_allocations: PromotionLineAllocation[];
+  applied_promotions: PromotionApplied[];
+  rejected_promotions: PromotionRejected[];
+  priced_at: string;
+};
+
+export type PromotionQuoteRequest = {
+  channel: string;
+  currency: string;
+  items: PromotionQuoteItem[];
+  submitted_at?: string;
+};
+
 function buildQuery(params: Record<string, any>) {
   const pairs: string[] = [];
   Object.keys(params || {}).forEach((k) => {
@@ -80,6 +132,14 @@ export async function createOrder(req: CreateOrderRequest, idempotencyKey: strin
     path: "/orders",
     data: req,
     headers: { "Idempotency-Key": idempotencyKey },
+  });
+}
+
+export async function quotePromotions(req: PromotionQuoteRequest) {
+  return await miniAppRequest<PromotionSummary>({
+    method: "POST",
+    path: "/promotions/quote",
+    data: req,
   });
 }
 

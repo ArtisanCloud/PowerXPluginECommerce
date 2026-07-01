@@ -1,0 +1,26 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.pricing.coupon.issue.manage.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.pricing.coupon.issue.manage.json
+description: com.powerx.plugins.ecommerce:pricing.coupon.issue manage capability
+id: com.powerx.plugins.ecommerce.pricing.coupon.issue.manage
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/coupons/issues
+    source:
+        action: manage
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:pricing.coupon.issue
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.pricing.coupon.issue.manage.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.pricing.coupon.issue.manage.json
+rbac:
+    actions:
+        - manage
+    resource: com.powerx.plugins.ecommerce:pricing.coupon.issue
+status: active
+type: API
+version: 1.0.0

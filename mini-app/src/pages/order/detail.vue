@@ -108,8 +108,12 @@
           <text class="text-sm font-semibold">{{ shippingText }}</text>
         </view>
         <view class="flex items-center justify-between text-sm">
-          <text class="text-muted">优惠券</text>
+          <text class="text-muted">自动促销</text>
           <text class="text-sm font-semibold" style="color:#ef4444;">-{{ discountText }}</text>
+        </view>
+        <view v-if="appliedPromotionNames" class="flex items-center justify-between text-xs" style="gap: 12px;">
+          <text class="text-muted shrink-0">已享活动</text>
+          <text class="text-primary text-right" :number-of-lines="2">{{ appliedPromotionNames }}</text>
         </view>
         <view class="pt-3 border-t flex justify-end items-center" style="gap: 6px; border-color: rgba(0,0,0,0.04);">
           <text class="text-sm font-semibold">实付金额：</text>
@@ -232,7 +236,12 @@ const createdAtText = computed(() => formatDateTime(detail.value?.summary?.creat
 const subtotalText = computed(() => formatMoneyFromMinor(currency.value, Number(detail.value?.summary?.amounts?.subtotal || 0)));
 const totalText = computed(() => formatMoneyFromMinor(currency.value, Number(detail.value?.summary?.amounts?.total || 0)));
 const shippingText = computed(() => formatMoneyFromMinor(currency.value, 0));
-const discountText = computed(() => formatMoneyFromMinor(currency.value, 0));
+const promotionDiscountMinor = computed(() => Number(detail.value?.summary?.promotion?.promotion_discount_minor || 0));
+const discountText = computed(() => formatMoneyFromMinor(currency.value, promotionDiscountMinor.value));
+const appliedPromotionNames = computed(() => {
+  const list = detail.value?.summary?.promotion?.applied_promotions || [];
+  return list.map((item: any) => item.name || item.code).filter(Boolean).join("、");
+});
 
 const statusText = computed(() => {
   const s = String(detail.value?.summary?.status || "").trim();

@@ -1,8 +1,2876 @@
 exposure:
   channels:
     - auth: jwt
+      capability: com.powerx.plugins.ecommerce.admin.security.advisory.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/security/advisories
+      method: GET
+      rbac: admin.security.advisory:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.admin.security.advisory.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/security/advisories
+      method: POST
+      rbac: admin.security.advisory:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.admin.security.advisory.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/security/advisories/:advisoryId/publish
+      method: POST
+      rbac: admin.security.advisory:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.admin.security.audit.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/security/audit-reports
+      method: GET
+      rbac: admin.security.audit:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.admin.security.consent.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/security/consent-tokens
+      method: GET
+      rbac: admin.security.consent:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.admin.security.consent.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/security/consent-tokens/:tokenId/revoke
+      method: POST
+      rbac: admin.security.consent:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.admin.security.lifecycle.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/security/lifecycle-events
+      method: GET
+      rbac: admin.security.lifecycle:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.admin.security.toolgrant.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/security/toolgrants/revocations
+      method: GET
+      rbac: admin.security.toolgrant:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.admin.security.toolgrant.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/security/toolgrants/usage
+      method: GET
+      rbac: admin.security.toolgrant:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.admin.security.toolgrant.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/security/toolgrants/revoke
+      method: POST
+      rbac: admin.security.toolgrant:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.after.sales.case.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/after-sales/cases/:id/accept
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:after_sales.case:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.after.sales.case.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/after-sales/cases/:id/approve
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:after_sales.case:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.after.sales.case.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/after-sales/cases/:id/close
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:after_sales.case:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.after.sales.case.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/after-sales/cases/:id/complete
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:after_sales.case:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.after.sales.case.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/after-sales/cases/:id/reject
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:after_sales.case:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.after.sales.case.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/after-sales/cases/:id/review
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:after_sales.case:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.after.sales.case.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/after-sales/cases
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:after_sales.case:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.after.sales.case.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/after-sales/cases/:id
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:after_sales.case:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.after.sales.dashboard.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/after-sales/dashboard
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:after_sales.dashboard:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.after.sales.reverse.link.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/after-sales/cases/:id/reverse-logistics
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:after_sales.reverse_link:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.capability.management.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/capabilities/lifecycle/:planID/status
+      method: POST
+      rbac: capability.management:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.capability.management.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/capabilities
+      method: GET
+      rbac: capability.management:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.capability.management.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/capabilities/exposure/:capabilityID
+      method: GET
+      rbac: capability.management:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.capability.management.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/capabilities/exposure/template
+      method: GET
+      rbac: capability.management:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.capability.management.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/capabilities/lifecycle
+      method: GET
+      rbac: capability.management:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.capability.management.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/capabilities/lifecycle/template
+      method: GET
+      rbac: capability.management:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.capability.management.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/capabilities/quotas/:capabilityID
+      method: GET
+      rbac: capability.management:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.capability.management.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/capabilities/register/template
+      method: GET
+      rbac: capability.management:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.capability.management.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/capabilities/sources
+      method: GET
+      rbac: capability.management:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.capability.management.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/capabilities/exposure/:capabilityID
+      method: PUT
+      rbac: capability.management:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.capability.management.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/capabilities/lifecycle
+      method: POST
+      rbac: capability.management:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.capability.management.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/capabilities/quotas/:capabilityID
+      method: POST
+      rbac: capability.management:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.capability.management.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/capabilities/register
+      method: POST
+      rbac: capability.management:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.capability.management.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/capabilities/register/validate
+      method: POST
+      rbac: capability.management:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.channel.alert.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels/:channelId/alerts/:alertId
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:channel.alert:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.channel.alert.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels/:channelId/alerts
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:channel.alert:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.channel.credential.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels/:channelId/credentials
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:channel.credential:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.channel.credential.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels/:channelId/credentials/test
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:channel.credential:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.channel.credential.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels/:channelId/credentials
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:channel.credential:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.channel.master.approve
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels/:channelId/approval
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:channel.master:approve
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.channel.master.create
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:channel.master:create
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.channel.master.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:channel.master:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.channel.master.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels/:channelId
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:channel.master:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.channel.master.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels/owners
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:channel.master:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.channel.master.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels/platforms
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:channel.master:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.channel.master.update
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels/:channelId
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:channel.master:update
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.channel.master.update
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels/:channelId/submit
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:channel.master:update
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.channel.note.create
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels/:channelId/notes
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:channel.note:create
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.channel.note.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels/:channelId/notes
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:channel.note:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.channel.strategy.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels/:channelId/strategy
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:channel.strategy:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.channel.strategy.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels/:channelId/strategy
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:channel.strategy:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.channel.sync.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels/:channelId/sync-history
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:channel.sync:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.channel.sync.trigger
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels/:channelId/sync
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:channel.sync:trigger
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.channel.task.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels/:channelId/tasks
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:channel.task:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.channel.task.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels/:channelId/tasks/:taskLinkId
+      method: DELETE
+      rbac: com.powerx.plugins.ecommerce:channel.task:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.channel.task.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels/:channelId/tasks/:taskLinkId
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:channel.task:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.channel.task.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels/:channelId/tasks
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:channel.task:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.customer.addresses.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/customers/*/addresses
+      method: GET
+      rbac: customer.addresses:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.customer.addresses.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/customers/*/addresses
+      method: POST
+      rbac: customer.addresses:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.customer.addresses.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/customers/*/addresses/*
+      method: DELETE
+      rbac: customer.addresses:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.customer.addresses.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/customers/*/addresses/*
+      method: PATCH
+      rbac: customer.addresses:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.customer.addresses.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/customers/*/addresses/*/default
+      method: POST
+      rbac: customer.addresses:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.customer.delete.delete
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/customers/:id
+      method: DELETE
+      rbac: customer.delete:delete
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.customer.manage.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/customers
+      method: POST
+      rbac: customer.manage:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.customer.manage.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/customers/:id
+      method: PATCH
+      rbac: customer.manage:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.customer.manage.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/customers/import
+      method: POST
+      rbac: customer.manage:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.customer.read.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/customers
+      method: GET
+      rbac: customer.read:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.customer.read.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/customers/:id/entitlements
+      method: GET
+      rbac: customer.read:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.customer.read.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/customers/:id/tokens
+      method: GET
+      rbac: customer.read:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.customer.read.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/customers/import/conflicts/:taskId
+      method: GET
+      rbac: customer.read:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.customer.read.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/customers/import/template
+      method: GET
+      rbac: customer.read:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.customer.read.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/jobs/*
+      method: GET
+      rbac: customer.read:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.fulfillment.exception.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/fulfillment/exceptions
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:fulfillment.exception:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.fulfillment.exception.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/fulfillment/exceptions
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:fulfillment.exception:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.fulfillment.task.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/fulfillment/tasks
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:fulfillment.task:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.fulfillment.task.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/fulfillment/tasks/:id/complete
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:fulfillment.task:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.fulfillment.task.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/fulfillment/tasks
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:fulfillment.task:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.fulfillment.warehouse.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/fulfillment/warehouse/outbounds
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:fulfillment.warehouse:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.fulfillment.warehouse.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/fulfillment/warehouse/outbounds/:id/execute
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:fulfillment.warehouse:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.fulfillment.warehouse.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/fulfillment/warehouse/outbounds/:id/rollback
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:fulfillment.warehouse:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.fulfillment.warehouse.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/fulfillment/warehouse/outbounds
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:fulfillment.warehouse:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.fulfillment.wave.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/fulfillment/waves
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:fulfillment.wave:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.fulfillment.wave.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/fulfillment/waves/:id/advance
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:fulfillment.wave:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.fulfillment.wave.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/fulfillment/waves/:id/tasks/:task_id/reassign
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:fulfillment.wave:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.fulfillment.wave.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/fulfillment/waves
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:fulfillment.wave:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.fulfillment.wave.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/fulfillment/waves/:id
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:fulfillment.wave:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.fulfillment.wave.strategy.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/fulfillment/wave-strategies
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:fulfillment.wave.strategy:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.fulfillment.wave.strategy.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/fulfillment/wave-strategies
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:fulfillment.wave.strategy:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.fulfillment.wave.strategy.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/fulfillment/wave-strategies/preview
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:fulfillment.wave.strategy:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.integration.approvals.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/integration/approvals/:id/approve
+      method: POST
+      rbac: integration.approvals:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.integration.approvals.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/integration/approvals/:id/reject
+      method: POST
+      rbac: integration.approvals:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.integration.approvals.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/integration/approvals
+      method: GET
+      rbac: integration.approvals:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.integration.dispatch.invoke
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/integration/capabilities/invoke
+      method: POST
+      rbac: integration.dispatch:invoke
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.integration.dispatch.invoke
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/integration/dispatch
+      method: POST
+      rbac: integration.dispatch:invoke
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.integration.grant.matrix.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/integration/grant-matrix
+      method: POST
+      rbac: integration.grant_matrix:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.integration.grant.matrix.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/integration/grant-matrix
+      method: GET
+      rbac: integration.grant_matrix:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.integration.grant.matrix.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/integration/grant-matrix
+      method: GET
+      rbac: integration.grant_matrix:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.integration.secrets.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/integration/secrets
+      method: POST
+      rbac: integration.secrets:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.integration.secrets.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/integration/secrets/:id/revoke
+      method: POST
+      rbac: integration.secrets:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.integration.secrets.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/integration/secrets/:id/rotate
+      method: POST
+      rbac: integration.secrets:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.integration.secrets.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/integration/secrets/:id/rotate/complete
+      method: POST
+      rbac: integration.secrets:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.integration.secrets.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/integration/secrets
+      method: POST
+      rbac: integration.secrets:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.integration.secrets.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/integration/secrets/:secretId/rotate
+      method: POST
+      rbac: integration.secrets:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.integration.secrets.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/integration/secrets
+      method: GET
+      rbac: integration.secrets:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.integration.secrets.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/integration/secrets/:id/audit
+      method: GET
+      rbac: integration.secrets:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.integration.webhooks.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/integration/webhooks
+      method: POST
+      rbac: integration.webhooks:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.integration.webhooks.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/integration/webhooks/:id
+      method: DELETE
+      rbac: integration.webhooks:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.integration.webhooks.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/integration/webhooks/:id
+      method: PUT
+      rbac: integration.webhooks:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.integration.webhooks.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/integration/webhooks/attempts/:attemptId/replay
+      method: POST
+      rbac: integration.webhooks:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.integration.webhooks.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/integration/webhooks/dlq/:attemptId/replay
+      method: POST
+      rbac: integration.webhooks:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.integration.webhooks.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/integration/webhooks/subscriptions
+      method: POST
+      rbac: integration.webhooks:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.integration.webhooks.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/integration/webhooks
+      method: GET
+      rbac: integration.webhooks:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.integration.webhooks.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/integration/webhooks/:id/attempts
+      method: GET
+      rbac: integration.webhooks:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.integration.webhooks.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/integration/webhooks/subscriptions
+      method: GET
+      rbac: integration.webhooks:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.address.validation.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/address-validation/check
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.address_validation:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.address.validation.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/address-validation/records
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.address_validation:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.allocation.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/allocation/allocate
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.allocation:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.allocation.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/allocation/override
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.allocation:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.allocation.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/allocation/plans
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.allocation:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.allocation.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/allocation/plans/:id
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:logistics.allocation:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.allocation.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/allocation/plans
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.allocation:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.billing.case.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/billing/cases
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.billing.case:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.billing.case.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/billing/cases/:id/transition
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:logistics.billing.case:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.billing.case.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/billing/cases
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.billing.case:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.billing.export
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/billing/export
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.billing:export
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.billing.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/waybills/:id/cost
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:logistics.billing:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.billing.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/billing/summary
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.billing:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.capacity.forecast.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/allocation/forecasts/:id/apply
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.capacity_forecast:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.capacity.forecast.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/allocation/forecasts/generate
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.capacity_forecast:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.capacity.forecast.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/allocation/forecasts
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.capacity_forecast:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.carrier.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/carriers
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.carrier:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.carrier.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/carriers/:id
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:logistics.carrier:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.carrier.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/carriers/:id/test
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.carrier:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.carrier.profile.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/carriers/profiles/:id/confirm-rating
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.carrier_profile:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.carrier.profile.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/carriers/profiles/:id/restore
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.carrier_profile:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.carrier.profile.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/carriers/profiles/:id/retire
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.carrier_profile:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.carrier.profile.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/carriers/profiles/evaluate
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.carrier_profile:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.carrier.profile.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/carriers/profiles
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.carrier_profile:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.carrier.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/carriers
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.carrier:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.compliance.kb.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/customs/compliance-kb/:id/publish
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.compliance_kb:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.compliance.kb.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/customs/compliance-kb/sync
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.compliance_kb:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.compliance.kb.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/customs/compliance-kb/diff
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.compliance_kb:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.compliance.kb.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/customs/compliance-kb/versions
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.compliance_kb:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.control.tower.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/control-tower/subscriptions
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.control_tower:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.control.tower.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/control-tower/subscriptions/:id
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:logistics.control_tower:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.control.tower.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/control-tower/drilldown
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.control_tower:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.control.tower.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/control-tower/overview
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.control_tower:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.control.tower.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/control-tower/subscriptions
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.control_tower:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.crossborder.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/crossborder/documents
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.crossborder:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.crossborder.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/crossborder/documents/:id
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:logistics.crossborder:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.crossborder.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/crossborder/tracking-maps
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.crossborder:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.crossborder.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/crossborder/tracking-maps/:id
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:logistics.crossborder:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.crossborder.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/crossborder/documents
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.crossborder:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.crossborder.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/crossborder/tax-quote
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.crossborder:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.crossborder.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/crossborder/tracking-maps
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.crossborder:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.crossborder.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/crossborder/tracking-maps/normalize
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.crossborder:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.customs.rule.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/customs/rule-packs
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.customs_rule:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.customs.rule.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/customs/rule-packs/:id
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:logistics.customs_rule:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.customs.rule.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/customs/rule-packs/:id/versions
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.customs_rule:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.customs.rule.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/customs/precheck
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.customs_rule:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.customs.rule.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/customs/rule-packs
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.customs_rule:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.customs.rule.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/customs/rule-packs/:id/versions
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.customs_rule:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.eta.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/eta
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.eta:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.eta.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/eta/:waybill_id
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.eta:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.finance.risk.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/billing/finance-risks/:id/actions
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.finance_risk:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.finance.risk.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/billing/finance-risks/evaluate
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.finance_risk:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.finance.risk.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/billing/finance-risks
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.finance_risk:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.finance.risk.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/billing/finance-risks/audits
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.finance_risk:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.fulfillment.sandbox.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/sandbox/run
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.fulfillment_sandbox:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.fulfillment.sandbox.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/sandbox/scenarios
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.fulfillment_sandbox:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.fulfillment.sandbox.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/sandbox/scenarios/:id
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:logistics.fulfillment_sandbox:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.fulfillment.sandbox.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/sandbox/compare
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.fulfillment_sandbox:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.fulfillment.sandbox.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/sandbox/runs
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.fulfillment_sandbox:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.fulfillment.sandbox.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/sandbox/scenarios
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.fulfillment_sandbox:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.gateway.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/gateway/failures/:id/compensate
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.gateway:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.gateway.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/gateway/failures/ingest
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.gateway:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.gateway.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/gateway/cost-alerts
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.gateway:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.gateway.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/gateway/costs
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.gateway:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.gateway.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/gateway/failures
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.gateway:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.gateway.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/gateway/health
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.gateway:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.interwarehouse.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/allocation/interwarehouse/confirm
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.interwarehouse:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.interwarehouse.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/allocation/interwarehouse/suggest
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.interwarehouse:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.interwarehouse.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/allocation/interwarehouse/candidates
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.interwarehouse:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.kpi.dashboard.export
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/kpi-dashboard/export
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.kpi_dashboard:export
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.kpi.dashboard.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/kpi-dashboard/drilldown
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.kpi_dashboard:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.kpi.dashboard.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/kpi-dashboard/overview
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.kpi_dashboard:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.kpi.dashboard.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/kpi-dashboard/trends
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.kpi_dashboard:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.label.print.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/labels/prints
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.label_print:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.label.print.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/labels/prints/retry
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.label_print:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.label.print.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/labels/prints
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.label_print:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.lastmile.recovery.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/lastmile-recovery/execute
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.lastmile_recovery:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.lastmile.recovery.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/lastmile-recovery/rules
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.lastmile_recovery:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.lastmile.recovery.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/lastmile-recovery/rules/:id
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:logistics.lastmile_recovery:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.lastmile.recovery.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/lastmile-recovery/runs/:id/takeover
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.lastmile_recovery:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.lastmile.recovery.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/lastmile-recovery/rules
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.lastmile_recovery:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.lastmile.recovery.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/lastmile-recovery/runs
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.lastmile_recovery:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.notification.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/notifications/records/:id/retry
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.notification:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.notification.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/notifications/send
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.notification:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.notification.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/notifications/templates
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.notification:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.notification.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/notifications/records
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.notification:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.notification.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/notifications/templates
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.notification:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.ops.automation.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/ops-automation/evaluate
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.ops_automation:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.ops.automation.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/ops-automation/policies
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.ops_automation:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.ops.automation.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/ops-automation/policies/:id
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:logistics.ops_automation:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.ops.automation.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/ops-automation/runs/:id/takeover
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.ops_automation:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.ops.automation.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/ops-automation/policies
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.ops_automation:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.ops.automation.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/ops-automation/runs
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.ops_automation:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.orchestration.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/exceptions/orchestration/execute
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.orchestration:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.orchestration.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/exceptions/orchestration/rules
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.orchestration:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.orchestration.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/exceptions/orchestration/rules/:id
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:logistics.orchestration:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.orchestration.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/exceptions/orchestration/rules
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.orchestration:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.orchestration.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/exceptions/orchestration/runs
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.orchestration:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.policy.orchestration.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/policy-orchestration/flows
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.policy_orchestration:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.policy.orchestration.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/policy-orchestration/flows/:id
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:logistics.policy_orchestration:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.policy.orchestration.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/policy-orchestration/flows/:id/publish
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.policy_orchestration:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.policy.orchestration.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/policy-orchestration/flows/:id/rollback
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.policy_orchestration:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.policy.orchestration.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/policy-orchestration/conflicts/preview
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.policy_orchestration:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.policy.orchestration.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/policy-orchestration/flows
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.policy_orchestration:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.policy.orchestration.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/policy-orchestration/flows/:id/versions
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.policy_orchestration:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.quality.audit.export
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/quality-reports/export
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.quality_audit:export
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.quality.audit.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/quality-reports/generate
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.quality_audit:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.quality.audit.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/quality-reports
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.quality_audit:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.quality.audit.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/quality-reports/:id
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.quality_audit:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.reconciliation.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/reconciliation/batches
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.reconciliation:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.reconciliation.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/reconciliation/cases/:id/handle
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.reconciliation:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.reconciliation.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/reconciliation/batches
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.reconciliation:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.reconciliation.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/reconciliation/cases
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.reconciliation:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.reconciliation.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/reconciliation/records
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.reconciliation:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.redelivery.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/redelivery/tasks/:id/address
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.redelivery:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.redelivery.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/redelivery/tasks/:id/close
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.redelivery:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.redelivery.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/redelivery/tasks/:id/redispatch
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.redelivery:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.redelivery.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/redelivery/tasks/initiate
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.redelivery:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.redelivery.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/redelivery/tasks
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.redelivery:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.risk.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/risk/blacklist
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.risk:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.risk.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/risk/blacklist/:id
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:logistics.risk:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.risk.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/risk/evaluate
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.risk:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.risk.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/risk/hits/:id/release
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.risk:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.risk.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/risk/rules
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.risk:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.risk.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/risk/rules/:id
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:logistics.risk:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.risk.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/risk/blacklist
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.risk:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.risk.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/risk/hits
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.risk:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.risk.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/risk/rules
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.risk:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.routing.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/routing/rules
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.routing:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.routing.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/routing/rules/:id
+      method: DELETE
+      rbac: com.powerx.plugins.ecommerce:logistics.routing:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.routing.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/routing/rules/:id
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:logistics.routing:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.routing.optimizer.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/routing/optimizer/strategy
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.routing_optimizer:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.routing.optimizer.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/routing/optimizer/simulate
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.routing_optimizer:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.routing.optimizer.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/routing/optimizer/strategy
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.routing_optimizer:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.routing.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/routing/preview
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.routing:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.routing.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/routing/rules
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.routing:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.settlement.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/settlement/batches
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.settlement:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.settlement.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/settlement/batches/:id/confirm
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.settlement:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.settlement.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/settlement/diffs/:id/handle
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.settlement:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.settlement.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/settlement/batches
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.settlement:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.settlement.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/settlement/diffs
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.settlement:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.sla.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/sla/dashboard
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.sla:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.slo.guard.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/slo-guard/evaluate
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.slo_guard:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.slo.guard.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/slo-guard/policies
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.slo_guard:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.slo.guard.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/slo-guard/policies/:id
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:logistics.slo_guard:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.slo.guard.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/slo-guard/policies/:id/release
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.slo_guard:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.slo.guard.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/slo-guard/policies
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.slo_guard:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.slo.guard.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/slo-guard/status
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.slo_guard:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.template.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/templates
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.template:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.template.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/templates/:id
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:logistics.template:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.template.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/templates/:id/publish
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.template:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.template.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/templates
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.template:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.template.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/templates/:id/quote
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.template:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.tracking.root.cause.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/tracking-root-causes/:id/handle
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.tracking_root_cause:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.tracking.root.cause.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/tracking-root-causes/analyze
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.tracking_root_cause:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.tracking.root.cause.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/tracking-root-causes/items
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.tracking_root_cause:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.tracking.root.cause.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/tracking-root-causes/summary
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.tracking_root_cause:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.tracking.sync.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/tracking-sync/jobs
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.tracking_sync:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.tracking.sync.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/tracking-sync/jobs/:id/cancel
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.tracking_sync:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.tracking.sync.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/tracking-sync/jobs/:id/retry
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.tracking_sync:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.tracking.sync.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/tracking-sync/schedules
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.tracking_sync:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.tracking.sync.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/tracking-sync/schedules/:id
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:logistics.tracking_sync:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.tracking.sync.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/tracking-sync/schedules/:id/toggle
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.tracking_sync:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.tracking.sync.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/tracking-sync/schedules/:id/trigger
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.tracking_sync:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.tracking.sync.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/tracking-sync/schedules/run-due
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.tracking_sync:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.tracking.sync.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/tracking-sync/jobs
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.tracking_sync:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.tracking.sync.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/tracking-sync/schedules
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.tracking_sync:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.waybill.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/waybills
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.waybill:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.waybill.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/waybills/:id/cancel
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.waybill:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.waybill.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/waybills/:id/sync-track
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.waybill:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.waybill.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/waybills/:id/track
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.waybill:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.waybill.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/waybills/:id
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:logistics.waybill:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.logistics.webhook.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/webhook
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:logistics.webhook:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.license.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/marketplace/licenses/*
+      method: POST
+      rbac: marketplace.license:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.license.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/marketplace/licenses/*/offline-extend
+      method: POST
+      rbac: marketplace.license:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.license.purchase
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/marketplace/licenses
+      method: POST
+      rbac: marketplace.license:purchase
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.license.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/marketplace/licenses/*
+      method: GET
+      rbac: marketplace.license:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.listings.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/marketplace/listings
+      method: GET
+      rbac: marketplace.listings:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.listings.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/marketplace/listings/:id
+      method: GET
+      rbac: marketplace.listings:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.listings.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/marketplace/listings
+      method: GET
+      rbac: marketplace.listings:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.listings.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/marketplace/listings/*
+      method: GET
+      rbac: marketplace.listings:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.listings.review
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/marketplace/checklist/graphql
+      method: POST
+      rbac: marketplace.listings:review
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.listings.review
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/marketplace/listings/:id/publish
+      method: POST
+      rbac: marketplace.listings:review
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.listings.review
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/marketplace/listings/:id/review
+      method: POST
+      rbac: marketplace.listings:review
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.listings.review
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/marketplace/listings/:id/suspend
+      method: POST
+      rbac: marketplace.listings:review
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.listings.review
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/marketplace/listings/*
+      method: POST
+      rbac: marketplace.listings:review
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.listings.review
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/marketplace/listings/*/status
+      method: POST
+      rbac: marketplace.listings:review
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.listings.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/marketplace/listings
+      method: POST
+      rbac: marketplace.listings:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.listings.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/marketplace/listings/:id
+      method: PATCH
+      rbac: marketplace.listings:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.listings.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/marketplace/listings
+      method: POST
+      rbac: marketplace.listings:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.listings.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/marketplace/listings/*
+      method: PATCH
+      rbac: marketplace.listings:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.recommendation.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/marketplace/recommendation/experiments
+      method: POST
+      rbac: marketplace.recommendation:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.recommendation.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/marketplace/recommendation/experiments/:id
+      method: PATCH
+      rbac: marketplace.recommendation:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.recommendation.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/marketplace/recommendation/weights/refresh
+      method: POST
+      rbac: marketplace.recommendation:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.recommendation.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/marketplace/recommendation/experiments
+      method: GET
+      rbac: marketplace.recommendation:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.revenue.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/marketplace/revenue-share/reports
+      method: GET
+      rbac: marketplace.revenue:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.revenue.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/marketplace/revenue-share/reports
+      method: GET
+      rbac: marketplace.revenue:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.sla.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/marketplace/sla/*
+      method: GET
+      rbac: marketplace.sla:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.usage.ingest
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/marketplace/usage
+      method: POST
+      rbac: marketplace.usage:ingest
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.usage.ingest
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/marketplace/usage
+      method: POST
+      rbac: marketplace.usage:ingest
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.usage.view
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/marketplace/usage/tenants/:tenantId/licenses/:licenseId/metrics
+      method: GET
+      rbac: marketplace.usage:view
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.marketplace.usage.view
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/marketplace/usage/tenants/*/licenses/*/metrics
+      method: GET
+      rbac: marketplace.usage:view
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.membership.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/membership/benefits
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:membership:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.membership.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/membership/tiers
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:membership:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.membership.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/membership/tokens/transactions
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:membership:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.membership.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/membership/benefits
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:membership:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.membership.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/membership/entitlements/grant
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:membership:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.membership.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/membership/entitlements/revoke
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:membership:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.membership.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/membership/points/redeem
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:membership:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.membership.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/membership/tiers
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:membership:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.membership.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/membership/tiers/:id
+      method: DELETE
+      rbac: com.powerx.plugins.ecommerce:membership:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.membership.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/membership/tiers/:id/status
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:membership:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.membership.write
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/membership/tokens/adjust
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:membership:write
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.operations.incident.command
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/operations/incidents
+      method: POST
+      rbac: operations.incident:command
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.operations.incident.command
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/operations/incidents/:incidentId
+      method: PATCH
+      rbac: operations.incident:command
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.operations.incident.command
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/operations/incidents/:incidentId/timeline
+      method: POST
+      rbac: operations.incident:command
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.operations.incident.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/operations/incidents
+      method: GET
+      rbac: operations.incident:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.operations.incident.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/operations/incidents/:incidentId
+      method: GET
+      rbac: operations.incident:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.operations.plugin.admin.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/dev-console/config/sections/*
+      method: PUT
+      rbac: operations.plugin.admin:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.operations.plugin.admin.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/dev-console/config/sections
+      method: GET
+      rbac: operations.plugin.admin:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.operations.plugin.audit.export
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/dev-console/audit/export
+      method: GET
+      rbac: operations.plugin.audit:export
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.operations.plugin.audit.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/dev-console/audit/events
+      method: GET
+      rbac: operations.plugin.audit:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.operations.plugin.ops.execute
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/dev-console/jobs/runs/*/retry
+      method: POST
+      rbac: operations.plugin.ops:execute
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.operations.plugin.ops.execute
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/dev-console/safe-ops/actions
+      method: POST
+      rbac: operations.plugin.ops:execute
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.operations.plugin.ops.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/dev-console/jobs/runs
+      method: GET
+      rbac: operations.plugin.ops:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.operations.plugin.ops.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/dev-console/troubleshooting/summary
+      method: GET
+      rbac: operations.plugin.ops:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.operations.plugin.ops.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/dev-console/webhooks/attempts
+      method: GET
+      rbac: operations.plugin.ops:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.operations.plugin.ops.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/dev-console/webhooks/attempts/*
+      method: GET
+      rbac: operations.plugin.ops:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.operations.sla.command
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/operations/sla/profiles/actuals
+      method: PATCH
+      rbac: operations.sla:command
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.operations.sla.command
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/operations/sla/profiles/recompute
+      method: POST
+      rbac: operations.sla:command
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.operations.sla.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/operations/sla/profiles
+      method: POST
+      rbac: operations.sla:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.operations.sla.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/operations/sla/profiles
+      method: GET
+      rbac: operations.sla:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.operations.support.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/operations/support/channels/test
+      method: POST
+      rbac: operations.support:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.operations.support.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/operations/support/playbook
+      method: PUT
+      rbac: operations.support:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.operations.support.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/operations/support/metrics
+      method: GET
+      rbac: operations.support:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.operations.support.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/operations/support/playbook
+      method: GET
+      rbac: operations.support:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.order.cancel
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/orders/:id/cancel
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:order:cancel
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.order.create
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/orders
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:order:create
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.order.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/orders
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:order:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.order.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/orders/:id
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:order:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.order.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/orders/:id/benefit-reviews
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:order:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.order.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/orders/benefit-codes
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:order:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.order.update
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/orders/:id/benefit-reviews
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:order:update
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.order.update
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/orders/:id/shipping-address
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:order:update
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.order.update
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/orders/benefit-reviews/approve
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:order:update
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.order.update
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/orders/benefit-reviews/reject
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:order:update
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.payments.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/manual-payments
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:payments:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.payments.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/manual-payments/:id/approve
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:payments:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.payments.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/manual-payments/:id/reject
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:payments:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.payments.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/providers
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:payments:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.payments.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/providers/:id
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:payments:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.payments.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/providers/:id/cert/test
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:payments:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.payments.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/providers/:id/miniapp/test
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:payments:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.payments.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/providers/:id/test
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:payments:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.payments.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/reconciliations
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:payments:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.payments.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/reconciliations/:id/items/:itemId/resolve
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:payments:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.payments.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/manual-payments
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:payments:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.payments.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/manual-payments/logs
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:payments:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.payments.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/providers
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:payments:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.payments.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/providers/:id
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:payments:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.payments.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/reconciliations
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:payments:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.payments.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/reconciliations/:id/items
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:payments:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.payments.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/split-results
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:payments:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.payments.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/split-rules
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:payments:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.payments.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/transactions
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:payments:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.payments.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/transactions/:id
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:payments:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.payments.refund
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/transactions/:id/refund
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:payments:refund
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.payments.risk
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/payments/risk-events
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:payments:risk
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.pricing.coupon.asset.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/coupons/assets
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:pricing.coupon.asset:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.pricing.coupon.issue.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/coupons/issues
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:pricing.coupon.issue:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.pricing.coupon.template.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/coupons/templates
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:pricing.coupon.template:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.pricing.coupon.template.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/coupons/templates/:id
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:pricing.coupon.template:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.pricing.coupon.template.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/coupons/templates
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:pricing.coupon.template:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.pricing.coupon.usage.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/coupons/usage-logs
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:pricing.coupon.usage:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.pricing.pricebook.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/pricing/pricebooks
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:pricing.pricebook:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.pricing.pricebook.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/pricing/pricebooks/:pricebookId
+      method: DELETE
+      rbac: com.powerx.plugins.ecommerce:pricing.pricebook:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.pricing.pricebook.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/pricing/pricebooks/:pricebookId
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:pricing.pricebook:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.pricing.pricebook.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/pricing/pricebooks/:pricebookId/versions
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:pricing.pricebook:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.pricing.pricebook.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/pricing/pricebooks/:pricebookId/versions/:versionId/items
+      method: PUT
+      rbac: com.powerx.plugins.ecommerce:pricing.pricebook:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.pricing.pricebook.publish
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/pricing/pricebooks/:pricebookId/versions/:versionId/archive
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:pricing.pricebook:publish
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.pricing.pricebook.publish
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/pricing/pricebooks/:pricebookId/versions/:versionId/publish
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:pricing.pricebook:publish
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.pricing.pricebook.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/pricing/pricebooks
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:pricing.pricebook:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.pricing.pricebook.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/pricing/pricebooks/:pricebookId/versions
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:pricing.pricebook:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.pricing.pricebook.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/pricing/pricebooks/:pricebookId/versions/:versionId/items
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:pricing.pricebook:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.pricing.promotion.audit.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/promotions/:id/audit-logs
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:pricing.promotion.audit:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.pricing.promotion.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/promotions
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:pricing.promotion:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.pricing.promotion.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/promotions/:id
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:pricing.promotion:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.pricing.promotion.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/promotions/:id/clone
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:pricing.promotion:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.pricing.promotion.publish
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/promotions/:id/activate
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:pricing.promotion:publish
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.pricing.promotion.publish
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/promotions/:id/pause
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:pricing.promotion:publish
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.pricing.promotion.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/promotions
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:pricing.promotion:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.import.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/categories/import
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:product.category.import:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.import.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/categories/export
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:product.category.import:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/categories
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:product.category:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/categories/:id
+      method: DELETE
+      rbac: com.powerx.plugins.ecommerce:product.category:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/categories/:id
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:product.category:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/categories/:id/move
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:product.category:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/categories/:id/status
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:product.category:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.mapping.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/categories/:id/mappings
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:product.category.mapping:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.mapping.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/categories/:id/mappings
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:product.category.mapping:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/categories
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:product.category:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/categories/:id/audit
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:product.category:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/categories/tree
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:product.category:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.template.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/category-templates
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:product.category.template:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.template.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/category-templates/:id
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:product.category.template:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.template.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/category-templates/:id/impact/recheck
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:product.category.template:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.template.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/category-templates/:id/publish
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:product.category.template:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.template.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/category-templates/:id/rollback
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:product.category.template:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.template.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/category-templates
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:product.category.template:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.template.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/category-templates/:id
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:product.category.template:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.template.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/category-templates/:id/impact
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:product.category.template:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.template.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/category-templates/:id/preview
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:product.category.template:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.template.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/category-templates/:id/simulate
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:product.category.template:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.template.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/category-templates/:id/versions
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:product.category.template:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.template.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/category-templates/effective
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:product.category.template:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.sku.barcode.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/skus/:id/barcodes
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:product.sku.barcode:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.sku.bulk.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/skus/bulk-tasks
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:product.sku.bulk:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.sku.bulk.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/skus/bulk-tasks/:taskId/approval
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:product.sku.bulk:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.sku.bulk.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/skus/bulk-tasks/:taskId/retry
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:product.sku.bulk:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.sku.bulk.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/skus/export
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:product.sku.bulk:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.sku.bulk.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/skus/import
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:product.sku.bulk:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.sku.bulk.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/skus/bulk-tasks/:taskId
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:product.sku.bulk:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.sku.channel.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/skus/:id/channels
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:product.sku.channel:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.sku.channel.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/skus/:id/channels/publish
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:product.sku.channel:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.sku.channel.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/skus/:id/channels
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:product.sku.channel:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.sku.inventory.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/skus/:id/inventory/adjust
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:product.sku.inventory:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.sku.inventory.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/skus/:id/inventory
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:product.sku.inventory:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.sku.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/skus
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:product.sku:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.sku.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/skus/:id
+      method: DELETE
+      rbac: com.powerx.plugins.ecommerce:product.sku:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.sku.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/skus/:id
+      method: PATCH
+      rbac: com.powerx.plugins.ecommerce:product.sku:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.sku.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/spus/:id/skus/generate
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:product.sku:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.sku.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/skus
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:product.sku:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.sku.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/skus/:id
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:product.sku:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.sku.serial.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/skus/:id/serials
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:product.sku.serial:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.sku.serial.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/skus/:id/serials
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:product.sku.serial:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.reverse.inspection.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/reverse/inspection/rules
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:reverse.inspection:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.reverse.inspection.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/reverse/waybills/:id/inspection
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:reverse.inspection:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.reverse.inspection.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/reverse/inspection/rules
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:reverse.inspection:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.reverse.waybill.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/reverse/waybills
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:reverse.waybill:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.reverse.waybill.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/reverse/waybills/:id/track
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:reverse.waybill:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.reverse.waybill.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/reverse/waybills/:id/warehouse-result
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:reverse.waybill:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.reverse.waybill.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/reverse/waybills
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:reverse.waybill:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.reverse.waybill.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/reverse/waybills/:id
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:reverse.waybill:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.runtime.ops.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/runtime/bootstrap
+      method: POST
+      rbac: runtime.ops:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.runtime.ops.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/runtime/internal/event-fabric/topics
+      method: POST
+      rbac: runtime.ops:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.runtime.ops.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/runtime/internal/ws-bus/grant
+      method: POST
+      rbac: runtime.ops:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.runtime.ops.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/runtime/internal/ws-bus/publish
+      method: POST
+      rbac: runtime.ops:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.runtime.ops.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/runtime/logging/policy
+      method: PUT
+      rbac: runtime.ops:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.runtime.ops.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/runtime/logging/probe
+      method: POST
+      rbac: runtime.ops:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.runtime.ops.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/runtime/quota/overrides
+      method: POST
+      rbac: runtime.ops:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.runtime.ops.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/runtime/sessions/register
+      method: POST
+      rbac: runtime.ops:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.runtime.ops.observe
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/runtime/metrics
+      method: GET
+      rbac: runtime.ops:observe
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.runtime.ops.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/runtime/logging/policy
+      method: GET
+      rbac: runtime.ops:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.runtime.ops.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/runtime/quota/status
+      method: GET
+      rbac: runtime.ops:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.subscription.reconciliation.batch.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/subscription-reconciliation/batches
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:subscription.reconciliation.batch:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.subscription.reconciliation.batch.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/subscription-reconciliation/batches
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:subscription.reconciliation.batch:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.subscription.reconciliation.dashboard.export
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/subscription-reconciliation/dashboard/export
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:subscription.reconciliation.dashboard:export
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.subscription.reconciliation.dashboard.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/subscription-reconciliation/dashboard
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:subscription.reconciliation.dashboard:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.subscription.reconciliation.delta.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/subscription-reconciliation/deltas/:id/adjust
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:subscription.reconciliation.delta:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.subscription.reconciliation.delta.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/subscription-reconciliation/batches/:id/deltas
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:subscription.reconciliation.delta:read
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.subscription.reconciliation.governance.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/subscription-reconciliation/governance/run
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:subscription.reconciliation.governance:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.subscription.reconciliation.task.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/subscription-reconciliation/deltas/:id/tasks
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:subscription.reconciliation.task:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.subscription.reconciliation.task.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/subscription-reconciliation/tasks/:id/close
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:subscription.reconciliation.task:manage
+      type: rest
+    - auth: jwt
       capability: com.powerx.plugins.ecommerce.template.create
       entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/resources
       method: POST
       rbac: com.powerx.plugins.ecommerce:template:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.template.prepare
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/integration/capabilities/invoke
+      method: POST
+      rbac: com.powerx.plugins.ecommerce:template:read
       type: rest

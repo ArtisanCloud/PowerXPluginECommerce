@@ -1,0 +1,34 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.pricing.pricebook.manage.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.pricing.pricebook.manage.json
+description: com.powerx.plugins.ecommerce:pricing.pricebook manage capability
+id: com.powerx.plugins.ecommerce.pricing.pricebook.manage
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/pricing/pricebooks
+            - method: DELETE
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/pricing/pricebooks/:pricebookId
+            - method: PATCH
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/pricing/pricebooks/:pricebookId
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/pricing/pricebooks/:pricebookId/versions
+            - method: PUT
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/pricing/pricebooks/:pricebookId/versions/:versionId/items
+    source:
+        action: manage
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:pricing.pricebook
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.pricing.pricebook.manage.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.pricing.pricebook.manage.json
+rbac:
+    actions:
+        - manage
+    resource: com.powerx.plugins.ecommerce:pricing.pricebook
+status: active
+type: API
+version: 1.0.0

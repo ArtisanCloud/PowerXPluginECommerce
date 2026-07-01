@@ -1,0 +1,26 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.integration.approvals.read.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.integration.approvals.read.json
+description: integration.approvals read capability
+id: com.powerx.plugins.ecommerce.integration.approvals.read
+metadata:
+    protocols:
+        rest:
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/integration/approvals
+    source:
+        action: read
+        generated_from: route_rbac
+        resource: integration.approvals
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.integration.approvals.read.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.integration.approvals.read.json
+rbac:
+    actions:
+        - read
+    resource: integration.approvals
+status: active
+type: API
+version: 1.0.0

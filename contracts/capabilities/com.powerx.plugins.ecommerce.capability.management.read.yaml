@@ -1,0 +1,40 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.capability.management.read.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.capability.management.read.json
+description: capability.management read capability
+id: com.powerx.plugins.ecommerce.capability.management.read
+metadata:
+    protocols:
+        rest:
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/capabilities
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/capabilities/exposure/:capabilityID
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/capabilities/exposure/template
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/capabilities/lifecycle
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/capabilities/lifecycle/template
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/capabilities/quotas/:capabilityID
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/capabilities/register/template
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/capabilities/sources
+    source:
+        action: read
+        generated_from: route_rbac
+        resource: capability.management
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.capability.management.read.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.capability.management.read.json
+rbac:
+    actions:
+        - read
+    resource: capability.management
+status: active
+type: API
+version: 1.0.0

@@ -131,6 +131,7 @@ pricebook 基础价 -> promotion 自动促销 -> coupon 用户券 -> payable 应
 - A/B 实验。
 - 活动素材和落地页。
 - 用户限购/总量限额的强一致扣减。
+- 商品详情页、购物车页的提前活动提示可作为 015 的增强项继续做，但不阻塞一期交易闭环；确认订单、提交订单、订单详情必须纳入一期。
 
 ### 11.3 页面与菜单
 
@@ -139,6 +140,9 @@ pricebook 基础价 -> promotion 自动促销 -> coupon 用户券 -> payable 应
 - 主页面：`web-admin/app/pages/pricing/promotions.vue`
 - API composable：`web-admin/app/composables/api/usePromotions.ts`
 - 后续营销聚合页：`web-admin/app/pages/market/promotions.vue`，只展示运营活动入口与效果摘要，不直接承担规则配置。
+- 小程序确认订单页：`mini-app/src/pages/order/confirm.vue`
+- 小程序订单详情页：`mini-app/src/pages/order/detail.vue`
+- 小程序订单 API：`mini-app/src/services/miniapp-order.ts`
 
 #### 菜单建议
 
@@ -523,7 +527,70 @@ type PromotionQuoteResult struct {
 }
 ```
 
-### 11.11 错误码与拒绝原因
+### 11.11 用户侧使用链路
+
+促销不是用户手动领取的券，而是服务端自动命中的订单促销。后台页面负责配置规则，小程序页面负责让用户在购买链路里看到和使用促销。
+
+#### 11.11.1 确认订单页
+
+页面：`mini-app/src/pages/order/confirm.vue`
+
+进入确认订单页后，前端根据当前订单草稿调用促销试算接口：
+
+- `channel`：使用订单草稿中的渠道，默认 `miniapp`。
+- `currency`：使用商品币种，默认 `CNY`。
+- `items`：传 SKU、数量、单价分值。
+
+页面必须展示：
+
+| 区域 | 内容 |
+| --- | --- |
+| 金额汇总 | 商品金额、运费、自动促销优惠、合计 |
+| 活动命中 | 已享活动名称，支持多活动用顿号拼接 |
+| 异常状态 | 促销试算加载中、未匹配活动或试算失败提示 |
+| 底部提交栏 | 使用促销后的应付金额，并展示已优惠金额 |
+
+注意事项：
+
+- 前端试算只用于展示，不能作为最终金额写入。
+- 提交订单时，后端必须重新计算促销，最终金额以后端下单结果为准。
+- 如果前端试算失败，不阻塞提交订单；后端下单仍会最终复算。
+
+#### 11.11.2 提交订单服务端复算
+
+后端小程序订单创建服务必须在落单前重新执行促销 quote：
+
+1. 根据订单行计算基础商品金额。
+2. 使用 `channel`、`currency`、SKU、数量、单价调用促销 quote。
+3. 使用 `after_promotion_total_minor` 更新订单应付金额。
+4. 写入 `order_promotion_snapshots`。
+5. 返回订单详情时输出促销摘要。
+
+该步骤是促销真正“被使用”的位置。任何来自前端的优惠金额都只能作为展示参考，不能被信任。
+
+#### 11.11.3 订单详情页
+
+页面：`mini-app/src/pages/order/detail.vue`
+
+订单详情必须读取订单促销快照，而不是重新试算当前促销规则。页面展示：
+
+| 区域 | 内容 |
+| --- | --- |
+| 金额明细 | 商品总额、运费、自动促销优惠、实付金额 |
+| 已享活动 | 订单创建时命中的促销名称 |
+| 历史一致性 | 促销后续停用、修改，不影响此处展示 |
+
+#### 11.11.4 后续增强入口
+
+以下仍属于 015 促销 feature 的增强范围，但不作为一期交易闭环必需项：
+
+- 商品详情页展示“可参与活动”。
+- 购物车页展示活动提示和预计优惠。
+- 购物车未满足门槛时提示“再买 X 元可享优惠”。
+- 管理端促销试算工具，用于运营验证规则。
+- 更完整的小程序端 E2E 自动化用例。
+
+### 11.12 错误码与拒绝原因
 
 促销 quote 不应因为单个活动不满足而整体失败；应返回拒绝原因。
 
@@ -539,7 +606,7 @@ type PromotionQuoteResult struct {
 | `invalid_rule` | 规则配置无效 |
 | `promotion_excludes_coupon` | 命中促销后排斥优惠券 |
 
-### 11.12 测试与验收
+### 11.13 测试与验收
 
 后端测试：
 
@@ -566,18 +633,24 @@ type PromotionQuoteResult struct {
 - 启用/停用后列表状态刷新。
 - SKU 搜索多选可用。
 - 空态、加载态、错误提示完整。
+- 小程序确认订单页能显示自动促销、已享活动、促销后合计。
+- 小程序提交订单后，后端最终金额与促销快照一致。
+- 小程序订单详情页读取历史促销快照，不重新计算当前活动。
 
 验收命令建议：
 
 ```bash
 cd backend
-go test ./internal/services/admin/promotion ./internal/transport/http/admin/promotion ./internal/services/admin/order
+go test ./internal/services/admin/promotion ./internal/transport/http/admin/promotion ./internal/transport/http/miniapp/promotion ./internal/services/admin/order ./internal/services/miniapp/order
 
 cd ../web-admin
 npm run -s build
+
+cd ../mini-app
+npm run build:h5
 ```
 
-### 11.13 分阶段实施
+### 11.14 分阶段实施
 
 #### Phase 1：基础模型与管理端 CRUD
 
@@ -596,6 +669,8 @@ npm run -s build
 - 订单 quote/下单接入促销计算。
 - 写 `order_promotion_snapshots`。
 - 与 coupon 顺序和互斥规则对齐。
+- 小程序确认订单页接入促销试算展示。
+- 小程序订单详情页展示订单促销快照。
 
 #### Phase 4：审计与可观测
 
@@ -610,8 +685,9 @@ npm run -s build
 - 审批流。
 - 渠道同步。
 - 与 `marketing/campaigns.md` 的活动控制台联动。
+- 商品详情页、购物车页活动提示和凑单提醒。
 
-### 11.14 与其他文档对齐
+### 11.15 与其他文档对齐
 
 - 与 `pricebooks.md` 对齐：促销不改写基础价，只在基础价之后计算优惠。
 - 与 `coupons.md` 对齐：促销与优惠券共享叠加/排他语义；优惠券完整生命周期仍由 coupon 模块负责。

@@ -1,0 +1,32 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.order.update.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.order.update.json
+description: com.powerx.plugins.ecommerce:order update capability
+id: com.powerx.plugins.ecommerce.order.update
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/orders/:id/benefit-reviews
+            - method: PATCH
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/orders/:id/shipping-address
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/orders/benefit-reviews/approve
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/orders/benefit-reviews/reject
+    source:
+        action: update
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:order
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.order.update.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.order.update.json
+rbac:
+    actions:
+        - update
+    resource: com.powerx.plugins.ecommerce:order
+status: active
+type: API
+version: 1.0.0

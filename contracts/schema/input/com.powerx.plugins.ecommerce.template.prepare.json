@@ -1,0 +1,34 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "EcommerceTemplatePrepareInput",
+  "type": "object",
+  "properties": {
+    "action": {
+      "type": "string",
+      "enum": ["create"]
+    },
+    "template": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "content": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": true
+    },
+    "user_message": {
+      "type": "string"
+    },
+    "state": {
+      "type": "object",
+      "additionalProperties": true
+    }
+  },
+  "additionalProperties": true
+}

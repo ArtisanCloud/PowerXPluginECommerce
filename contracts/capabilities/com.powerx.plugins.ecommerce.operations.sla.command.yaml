@@ -1,0 +1,28 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.operations.sla.command.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.operations.sla.command.json
+description: operations.sla command capability
+id: com.powerx.plugins.ecommerce.operations.sla.command
+metadata:
+    protocols:
+        rest:
+            - method: PATCH
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/operations/sla/profiles/actuals
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/operations/sla/profiles/recompute
+    source:
+        action: command
+        generated_from: route_rbac
+        resource: operations.sla
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.operations.sla.command.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.operations.sla.command.json
+rbac:
+    actions:
+        - command
+    resource: operations.sla
+status: active
+type: API
+version: 1.0.0

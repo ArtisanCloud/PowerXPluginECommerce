@@ -1,0 +1,32 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.logistics.ops.automation.manage.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.logistics.ops.automation.manage.json
+description: com.powerx.plugins.ecommerce:logistics.ops_automation manage capability
+id: com.powerx.plugins.ecommerce.logistics.ops.automation.manage
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/ops-automation/evaluate
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/ops-automation/policies
+            - method: PATCH
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/ops-automation/policies/:id
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/ops-automation/runs/:id/takeover
+    source:
+        action: manage
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:logistics.ops_automation
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.logistics.ops.automation.manage.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.logistics.ops.automation.manage.json
+rbac:
+    actions:
+        - manage
+    resource: com.powerx.plugins.ecommerce:logistics.ops_automation
+status: active
+type: API
+version: 1.0.0

@@ -1,0 +1,26 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.product.category.import.read.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.product.category.import.read.json
+description: com.powerx.plugins.ecommerce:product.category.import read capability
+id: com.powerx.plugins.ecommerce.product.category.import.read
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/categories/export
+    source:
+        action: read
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:product.category.import
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.product.category.import.read.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.product.category.import.read.json
+rbac:
+    actions:
+        - read
+    resource: com.powerx.plugins.ecommerce:product.category.import
+status: active
+type: API
+version: 1.0.0

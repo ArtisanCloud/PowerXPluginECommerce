@@ -20,6 +20,7 @@ TOKEN ?=
 ENABLE ?= true
 FORCE ?= false
 LOCAL_INSTALL_SRC ?= $(abspath $(DIST_DIR))
+ABS_LOCAL_INSTALL_SRC := $(abspath $(LOCAL_INSTALL_SRC))
 LOCAL_INSTALL_TMP ?= $(DIST_ROOT)/.local-install
 LOCAL_INSTALL_PXP_TMP ?= $(DIST_ROOT)/.pxp-unpack
 PACKAGE ?=
@@ -86,50 +87,60 @@ local-install: dist local-install-run ## 调用 /admin/plugins/install/local 安
 
 .PHONY: local-install-precheck
 local-install-precheck: ## 安装前完整性检查（包完整≠启用成功）
-	@if [ ! -d "$(LOCAL_INSTALL_SRC)" ]; then \
-		echo "❌ 未找到安装目录：$(LOCAL_INSTALL_SRC)"; \
+	@if [ ! -d "$(ABS_LOCAL_INSTALL_SRC)" ]; then \
+		echo "❌ 未找到安装目录：$(ABS_LOCAL_INSTALL_SRC)"; \
 		echo "   请先执行 make dist 或传入 LOCAL_INSTALL_SRC=/path/to/dist"; \
 		exit 1; \
-	fi
-	@if [ ! -f "$(LOCAL_INSTALL_SRC)/plugin.yaml" ]; then \
-		echo "❌ 缺少 $(LOCAL_INSTALL_SRC)/plugin.yaml"; \
+	fi; \
+	if [ -f "$(ABS_LOCAL_INSTALL_SRC)/package.tar.gz" ] && [ ! -f "$(ABS_LOCAL_INSTALL_SRC)/plugin.yaml" ]; then \
+		echo "==> 检测到紧凑安装源：$(ABS_LOCAL_INSTALL_SRC)/package.tar.gz"; \
+		tar -tzf "$(ABS_LOCAL_INSTALL_SRC)/package.tar.gz" payload/plugin.yaml >/dev/null || { echo "❌ package.tar.gz 缺少 payload/plugin.yaml"; exit 1; }; \
+		tar -tzf "$(ABS_LOCAL_INSTALL_SRC)/package.tar.gz" payload/plugin.d/capabilities.yaml >/dev/null || { echo "❌ package.tar.gz 缺少 payload/plugin.d/capabilities.yaml"; exit 1; }; \
+		tar -tzf "$(ABS_LOCAL_INSTALL_SRC)/package.tar.gz" payload/plugin.d/exposure.yaml >/dev/null || { echo "❌ package.tar.gz 缺少 payload/plugin.d/exposure.yaml"; exit 1; }; \
+		tar -tzf "$(ABS_LOCAL_INSTALL_SRC)/package.tar.gz" payload/plugin.d/rbac.yaml >/dev/null || { echo "❌ package.tar.gz 缺少 payload/plugin.d/rbac.yaml"; exit 1; }; \
+		tar -tzf "$(ABS_LOCAL_INSTALL_SRC)/package.tar.gz" | rg -q '^payload/contracts/capabilities/.+\.yaml$$' || { echo "❌ package.tar.gz 缺少 capability contracts"; exit 1; }; \
+		echo "✅ compact local install precheck passed"; \
+		exit 0; \
+	fi; \
+	if [ ! -f "$(ABS_LOCAL_INSTALL_SRC)/plugin.yaml" ]; then \
+		echo "❌ 缺少 $(ABS_LOCAL_INSTALL_SRC)/plugin.yaml 或 package.tar.gz"; \
 		exit 1; \
-	fi
-	@if [ ! -f "$(LOCAL_INSTALL_SRC)/backend/etc/config.yaml" ]; then \
-		echo "❌ 缺少 $(LOCAL_INSTALL_SRC)/backend/etc/config.yaml（运行时配置）"; \
+	fi; \
+	if [ ! -f "$(ABS_LOCAL_INSTALL_SRC)/backend/etc/config.yaml" ]; then \
+		echo "❌ 缺少 $(ABS_LOCAL_INSTALL_SRC)/backend/etc/config.yaml（运行时配置）"; \
 		echo "   请确认 make dist 已打包 backend/etc"; \
 		exit 1; \
-	fi
-	@for f in plugin.d/capabilities.yaml plugin.d/exposure.yaml plugin.d/rbac.yaml; do \
-		if [ ! -f "$(LOCAL_INSTALL_SRC)/$$f" ]; then \
-			echo "❌ 缺少 $(LOCAL_INSTALL_SRC)/$$f（运行时清单产物）"; \
+	fi; \
+	for f in plugin.d/capabilities.yaml plugin.d/exposure.yaml plugin.d/rbac.yaml; do \
+		if [ ! -f "$(ABS_LOCAL_INSTALL_SRC)/$$f" ]; then \
+			echo "❌ 缺少 $(ABS_LOCAL_INSTALL_SRC)/$$f（运行时清单产物）"; \
 			exit 1; \
 		fi; \
-	done
-	@if [ ! -d "$(LOCAL_INSTALL_SRC)/contracts/capabilities" ]; then \
-		echo "❌ 缺少 $(LOCAL_INSTALL_SRC)/contracts/capabilities（能力事实源）"; \
+	done; \
+	if [ ! -d "$(ABS_LOCAL_INSTALL_SRC)/contracts/capabilities" ]; then \
+		echo "❌ 缺少 $(ABS_LOCAL_INSTALL_SRC)/contracts/capabilities（能力事实源）"; \
 		exit 1; \
-	fi
-	@if ! awk '/^[[:space:]]*migrations:[[:space:]]*$$/{found=1} END{exit found?0:1}' "$(LOCAL_INSTALL_SRC)/plugin.yaml"; then \
-		echo "❌ $(LOCAL_INSTALL_SRC)/plugin.yaml 缺少 migrations 段"; \
+	fi; \
+	if ! awk '/^[[:space:]]*migrations:[[:space:]]*$$/{found=1} END{exit found?0:1}' "$(ABS_LOCAL_INSTALL_SRC)/plugin.yaml"; then \
+		echo "❌ $(ABS_LOCAL_INSTALL_SRC)/plugin.yaml 缺少 migrations 段"; \
 		exit 1; \
-	fi
-	@SCHEMA_REFS=$$(awk '/^[[:space:]]*(input|output):[[:space:]]*/ {print $$2}' "$(LOCAL_INSTALL_SRC)/plugin.yaml" | tr -d '"' | tr -d "'" | sed 's/[[:space:]]*$$//' | sed '/^$$/d' | sort -u); \
+	fi; \
+	SCHEMA_REFS=$$(awk '/^[[:space:]]*(input|output):[[:space:]]*/ {print $$2}' "$(ABS_LOCAL_INSTALL_SRC)/plugin.yaml" | tr -d '"' | tr -d "'" | sed 's/[[:space:]]*$$//' | sed '/^$$/d' | sort -u); \
 	for p in $$SCHEMA_REFS; do \
 		case "$$p" in \
 			schema/*|contracts/schema/*) \
-				if [ -f "$(LOCAL_INSTALL_SRC)/$$p" ]; then \
+				if [ -f "$(ABS_LOCAL_INSTALL_SRC)/$$p" ]; then \
 					:; \
-				elif [ -f "$(LOCAL_INSTALL_SRC)/contracts/$$p" ]; then \
+				elif [ -f "$(ABS_LOCAL_INSTALL_SRC)/contracts/$$p" ]; then \
 					:; \
 				else \
-					echo "❌ schema 引用文件不存在: $(LOCAL_INSTALL_SRC)/$$p"; \
-					echo "   也未找到兼容路径: $(LOCAL_INSTALL_SRC)/contracts/$$p"; \
+					echo "❌ schema 引用文件不存在: $(ABS_LOCAL_INSTALL_SRC)/$$p"; \
+					echo "   也未找到兼容路径: $(ABS_LOCAL_INSTALL_SRC)/contracts/$$p"; \
 					exit 1; \
 				fi ;; \
 		esac; \
-	done
-	@echo "✅ local install precheck passed"
+	done; \
+	echo "✅ local install precheck passed"
 
 .PHONY: local-install-run
 local-install-run: local-install-precheck
@@ -142,9 +153,9 @@ local-install-run: local-install-precheck
 		exit 1; \
 	fi
 	@echo "==> 调用 $(API_BASE)/admin/plugins/install/local"
-	@echo "    src_dir=$(LOCAL_INSTALL_SRC)"
+	@echo "    src_dir=$(ABS_LOCAL_INSTALL_SRC)"
 	@echo "    enable=$(ENABLE) force=$(FORCE)"
-	@PAYLOAD=$$(printf '{"src_dir":"%s","enable":%s,"force":%s}' "$(LOCAL_INSTALL_SRC)" "$(ENABLE)" "$(FORCE)"); \
+	@PAYLOAD=$$(printf '{"src_dir":"%s","enable":%s,"force":%s}' "$(ABS_LOCAL_INSTALL_SRC)" "$(ENABLE)" "$(FORCE)"); \
 		RESPONSE=$$(curl -sS -X POST "$(API_BASE)/admin/plugins/install/local" \
 			-H "Authorization: Bearer $(TOKEN)" \
 			-H "Content-Type: application/json" \
@@ -210,6 +221,11 @@ local-install-pxp: ## 先解包 PACKAGE 再调用 local install（当前 .pxp �
 			TOKEN="$(TOKEN)" \
 			ENABLE="$(ENABLE)" \
 			FORCE="$(FORCE)"
+
+.PHONY: skeleton-dist skeleton-install skeleton-reinstall
+skeleton-dist: dist ## 兼容 PowerXPlugin 文档：生成安装产物
+skeleton-install: local-install ## 兼容 PowerXPlugin 文档：构建并安装当前插件
+skeleton-reinstall: local-reinstall ## 兼容 PowerXPlugin 文档：禁用 -> 强制安装 -> 切换版本
 
 .PHONY: local-reinstall
 local-reinstall: dist ## 禁用当前版本 -> 强制安装 -> 切换并启用目标版本

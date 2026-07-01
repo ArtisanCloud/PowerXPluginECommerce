@@ -1,0 +1,28 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.logistics.compliance.kb.read.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.logistics.compliance.kb.read.json
+description: com.powerx.plugins.ecommerce:logistics.compliance_kb read capability
+id: com.powerx.plugins.ecommerce.logistics.compliance.kb.read
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/customs/compliance-kb/diff
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/customs/compliance-kb/versions
+    source:
+        action: read
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:logistics.compliance_kb
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.logistics.compliance.kb.read.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.logistics.compliance.kb.read.json
+rbac:
+    actions:
+        - read
+    resource: com.powerx.plugins.ecommerce:logistics.compliance_kb
+status: active
+type: API
+version: 1.0.0

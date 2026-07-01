@@ -1,0 +1,36 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.integration.webhooks.manage.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.integration.webhooks.manage.json
+description: integration.webhooks manage capability
+id: com.powerx.plugins.ecommerce.integration.webhooks.manage
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/integration/webhooks
+            - method: DELETE
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/integration/webhooks/:id
+            - method: PUT
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/integration/webhooks/:id
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/integration/webhooks/attempts/:attemptId/replay
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/integration/webhooks/dlq/:attemptId/replay
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/integration/webhooks/subscriptions
+    source:
+        action: manage
+        generated_from: route_rbac
+        resource: integration.webhooks
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.integration.webhooks.manage.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.integration.webhooks.manage.json
+rbac:
+    actions:
+        - manage
+    resource: integration.webhooks
+status: active
+type: API
+version: 1.0.0

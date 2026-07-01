@@ -1,0 +1,26 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.customer.delete.delete.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.customer.delete.delete.json
+description: customer.delete delete capability
+id: com.powerx.plugins.ecommerce.customer.delete.delete
+metadata:
+    protocols:
+        rest:
+            - method: DELETE
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/customers/:id
+    source:
+        action: delete
+        generated_from: route_rbac
+        resource: customer.delete
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.customer.delete.delete.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.customer.delete.delete.json
+rbac:
+    actions:
+        - delete
+    resource: customer.delete
+status: active
+type: API
+version: 1.0.0

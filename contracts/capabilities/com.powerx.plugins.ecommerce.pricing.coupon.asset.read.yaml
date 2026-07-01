@@ -1,0 +1,26 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.pricing.coupon.asset.read.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.pricing.coupon.asset.read.json
+description: com.powerx.plugins.ecommerce:pricing.coupon.asset read capability
+id: com.powerx.plugins.ecommerce.pricing.coupon.asset.read
+metadata:
+    protocols:
+        rest:
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/coupons/assets
+    source:
+        action: read
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:pricing.coupon.asset
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.pricing.coupon.asset.read.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.pricing.coupon.asset.read.json
+rbac:
+    actions:
+        - read
+    resource: com.powerx.plugins.ecommerce:pricing.coupon.asset
+status: active
+type: API
+version: 1.0.0

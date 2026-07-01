@@ -1,0 +1,28 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.operations.incident.read.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.operations.incident.read.json
+description: operations.incident read capability
+id: com.powerx.plugins.ecommerce.operations.incident.read
+metadata:
+    protocols:
+        rest:
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/operations/incidents
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/operations/incidents/:incidentId
+    source:
+        action: read
+        generated_from: route_rbac
+        resource: operations.incident
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.operations.incident.read.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.operations.incident.read.json
+rbac:
+    actions:
+        - read
+    resource: operations.incident
+status: active
+type: API
+version: 1.0.0

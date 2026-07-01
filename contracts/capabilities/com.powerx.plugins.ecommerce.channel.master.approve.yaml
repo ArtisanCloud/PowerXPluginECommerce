@@ -1,0 +1,26 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.channel.master.approve.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.channel.master.approve.json
+description: com.powerx.plugins.ecommerce:channel.master approve capability
+id: com.powerx.plugins.ecommerce.channel.master.approve
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/channels/:channelId/approval
+    source:
+        action: approve
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:channel.master
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.channel.master.approve.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.channel.master.approve.json
+rbac:
+    actions:
+        - approve
+    resource: com.powerx.plugins.ecommerce:channel.master
+status: active
+type: API
+version: 1.0.0

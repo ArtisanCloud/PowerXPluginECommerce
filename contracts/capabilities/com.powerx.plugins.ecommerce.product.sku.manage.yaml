@@ -1,0 +1,32 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.product.sku.manage.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.product.sku.manage.json
+description: com.powerx.plugins.ecommerce:product.sku manage capability
+id: com.powerx.plugins.ecommerce.product.sku.manage
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/skus
+            - method: DELETE
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/skus/:id
+            - method: PATCH
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/skus/:id
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/spus/:id/skus/generate
+    source:
+        action: manage
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:product.sku
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.product.sku.manage.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.product.sku.manage.json
+rbac:
+    actions:
+        - manage
+    resource: com.powerx.plugins.ecommerce:product.sku
+status: active
+type: API
+version: 1.0.0

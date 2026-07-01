@@ -1,0 +1,28 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.logistics.tracking.sync.read.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.logistics.tracking.sync.read.json
+description: com.powerx.plugins.ecommerce:logistics.tracking_sync read capability
+id: com.powerx.plugins.ecommerce.logistics.tracking.sync.read
+metadata:
+    protocols:
+        rest:
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/tracking-sync/jobs
+            - method: GET
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/tracking-sync/schedules
+    source:
+        action: read
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:logistics.tracking_sync
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.logistics.tracking.sync.read.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.logistics.tracking.sync.read.json
+rbac:
+    actions:
+        - read
+    resource: com.powerx.plugins.ecommerce:logistics.tracking_sync
+status: active
+type: API
+version: 1.0.0

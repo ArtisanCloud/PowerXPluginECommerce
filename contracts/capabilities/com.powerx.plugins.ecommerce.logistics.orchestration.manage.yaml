@@ -1,0 +1,30 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.logistics.orchestration.manage.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.logistics.orchestration.manage.json
+description: com.powerx.plugins.ecommerce:logistics.orchestration manage capability
+id: com.powerx.plugins.ecommerce.logistics.orchestration.manage
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/exceptions/orchestration/execute
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/exceptions/orchestration/rules
+            - method: PATCH
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/logistics/exceptions/orchestration/rules/:id
+    source:
+        action: manage
+        generated_from: route_rbac
+        resource: com.powerx.plugins.ecommerce:logistics.orchestration
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.logistics.orchestration.manage.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.logistics.orchestration.manage.json
+rbac:
+    actions:
+        - manage
+    resource: com.powerx.plugins.ecommerce:logistics.orchestration
+status: active
+type: API
+version: 1.0.0

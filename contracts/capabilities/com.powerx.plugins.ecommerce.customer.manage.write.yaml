@@ -1,0 +1,30 @@
+consumes:
+    - id: schema/input/com.powerx.plugins.ecommerce.customer.manage.write.json
+      kind: input
+      path: schema/input/com.powerx.plugins.ecommerce.customer.manage.write.json
+description: customer.manage write capability
+id: com.powerx.plugins.ecommerce.customer.manage.write
+metadata:
+    protocols:
+        rest:
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/customers
+            - method: PATCH
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/customers/:id
+            - method: POST
+              path: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/customers/import
+    source:
+        action: write
+        generated_from: route_rbac
+        resource: customer.manage
+provides:
+    - id: schema/output/com.powerx.plugins.ecommerce.customer.manage.write.json
+      kind: output
+      path: schema/output/com.powerx.plugins.ecommerce.customer.manage.write.json
+rbac:
+    actions:
+        - write
+    resource: customer.manage
+status: active
+type: API
+version: 1.0.0
