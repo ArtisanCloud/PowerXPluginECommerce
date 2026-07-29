@@ -5,7 +5,7 @@
         <h1 class="text-xl font-semibold text-gray-900 dark:text-white">{{ t("pricing.promotions.title") }}</h1>
         <p class="mt-1 text-sm text-gray-500 dark:text-gray-400">{{ t("pricing.promotions.subtitle") }}</p>
       </div>
-      <UButton icon="i-lucide-plus" color="primary" @click="openCreate">{{ t("pricing.promotions.actions.create") }}</UButton>
+      <UButton icon="i-heroicons-plus" color="primary" @click="openCreate">{{ t("pricing.promotions.actions.create") }}</UButton>
     </div>
 
     <div class="grid gap-3 md:grid-cols-5">
@@ -14,8 +14,8 @@
       <USelect v-model="filters.status" :items="statusOptions" :placeholder="t('pricing.promotions.fields.status')" />
       <UInput v-model="filters.channel" :placeholder="t('pricing.promotions.fields.channel')" />
       <div class="flex gap-2">
-        <UButton variant="soft" icon="i-lucide-search" @click="load">{{ t("pricing.promotions.actions.search") }}</UButton>
-        <UButton variant="ghost" icon="i-lucide-rotate-ccw" @click="reset">{{ t("pricing.promotions.actions.reset") }}</UButton>
+        <UButton variant="soft" icon="i-heroicons-magnifying-glass" @click="load">{{ t("pricing.promotions.actions.search") }}</UButton>
+        <UButton variant="ghost" icon="i-heroicons-arrow-path" @click="reset">{{ t("pricing.promotions.actions.reset") }}</UButton>
       </div>
     </div>
 
@@ -25,7 +25,7 @@
       </template>
       <template #actions-cell="{ row }">
         <div class="flex flex-wrap items-center gap-2">
-          <UButton size="xs" variant="soft" icon="i-lucide-pencil" @click="openEdit(row.original)">
+          <UButton size="xs" variant="soft" icon="i-heroicons-pencil-square" @click="openEdit(row.original)">
             {{ t("pricing.promotions.actions.editShort") }}
           </UButton>
           <UButton
@@ -33,7 +33,7 @@
             size="xs"
             color="warning"
             variant="soft"
-            icon="i-lucide-circle-pause"
+            icon="i-heroicons-pause-circle"
             @click="pause(row.original.id)"
           >
             {{ t("pricing.promotions.actions.pause") }}
@@ -43,12 +43,12 @@
             size="xs"
             color="success"
             variant="soft"
-            icon="i-lucide-circle-check"
+            icon="i-heroicons-check-circle"
             @click="activate(row.original.id)"
           >
             {{ t("pricing.promotions.actions.activate") }}
           </UButton>
-          <UButton size="xs" variant="soft" icon="i-lucide-copy-plus" @click="clone(row.original.id)">
+          <UButton size="xs" variant="soft" icon="i-heroicons-document-duplicate" @click="clone(row.original.id)">
             {{ t("pricing.promotions.actions.clone") }}
           </UButton>
         </div>
@@ -67,7 +67,7 @@
             v-if="formError"
             color="error"
             variant="soft"
-            icon="i-lucide-circle-alert"
+            icon="i-heroicons-exclamation-circle"
             :description="formError"
             class="lg:col-span-4"
           />
@@ -78,7 +78,7 @@
                 v-if="!editingId"
                 type="button"
                 variant="soft"
-                icon="i-lucide-refresh-cw"
+                icon="i-heroicons-arrow-path"
                 @click="generateCode"
               >
                 {{ t("pricing.promotions.actions.generate") }}
@@ -119,7 +119,7 @@
 
           <UFormField :label="t('pricing.promotions.fields.channel')" class="lg:col-span-2">
             <UPopover :ui="multiSelectPopoverUi">
-              <UButton type="button" color="neutral" variant="outline" trailing-icon="i-lucide-chevron-down" class="h-10 w-full justify-between overflow-hidden px-3">
+              <UButton type="button" color="neutral" variant="outline" trailing-icon="i-heroicons-chevron-down" class="h-10 w-full justify-between overflow-hidden px-3">
                 <span class="truncate text-left font-normal">{{ selectedSummary(form.channels, channelOptions, t("pricing.promotions.placeholders.channels")) }}</span>
               </UButton>
               <template #content>
@@ -134,7 +134,7 @@
                       @click="toggleSelected(form.channels, item.value)"
                     >
                       <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded border border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-900">
-                        <UIcon v-if="form.channels.includes(item.value)" name="i-lucide-check" class="h-3 w-3 text-primary" />
+                        <UIcon v-if="form.channels.includes(item.value)" name="i-heroicons-check" class="h-3 w-3 text-primary" />
                       </span>
                       <span class="truncate">{{ item.label }}</span>
                     </button>
@@ -148,7 +148,7 @@
           </UFormField>
           <UFormField :label="t('pricing.promotions.fields.exclusionGroup')" :class="form.scope_type === 'sku' ? '' : 'lg:col-span-2'">
             <UPopover :ui="multiSelectPopoverUi">
-              <UButton type="button" color="neutral" variant="outline" trailing-icon="i-lucide-chevron-down" class="h-10 w-full justify-between overflow-hidden px-3">
+              <UButton type="button" color="neutral" variant="outline" trailing-icon="i-heroicons-chevron-down" class="h-10 w-full justify-between overflow-hidden px-3">
                 <span class="truncate text-left font-normal">{{ selectedSummary(form.exclusion_groups, exclusionGroupOptions, t("pricing.promotions.placeholders.exclusionGroups")) }}</span>
               </UButton>
               <template #content>
@@ -163,7 +163,7 @@
                       @click="toggleSelected(form.exclusion_groups, item.value)"
                     >
                       <span class="flex h-4 w-4 shrink-0 items-center justify-center rounded border border-gray-300 bg-white dark:border-gray-600 dark:bg-gray-900">
-                        <UIcon v-if="form.exclusion_groups.includes(item.value)" name="i-lucide-check" class="h-3 w-3 text-primary" />
+                        <UIcon v-if="form.exclusion_groups.includes(item.value)" name="i-heroicons-check" class="h-3 w-3 text-primary" />
                       </span>
                       <span class="truncate">{{ item.label }}</span>
                     </button>

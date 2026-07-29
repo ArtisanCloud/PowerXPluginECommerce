@@ -41,8 +41,8 @@ type Deps struct {
 	OperationsMetrics     *opsmetrics.Metrics
 	AdminConsoleMetrics   *adminmetrics.Metrics
 	ProductMetrics        *productmetrics.Metrics
-	IAMMode               iamservice.IAMMode
-	IAMModeSource         string
+	ProviderMode          iamservice.Mode
+	ProviderModeSource    string
 	AuthProxy             DelegatedAuthProxy
 	IAMDirectory          iamservice.IAMDirectory
 	TaskBus               taskbus.Client

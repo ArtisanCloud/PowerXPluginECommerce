@@ -31,9 +31,9 @@ func TestBuildJWTInProxyMode(t *testing.T) {
 	}
 }
 
-func TestBuildJWTInDelegatedModeWithoutProxyEnv(t *testing.T) {
+func TestBuildJWTInDelegatedProviderWithoutProxyEnv(t *testing.T) {
 	cfg := &config.Config{
-		Context: &config.ContextConfig{IAMMode: "delegated"},
+		Context: &config.ContextConfig{ProviderMode: "delegated"},
 		Server:  &config.ServerConfig{},
 	}
 	r := &Router{cfg: cfg}
@@ -46,11 +46,11 @@ func TestBuildJWTInDelegatedModeWithoutProxyEnv(t *testing.T) {
 
 	jwtCfg := r.buildJWT()
 
-	if jwtCfg.Optional {
-		t.Fatal("expected strict JWT validation when IAM mode is delegated")
-	}
 	if jwtCfg.AllowSignedContext {
-		t.Fatal("expected signed context disabled in delegated mode")
+		t.Fatal("expected signed context disabled in delegated provider mode")
+	}
+	if jwtCfg.Issuer == "powerx-auth" {
+		t.Fatal("delegated provider without POWERX_PROXY must not force host JWT issuer")
 	}
 }
 

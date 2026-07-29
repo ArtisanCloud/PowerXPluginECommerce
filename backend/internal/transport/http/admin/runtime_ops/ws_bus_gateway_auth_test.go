@@ -17,7 +17,7 @@ func TestResolveWSBusGatewayAuth_BearerWithoutSTSHasNoCredential(t *testing.T) {
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request = httptest.NewRequest("POST", "/", nil)
 
-	decision := resolveWSBusGatewayAuth(c, &app.Deps{IAMMode: authx.IAMModeLocal})
+	decision := resolveWSBusGatewayAuth(c, &app.Deps{ProviderMode: authx.ModeLocal})
 	if decision.Source != "none" {
 		t.Fatalf("unexpected source: %s", decision.Source)
 	}
@@ -43,7 +43,7 @@ func TestResolveWSBusGatewayAuth_DelegatedDoesNotUseInboundTokenForOutbound(t *t
 	req.Header.Set("Authorization", "Bearer "+inbound)
 	c.Request = req
 
-	decision := resolveWSBusGatewayAuth(c, &app.Deps{IAMMode: authx.IAMModeDelegated})
+	decision := resolveWSBusGatewayAuth(c, &app.Deps{ProviderMode: authx.ModeDelegated})
 	if decision.Source != "none" {
 		t.Fatalf("unexpected source: %s", decision.Source)
 	}
@@ -64,7 +64,7 @@ func TestResolveWSBusGatewayAuth_ApiKey(t *testing.T) {
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request = httptest.NewRequest("POST", "/", nil)
 
-	decision := resolveWSBusGatewayAuth(c, &app.Deps{IAMMode: authx.IAMModeLocal})
+	decision := resolveWSBusGatewayAuth(c, &app.Deps{ProviderMode: authx.ModeLocal})
 	if decision.GatewayAuthScheme != "apikey" {
 		t.Fatalf("unexpected auth scheme: %s", decision.GatewayAuthScheme)
 	}
@@ -86,7 +86,7 @@ func TestResolveWSBusGatewayAuth_DefaultsToApiKeyWhenAPIKeyPresent(t *testing.T)
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request = httptest.NewRequest("POST", "/", nil)
 
-	decision := resolveWSBusGatewayAuth(c, &app.Deps{IAMMode: authx.IAMModeLocal})
+	decision := resolveWSBusGatewayAuth(c, &app.Deps{ProviderMode: authx.ModeLocal})
 	if decision.GatewayAuthScheme != "apikey" {
 		t.Fatalf("unexpected auth scheme: %s", decision.GatewayAuthScheme)
 	}
@@ -100,7 +100,7 @@ func TestResolveWSBusGatewayAuth_Timeout(t *testing.T) {
 	c, _ := gin.CreateTestContext(httptest.NewRecorder())
 	c.Request = httptest.NewRequest("POST", "/", nil)
 
-	decision := resolveWSBusGatewayAuth(c, &app.Deps{IAMMode: authx.IAMModeLocal})
+	decision := resolveWSBusGatewayAuth(c, &app.Deps{ProviderMode: authx.ModeLocal})
 	if decision.GatewayTimeout != 75*time.Second {
 		t.Fatalf("unexpected timeout: %s", decision.GatewayTimeout)
 	}

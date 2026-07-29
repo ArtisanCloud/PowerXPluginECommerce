@@ -3,16 +3,30 @@
 		<UAlert
 			color="neutral"
 			variant="soft"
-			title="说明"
-			description="这里维护的是“变体规格”（颜色/尺码等），用于生成 SKU 组合。属性和规格菜单中的“属性/规格”目前未对接此数据。"
+			:title="t('product.spu.specEditor.noticeTitle')"
+			:description="t('product.spu.specEditor.noticeDescription')"
 		/>
 
 		<div class="flex flex-wrap items-center justify-between gap-3">
 			<div>
-				<h3 class="text-base font-semibold text-gray-900 dark:text-white">规格定义</h3>
-				<p class="text-sm text-gray-500 dark:text-gray-400">每个规格组包含若干规格值，SKU 由规格值组合生成。</p>
+				<h3 class="text-base font-semibold text-gray-900 dark:text-white">
+					{{ t('product.spu.specEditor.title') }}
+				</h3>
+				<p class="text-sm text-gray-500 dark:text-gray-400">
+					{{ t('product.spu.specEditor.description') }}
+				</p>
 			</div>
 			<div class="flex items-center gap-2">
+				<UButton
+					color="neutral"
+					variant="soft"
+					size="sm"
+					:loading="syncingCategorySpecs"
+					:disabled="loading || !editable || !categoryId"
+					@click="syncFromCategory"
+				>
+					{{ t('product.spu.specEditor.syncFromCategory') }}
+				</UButton>
 				<UButton
 					color="primary"
 					variant="outline"
@@ -20,10 +34,10 @@
 					:disabled="loading || !editable"
 					@click="addGroup"
 				>
-					新增规格组
+					{{ t('product.spu.specEditor.addGroup') }}
 				</UButton>
 				<UButton color="primary" size="sm" :loading="saving" :disabled="loading || !editable" @click="save">
-					保存
+					{{ t('product.spu.specEditor.save') }}
 				</UButton>
 			</div>
 		</div>
@@ -32,8 +46,8 @@
 			v-if="!editable"
 			color="warning"
 			variant="soft"
-			title="只读"
-			description="当前 SPU 不是草稿状态，规格定义为只读；如需修改请先创建草稿版本。"
+			:title="t('product.spu.specEditor.readonlyTitle')"
+			:description="t('product.spu.specEditor.readonlyDescription')"
 		/>
 
 		<div v-if="loading">
@@ -45,8 +59,12 @@
 				<template #header>
 					<div class="flex flex-wrap items-center justify-between gap-3">
 						<div class="flex items-center gap-2">
-							<UBadge variant="soft" color="neutral">规格组 {{ gi + 1 }}</UBadge>
-							<UBadge v-if="g.required" variant="soft" color="primary">必选</UBadge>
+							<UBadge variant="soft" color="neutral">
+								{{ t('product.spu.specEditor.groupBadge', { index: gi + 1 }) }}
+							</UBadge>
+							<UBadge v-if="g.required" variant="soft" color="primary">
+								{{ t('product.spu.specEditor.required') }}
+							</UBadge>
 						</div>
 						<UButton
 							color="error"
@@ -55,29 +73,37 @@
 							:disabled="!editable"
 							@click="removeGroup(gi)"
 						>
-							删除规格组
+							{{ t('product.spu.specEditor.removeGroup') }}
 						</UButton>
 					</div>
 				</template>
 
 				<div class="grid gap-4 md:grid-cols-2">
-					<UFormField label="编码（Code）" help="建议全小写下划线，例如 color/size">
-						<UInput v-model="g.code" :disabled="!editable" placeholder="例如：color" />
+					<UFormField
+						:label="t('product.spu.specEditor.code')"
+						:help="t('product.spu.specEditor.codeHelp')"
+					>
+						<UInput v-model="g.code" :disabled="!editable" :placeholder="t('product.spu.specEditor.codePlaceholder')" />
 					</UFormField>
-					<UFormField label="名称（Name）" help="展示给用户的名称，例如 颜色/尺码">
-						<UInput v-model="g.name" :disabled="!editable" placeholder="例如：颜色" />
+					<UFormField
+						:label="t('product.spu.specEditor.name')"
+						:help="t('product.spu.specEditor.nameHelp')"
+					>
+						<UInput v-model="g.name" :disabled="!editable" :placeholder="t('product.spu.specEditor.namePlaceholder')" />
 					</UFormField>
-					<UFormField label="排序" help="数字越小越靠前">
+					<UFormField :label="t('product.spu.specEditor.sortOrder')" :help="t('product.spu.specEditor.sortOrderHelp')">
 						<UInput v-model.number="g.sort_order" :disabled="!editable" type="number" />
 					</UFormField>
-					<UFormField label="是否必选">
-						<UCheckbox v-model="g.required" :disabled="!editable" label="必选" />
+					<UFormField :label="t('product.spu.specEditor.requiredField')">
+						<UCheckbox v-model="g.required" :disabled="!editable" :label="t('product.spu.specEditor.required')" />
 					</UFormField>
 				</div>
 
 				<div class="mt-4 space-y-3">
 					<div class="flex flex-wrap items-center justify-between gap-2">
-						<h4 class="text-sm font-semibold text-gray-900 dark:text-white">规格值（Options）</h4>
+						<h4 class="text-sm font-semibold text-gray-900 dark:text-white">
+							{{ t('product.spu.specEditor.options') }}
+						</h4>
 						<UButton
 							color="primary"
 							variant="outline"
@@ -85,12 +111,12 @@
 							:disabled="!editable"
 							@click="addOption(gi)"
 						>
-							新增规格值
+							{{ t('product.spu.specEditor.addOption') }}
 						</UButton>
 					</div>
 
 					<div v-if="!g.options.length" class="text-sm text-gray-500 dark:text-gray-400">
-						暂无规格值，请先添加至少 1 个。
+						{{ t('product.spu.specEditor.emptyOptions') }}
 					</div>
 
 					<div v-else class="space-y-3">
@@ -100,7 +126,9 @@
 							class="rounded-md border border-gray-200 dark:border-gray-700 p-3"
 						>
 							<div class="flex items-center justify-between gap-3 mb-2">
-								<UBadge variant="soft" color="neutral">值 {{ oi + 1 }}</UBadge>
+								<UBadge variant="soft" color="neutral">
+									{{ t('product.spu.specEditor.optionBadge', { index: oi + 1 }) }}
+								</UBadge>
 								<UButton
 									color="error"
 									variant="soft"
@@ -108,17 +136,17 @@
 									:disabled="!editable"
 									@click="removeOption(gi, oi)"
 								>
-									删除
+									{{ t('product.spu.specEditor.removeOption') }}
 								</UButton>
 							</div>
 							<div class="grid gap-3 md:grid-cols-3">
-								<UFormField label="编码（Code）">
-									<UInput v-model="o.code" :disabled="!editable" placeholder="例如：red" />
+								<UFormField :label="t('product.spu.specEditor.optionCode')">
+									<UInput v-model="o.code" :disabled="!editable" :placeholder="t('product.spu.specEditor.optionCodePlaceholder')" />
 								</UFormField>
-								<UFormField label="名称（Name）">
-									<UInput v-model="o.name" :disabled="!editable" placeholder="例如：红色" />
+								<UFormField :label="t('product.spu.specEditor.optionName')">
+									<UInput v-model="o.name" :disabled="!editable" :placeholder="t('product.spu.specEditor.optionNamePlaceholder')" />
 								</UFormField>
-								<UFormField label="排序">
+								<UFormField :label="t('product.spu.specEditor.sortOrder')">
 									<UInput v-model.number="o.sort_order" :disabled="!editable" type="number" />
 								</UFormField>
 							</div>
@@ -131,8 +159,8 @@
 				v-if="!groups.length"
 				color="neutral"
 				variant="soft"
-				title="暂无规格定义"
-				description="你可以点击“新增规格组”开始配置，例如：颜色/尺码。配置后即可到“关联 SKU / 批量生成”生成 SKU 组合。"
+				:title="t('product.spu.specEditor.emptyTitle')"
+				:description="t('product.spu.specEditor.emptyDescription')"
 			/>
 		</div>
 	</div>
@@ -140,7 +168,8 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { useToast } from "#imports";
+import { useToast, useI18n } from "#imports";
+import { useCategoryApi } from "~/composables/api/useCategory";
 import { useProductSpecApi, type ProductSpecGroup, type ReplaceProductSpecRequest } from "~/composables/api";
 
 type EditableOption = {
@@ -164,14 +193,17 @@ type EditableGroup = {
   options: EditableOption[];
 };
 
-const props = defineProps<{ spuId: string; editable?: boolean }>();
+const props = defineProps<{ spuId: string; categoryId?: string; editable?: boolean }>();
 const emit = defineEmits<{ (e: "updated", groups: ProductSpecGroup[]): void }>();
 
 const api = useProductSpecApi();
+const categoryApi = useCategoryApi();
 const toast = useToast();
+const { t } = useI18n();
 
 const loading = ref(false);
 const saving = ref(false);
+const syncingCategorySpecs = ref(false);
 const groups = ref<EditableGroup[]>([]);
 
 const newKey = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`;
@@ -196,6 +228,24 @@ const toEditable = (input: ProductSpecGroup[]): EditableGroup[] =>
     })),
   }));
 
+const fromCategorySaleSpecs = (input: any[]): EditableGroup[] =>
+  (input || []).filter((g) => (g.status || "active") === "active").map((g, index) => ({
+    __key: newKey(),
+    code: String(g.code ?? "").trim(),
+    name: String(g.name ?? "").trim(),
+    sort_order: Number(g.sortOrder ?? g.sort_order ?? index),
+    required: Boolean(g.required ?? true),
+    status: g.status || "active",
+    options: (g.options || []).filter((o: any) => (o.status || "active") === "active").map((o: any, optionIndex: number) => ({
+      __key: newKey(),
+      code: String(o.code ?? "").trim(),
+      name: String(o.name ?? "").trim(),
+      sort_order: Number(o.sortOrder ?? o.sort_order ?? optionIndex),
+      status: o.status || "active",
+      meta: o.meta || null,
+    })),
+  }));
+
 const fetchGroups = async () => {
   if (!props.spuId) return;
   loading.value = true;
@@ -203,9 +253,31 @@ const fetchGroups = async () => {
     const data = await api.list(props.spuId);
     groups.value = toEditable(data.groups || []);
   } catch (e: any) {
-    toast.add({ title: "加载规格失败", description: e?.message || String(e), color: "error" });
+    toast.add({ title: t("product.spu.specEditor.loadFailed"), description: e?.message || String(e), color: "error" });
   } finally {
     loading.value = false;
+  }
+};
+
+const syncFromCategory = async () => {
+  if (!props.categoryId) {
+    toast.add({ title: t("product.spu.specEditor.categoryMissing"), color: "error" });
+    return;
+  }
+  syncingCategorySpecs.value = true;
+  try {
+    const data = await categoryApi.saleSpecs(props.categoryId);
+    const nextGroups = fromCategorySaleSpecs(data.groups || []);
+    if (!nextGroups.length) {
+      toast.add({ title: t("product.spu.specEditor.categorySpecEmpty"), color: "warning" });
+      return;
+    }
+    groups.value = nextGroups;
+    toast.add({ title: t("product.spu.specEditor.categorySpecSynced"), color: "primary" });
+  } catch (e: any) {
+    toast.add({ title: t("product.spu.specEditor.categorySpecSyncFailed"), description: e?.message || String(e), color: "error" });
+  } finally {
+    syncingCategorySpecs.value = false;
   }
 };
 
@@ -245,11 +317,21 @@ const removeOption = (groupIndex: number, optionIndex: number) => {
 };
 
 const validate = (): string | null => {
+  const groupCodes = new Set<string>();
   for (const g of groups.value) {
-    if (!g.code.trim() || !g.name.trim()) return "规格组的编码/名称不能为空";
-    if (!g.options.length) return `规格组 ${g.code || g.name} 至少需要 1 个规格值`;
+    const groupCode = g.code.trim();
+    if (!groupCode || !g.name.trim()) return t("product.spu.specEditor.groupRequired");
+    const groupCodeKey = groupCode.toLowerCase();
+    if (groupCodes.has(groupCodeKey)) return t("product.spu.specEditor.duplicateGroup", { code: groupCode });
+    groupCodes.add(groupCodeKey);
+    if (!g.options.length) return t("product.spu.specEditor.groupOptionRequired", { code: groupCode });
+    const optionCodes = new Set<string>();
     for (const o of g.options) {
-      if (!o.code.trim() || !o.name.trim()) return `规格组 ${g.code || g.name} 的规格值编码/名称不能为空`;
+      const optionCode = o.code.trim();
+      if (!optionCode || !o.name.trim()) return t("product.spu.specEditor.optionRequired", { code: groupCode });
+      const optionCodeKey = optionCode.toLowerCase();
+      if (optionCodes.has(optionCodeKey)) return t("product.spu.specEditor.duplicateOption", { code: groupCode, option: optionCode });
+      optionCodes.add(optionCodeKey);
     }
   }
   return null;
@@ -278,7 +360,7 @@ const save = async () => {
   if (!props.editable) return;
   const err = validate();
   if (err) {
-    toast.add({ title: "校验失败", description: err, color: "warning" });
+    toast.add({ title: t("product.spu.specEditor.validateFailed"), description: err, color: "warning" });
     return;
   }
   saving.value = true;
@@ -286,9 +368,9 @@ const save = async () => {
     const data = await api.replace(props.spuId, toPayload());
     groups.value = toEditable(data.groups || []);
     emit("updated", data.groups || []);
-    toast.add({ title: "已保存规格定义", color: "success" });
+    toast.add({ title: t("product.spu.specEditor.saveSuccess"), color: "success" });
   } catch (e: any) {
-    toast.add({ title: "保存失败", description: e?.message || String(e), color: "error" });
+    toast.add({ title: t("product.spu.specEditor.saveFailed"), description: e?.message || String(e), color: "error" });
   } finally {
     saving.value = false;
   }
@@ -296,4 +378,3 @@ const save = async () => {
 
 onMounted(fetchGroups);
 </script>
-

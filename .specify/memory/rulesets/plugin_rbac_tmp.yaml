@@ -13,7 +13,7 @@ strategy: |
   1. 每个 HTTP 域（如 product、channel 等）提供 `rbac.go`，定义 `RBACEntries(prefix string) map[string]authx.Permission`，将 REST 路由映射到 `com.powerx.plugins.<domain>:<resource>.<action>` scope。当前可参考 `backend/internal/transport/http/admin/product/rbac.go` 的模板实现。
   2. 注册器 `http.Registry` 将各模块 `RBACEntries` 合并，注入 `middleware.RBAC`；无需在 Handler 中直接判断权限。
   3. `/api/v1/admin/manifest` 与 `/api/v1/admin/rbac` 由 `admin_handler.go` 输出 Manifest 与权限清单，宿主与 Standalone 统一读取。
-  4. Delegated/Standalone 的切换由 Router 根据 `POWERX_RBAC_DELEGATE`/`POWERX_PROXY` 控制，中间件逻辑一致。
+  4. Delegated/Standalone 的切换由 Router 根据 `POWERX_PROVIDER_MODE` 控制；`POWERX_PROXY` 仅表示宿主代理链路，中间件逻辑一致。
 checks:
   - id: tmp-rbac-route-map
     desc: 每个模块需存在 RBACEntries 声明 route→scope，先以 product 域为模板

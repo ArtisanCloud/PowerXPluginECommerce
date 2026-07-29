@@ -88,7 +88,7 @@ func (r *Router) setupGlobalMiddleware() {
 
 	// —— 仅在“不在 PowerX 宿主内”且“非生产”时，才启用 DevSwitch —— //
 	// 避免 PowerX 模式被 DevSwitch 绕过鉴权。
-	if !r.cfg.IsProduction() && !pluginbootstrap.EffectiveHostMode(r.cfg, "") {
+	if !r.cfg.IsProduction() && !pluginbootstrap.EffectiveHostMode() {
 		tenantUUID := "00000000-0000-0000-0000-000000000001"
 		if r.cfg.GRPCUpstream != nil && strings.TrimSpace(r.cfg.GRPCUpstream.TenantUUID) != "" {
 			tenantUUID = strings.TrimSpace(r.cfg.GRPCUpstream.TenantUUID)
@@ -185,7 +185,7 @@ func (r *Router) RegisterMiddleware(m gin.HandlerFunc) {
 
 // —— 从配置构造 JWT 配置（自动区分 PowerX 宿主/本地直连） —— //
 func (r *Router) buildJWT() middleware.JWTAuthConfig {
-	inPX := pluginbootstrap.EffectiveHostMode(r.cfg, "")
+	inPX := pluginbootstrap.EffectiveHostMode()
 	if inPX {
 		// PowerX 网关严格模式：使用宿主注入的安全参数
 		pid := strings.TrimSpace(os.Getenv("POWERX_PLUGIN_ID"))
@@ -287,13 +287,11 @@ func (r *Router) buildRBAC() *middleware.RBACConfig {
 }
 
 func shouldDelegateToPowerX(cfg *config.Config) bool {
-	if cfg != nil && cfg.Context != nil {
-		switch strings.ToLower(strings.TrimSpace(cfg.Context.IAMMode)) {
-		case "delegated":
-			return true
-		case "local":
-			return false
-		}
+	if cfg == nil {
+		return false
 	}
-	return pluginbootstrap.EffectiveHostMode(cfg, "")
+	if mode, err := cfg.ResolveProviderMode(); err == nil {
+		return mode == config.ProviderModeDelegated
+	}
+	return false
 }

@@ -2503,6 +2503,18 @@ exposure:
       rbac: com.powerx.plugins.ecommerce:product.category:read
       type: rest
     - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.sale.spec.manage
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/categories/:id/sale-specs
+      method: PUT
+      rbac: com.powerx.plugins.ecommerce:product.category.sale_spec:manage
+      type: rest
+    - auth: jwt
+      capability: com.powerx.plugins.ecommerce.product.category.sale.spec.read
+      entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/categories/:id/sale-specs
+      method: GET
+      rbac: com.powerx.plugins.ecommerce:product.category.sale_spec:read
+      type: rest
+    - auth: jwt
       capability: com.powerx.plugins.ecommerce.product.category.template.manage
       entrypoint: ${POWERX_PLUGIN_HTTP_BASE:-/api/v1}/admin/product/category-templates
       method: POST

@@ -72,7 +72,35 @@
   - 子类目未绑定模板时，继承最近祖先的“已发布模板版本”
   - 回滚创建新版本或将当前版本指向历史版本（实现阶段固定）
 
-### 6) Category Mapping（渠道类目映射）
+### 6) Category Sale Spec Group（品类销售规格组）
+
+- **Identity**：`id`（UUID），`tenant_uuid`
+- **Relationship**：`category_id`
+- **Fields**：
+  - `code`（同一类目内唯一，例如 `color`/`size`/`body_type`）
+  - `name`（展示名称）
+  - `sort_order`
+  - `required`
+  - `allow_custom`（是否允许 SPU 在同步后扩展该维度）
+  - `status`（active/disabled）
+- **Behavior**：
+  - 作为同品类 SPU 的销售规格模板来源。
+  - SPU 需显式同步后生成自己的 `ProductSpecGroup`，系统不静默覆盖 SPU 已启用规格。
+
+### 7) Category Sale Spec Option（品类销售规格值）
+
+- **Identity**：`id`（UUID），`tenant_uuid`
+- **Relationship**：`category_id`，`group_id`
+- **Fields**：
+  - `code`（同一规格组内唯一，例如 `red`/`10cm`/`embroidered`）
+  - `name`
+  - `sort_order`
+  - `meta`（可选结构化扩展）
+  - `status`（active/disabled）
+- **Behavior**：
+  - 作为 SPU 可选择的规格值模板；同步到 SPU 后成为 SKU 组合的候选值。
+
+### 8) Category Mapping（渠道类目映射）
 
 - **Identity**：`id`（UUID），`tenant_uuid`
 - **Relationship**：`category_id`
@@ -86,7 +114,7 @@
   - (`category_id`, `channel`) 唯一（若需要同类目多映射，则在实现阶段调整唯一性）
   - CSV 导入必须检测冲突并输出可定位错误
 
-### 7) Category Permission Scope（类目权限范围）
+### 9) Category Permission Scope（类目权限范围）
 
 - **Identity**：`id`（UUID），`tenant_uuid`
 - **Relationship**：`principal_type`（role/department/user 等），`principal_id`，`category_id`
@@ -96,4 +124,3 @@
 ## Auditing
 
 - 对下列动作写审计事件：类目 CRUD、排序/迁移、启停、模板编辑/发布/回滚、映射增删改、CSV 导入导出、批量重检任务触发与结果。
-

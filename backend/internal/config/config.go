@@ -43,7 +43,7 @@ type Config struct {
 	// 宿主标准配置，由 PowerX host-values.yaml 注入。
 	Host *HostConfig `yaml:"host" json:"host"`
 
-	// CustomerAuth 配置迷你应用客户鉴权模式。
+	// CustomerAuth 配置迷你应用客户鉴权参数，模式由 provider_mode 统一决定。
 	CustomerAuth *CustomerAuthConfig `yaml:"customer_auth" json:"customer_auth"`
 
 	// WechatMiniApp 配置微信小程序登录。
@@ -80,7 +80,7 @@ type Config struct {
 	// TaskBus 配置。
 	TaskBus *TaskBusConfig `yaml:"taskbus" json:"taskbus"`
 
-	// 向后兼容的字段（从环境变量或旧配置中填充）
+	// Legacy flat fields populated from canonical config/env for process setup.
 	BindAddr   string `yaml:"-" json:"bind_addr,omitempty"`
 	LogLevel   string `yaml:"-" json:"log_level,omitempty"`
 	DevMode    bool   `yaml:"-" json:"dev_mode,omitempty"`
@@ -89,15 +89,18 @@ type Config struct {
 	RunMigrate bool   `yaml:"-" json:"run_migrate,omitempty"`
 }
 
-// CustomerAuthMode 表示 Customer 鉴权模式。
+// CustomerAuthMode 表示 Customer 鉴权分支，由 provider_mode 派生。
 type CustomerAuthMode string
 
 const (
+	ProviderModeLocal     = "local"
+	ProviderModeDelegated = "delegated"
+
 	CustomerAuthModeDelegate CustomerAuthMode = "delegate"
 	CustomerAuthModeLocal    CustomerAuthMode = "local"
 )
 
-// CustomerAuthConfig 控制 mini-app 客户鉴权。
+// CustomerAuthConfig 控制 mini-app 客户鉴权参数；Mode 已废弃，不再参与模式选择。
 type CustomerAuthConfig struct {
 	Mode             string        `yaml:"mode" json:"mode"`
 	DelegateEndpoint string        `yaml:"delegate_endpoint" json:"delegate_endpoint"`
@@ -334,8 +337,8 @@ type ContextConfig struct {
 	Audience string        `yaml:"audience" json:"audience"`
 	TTL      time.Duration `yaml:"ttl" json:"ttl"`
 
-	// IAM 模式（可选）：delegated / local，留空按环境变量规则推断
-	IAMMode string `yaml:"iam_mode" json:"iam_mode"`
+	// ProviderMode controls all business provider routing: local / delegated.
+	ProviderMode string `yaml:"provider_mode" json:"provider_mode"`
 }
 
 // Load 加载配置，优先级：YAML 文件 > 默认值（不再从环境变量覆盖）
@@ -414,7 +417,6 @@ func getDefaultConfig() *Config {
 			DevMode:  false,
 		},
 		CustomerAuth: &CustomerAuthConfig{
-			Mode:        "auto",
 			JWTIssuer:   "powerx-plugin-customer",
 			JWTAudience: "mini-app",
 			JWTExpires:  2 * time.Hour,
@@ -842,11 +844,8 @@ func loadEnvConfig(cfg *Config) {
 	if audience := resolveConfigValue(os.Getenv("POWERX_CTX_AUDIENCE")); audience != "" {
 		cfg.Context.Audience = audience
 	}
-	// IAM 模式（可选）：兼容 .env 里常用的 IAM_MODE=local/delegated
-	if iamMode := resolveConfigValue(os.Getenv("IAM_MODE")); iamMode != "" {
-		cfg.Context.IAMMode = iamMode
-	} else if iamMode := resolveConfigValue(os.Getenv("POWERX_IAM_MODE")); iamMode != "" {
-		cfg.Context.IAMMode = iamMode
+	if providerMode := resolveConfigValue(os.Getenv("POWERX_PROVIDER_MODE")); providerMode != "" {
+		cfg.Context.ProviderMode = providerMode
 	}
 	if ttlStr := resolveConfigValue(os.Getenv("POWERX_CTX_TTL")); ttlStr != "" {
 		if ttl, err := time.ParseDuration(ttlStr); err == nil {
@@ -855,9 +854,6 @@ func loadEnvConfig(cfg *Config) {
 	}
 
 	// Customer auth 配置
-	if mode := resolveConfigValue(os.Getenv("POWERX_CUSTOMER_AUTH_MODE")); mode != "" {
-		cfg.CustomerAuthConfigOrDefault().Mode = mode
-	}
 	if delegateEndpoint := resolveConfigValue(os.Getenv("POWERX_CUSTOMER_DELEGATE_ENDPOINT")); delegateEndpoint != "" {
 		cfg.CustomerAuthConfigOrDefault().DelegateEndpoint = delegateEndpoint
 	}
@@ -1068,7 +1064,7 @@ func normalizeConfig(cfg *Config) {
 		normalizeGRPCServerConfig(cfg.GRPCServer)
 	}
 	customerCfg := cfg.CustomerAuthConfigOrDefault()
-	customerCfg.Mode = strings.ToLower(strings.TrimSpace(resolveConfigValue(customerCfg.Mode)))
+	customerCfg.Mode = strings.TrimSpace(resolveConfigValue(customerCfg.Mode))
 	customerCfg.DelegateEndpoint = strings.TrimSpace(resolveConfigValue(customerCfg.DelegateEndpoint))
 	if cfg.ResolveCustomerAuthMode() == CustomerAuthModeDelegate && customerCfg.DelegateEndpoint == "" {
 		if fallback := defaultCustomerDelegateEndpoint(); fallback != "" {
@@ -1117,7 +1113,6 @@ func normalizeGRPCServerConfig(server *GRPCServer) {
 func (c *Config) CustomerAuthConfigOrDefault() *CustomerAuthConfig {
 	if c == nil {
 		return &CustomerAuthConfig{
-			Mode:        "auto",
 			JWTIssuer:   "powerx-plugin-customer",
 			JWTAudience: "mini-app",
 			JWTExpires:  2 * time.Hour,
@@ -1156,26 +1151,49 @@ func (c *Config) WechatMiniAppConfigOrDefault() *WechatMiniAppConfig {
 // PaymentsConfigOrDefault ensures payments config is non-nil.
 // ResolveCustomerAuthMode 返回最终客户鉴权模式。
 func (c *Config) ResolveCustomerAuthMode() CustomerAuthMode {
-	if c == nil {
-		if truthyEnv(os.Getenv("POWERX_CUSTOMER_DELEGATE")) || strings.TrimSpace(os.Getenv("POWERX_PROXY")) == "1" {
-			return CustomerAuthModeDelegate
-		}
-		return CustomerAuthModeLocal
-	}
-	cfg := c.CustomerAuthConfigOrDefault()
-	switch strings.ToLower(strings.TrimSpace(cfg.Mode)) {
-	case "delegate":
-		return CustomerAuthModeDelegate
-	case "local":
-		return CustomerAuthModeLocal
-	}
-	if truthyEnv(os.Getenv("POWERX_CUSTOMER_DELEGATE")) {
-		return CustomerAuthModeDelegate
-	}
-	if strings.TrimSpace(os.Getenv("POWERX_PROXY")) == "1" {
+	if mode, err := c.ResolveProviderMode(); err == nil && mode == ProviderModeDelegated {
 		return CustomerAuthModeDelegate
 	}
 	return CustomerAuthModeLocal
+}
+
+// ResolveProviderMode returns the explicit business provider mode.
+func (c *Config) ResolveProviderMode() (string, error) {
+	if c == nil || c.Context == nil {
+		return "", NewConfigError("context.provider_mode is required")
+	}
+	configMode := strings.ToLower(strings.TrimSpace(resolveConfigValue(c.Context.ProviderMode)))
+	envMode := strings.ToLower(strings.TrimSpace(resolveConfigValue(os.Getenv("POWERX_PROVIDER_MODE"))))
+	if configMode != "" && envMode != "" && configMode != envMode {
+		return "", NewConfigError("context.provider_mode and POWERX_PROVIDER_MODE must match")
+	}
+	mode := configMode
+	if mode == "" {
+		mode = envMode
+	}
+	switch mode {
+	case ProviderModeLocal, ProviderModeDelegated:
+		return mode, nil
+	case "":
+		return "", NewConfigError("context.provider_mode or POWERX_PROVIDER_MODE is required")
+	default:
+		return "", NewConfigError("provider mode must be one of: local, delegated")
+	}
+}
+
+func RejectDeprecatedProviderModeVars() error {
+	deprecatedKeys := []string{
+		"IAM" + "_MODE",
+		"POWERX" + "_IAM" + "_MODE",
+		"POWERX_CUSTOMER_AUTH" + "_MODE",
+		"POWERX_CUSTOMER" + "_DELEGATE",
+	}
+	for _, key := range deprecatedKeys {
+		if strings.TrimSpace(os.Getenv(key)) != "" {
+			return NewConfigError(key + " is deprecated; use POWERX_PROVIDER_MODE")
+		}
+	}
+	return nil
 }
 
 func extractPort(addr string) int {
@@ -1378,6 +1396,16 @@ func (c *Config) IsJWTMode() bool {
 
 // Validate 验证配置
 func (c *Config) Validate() error {
+	if err := RejectDeprecatedProviderModeVars(); err != nil {
+		return err
+	}
+	if _, err := c.ResolveProviderMode(); err != nil {
+		return err
+	}
+	if c.CustomerAuth != nil && strings.TrimSpace(c.CustomerAuth.Mode) != "" {
+		return NewConfigError("customer_auth" + ".mode is deprecated; use context.provider_mode or POWERX_PROVIDER_MODE")
+	}
+
 	// 数据库配置验证
 	if c.Database.DSN == "" && c.DBDSN == "" {
 		return NewConfigError("database DSN is required (configure in YAML)")

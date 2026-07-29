@@ -19,7 +19,7 @@ func RequestTrace() gin.HandlerFunc {
 	}
 
 	mode := requestMode()
-	iamMode := iamModeFromEnv()
+	providerMode := providerModeFromEnv()
 	return func(c *gin.Context) {
 		start := time.Now()
 
@@ -29,24 +29,24 @@ func RequestTrace() gin.HandlerFunc {
 		tenantCtx, _ := authx.GetTenantContext(c)
 
 		pxlogger.WithFields(pxlogger.Fields{
-			"component":   "http.middleware.request_trace",
-			"stage":       "begin",
-			"mode":        mode,
-			"iam_mode":    iamMode,
-			"method":      c.Request.Method,
-			"path":        c.Request.URL.Path,
-			"auth":        authMode,
-			"auth_head":   authPreview,
-			"tenant_uuid": tenantCtx.TenantUUID,
-			"tenant_id":   tenantCtx.TenantID,
-			"user_id":     tenantCtx.UserID,
-			"user_uuid":   tenantCtx.UserUUID,
-			"member_id":   tenantCtx.MemberID,
-			"member_uuid": tenantCtx.MemberUUID,
-			"trace_id":    traceID,
-			"request_id":  traceID,
-			"ip":          c.ClientIP(),
-			"user_agent":  userAgent,
+			"component":     "http.middleware.request_trace",
+			"stage":         "begin",
+			"mode":          mode,
+			"provider_mode": providerMode,
+			"method":        c.Request.Method,
+			"path":          c.Request.URL.Path,
+			"auth":          authMode,
+			"auth_head":     authPreview,
+			"tenant_uuid":   tenantCtx.TenantUUID,
+			"tenant_id":     tenantCtx.TenantID,
+			"user_id":       tenantCtx.UserID,
+			"user_uuid":     tenantCtx.UserUUID,
+			"member_id":     tenantCtx.MemberID,
+			"member_uuid":   tenantCtx.MemberUUID,
+			"trace_id":      traceID,
+			"request_id":    traceID,
+			"ip":            c.ClientIP(),
+			"user_agent":    userAgent,
 		}).Debug("request trace begin")
 
 		c.Next()
@@ -59,22 +59,22 @@ func RequestTrace() gin.HandlerFunc {
 		}
 
 		pxlogger.WithFields(pxlogger.Fields{
-			"component":   "http.middleware.request_trace",
-			"stage":       "end",
-			"mode":        mode,
-			"iam_mode":    iamMode,
-			"status":      status,
-			"latency":     latency.String(),
-			"auth":        authMode,
-			"auth_head":   authPreview,
-			"tenant_uuid": tenantCtx.TenantUUID,
-			"tenant_id":   tenantCtx.TenantID,
-			"user_id":     tenantCtx.UserID,
-			"user_uuid":   tenantCtx.UserUUID,
-			"member_id":   tenantCtx.MemberID,
-			"member_uuid": tenantCtx.MemberUUID,
-			"trace_id":    traceID,
-			"request_id":  traceID,
+			"component":     "http.middleware.request_trace",
+			"stage":         "end",
+			"mode":          mode,
+			"provider_mode": providerMode,
+			"status":        status,
+			"latency":       latency.String(),
+			"auth":          authMode,
+			"auth_head":     authPreview,
+			"tenant_uuid":   tenantCtx.TenantUUID,
+			"tenant_id":     tenantCtx.TenantID,
+			"user_id":       tenantCtx.UserID,
+			"user_uuid":     tenantCtx.UserUUID,
+			"member_id":     tenantCtx.MemberID,
+			"member_uuid":   tenantCtx.MemberUUID,
+			"trace_id":      traceID,
+			"request_id":    traceID,
 		}).Debug("request trace end")
 	}
 }
@@ -106,27 +106,15 @@ func detectAuth(c *gin.Context) (mode, preview string) {
 	return "none", ""
 }
 
-func iamModeFromEnv() string {
-	if v := strings.ToLower(strings.TrimSpace(os.Getenv("IAM_MODE"))); v != "" {
-		if v == "delegated" {
-			return "delegated"
-		}
-		if v == "local" {
-			return "local"
-		}
-	}
-	if v := strings.ToLower(strings.TrimSpace(os.Getenv("POWERX_IAM_MODE"))); v != "" {
-		if v == "delegated" {
-			return "delegated"
-		}
-		if v == "local" {
-			return "local"
-		}
-	}
-	if strings.TrimSpace(os.Getenv("POWERX_PROXY")) == "1" {
+func providerModeFromEnv() string {
+	switch strings.ToLower(strings.TrimSpace(os.Getenv("POWERX_PROVIDER_MODE"))) {
+	case "delegated":
 		return "delegated"
+	case "local":
+		return "local"
+	default:
+		return "unknown"
 	}
-	return "local"
 }
 
 func traceIdentifier(c *gin.Context) string {

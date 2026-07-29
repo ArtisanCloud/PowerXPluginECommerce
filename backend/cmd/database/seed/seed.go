@@ -14,7 +14,7 @@ import (
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models"
 	channelmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/channel_master"
 	customermodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/customer"
-	iammodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/iam"
+	identitymodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/iam"
 	membershipmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/membership"
 	pricingmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/pricing"
 	productmodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/product"
@@ -458,17 +458,17 @@ func seedTemplates(db *gorm.DB) error {
 
 func seedCustomerPermissions(db *gorm.DB) (map[string]uint64, error) {
 	ids := make(map[string]uint64)
-	if db == nil || db.Migrator() == nil || !db.Migrator().HasTable(&iammodel.Permission{}) {
+	if db == nil || db.Migrator() == nil || !db.Migrator().HasTable(&identitymodel.Permission{}) {
 		return ids, nil
 	}
-	customerPermissions := []iammodel.Permission{
+	customerPermissions := []identitymodel.Permission{
 		{Resource: "customer.read", Action: "read", Description: "查看客户列表与详情"},
 		{Resource: "customer.manage", Action: "write", Description: "客户批量操作与导入"},
 		{Resource: "customer.export", Action: "write", Description: "导出客户/会员名单"},
 		{Resource: "customer.delete", Action: "delete", Description: "删除客户记录"},
 	}
 
-	productPermissions := []iammodel.Permission{
+	productPermissions := []identitymodel.Permission{
 		// SKU 基础
 		{Resource: "com.powerx.plugins.ecommerce:product.sku", Action: "read", Description: "查看 SKU 列表与详情"},
 		{Resource: "com.powerx.plugins.ecommerce:product.sku", Action: "manage", Description: "创建/编辑/删除 SKU"},
@@ -501,7 +501,7 @@ func seedCustomerPermissions(db *gorm.DB) (map[string]uint64, error) {
 	customerPermissions = append(customerPermissions, productPermissions...)
 
 	for _, perm := range customerPermissions {
-		var existing iammodel.Permission
+		var existing identitymodel.Permission
 		err := db.Where("resource = ? AND action = ?", perm.Resource, perm.Action).
 			First(&existing).Error
 		switch {
@@ -530,10 +530,10 @@ func seedCustomerRoleBindings(db *gorm.DB, permIDs map[string]uint64) error {
 	if len(permIDs) == 0 {
 		return nil
 	}
-	if db == nil || db.Migrator() == nil || !db.Migrator().HasTable(&iammodel.Role{}) || !db.Migrator().HasTable(&iammodel.RolePermission{}) {
+	if db == nil || db.Migrator() == nil || !db.Migrator().HasTable(&identitymodel.Role{}) || !db.Migrator().HasTable(&identitymodel.RolePermission{}) {
 		return nil
 	}
-	var role iammodel.Role
+	var role identitymodel.Role
 	err := db.Where("tenant_uuid = ? AND code = ?", defaultTenantUUID, defaultAdminRoleCode).
 		First(&role).Error
 	if err != nil {
@@ -546,7 +546,7 @@ func seedCustomerRoleBindings(db *gorm.DB, permIDs map[string]uint64) error {
 		if permID == 0 {
 			continue
 		}
-		rp := iammodel.RolePermission{
+		rp := identitymodel.RolePermission{
 			RoleID:       role.ID,
 			PermissionID: permID,
 		}
@@ -672,7 +672,7 @@ func seedDebugCustomerAccount(db *gorm.DB) error {
 	// 不引入新的环境变量：仅在 Standalone + local 模式下写入弱密码调试账号。
 	// 约束条件：
 	// - POWERX_PROXY=0（非宿主代理）
-	// - IAM_MODE=local（本地模式）
+	// - POWERX_PROVIDER_MODE=local（本地 provider）
 	if !shouldSeedDebugCustomerAccount() {
 		return nil
 	}
@@ -744,13 +744,8 @@ func shouldSeedDebugCustomerAccount() bool {
 		}
 	}
 
-	// IAM 非 local 时不写入（避免污染非本地环境）
-	if v := strings.ToLower(strings.TrimSpace(os.Getenv("IAM_MODE"))); v != "" && v != "local" {
-		return false
-	}
-
-	// Customer auth 明确 delegate 时不写入
-	if v := strings.ToLower(strings.TrimSpace(os.Getenv("POWERX_CUSTOMER_AUTH_MODE"))); v == "delegate" {
+	// Provider 非 local 时不写入（避免污染非本地环境）
+	if v := strings.ToLower(strings.TrimSpace(os.Getenv("POWERX_PROVIDER_MODE"))); v != "" && v != "local" {
 		return false
 	}
 

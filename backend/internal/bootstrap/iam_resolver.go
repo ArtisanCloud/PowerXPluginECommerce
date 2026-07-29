@@ -1,74 +1,63 @@
 package bootstrap
 
 import (
-	"os"
 	"strings"
 
-	iamcontext "github.com/ArtisanCloud/PowerXPlugin/framework/backend/go/iam/context"
-	iamcontracts "github.com/ArtisanCloud/PowerXPlugin/framework/backend/go/iam/contracts"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/config"
 	iamservice "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/iam"
 )
 
-// IAMResolver determines whether the plugin should rely on delegated (PowerX Core)
-// or local IAM. Priority: config.context.iam_mode > POWERX_PROXY.
-type IAMResolver struct {
-	mode   iamservice.IAMMode
+// ProviderResolver maps the unified provider mode to the existing auth branch.
+type ProviderResolver struct {
+	mode   iamservice.Mode
 	source string
 }
 
-func NewIAMResolver(cfg *config.Config) *IAMResolver {
-	input := iamcontext.ResolveInput{
-		ConfigMode:  resolveIAMModeInput(cfg),
-		EnvMode:     strings.TrimSpace(os.Getenv("IAM_MODE")),
-		Environment: strings.TrimSpace(os.Getenv("APP_ENV")),
-	}
-	if input.ConfigMode == "" && input.EnvMode == "" {
-		input.PowerXProxy = strings.TrimSpace(os.Getenv("POWERX_PROXY"))
-	}
-	mode, record, err := (iamcontext.ModeResolver{}).Resolve(input)
+func NewProviderResolver(cfg *config.Config) (*ProviderResolver, error) {
+	mode, err := cfg.ResolveProviderMode()
 	if err != nil {
-		return &IAMResolver{mode: iamservice.IAMModeLocal, source: "framework:error"}
+		return nil, err
 	}
-	return &IAMResolver{mode: toServiceIAMMode(mode), source: record.Audit.Source}
+	return &ProviderResolver{mode: toServiceProviderMode(mode), source: resolveProviderModeSource(cfg)}, nil
 }
 
-func (r *IAMResolver) Mode() iamservice.IAMMode {
+func (r *ProviderResolver) Mode() iamservice.Mode {
 	if r == nil {
-		return iamservice.IAMModeLocal
+		return iamservice.ModeLocal
 	}
 	return r.mode
 }
 
-func (r *IAMResolver) Source() string {
+func (r *ProviderResolver) Source() string {
 	if r == nil {
-		return "auto"
+		return ""
 	}
 	return r.source
 }
 
-func resolveIAMModeInput(cfg *config.Config) string {
+func resolveProviderModeInput(cfg *config.Config) string {
 	if cfg == nil || cfg.Context == nil {
 		return ""
 	}
-	return strings.TrimSpace(cfg.Context.IAMMode)
+	return strings.TrimSpace(cfg.Context.ProviderMode)
 }
 
-func toServiceIAMMode(mode iamcontracts.IAMMode) iamservice.IAMMode {
-	switch mode {
-	case iamcontracts.IAMModeDelegated:
-		return iamservice.IAMModeDelegated
+func toServiceProviderMode(mode string) iamservice.Mode {
+	switch strings.ToLower(strings.TrimSpace(mode)) {
+	case config.ProviderModeDelegated:
+		return iamservice.ModeDelegated
 	default:
-		return iamservice.IAMModeLocal
+		return iamservice.ModeLocal
 	}
 }
 
-func EffectiveHostMode(cfg *config.Config, iamMode string) bool {
-	if strings.EqualFold(strings.TrimSpace(iamMode), string(iamservice.IAMModeDelegated)) {
-		return true
-	}
-	if cfg != nil && cfg.Context != nil && strings.EqualFold(strings.TrimSpace(cfg.Context.IAMMode), string(iamservice.IAMModeDelegated)) {
-		return true
-	}
+func EffectiveHostMode() bool {
 	return envTruthy("POWERX_PROXY")
+}
+
+func resolveProviderModeSource(cfg *config.Config) string {
+	if cfg != nil && cfg.Context != nil && strings.TrimSpace(cfg.Context.ProviderMode) != "" {
+		return "config:context.provider_mode"
+	}
+	return "env:POWERX_PROVIDER_MODE"
 }

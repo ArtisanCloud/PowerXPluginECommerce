@@ -91,7 +91,7 @@ rulesets:
 ### VI. Unified Plugin RBAC（Delegated ↔ Standalone）
 
 - RBAC 定义遵循 docs/plan/007-standalone-iam-rbac（`plugin/resource/action` 三元组），统一由各域 `RBACEntries` 暴露并在 `/api/v1/admin/rbac`/manifest 中输出。
-- Delegated 模式由宿主颁发 Token；Standalone 模式使用本地 IAM，同一套 scope/角色在两种模式间可互转（`POWERX_RBAC_DELEGATE` / `POWERX_PROXY` 控制）。
+- Delegated 模式由宿主颁发 Token；Standalone 模式使用本地 IAM，同一套 scope/角色在两种模式间可互转；业务 provider mode 由 `POWERX_PROVIDER_MODE` / `context.provider_mode` 控制，`POWERX_PROXY` 仅表示宿主代理链路。
 - 禁止发明额外 RBAC 配置文件或在 Handler 层硬编码权限判断；一切鉴权均通过中间件 + Manifest。
 
 ## Operational Constraints

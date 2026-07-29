@@ -319,12 +319,6 @@ func (p *PowerXServiceClient) HasToken() bool {
 }
 
 func effectiveHostModeEnv() bool {
-	if strings.EqualFold(strings.TrimSpace(os.Getenv("IAM_MODE")), "delegated") {
-		return true
-	}
-	if strings.EqualFold(strings.TrimSpace(os.Getenv("POWERX_IAM_MODE")), "delegated") {
-		return true
-	}
 	return strings.TrimSpace(os.Getenv("POWERX_PROXY")) == "1"
 }
 

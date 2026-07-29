@@ -40,14 +40,16 @@ func RBACEntries(prefix string) map[string]authx.Permission {
 		"POST:" + spuBase + "/:id/skus/generate":           {Resource: resource("product.sku"), Action: "manage"},
 
 		// Category CRUD.
-		"GET:" + categoryBase:                   {Resource: resource("product.category"), Action: "read"},
-		"GET:" + categoryBase + "/tree":         {Resource: resource("product.category"), Action: "read"},
-		"POST:" + categoryBase:                  {Resource: resource("product.category"), Action: "manage"},
-		"PATCH:" + categoryBase + "/:id":        {Resource: resource("product.category"), Action: "manage"},
-		"DELETE:" + categoryBase + "/:id":       {Resource: resource("product.category"), Action: "manage"},
-		"POST:" + categoryBase + "/:id/move":    {Resource: resource("product.category"), Action: "manage"},
-		"PATCH:" + categoryBase + "/:id/status": {Resource: resource("product.category"), Action: "manage"},
-		"GET:" + categoryBase + "/:id/audit":    {Resource: resource("product.category"), Action: "read"},
+		"GET:" + categoryBase:                     {Resource: resource("product.category"), Action: "read"},
+		"GET:" + categoryBase + "/tree":           {Resource: resource("product.category"), Action: "read"},
+		"POST:" + categoryBase:                    {Resource: resource("product.category"), Action: "manage"},
+		"PATCH:" + categoryBase + "/:id":          {Resource: resource("product.category"), Action: "manage"},
+		"DELETE:" + categoryBase + "/:id":         {Resource: resource("product.category"), Action: "manage"},
+		"POST:" + categoryBase + "/:id/move":      {Resource: resource("product.category"), Action: "manage"},
+		"PATCH:" + categoryBase + "/:id/status":   {Resource: resource("product.category"), Action: "manage"},
+		"GET:" + categoryBase + "/:id/audit":      {Resource: resource("product.category"), Action: "read"},
+		"GET:" + categoryBase + "/:id/sale-specs": {Resource: resource("product.category.sale_spec"), Action: "read"},
+		"PUT:" + categoryBase + "/:id/sale-specs": {Resource: resource("product.category.sale_spec"), Action: "manage"},
 
 		// Category mappings.
 		"GET:" + categoryBase + "/:id/mappings":  {Resource: resource("product.category.mapping"), Action: "read"},

@@ -24,16 +24,11 @@ func (s *Service) buildSpecSignature(ctx context.Context, tx *gorm.DB, tenantID,
 	if strings.TrimSpace(spuID) == "" {
 		return "", errors.New("spu id is required")
 	}
-	// If the SPU has no spec groups configured, keep signature empty for backward compatibility.
 	var groupCount int64
 	if err := tx.WithContext(ctx).
 		Model(&productspecmodel.ProductSpecGroup{}).
 		Where("tenant_uuid = ? AND spu_id = ? AND deleted_at IS NULL", tenantID, spuID).
 		Count(&groupCount).Error; err != nil {
-		// 兼容旧环境/测试环境：若尚未迁移出规格表，则直接跳过 signature。
-		if isMissingSpecTable(err) {
-			return "", nil
-		}
 		return "", err
 	}
 	if groupCount == 0 {
@@ -128,18 +123,4 @@ func (s *Service) buildSpecSignature(ctx context.Context, tx *gorm.DB, tenantID,
 		parts = append(parts, e.GroupCode+"="+e.OptionCode)
 	}
 	return strings.Join(parts, "|"), nil
-}
-
-func isMissingSpecTable(err error) bool {
-	if err == nil {
-		return false
-	}
-	msg := err.Error()
-	if strings.Contains(msg, "no such table: product_spec_groups") {
-		return true
-	}
-	if strings.Contains(msg, "relation \"product_spec_groups\" does not exist") {
-		return true
-	}
-	return false
 }

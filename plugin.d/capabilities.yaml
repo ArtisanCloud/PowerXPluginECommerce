@@ -181,6 +181,8 @@ capabilities:
     - contracts/capabilities/com.powerx.plugins.ecommerce.product.category.mapping.manage.yaml
     - contracts/capabilities/com.powerx.plugins.ecommerce.product.category.mapping.read.yaml
     - contracts/capabilities/com.powerx.plugins.ecommerce.product.category.read.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.product.category.sale.spec.manage.yaml
+    - contracts/capabilities/com.powerx.plugins.ecommerce.product.category.sale.spec.read.yaml
     - contracts/capabilities/com.powerx.plugins.ecommerce.product.category.template.manage.yaml
     - contracts/capabilities/com.powerx.plugins.ecommerce.product.category.template.read.yaml
     - contracts/capabilities/com.powerx.plugins.ecommerce.product.sku.barcode.manage.yaml
@@ -1297,6 +1299,18 @@ capabilities:
       schemas:
         input: contracts/schema/input/com.powerx.plugins.ecommerce.product.category.read.json
         output: contracts/schema/output/com.powerx.plugins.ecommerce.product.category.read.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.product.category.sale.spec.manage.yaml
+      id: com.powerx.plugins.ecommerce.product.category.sale.spec.manage
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.product.category.sale.spec.manage.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.product.category.sale.spec.manage.json
+      version: 1.0.0
+    - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.product.category.sale.spec.read.yaml
+      id: com.powerx.plugins.ecommerce.product.category.sale.spec.read
+      schemas:
+        input: contracts/schema/input/com.powerx.plugins.ecommerce.product.category.sale.spec.read.json
+        output: contracts/schema/output/com.powerx.plugins.ecommerce.product.category.sale.spec.read.json
       version: 1.0.0
     - descriptor: contracts/capabilities/com.powerx.plugins.ecommerce.product.category.template.manage.yaml
       id: com.powerx.plugins.ecommerce.product.category.template.manage

@@ -115,6 +115,105 @@
 						</div>
 						</div>
 
+						<div v-else-if="activeTab === 'saleSpecs'" class="space-y-4">
+							<div class="flex flex-wrap items-center justify-between gap-3">
+								<div>
+									<h2 class="text-lg font-semibold">{{ t('product.categories.saleSpecs.title') }}</h2>
+									<p class="text-sm text-white/60">{{ t('product.categories.saleSpecs.description') }}</p>
+								</div>
+								<div class="flex flex-wrap gap-2">
+									<UButton variant="soft" icon="i-heroicons-arrow-path" :loading="saleSpecsLoading" @click="loadSaleSpecs">
+										{{ t('product.categories.saleSpecs.refresh') }}
+									</UButton>
+									<UButton color="primary" icon="i-heroicons-plus" @click="addSaleSpecGroup">
+										{{ t('product.categories.saleSpecs.addGroup') }}
+									</UButton>
+								</div>
+							</div>
+
+							<div v-if="saleSpecsLoading" class="py-8 text-center text-sm text-white/60">
+								{{ t('product.categories.saleSpecs.loading') }}
+							</div>
+							<div v-else class="space-y-4">
+								<UCard v-for="(group, groupIndex) in saleSpecGroups" :key="group.__key">
+									<template #header>
+										<div class="flex flex-wrap items-center justify-between gap-3">
+											<div class="flex flex-wrap items-center gap-2">
+												<UBadge variant="soft" color="primary">{{ t('product.categories.saleSpecs.groupBadge', { index: groupIndex + 1 }) }}</UBadge>
+												<UBadge v-if="group.required" variant="soft" color="emerald">{{ t('product.categories.saleSpecs.required') }}</UBadge>
+												<UBadge v-if="group.allowCustom" variant="soft" color="neutral">{{ t('product.categories.saleSpecs.allowCustom') }}</UBadge>
+											</div>
+											<UButton color="error" variant="soft" size="xs" @click="removeSaleSpecGroup(groupIndex)">
+												{{ t('product.categories.saleSpecs.removeGroup') }}
+											</UButton>
+										</div>
+									</template>
+
+									<div class="grid grid-cols-12 gap-4">
+										<UFormField :label="t('product.categories.saleSpecs.code')" class="col-span-12 md:col-span-4">
+											<UInput v-model="group.code" placeholder="color" />
+										</UFormField>
+										<UFormField :label="t('product.categories.saleSpecs.name')" class="col-span-12 md:col-span-4">
+											<UInput v-model="group.name" :placeholder="t('product.categories.saleSpecs.namePlaceholder')" />
+										</UFormField>
+										<UFormField :label="t('product.categories.saleSpecs.sortOrder')" class="col-span-12 md:col-span-4">
+											<UInput v-model.number="group.sortOrder" type="number" />
+										</UFormField>
+										<UFormField :label="t('product.categories.saleSpecs.required')" class="col-span-12 md:col-span-4">
+											<USwitch v-model="group.required" />
+										</UFormField>
+										<UFormField :label="t('product.categories.saleSpecs.allowCustom')" class="col-span-12 md:col-span-4">
+											<USwitch v-model="group.allowCustom" />
+										</UFormField>
+										<UFormField :label="t('product.categories.saleSpecs.status')" class="col-span-12 md:col-span-4">
+											<USelect v-model="group.status" :items="saleSpecStatusItems" class="w-full" />
+										</UFormField>
+									</div>
+
+									<div class="mt-4 space-y-3">
+										<div class="flex flex-wrap items-center justify-between gap-2">
+											<h3 class="text-sm font-semibold">{{ t('product.categories.saleSpecs.options') }}</h3>
+											<UButton variant="soft" size="xs" icon="i-heroicons-plus" @click="addSaleSpecOption(groupIndex)">
+												{{ t('product.categories.saleSpecs.addOption') }}
+											</UButton>
+										</div>
+										<div v-if="group.options.length === 0" class="rounded border border-dashed border-white/10 p-3 text-sm text-white/60">
+											{{ t('product.categories.saleSpecs.emptyOptions') }}
+										</div>
+										<div v-else class="space-y-3">
+											<div v-for="(option, optionIndex) in group.options" :key="option.__key" class="grid grid-cols-12 gap-3 rounded border border-white/10 p-3">
+												<UFormField :label="t('product.categories.saleSpecs.optionCode')" class="col-span-12 md:col-span-3">
+													<UInput v-model="option.code" placeholder="red" />
+												</UFormField>
+												<UFormField :label="t('product.categories.saleSpecs.optionName')" class="col-span-12 md:col-span-3">
+													<UInput v-model="option.name" :placeholder="t('product.categories.saleSpecs.optionNamePlaceholder')" />
+												</UFormField>
+												<UFormField :label="t('product.categories.saleSpecs.sortOrder')" class="col-span-12 md:col-span-2">
+													<UInput v-model.number="option.sortOrder" type="number" />
+												</UFormField>
+												<UFormField :label="t('product.categories.saleSpecs.status')" class="col-span-12 md:col-span-2">
+													<USelect v-model="option.status" :items="saleSpecStatusItems" class="w-full" />
+												</UFormField>
+												<div class="col-span-12 flex items-end md:col-span-2">
+													<UButton color="error" variant="soft" size="xs" @click="removeSaleSpecOption(groupIndex, optionIndex)">
+														{{ t('product.categories.saleSpecs.removeOption') }}
+													</UButton>
+												</div>
+											</div>
+										</div>
+									</div>
+								</UCard>
+								<div v-if="saleSpecGroups.length === 0" class="rounded border border-dashed border-white/10 p-4 text-sm text-white/60">
+									{{ t('product.categories.saleSpecs.empty') }}
+								</div>
+								<div class="flex justify-end">
+									<UButton color="primary" :loading="saleSpecsSaving" @click="saveSaleSpecs">
+										{{ t('product.categories.saleSpecs.save') }}
+									</UButton>
+								</div>
+							</div>
+						</div>
+
 						<div v-else-if="activeTab === 'mappings'" class="space-y-4">
 							<div class="flex flex-wrap items-center justify-between gap-3">
 								<div>
@@ -322,9 +421,10 @@
 import { computed, defineComponent, h, onMounted, ref, watch } from 'vue'
 import ConfirmDialog from '~/components/ConfirmDialog.vue'
 import { useToastAlert } from '~/composables/useToastAlert'
-import { useCategoryApi, type CategoryNode, type CategoryCreatePayload } from '~/composables/api/useCategory'
+import { useCategoryApi, type CategoryNode, type CategoryCreatePayload, type CategorySaleSpecGroup } from '~/composables/api/useCategory'
 import { useCategoryMappingApi, type CategoryMapping, type AuditRecord } from '~/composables/api/useCategoryMapping'
 
+const { t } = useI18n()
 const toast = useToastAlert()
 const api = useCategoryApi()
 const mappingApi = useCategoryMappingApi()
@@ -337,12 +437,13 @@ const deletingCategory = ref(false)
 
 const tree = ref<CategoryNode[]>([])
 const selected = ref<CategoryNode | null>(null)
-const activeTab = ref<'detail' | 'mappings' | 'audit'>('detail')
-const tabs = [
+const activeTab = ref<'detail' | 'saleSpecs' | 'mappings' | 'audit'>('detail')
+const tabs = computed(() => [
 	{ label: '详情', value: 'detail' },
+	{ label: t('product.categories.saleSpecs.tab'), value: 'saleSpecs' },
 	{ label: '渠道映射', value: 'mappings' },
 	{ label: '审计', value: 'audit' },
-]
+])
 
 const keyword = ref('')
 const statusFilter = ref<'all' | 'enabled' | 'disabled'>('all')
@@ -397,6 +498,38 @@ const syncStatusItems = [
 	{ label: 'failed', value: 'failed' },
 	{ label: 'disabled', value: 'disabled' },
 ]
+
+type EditableSaleSpecOption = {
+	__key: string
+	id?: string
+	groupId?: string
+	code: string
+	name: string
+	sortOrder: number
+	meta?: Record<string, any> | null
+	status: string
+}
+
+type EditableSaleSpecGroup = {
+	__key: string
+	id?: string
+	categoryId?: string
+	code: string
+	name: string
+	sortOrder: number
+	required: boolean
+	allowCustom: boolean
+	status: string
+	options: EditableSaleSpecOption[]
+}
+
+const saleSpecsLoading = ref(false)
+const saleSpecsSaving = ref(false)
+const saleSpecGroups = ref<EditableSaleSpecGroup[]>([])
+const saleSpecStatusItems = computed(() => [
+	{ label: t('product.categories.saleSpecs.statusActive'), value: 'active' },
+	{ label: t('product.categories.saleSpecs.statusDisabled'), value: 'disabled' },
+])
 
 const auditLoading = ref(false)
 const auditItems = ref<AuditRecord[]>([])
@@ -454,6 +587,9 @@ const refreshTree = async () => {
 const selectCategory = (node: CategoryNode) => {
 	selected.value = node
 	resetEdit()
+	if (activeTab.value === 'saleSpecs') {
+		loadSaleSpecs()
+	}
 	if (activeTab.value === 'mappings') {
 		loadMappings()
 	}
@@ -530,6 +666,9 @@ const saveEdit = async () => {
 
 watch(activeTab, (tab) => {
 	if (!selected.value) return
+	if (tab === 'saleSpecs') {
+		loadSaleSpecs()
+	}
 	if (tab === 'mappings') {
 		loadMappings()
 	}
@@ -537,6 +676,146 @@ watch(activeTab, (tab) => {
 		loadAudit()
 	}
 })
+
+const saleSpecKey = () => `${Date.now()}-${Math.random().toString(16).slice(2)}`
+
+const toEditableSaleSpecs = (groups: CategorySaleSpecGroup[]): EditableSaleSpecGroup[] =>
+	(groups || []).map((group) => ({
+		__key: saleSpecKey(),
+		id: group.id,
+		categoryId: group.categoryId,
+		code: group.code,
+		name: group.name,
+		sortOrder: Number(group.sortOrder || 0),
+		required: Boolean(group.required),
+		allowCustom: Boolean(group.allowCustom),
+		status: group.status || 'active',
+		options: (group.options || []).map((option) => ({
+			__key: saleSpecKey(),
+			id: option.id,
+			groupId: option.groupId,
+			code: option.code,
+			name: option.name,
+			sortOrder: Number(option.sortOrder || 0),
+			meta: option.meta || null,
+			status: option.status || 'active',
+		})),
+	}))
+
+const loadSaleSpecs = async () => {
+	if (!selected.value) return
+	saleSpecsLoading.value = true
+	try {
+		const resp = await api.saleSpecs(selected.value.id)
+		saleSpecGroups.value = toEditableSaleSpecs(resp.groups || [])
+	} catch (error: any) {
+		toast.add({
+			title: t('product.categories.saleSpecs.loadFailed'),
+			description: error?.message || t('product.categories.saleSpecs.retry'),
+			color: 'error',
+		})
+	} finally {
+		saleSpecsLoading.value = false
+	}
+}
+
+const addSaleSpecGroup = () => {
+	saleSpecGroups.value.push({
+		__key: saleSpecKey(),
+		code: '',
+		name: '',
+		sortOrder: saleSpecGroups.value.length,
+		required: true,
+		allowCustom: false,
+		status: 'active',
+		options: [],
+	})
+}
+
+const removeSaleSpecGroup = (index: number) => {
+	saleSpecGroups.value.splice(index, 1)
+}
+
+const addSaleSpecOption = (groupIndex: number) => {
+	const group = saleSpecGroups.value[groupIndex]
+	if (!group) return
+	group.options.push({
+		__key: saleSpecKey(),
+		code: '',
+		name: '',
+		sortOrder: group.options.length,
+		meta: null,
+		status: 'active',
+	})
+}
+
+const removeSaleSpecOption = (groupIndex: number, optionIndex: number) => {
+	const group = saleSpecGroups.value[groupIndex]
+	if (!group) return
+	group.options.splice(optionIndex, 1)
+}
+
+const validateSaleSpecs = () => {
+	for (const group of saleSpecGroups.value) {
+		if (!group.code.trim() || !group.name.trim()) {
+			return t('product.categories.saleSpecs.groupRequired')
+		}
+		const optionCodes = new Set<string>()
+		for (const option of group.options) {
+			if (!option.code.trim() || !option.name.trim()) {
+				return t('product.categories.saleSpecs.optionRequired')
+			}
+			const code = option.code.trim().toLowerCase()
+			if (optionCodes.has(code)) {
+				return t('product.categories.saleSpecs.duplicateOption')
+			}
+			optionCodes.add(code)
+		}
+	}
+	return ''
+}
+
+const saveSaleSpecs = async () => {
+	if (!selected.value) return
+	const error = validateSaleSpecs()
+	if (error) {
+		toast.add({ title: error, color: 'error' })
+		return
+	}
+	saleSpecsSaving.value = true
+	try {
+		const payload = {
+			groups: saleSpecGroups.value.map((group) => ({
+				id: group.id,
+				code: group.code.trim(),
+				name: group.name.trim(),
+				sortOrder: Number(group.sortOrder || 0),
+				required: group.required,
+				allowCustom: group.allowCustom,
+				status: group.status || 'active',
+				options: group.options.map((option) => ({
+					id: option.id,
+					code: option.code.trim(),
+					name: option.name.trim(),
+					sortOrder: Number(option.sortOrder || 0),
+					meta: option.meta || null,
+					status: option.status || 'active',
+				})),
+			})),
+		}
+		const resp = await api.replaceSaleSpecs(selected.value.id, payload)
+		saleSpecGroups.value = toEditableSaleSpecs(resp.groups || [])
+		toast.add({ title: t('product.categories.saleSpecs.saveSuccess'), color: 'success' })
+	} catch (error: any) {
+		toast.add({
+			title: t('product.categories.saleSpecs.saveFailed'),
+			description: error?.message || t('product.categories.saleSpecs.retry'),
+			color: 'error',
+		})
+	} finally {
+		saleSpecsSaving.value = false
+	}
+}
 
 const loadMappings = async () => {
 	if (!selected.value) return

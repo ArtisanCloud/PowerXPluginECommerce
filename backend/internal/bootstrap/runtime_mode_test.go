@@ -43,8 +43,8 @@ func TestResolveRuntimeModeDecision(t *testing.T) {
 	if !d.EffectiveProxy {
 		t.Fatal("expected effective proxy true")
 	}
-	if d.IAMMode != "local" {
-		t.Fatalf("unexpected iam mode: %s", d.IAMMode)
+	if d.ProviderMode != "local" {
+		t.Fatalf("unexpected provider mode: %s", d.ProviderMode)
 	}
 	if d.WSRoute != "host" || d.CapabilityRoute != "host" {
 		t.Fatalf("unexpected routes: ws=%s cap=%s", d.WSRoute, d.CapabilityRoute)
@@ -59,17 +59,17 @@ func TestResolveRuntimeModeDecision(t *testing.T) {
 
 func TestEffectiveHostMode(t *testing.T) {
 	t.Setenv("POWERX_PROXY", "0")
-	if EffectiveHostMode(&config.Config{Context: &config.ContextConfig{IAMMode: "delegated"}}, "") != true {
-		t.Fatal("delegated IAM mode must force host mode")
+	if EffectiveHostMode() != false {
+		t.Fatal("POWERX_PROXY=0 must stay local")
 	}
 
 	t.Setenv("POWERX_PROXY", "1")
-	if EffectiveHostMode(&config.Config{Context: &config.ContextConfig{IAMMode: "local"}}, "local") != true {
+	if EffectiveHostMode() != true {
 		t.Fatal("local + POWERX_PROXY=1 must use host route")
 	}
 
 	t.Setenv("POWERX_PROXY", "0")
-	if EffectiveHostMode(&config.Config{Context: &config.ContextConfig{IAMMode: "local"}}, "local") != false {
+	if EffectiveHostMode() != false {
 		t.Fatal("local + POWERX_PROXY=0 must stay local")
 	}
 }

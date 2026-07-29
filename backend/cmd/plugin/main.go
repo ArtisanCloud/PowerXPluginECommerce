@@ -143,8 +143,11 @@ func main() {
 		}
 	}
 
-	iamResolver := pluginbootstrap.NewIAMResolver(cfg)
-	runtimeDecision := pluginbootstrap.ResolveRuntimeModeDecision(cfg, iamResolver.Mode().String(), iamResolver.Source())
+	providerResolver, err := pluginbootstrap.NewProviderResolver(cfg)
+	if err != nil {
+		logger.WithError(err).Fatal("Failed to resolve provider mode")
+	}
+	runtimeDecision := pluginbootstrap.ResolveRuntimeModeDecision(cfg, providerResolver.Mode().String(), providerResolver.Source())
 	wsDriver := cfg.ResolveWebSocketDriver()
 	eventTopicDriver := cfg.ResolveEventTopicDriver()
 	taskDriver := cfg.ResolveTaskDriver()
@@ -156,10 +159,10 @@ func main() {
 		upstreamTenant = strings.TrimSpace(cfg.GRPCUpstream.TenantUUID)
 	}
 	logger.WithFields(logger.Fields{
-		"matrix":                     "IAMMode × POWERX_PROXY",
-		"iam_input":                  runtimeDecision.IAMInput,
-		"iam_mode":                   runtimeDecision.IAMMode,
-		"iam_source":                 runtimeDecision.IAMSource,
+		"matrix":                     "POWERX_PROVIDER_MODE × POWERX_PROXY",
+		"provider_input":             runtimeDecision.ProviderInput,
+		"provider_mode":              runtimeDecision.ProviderMode,
+		"provider_source":            runtimeDecision.ProviderSource,
 		"powerx_proxy":               runtimeDecision.PowerXProxy,
 		"effective_proxy":            runtimeDecision.EffectiveProxy,
 		"capability_route":           runtimeDecision.CapabilityRoute,
@@ -174,11 +177,11 @@ func main() {
 		"task_driver":                taskDriver,
 		"cache_driver":               cacheDriver,
 	}).Info("runtime mode decision resolved")
-	auth.ObserveMode(iamResolver.Mode().String())
+	auth.ObserveMode(providerResolver.Mode().String())
 
 	var authClient *authproxy.DelegatedClient
 	var localIAM iamservice.IAMDirectory
-	if iamResolver.Mode() == iamservice.IAMModeDelegated {
+	if providerResolver.Mode() == iamservice.ModeDelegated {
 		client, err := authproxy.NewDelegatedClient("", "")
 		if err != nil {
 			logger.WithError(err).Warn("Failed to initialize delegated auth proxy; auth endpoints will be unavailable")
@@ -294,8 +297,8 @@ func main() {
 		LicenseCache:        licenseCache,
 		OperationsMetrics:   opsmetrics.NewMetrics(),
 		AdminConsoleMetrics: adminmetrics.NewMetrics(),
-		IAMMode:             iamResolver.Mode(),
-		IAMModeSource:       iamResolver.Source(),
+		ProviderMode:        providerResolver.Mode(),
+		ProviderModeSource:  providerResolver.Source(),
 		AuthProxy:           authClient,
 		IAMDirectory:        localIAM,
 		TaskBus:             taskBusClient,

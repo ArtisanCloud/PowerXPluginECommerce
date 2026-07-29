@@ -43,7 +43,10 @@ loadBackendEnvFallback();
 // Print key env vars to aid debugging
 if (!process.env.QUIET_START) {
   const inspectEnv = [
+    "POWERX_PROVIDER_MODE",
+    "NUXT_PUBLIC_POWERX_PROVIDER_MODE",
     "POWERX_PROXY",
+    "NUXT_PUBLIC_POWERX_PROXY",
     "NUXT_PUBLIC_API_BASE",
     "NUXT_PUBLIC_API_PREFIX",
     "NUXT_DEV_API_PROXY",
@@ -129,6 +132,11 @@ const powerxCoreBase =
   process.env.PX_GATEWAY_BASE_URL ||
   "http://localhost:8077";
 
+const providerMode =
+  process.env.NUXT_PUBLIC_POWERX_PROVIDER_MODE ||
+  process.env.POWERX_PROVIDER_MODE ||
+  "unknown";
+const powerxProxy = process.env.NUXT_PUBLIC_POWERX_PROXY ?? process.env.POWERX_PROXY ?? "0";
 const INSIDE_POWERX = process.env.POWERX_PROXY === "1";
 // 在宿主代理模式下指定 api base，即“模拟 standalone” 场景
 const simulateStandalone = INSIDE_POWERX && Boolean(envApiBase);
@@ -146,6 +154,8 @@ if (!INSIDE_POWERX || simulateStandalone) {
 
 if (!process.env.QUIET_START) {
   console.info("[web-admin] resolved config →");
+  console.info(`  providerMode=${providerMode}`);
+  console.info(`  powerxProxy=${powerxProxy}`);
   console.info(`  insidePowerX=${INSIDE_POWERX}`);
   console.info(
     `  runtime apiBase=${INSIDE_POWERX ? hostApiBase : localApiBase}`,
@@ -340,6 +350,8 @@ export default defineNuxtConfig({
       productSkuImportEndpoint: productSkuApi.import,
       productSkuExportEndpoint: productSkuApi.export,
       insidePowerX: INSIDE_POWERX,
+      providerMode,
+      powerxProxy,
       pluginAdminBase,
       bridgeDebug: BRIDGE_DEBUG,
       powerxCoreBase,

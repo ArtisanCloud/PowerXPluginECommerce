@@ -32,6 +32,8 @@ func RegisterRoutes(router *gin.RouterGroup, deps *app.Deps) {
 	categories.PATCH("/:id/status", handler.SetStatus)
 	categories.POST("/import", handler.CategoriesImport)
 	categories.POST("/export", handler.CategoriesExport)
+	categories.GET("/:id/sale-specs", handler.SaleSpecList)
+	categories.PUT("/:id/sale-specs", handler.SaleSpecReplace)
 	categories.GET("/:id/mappings", handler.MappingList)
 	categories.POST("/:id/mappings", handler.MappingUpsert)
 	categories.GET("/:id/audit", handler.CategoryAudit)

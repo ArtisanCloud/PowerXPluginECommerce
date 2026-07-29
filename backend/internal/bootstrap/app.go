@@ -43,8 +43,7 @@ func BootstrapPlugin(ctx context.Context, cfg *config.Config) (*gorm.DB, error) 
 		maxBackups = cfg.Logging.MaxBackups
 		maxAge = cfg.Logging.MaxAge
 	}
-	iamResolver := NewIAMResolver(cfg)
-	logger.InitWithHostMode(logLevel, logFormat, logOutput, logFile, maxSize, maxBackups, maxAge, httpAccess, EffectiveHostMode(cfg, iamResolver.Mode().String()))
+	logger.InitWithHostMode(logLevel, logFormat, logOutput, logFile, maxSize, maxBackups, maxAge, httpAccess, envTruthy("POWERX_PROXY"))
 	logger.Info("Starting PowerX Note Plugin...")
 
 	// 初始化 schema

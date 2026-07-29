@@ -10,6 +10,7 @@
 - **Identifiers**: `id (uuid)`, `tenant_uuid`, `spu_id`, `code`（SPU 内唯一）  
 - **Attributes**: `name`, `sort_order`, `required`, `status (active/inactive)`  
 - **Relationships**: has many `ProductSpecOption`；用于 SKU 生成器与前端规格选择渲染。  
+- **Source**: 优先由品类销售规格模板显式同步后生成；SPU 可按业务裁剪启用范围。  
 - **Validation**: `(tenant_uuid, spu_id, code)` 唯一；`required=true` 的维度必须在每个 SKU 中出现一次。
 
 ## Entity: ProductSpecOption
@@ -17,6 +18,11 @@
 - **Attributes**: `name`, `sort_order`, `meta (jsonb)`, `status (active/inactive)`  
 - **Relationships**: belongs to `ProductSpecGroup`；用于 SKU 组合与前端选项禁用态计算。  
 - **Validation**: `(tenant_uuid, group_id, code)` 唯一；禁用项不参与新组合生成（历史 SKU 可保留）。
+
+## Upstream Entity: CategorySaleSpecGroup / CategorySaleSpecOption
+- **Identifiers**: `id (uuid)`, `tenant_uuid`, `category_id`, `code`。  
+- **Relationships**: belongs to Product Category；作为同品类 SPU 的销售规格模板。  
+- **Rules**: SPU 同步模板是显式动作；同步结果写入 `ProductSpecGroup/ProductSpecOption` 后才参与 SKU 组合，不允许后台静默覆盖已有 SPU 规格。
 
 ## Entity: ProductSkuAttribute
 - **Identifiers**: `id`, `sku_id`, `spec_id`, `spec_value_id`.  

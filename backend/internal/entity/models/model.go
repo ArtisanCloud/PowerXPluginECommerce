@@ -100,6 +100,8 @@ const (
 	TableProductCategoryTemplates        = "product_category_templates"
 	TableProductCategoryTemplateFields   = "product_category_template_fields"
 	TableProductCategoryTemplateVersions = "product_category_template_versions"
+	TableProductCategorySaleSpecGroups   = "product_category_sale_spec_groups"
+	TableProductCategorySaleSpecOptions  = "product_category_sale_spec_options"
 	TableProductCategoryMappings         = "product_category_mappings"
 	TableProductCategoryPermissions      = "product_category_permissions"
 	TableAdminConsoleAuditEvents         = "admin_console_audit_events"

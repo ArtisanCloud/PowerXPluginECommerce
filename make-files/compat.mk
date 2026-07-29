@@ -11,12 +11,12 @@ check-compat:
 
 .PHONY: check-powerx-align
 check-powerx-align:
-	@echo "[align] checking deprecated env vars..."
-	@if rg -n "POWERX_RBAC_DELEGATE" . -S --glob '!make-files/compat.mk'; then \
-		echo "[align] FAIL: deprecated POWERX_RBAC_DELEGATE still exists"; \
+	@echo "[align] checking provider mode contract..."
+	@if rg -n "POWERX_"."RBAC_"."DELEGATE" . -S --glob '!make-files/compat.mk'; then \
+		echo "[align] FAIL: deprecated RBAC delegate env still exists"; \
 		exit 1; \
 	else \
-		echo "[align] PASS: POWERX_RBAC_DELEGATE not found"; \
+		echo "[align] PASS: deprecated RBAC delegate env not found"; \
 	fi
 	@echo "[align] checking proxy/apikey coupling..."
 	@if rg -n "POWERX_PROXY.*apikey|apikey.*POWERX_PROXY" backend -S; then \

@@ -66,7 +66,7 @@ Skeleton 与 Base 插件保持相同的字段结构，可直接复用宿主侧�
 | `POWERX_STS_SCOPE` | STS scope，默认 `access` |
 | `PX_GATEWAY_TIMEOUT` | Gateway 调用超时（支持 `60s` 或 `60`，默认 `60s`） |
 | `POWERX_AUTH_TOKEN` | Root/Admin 本地调试 Token；宿主业务链路不得依赖 |
-| `IAM_MODE` / `POWERX_IAM_MODE` | 显式指定 IAM 模式：`local` / `delegated` |
+| `POWERX_PROVIDER_MODE` | 显式指定业务 provider 模式：`local` / `delegated` |
 | `PLUGIN_IAM_ADMIN_EMAIL` | Local 模式默认管理员邮箱，`go run ./cmd/database setup` 时必填 |
 | `PLUGIN_IAM_ADMIN_PASSWORD` | Local 模式默认管理员密码，配合上方邮箱使用 |
 
@@ -74,16 +74,16 @@ Skeleton 与 Base 插件保持相同的字段结构，可直接复用宿主侧�
 >
 > 建议在生产环境通过配置文件写入敏感信息，仅在必要时才使用环境变量覆盖。
 
-## IAM / Proxy 四态矩阵（推荐默认）
+## Provider / Proxy 运行矩阵
 
-| IAM_MODE | POWERX_PROXY | 语义 |
+| POWERX_PROVIDER_MODE | POWERX_PROXY | 语义 |
 | --- | --- | --- |
-| `delegated` | `1` | 宿主安装默认（推荐） |
-| `local` | `0` | 本地开发默认（推荐） |
-| `local` | `1` | 本地 IAM + 宿主路由（兼容态） |
-| `delegated` | `0` | 直连 delegated（按网关配置调试） |
+| `local` | `0` | 本地业务数据 + 本地运行时链路 |
+| `local` | `1` | 本地业务数据 + 宿主 gateway/ws/scheduler 链路 |
+| `delegated` | `1` | 宿主安装默认，业务 provider 委派到 PowerX Core |
+| `delegated` | `0` | 仅当存在明确离线 delegated provider 时使用，否则应失败 |
 
-> Capability Lab 能否调用 CoreX 能力，判定依据始终是“网关配置 + 凭证”是否完整，不以 `POWERX_PROXY` 作为功能开关。
+> `POWERX_PROXY` 只表示是否连接宿主运行时链路，不能推导、覆盖或替代 `POWERX_PROVIDER_MODE`。
 
 ## 安全基线
 

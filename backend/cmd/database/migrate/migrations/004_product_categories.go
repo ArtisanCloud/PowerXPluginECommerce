@@ -9,6 +9,8 @@ var ProductCategoryTables = []interface{}{
 	&productcategory.CategoryTemplate{},
 	&productcategory.CategoryTemplateField{},
 	&productcategory.CategoryTemplateVersion{},
+	&productcategory.CategorySaleSpecGroup{},
+	&productcategory.CategorySaleSpecOption{},
 	&productcategory.CategoryMapping{},
 	&productcategory.CategoryPermission{},
 }

@@ -31,6 +31,11 @@
 
 <!-- MANUAL ADDITIONS START -->
 Always respond in Chinese-simplified
+Do not preserve compatibility with legacy, incorrect, or deprecated specifications, formats, code paths, APIs, manifests, or build artifacts unless explicitly requested by the user.
+When introducing a new strategy or correcting an existing one, prefer strict, explicit failure over fallback or silent compatibility behavior; remove or reject obsolete formats by default.
+All human-readable text must go through i18n/locale resources, including frontend buttons/prompts/errors, backend responses, email templates, agent-visible user prompts, business role display names, role aliases/blocklists, and tests that assert user-facing copy.
+Machine-semantic constants may remain in code: protocol constants, enum values, JSON field names, routes, log keys, status codes, capability names, database fields, and i18n keys.
+Do not show object UUIDs directly in user-facing UI unless explicitly requested by the user. Prefer human-readable names/labels for display and selector options, for example tenant name instead of tenant UUID.
 <!-- MANUAL ADDITIONS END -->
 
 ## Active Technologies

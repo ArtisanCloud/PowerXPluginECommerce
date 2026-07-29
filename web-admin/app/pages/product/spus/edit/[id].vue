@@ -340,6 +340,7 @@
 			<SpuSpecEditor
 				v-if="spu"
 				:spu-id="spu.id"
+				:category-id="spu.categoryId"
 				:editable="(spu.status || '').toLowerCase() === 'draft'"
 				@updated="handleSpecUpdated"
 			/>

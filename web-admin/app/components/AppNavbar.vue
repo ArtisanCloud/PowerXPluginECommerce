@@ -18,7 +18,7 @@
       <!-- 中间运行模式提示 -->
       <div class="flex items-center space-x-3">
         <p class="text-xs text-gray-400">
-          {{ iamModeDescription }}
+          {{ providerModeDescription }}
         </p>
       </div>
 
@@ -63,7 +63,7 @@ const { t } = useI18n();
 const runtimeConfig = useRuntimeConfig();
 const auth = useAuth();
 const colorMode = useColorMode();
-const iamModeDescription = computed(() =>
+const providerModeDescription = computed(() =>
   runtimeConfig.public.insidePowerX ? "通过宿主 PowerX 鉴权" : "当前使用本地目录与 STS"
 );
 

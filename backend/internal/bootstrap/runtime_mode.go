@@ -9,11 +9,11 @@ import (
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/config"
 )
 
-// RuntimeModeDecision captures startup runtime semantics for IAM / host routing.
+// RuntimeModeDecision captures startup runtime semantics for provider / host routing.
 type RuntimeModeDecision struct {
-	IAMInput            string
-	IAMMode             string
-	IAMSource           string
+	ProviderInput       string
+	ProviderMode        string
+	ProviderSource      string
 	PowerXProxy         bool
 	EffectiveProxy      bool
 	CapabilityRoute     string
@@ -23,14 +23,14 @@ type RuntimeModeDecision struct {
 	TokenTenantID       string
 }
 
-func ResolveRuntimeModeDecision(cfg *config.Config, iamMode string, iamSource string) RuntimeModeDecision {
-	token, tokenSource := ResolvePowerXAccessTokenBootstrap(cfg, EffectiveHostMode(cfg, iamMode))
+func ResolveRuntimeModeDecision(cfg *config.Config, providerMode string, providerSource string) RuntimeModeDecision {
+	token, tokenSource := ResolvePowerXAccessTokenBootstrap(cfg, EffectiveHostMode())
 	tenantID := resolveSTSTenantID(cfg)
 	if tenantID == "" {
 		tenantID, _ = ParseTenantIDFromJWT(token)
 	}
 	proxy := envTruthy("POWERX_PROXY")
-	effectiveProxy := EffectiveHostMode(cfg, iamMode)
+	effectiveProxy := EffectiveHostMode()
 	capRoute := "local"
 	wsRoute := "local"
 	if effectiveProxy {
@@ -38,9 +38,9 @@ func ResolveRuntimeModeDecision(cfg *config.Config, iamMode string, iamSource st
 		wsRoute = "host"
 	}
 	return RuntimeModeDecision{
-		IAMInput:            resolveIAMInput(cfg),
-		IAMMode:             strings.ToLower(strings.TrimSpace(iamMode)),
-		IAMSource:           strings.TrimSpace(iamSource),
+		ProviderInput:       resolveProviderInput(cfg),
+		ProviderMode:        strings.ToLower(strings.TrimSpace(providerMode)),
+		ProviderSource:      strings.TrimSpace(providerSource),
 		PowerXProxy:         proxy,
 		EffectiveProxy:      effectiveProxy,
 		CapabilityRoute:     capRoute,
@@ -51,11 +51,11 @@ func ResolveRuntimeModeDecision(cfg *config.Config, iamMode string, iamSource st
 	}
 }
 
-func resolveIAMInput(cfg *config.Config) string {
+func resolveProviderInput(cfg *config.Config) string {
 	if cfg == nil || cfg.Context == nil {
 		return ""
 	}
-	return strings.TrimSpace(cfg.Context.IAMMode)
+	return strings.TrimSpace(cfg.Context.ProviderMode)
 }
 
 func ResolvePowerXAccessTokenBootstrap(cfg *config.Config, hostMode bool) (token string, source string) {

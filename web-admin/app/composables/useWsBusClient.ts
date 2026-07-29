@@ -37,13 +37,16 @@ const createClient = () => {
   if (client) return client
   const cfg = typeof useRuntimeConfig === 'function' ? useRuntimeConfig() : undefined
   const publicCfg = (cfg?.public || {}) as Record<string, any>
+  const apiBaseURL = resolveApiBase()
+  const insidePowerX = Boolean(publicCfg.insidePowerX)
+  const wsBaseURL = String(publicCfg.wsBaseUrl || (!insidePowerX ? apiBaseURL : '') || '')
   client = createPluginWsBusClient({
     pluginId: PLUGIN_ID,
-    apiBaseURL: resolveApiBase(),
+    apiBaseURL,
     hostBaseURL: String(publicCfg.powerxCoreBase || publicCfg.apiBaseUrl || ''),
-    wsBaseURL: String(publicCfg.wsBaseUrl || ''),
-    wsPath: '/api/ws',
-    insidePowerX: Boolean(publicCfg.insidePowerX),
+    wsBaseURL,
+    wsPath: insidePowerX ? '/api/ws' : '/api/v1/ws',
+    insidePowerX,
     token: getAuthToken(),
     tenantUuid: getTenantUuid(),
     reconnectIntervalMs: 3000,

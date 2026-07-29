@@ -16,7 +16,7 @@ type wsBusGatewayAuthDecision struct {
 	Source            string
 	TenantID          string
 	ProxyEnabled      bool
-	IAMMode           string
+	ProviderMode      string
 	GatewayBaseURL    string
 	GatewayAPIPrefix  string
 	GatewayTimeout    time.Duration
@@ -31,7 +31,7 @@ func resolveWSBusGatewayAuth(c *gin.Context, deps *app.Deps) wsBusGatewayAuthDec
 	decision := wsBusGatewayAuthDecision{
 		Source:            "none",
 		ProxyEnabled:      envTruthyValue(os.Getenv("POWERX_PROXY")),
-		IAMMode:           iamModeLabel(deps),
+		ProviderMode:      providerModeLabel(deps),
 		GatewayBaseURL:    resolveGatewayBaseURL(),
 		GatewayAPIPrefix:  resolveGatewayAPIPrefix(),
 		GatewayTimeout:    resolveGatewayTimeout(),
@@ -170,11 +170,11 @@ func envTruthyValue(value string) bool {
 	}
 }
 
-func iamModeLabel(deps *app.Deps) string {
+func providerModeLabel(deps *app.Deps) string {
 	if deps == nil {
 		return "local"
 	}
-	mode := strings.TrimSpace(deps.IAMMode.String())
+	mode := strings.TrimSpace(deps.ProviderMode.String())
 	if mode == "" {
 		return "local"
 	}

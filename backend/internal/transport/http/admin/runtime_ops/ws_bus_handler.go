@@ -70,7 +70,7 @@ func (h *WSBusHandler) Grant(c *gin.Context) {
 		"gateway_token_source": auth.Source,
 		"tenant_id":            tenant,
 		"proxied":              auth.ProxyEnabled,
-		"iam_mode":             auth.IAMMode,
+		"provider_mode":        auth.ProviderMode,
 		"message":              "ws bus grant applied (local acl)",
 	})
 }
@@ -126,7 +126,7 @@ func (h *WSBusHandler) Publish(c *gin.Context) {
 		"gateway_token_source": auth.Source,
 		"tenant_id":            tenant,
 		"proxied":              auth.ProxyEnabled,
-		"iam_mode":             auth.IAMMode,
+		"provider_mode":        auth.ProviderMode,
 		"message":              "ws bus publish accepted (local driver)",
 	})
 }
@@ -183,7 +183,7 @@ func (h *WSBusHandler) logResolvedAuth(action string, topic string, auth wsBusGa
 		"gateway_auth_scheme": auth.GatewayAuthScheme,
 		"tenant_id":           auth.TenantID,
 		"powerx_proxy":        auth.ProxyEnabled,
-		"iam_mode":            auth.IAMMode,
+		"provider_mode":       auth.ProviderMode,
 	}).Info("WS bus gateway auth resolved")
 }
 

@@ -16,8 +16,8 @@ import (
 )
 
 type Service struct {
-	deps      *app.Deps
-	GroupRepo *repo.GroupRepository
+	deps       *app.Deps
+	GroupRepo  *repo.GroupRepository
 	OptionRepo *repo.OptionRepository
 }
 
@@ -26,8 +26,8 @@ func NewService(deps *app.Deps) *Service {
 		return &Service{deps: deps}
 	}
 	return &Service{
-		deps:      deps,
-		GroupRepo: repo.NewGroupRepository(deps.DB),
+		deps:       deps,
+		GroupRepo:  repo.NewGroupRepository(deps.DB),
 		OptionRepo: repo.NewOptionRepository(deps.DB),
 	}
 }
@@ -75,23 +75,23 @@ type ReplaceRequest struct {
 }
 
 type SpecGroupDTO struct {
-	ID        string                 `json:"id"`
-	Code      string                 `json:"code"`
-	Name      string                 `json:"name"`
-	SortOrder int                    `json:"sort_order"`
-	Required  bool                   `json:"required"`
-	Status    string                 `json:"status"`
-	Options   []SpecOptionDTO        `json:"options"`
+	ID        string          `json:"id"`
+	Code      string          `json:"code"`
+	Name      string          `json:"name"`
+	SortOrder int             `json:"sort_order"`
+	Required  bool            `json:"required"`
+	Status    string          `json:"status"`
+	Options   []SpecOptionDTO `json:"options"`
 }
 
 type SpecOptionDTO struct {
-	ID        string                 `json:"id"`
-	GroupID   string                 `json:"group_id"`
-	Code      string                 `json:"code"`
-	Name      string                 `json:"name"`
-	SortOrder int                    `json:"sort_order"`
-	Meta      map[string]any         `json:"meta,omitempty"`
-	Status    string                 `json:"status"`
+	ID        string         `json:"id"`
+	GroupID   string         `json:"group_id"`
+	Code      string         `json:"code"`
+	Name      string         `json:"name"`
+	SortOrder int            `json:"sort_order"`
+	Meta      map[string]any `json:"meta,omitempty"`
+	Status    string         `json:"status"`
 }
 
 func (s *Service) List(ctx context.Context, spuID string) ([]SpecGroupDTO, error) {
@@ -161,6 +161,9 @@ func (s *Service) Replace(ctx context.Context, spuID string, req ReplaceRequest)
 	if spuID == "" {
 		return nil, errors.New("spu id is required")
 	}
+	if err := validateReplaceRequest(req); err != nil {
+		return nil, err
+	}
 	now := time.Now().UTC()
 
 	err = s.deps.DB.WithContext(ctx).Transaction(func(tx *gorm.DB) error {
@@ -191,32 +194,31 @@ func (s *Service) Replace(ctx context.Context, spuID string, req ReplaceRequest)
 		for _, input := range req.Groups {
 			code := strings.TrimSpace(input.Code)
 			name := strings.TrimSpace(input.Name)
-			if code == "" || name == "" {
-				return errors.New("group code/name is required")
-			}
 			id := strings.TrimSpace(input.ID)
 			if id == "" {
 				id = utils.NewUUID()
+			} else if _, ok := existingGroupsByID[id]; !ok {
+				return fmt.Errorf("spec group id does not belong to spu: %s", id)
 			}
 			required := true
 			if input.Required != nil {
 				required = *input.Required
 			}
-			status := strings.TrimSpace(input.Status)
-			if status == "" {
-				status = "active"
+			status, err := normalizeSpecStatus(input.Status)
+			if err != nil {
+				return err
 			}
 			group := productspecmodel.ProductSpecGroup{
-				ID:        id,
+				ID:         id,
 				TenantUUID: tenantID,
-				SPUID:     spuID,
-				Code:      code,
-				Name:      name,
-				SortOrder: input.SortOrder,
-				Required:  required,
-				Status:    status,
-				CreatedAt: now,
-				UpdatedAt: now,
+				SPUID:      spuID,
+				Code:       code,
+				Name:       name,
+				SortOrder:  input.SortOrder,
+				Required:   required,
+				Status:     status,
+				CreatedAt:  now,
+				UpdatedAt:  now,
 			}
 			if existing, ok := existingGroupsByID[id]; ok {
 				group.CreatedAt = existing.CreatedAt
@@ -243,33 +245,32 @@ func (s *Service) Replace(ctx context.Context, spuID string, req ReplaceRequest)
 			for _, opt := range input.Options {
 				optCode := strings.TrimSpace(opt.Code)
 				optName := strings.TrimSpace(opt.Name)
-				if optCode == "" || optName == "" {
-					return fmt.Errorf("option code/name is required for group %s", code)
-				}
 				optID := strings.TrimSpace(opt.ID)
 				if optID == "" {
 					optID = utils.NewUUID()
+				} else if _, ok := existingOptionsByID[optID]; !ok {
+					return fmt.Errorf("spec option id does not belong to spu: %s", optID)
 				}
-				optStatus := strings.TrimSpace(opt.Status)
-				if optStatus == "" {
-					optStatus = "active"
+				optStatus, err := normalizeSpecStatus(opt.Status)
+				if err != nil {
+					return err
 				}
 				metaJSON, err := encodeMeta(opt.Meta)
 				if err != nil {
 					return err
 				}
 				option := productspecmodel.ProductSpecOption{
-					ID:        optID,
+					ID:         optID,
 					TenantUUID: tenantID,
-					SPUID:     spuID,
-					GroupID:   id,
-					Code:      optCode,
-					Name:      optName,
-					SortOrder: opt.SortOrder,
-					Meta:      metaJSON,
-					Status:    optStatus,
-					CreatedAt: now,
-					UpdatedAt: now,
+					SPUID:      spuID,
+					GroupID:    id,
+					Code:       optCode,
+					Name:       optName,
+					SortOrder:  opt.SortOrder,
+					Meta:       metaJSON,
+					Status:     optStatus,
+					CreatedAt:  now,
+					UpdatedAt:  now,
 				}
 				if existing, ok := existingOptionsByID[optID]; ok {
 					option.CreatedAt = existing.CreatedAt
@@ -335,4 +336,56 @@ func (s *Service) Replace(ctx context.Context, spuID string, req ReplaceRequest)
 		return nil, err
 	}
 	return s.List(ctx, spuID)
+}
+
+func validateReplaceRequest(req ReplaceRequest) error {
+	groupCodes := map[string]struct{}{}
+	for _, group := range req.Groups {
+		code := strings.TrimSpace(group.Code)
+		name := strings.TrimSpace(group.Name)
+		if code == "" || name == "" {
+			return errors.New("spec group code/name is required")
+		}
+		codeKey := strings.ToLower(code)
+		if _, exists := groupCodes[codeKey]; exists {
+			return fmt.Errorf("duplicate spec group code: %s", code)
+		}
+		groupCodes[codeKey] = struct{}{}
+		if _, err := normalizeSpecStatus(group.Status); err != nil {
+			return err
+		}
+		if len(group.Options) == 0 {
+			return fmt.Errorf("spec group %s must have at least one option", code)
+		}
+		optionCodes := map[string]struct{}{}
+		for _, option := range group.Options {
+			optCode := strings.TrimSpace(option.Code)
+			optName := strings.TrimSpace(option.Name)
+			if optCode == "" || optName == "" {
+				return fmt.Errorf("spec option code/name is required for group %s", code)
+			}
+			optKey := strings.ToLower(optCode)
+			if _, exists := optionCodes[optKey]; exists {
+				return fmt.Errorf("duplicate spec option code in group %s: %s", code, optCode)
+			}
+			optionCodes[optKey] = struct{}{}
+			if _, err := normalizeSpecStatus(option.Status); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
+}
+
+func normalizeSpecStatus(raw string) (string, error) {
+	status := strings.TrimSpace(strings.ToLower(raw))
+	if status == "" {
+		return "active", nil
+	}
+	switch status {
+	case "active", "disabled":
+		return status, nil
+	default:
+		return "", errors.New("spec status must be active/disabled")
+	}
 }

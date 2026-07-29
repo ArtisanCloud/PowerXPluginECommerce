@@ -12,8 +12,8 @@
     "test:e2e": "playwright test tests/e2e/product-sku.spec.ts"
   },
   "dependencies": {
-    "@artisan-cloud/plugin-framework-admin": "0.0.9",
-    "@artisan-cloud/plugin-framework-client": "0.0.9",
+    "@artisan-cloud/plugin-framework-admin": "0.0.10",
+    "@artisan-cloud/plugin-framework-client": "0.0.10",
     "@nuxt/content": "^3.6.3",
     "@nuxt/eslint": "^1.9.0",
     "@nuxt/icon": "^2.0.0",

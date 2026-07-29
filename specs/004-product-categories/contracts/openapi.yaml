@@ -113,6 +113,60 @@ paths:
       responses:
         "200":
           description: OK
+  /admin/product/categories/{id}/sale-specs:
+    get:
+      summary: 获取某类目的销售规格模板
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        "200":
+          description: OK
+    put:
+      summary: 整体替换某类目的销售规格模板
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [groups]
+              properties:
+                groups:
+                  type: array
+                  items:
+                    type: object
+                    required: [code, name]
+                    properties:
+                      id: { type: string }
+                      code: { type: string }
+                      name: { type: string }
+                      sortOrder: { type: integer }
+                      required: { type: boolean }
+                      allowCustom: { type: boolean }
+                      status: { type: string, enum: [active, disabled] }
+                      options:
+                        type: array
+                        items:
+                          type: object
+                          required: [code, name]
+                          properties:
+                            id: { type: string }
+                            code: { type: string }
+                            name: { type: string }
+                            sortOrder: { type: integer }
+                            meta: { type: object, additionalProperties: true }
+                            status: { type: string, enum: [active, disabled] }
+      responses:
+        "200":
+          description: OK
   /admin/product/categories/{id}/mappings:
     get:
       summary: 获取某类目全部渠道映射
@@ -157,4 +211,3 @@ paths:
       responses:
         "200":
           description: OK
-

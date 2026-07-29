@@ -92,7 +92,7 @@
 ### Functional Requirements
 
 - **FR-001**: 系统必须提供 SKU 生成器，可基于 SPU 规格组合动态列出所有潜在 SKU，并允许用户勾选、筛选和批量设置默认字段。
-- **FR-001A**: 系统必须提供“规格维度/规格取值”的一等数据管理能力：可在 SPU 维度维护 `SpecGroup(code/name/required/sort/status)` 与其 `SpecOption(code/name/meta/sort/status)`，作为 SKU 组合与前端选择的唯一来源。
+- **FR-001A**: 系统必须提供“销售规格维度/规格取值”的一等数据管理能力：品类维度维护可复用销售规格模板；SPU 维度维护实际启用的 `SpecGroup(code/name/required/sort/status)` 与其 `SpecOption(code/name/meta/sort/status)`，作为 SKU 组合与前端选择的唯一交易来源。
 - **FR-002**: 生成器需支持设置条码、成本、起订量、重量、尺寸、单位等默认值，并在创建时写入每个 SKU，可对已有 SKU 选择是否同步。
 - **FR-003**: SKU 列表与矩阵视图必须提供批量选择、复制、快速编辑、差异化字段配置，并可针对单个 SKU 编辑媒体、物流及供应信息。
 - **FR-004**: 列表页需提供 SPU、类目、规格、渠道、库存区间、标签等过滤；批量操作需限定权限并支持上/下架、价格调整、库存调整、导出、指派仓库。
@@ -115,6 +115,47 @@
   - `GET /api/v1/admin/product/spus/{spuId}/spec-groups`：返回规格维度及其取值（嵌套 options）。
   - `PUT /api/v1/admin/product/spus/{spuId}/spec-groups`：整体替换该 SPU 的规格维度与取值（用于管理端可视化编辑）。
 
+- **Admin - 销售规格模板（品类维度）**
+  - `GET /api/v1/admin/product/categories/{categoryId}/sale-specs`：返回该品类可复用的销售规格模板。
+  - `PUT /api/v1/admin/product/categories/{categoryId}/sale-specs`：整体替换该品类的销售规格模板；SPU 需显式同步，不自动覆盖。
+
+### 销售规格到 SKU 的业务链路
+
+SKU 不直接从品类模板生成，而是从 SPU 实际启用规格生成。这样可以保证“品类有标准、商品可裁剪、SKU 可交易”。
+
+业务链路：
+
+```text
+品类销售规格模板
+  -> SPU 点击“从品类同步”
+  -> SPU 删除不用的规格或规格值
+  -> 保存为 SPU 实际启用规格
+  -> SKU 生成器按 SPU 规格做组合
+  -> 每个组合落成一个 SKU
+```
+
+示例：
+
+```text
+品类：毛绒玩具
+  模板规格：
+    尺寸：10cm、20cm、30cm
+    体型：普通体、海星体、骨架体
+
+SPU：努努娃娃
+  实际启用：
+    尺寸：10cm、20cm
+    体型：海星体、骨架体
+
+生成 SKU：
+  10cm / 海星体
+  10cm / 骨架体
+  20cm / 海星体
+  20cm / 骨架体
+```
+
+这能避免同一品类下出现“尺寸/大小/高度”“10cm/10厘米/10 CM”等不同写法，也能让后续筛选、导入、渠道映射和库存管理更稳定。
+
 - **MiniApp - 一次取齐用于规格选择**
   - `GET /api/v1/mini-app/products/{spuId}/detail`：返回 `spu + spec(groups/options) + skus(specSignature + spec映射)`，前端据此做禁用态与 skuId 匹配。
 
@@ -123,7 +164,8 @@
 
 ### Key Entities *(include if feature involves data)*
 
-- **SPU（标准产品单元）**: 定义产品主信息及可选规格；驱动 SKU 生成器的规格集合。
+- **品类销售规格模板**: 在品类维度沉淀可复用的销售规格维度和值域，供同品类 SPU 显式同步和裁剪。
+- **SPU（标准产品单元）**: 定义产品主信息及实际启用规格；驱动 SKU 生成器的规格集合。
 - **SKU**: 具体可售变体，包含规格组合、编码、条码、状态、价格、库存阈值、物流与供应商信息。
 - **SKU 属性/规格值**: 记录 SKU 与各规格值的关联，确保组合唯一性与展示顺序。
 - **SKU 渠道映射**: 存储渠道标识、渠道 SKU ID、状态、生效时间、同步策略以及最近一次推送结果。

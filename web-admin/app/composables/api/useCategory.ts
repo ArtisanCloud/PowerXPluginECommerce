@@ -1,4 +1,4 @@
-import { apiDel, apiGet, apiPatch, apiPost } from './_client'
+import { apiDel, apiGet, apiPatch, apiPost, apiPut } from './_client'
 import type { ApiResponse } from './_base'
 
 export type CategoryStatus = 'enabled' | 'disabled'
@@ -72,6 +72,38 @@ export interface CategoryStatusPayload {
   status: CategoryStatus
 }
 
+export type CategorySaleSpecStatus = 'active' | 'disabled' | string
+
+export interface CategorySaleSpecOption {
+  id?: string
+  groupId?: string
+  code: string
+  name: string
+  sortOrder: number
+  meta?: Record<string, any> | null
+  status: CategorySaleSpecStatus
+}
+
+export interface CategorySaleSpecGroup {
+  id?: string
+  categoryId?: string
+  code: string
+  name: string
+  sortOrder: number
+  required: boolean
+  allowCustom: boolean
+  status: CategorySaleSpecStatus
+  options: CategorySaleSpecOption[]
+}
+
+export interface ReplaceCategorySaleSpecsPayload {
+  groups: CategorySaleSpecGroup[]
+}
+
+export interface CategorySaleSpecsResponse {
+  groups: CategorySaleSpecGroup[]
+}
+
 export function useCategoryApi() {
   const basePath = 'admin/product/categories'
 
@@ -101,6 +133,12 @@ export function useCategoryApi() {
   const remove = (id: string, init?: any) =>
     unwrap(apiDel<ApiResponse<{ ok: boolean }>>(`${basePath}/${id}`, undefined, init))
 
+  const saleSpecs = (id: string, init?: any) =>
+    unwrap(apiGet<ApiResponse<CategorySaleSpecsResponse>>(`${basePath}/${id}/sale-specs`, undefined, init))
+
+  const replaceSaleSpecs = (id: string, payload: ReplaceCategorySaleSpecsPayload, init?: any) =>
+    unwrap(apiPut<ApiResponse<CategorySaleSpecsResponse>>(`${basePath}/${id}/sale-specs`, payload, init))
+
   return {
     tree,
     list,
@@ -109,5 +147,7 @@ export function useCategoryApi() {
     move,
     setStatus,
     remove,
+    saleSpecs,
+    replaceSaleSpecs,
   }
 }

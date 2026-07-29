@@ -1,7 +1,7 @@
 # Skeleton 插件示例配置
 # 将本文件复制为 backend/etc/config.yaml 即可覆盖默认配置。
 #
-# Auth / IAM 相关环境变量速查（未在 YAML 中硬编码，以免泄露敏感信息）：
+# Provider / Auth 相关环境变量速查（未在 YAML 中硬编码，以免泄露敏感信息）：
 #   POWERX_CORE_ENDPOINT      - Delegated 模式访问宿主 Core API 的基址（默认 http://localhost:8077）
 #   PX_GATEWAY_BASE_URL       - Gateway 基址（不带 API 前缀，例如 http://localhost:8077）
 #   PX_GATEWAY_API_PREFIX     - Gateway API 前缀（默认 /api/v1）
@@ -13,7 +13,7 @@
 #   POWERX_STS_SCOPE          - STS scope（默认 access）
 #   PX_GATEWAY_TIMEOUT        - Gateway 调用超时（支持 duration 或秒数，默认 60s）
 #   POWERX_AUTH_TOKEN         - Root/Admin 本地调试 Token；宿主业务链路不得依赖
-#   IAM_MODE / POWERX_IAM_MODE - IAM 模式（local / delegated）
+#   POWERX_PROVIDER_MODE      - 业务 provider 模式（local / delegated）
 #   PLUGIN_IAM_ADMIN_EMAIL    - Local 模式默认管理员邮箱（用于 migrate/seed）
 #   PLUGIN_IAM_ADMIN_PASSWORD - Local 模式默认管理员密码（用于 migrate/seed）
 
@@ -88,9 +88,8 @@ context:
   jwks_url: ""
   issuer: ""
   audience: ""
-  # IAM 模式解析优先级：context.iam_mode > POWERX_PROXY
-  # 可选值：local / delegated；留空表示 auto（按环境推断）
-  iam_mode: ""
+  # 业务 provider 模式：local / delegated。POWERX_PROXY 不参与该值推导。
+  provider_mode: "local"
   ttl: "5m"
 
 host:
@@ -99,7 +98,6 @@ host:
     - "http://127.0.0.1:3030"
 
 customer_auth:
-  mode: "local" # local / delegate / auto
   delegate_endpoint: "https://core.powerx.dev/api/v1/customer/auth/validate"
   service_token: "" # 默认为 POWERX_AUTH_TOKEN
   jwt_secret: "dev-miniapp-secret"

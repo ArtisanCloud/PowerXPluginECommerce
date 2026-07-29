@@ -11,7 +11,7 @@ import (
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/config"
 	"github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models"
 	adminconsoleModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/admin_console"
-	iammodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/iam"
+	identitymodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/iam"
 	marketplaceModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/marketplace"
 	operationsModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/operations"
 	runtimeOpsModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/runtime_ops"
@@ -107,15 +107,15 @@ var businessTables = func() []interface{} {
 }()
 
 var iamTables = []interface{}{
-	&iammodel.Tenant{},
-	&iammodel.User{},
-	&iammodel.Member{},
-	&iammodel.Role{},
-	&iammodel.Permission{},
-	&iammodel.Department{},
-	&iammodel.MemberRole{},
-	&iammodel.RolePermission{},
-	&iammodel.RefreshToken{},
+	&identitymodel.Tenant{},
+	&identitymodel.User{},
+	&identitymodel.Member{},
+	&identitymodel.Role{},
+	&identitymodel.Permission{},
+	&identitymodel.Department{},
+	&identitymodel.MemberRole{},
+	&identitymodel.RolePermission{},
+	&identitymodel.RefreshToken{},
 }
 
 // MigratePluginModels 只做 AutoMigrate（最小实现）

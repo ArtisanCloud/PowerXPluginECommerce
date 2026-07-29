@@ -19,8 +19,7 @@ runtime:
   env:
     POWERX_BIND_ADDR: ":__POWERX_DYNAMIC_PORT__"
     POWERX_PLUGIN_REGISTRATION_MODE: installed
-    IAMMode: "delegated"
-    IAM_MODE: "delegated"
+    POWERX_PROVIDER_MODE: delegated
     POWERX_PROXY: "1"
     POWERX_PLUGIN_ID: "com.powerx.plugins.ecommerce"
     POWERX_SECURITY_JWT_ISSUER: "powerx-auth"
@@ -55,8 +54,10 @@ frontend:
       env:
         NODE_ENV: production
         NITRO_HOST: 127.0.0.1
-        IAMMode: "delegated"
+        POWERX_PROVIDER_MODE: delegated
+        NUXT_PUBLIC_POWERX_PROVIDER_MODE: delegated
         POWERX_PROXY: "1"
+        NUXT_PUBLIC_POWERX_PROXY: "1"
       health:
         http: /healthz
         interval: 5s
@@ -133,6 +134,7 @@ frontend:
                 order: 3
                 required_policies:
                   - com.powerx.plugins.ecommerce:product.category:read
+                  - com.powerx.plugins.ecommerce:product.category.sale_spec:read
               - id: plugins.com.powerx.plugins.ecommerce.products.category_templates
                 title: 分类模板
                 title_i18n:

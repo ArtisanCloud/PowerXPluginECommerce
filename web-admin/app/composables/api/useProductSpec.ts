@@ -1,7 +1,7 @@
 import { apiGet, apiPut } from "./_client";
 import type { ApiResponse } from "./_base";
 
-export type ProductSpecStatus = "active" | "disabled" | "deprecated" | string;
+export type ProductSpecStatus = "active" | "disabled";
 
 export type ProductSpecOption = {
   id: string;
@@ -56,6 +56,11 @@ const unwrap = async <T>(promise: Promise<ApiEnvelope<T> | T>): Promise<T> => {
   return resp as T;
 };
 
+const normalizeSpecStatus = (status: unknown): ProductSpecStatus => {
+  if (status === 'disabled') return 'disabled'
+  return 'active'
+}
+
 const normalizeSpecOption = (opt: Record<string, any>): ProductSpecOption => ({
   id: String(opt?.id ?? '').trim(),
   group_id: String(opt?.group_id ?? opt?.groupId ?? '').trim(),
@@ -63,7 +68,7 @@ const normalizeSpecOption = (opt: Record<string, any>): ProductSpecOption => ({
   name: String(opt?.name ?? '').trim(),
   sort_order: opt?.sort_order ?? opt?.sortOrder ?? 0,
   meta: opt?.meta ?? null,
-  status: opt?.status ?? 'active',
+  status: normalizeSpecStatus(opt?.status),
 })
 
 const normalizeSpecGroup = (group: Record<string, any>): ProductSpecGroup => ({
@@ -72,7 +77,7 @@ const normalizeSpecGroup = (group: Record<string, any>): ProductSpecGroup => ({
   name: String(group?.name ?? '').trim(),
   sort_order: group?.sort_order ?? group?.sortOrder ?? 0,
   required: Boolean(group?.required),
-  status: group?.status ?? 'active',
+  status: normalizeSpecStatus(group?.status),
   options: Array.isArray(group?.options) ? group.options.map((opt: Record<string, any>) => normalizeSpecOption(opt)) : [],
 })
 

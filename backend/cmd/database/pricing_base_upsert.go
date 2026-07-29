@@ -8,7 +8,7 @@ import (
 	"sort"
 	"strings"
 
-	iammodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/iam"
+	identitymodel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/iam"
 	pricingModel "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/entity/models/pricing"
 	authx "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/middleware"
 	pricingsvc "github.com/ArtisanCloud/PowerXPlugin/plugins/com-powerx-plugin-ecommerce/backend/internal/services/pricing"
@@ -115,11 +115,11 @@ func discoverTenantUUIDsFromIAM(db *gorm.DB, set map[string]struct{}) error {
 	if db == nil || db.Migrator() == nil {
 		return errors.New("db migrator not available")
 	}
-	if !db.Migrator().HasTable(&iammodel.Tenant{}) {
+	if !db.Migrator().HasTable(&identitymodel.Tenant{}) {
 		return nil
 	}
-	var tenants []iammodel.Tenant
-	if err := db.Model(&iammodel.Tenant{}).Where("deleted_at IS NULL").Find(&tenants).Error; err != nil {
+	var tenants []identitymodel.Tenant
+	if err := db.Model(&identitymodel.Tenant{}).Where("deleted_at IS NULL").Find(&tenants).Error; err != nil {
 		return err
 	}
 	for _, t := range tenants {

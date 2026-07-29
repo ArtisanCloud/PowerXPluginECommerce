@@ -32,8 +32,11 @@ func main() {
 	}
 	models.InitSchemaFrom(cfg.Database.Schema) // 必须在所有 DB 操作之前
 
-	iamResolver := pluginbootstrap.NewIAMResolver(cfg)
-	includeIAM := iamResolver.Mode() == iamservice.IAMModeLocal
+	providerResolver, err := pluginbootstrap.NewProviderResolver(cfg)
+	if err != nil {
+		log.Fatalf("resolve provider mode failed: %v", err)
+	}
+	includeIAM := providerResolver.Mode() == iamservice.ModeLocal
 
 	ctx := context.Background()
 	// 连接数据库
@@ -143,9 +146,6 @@ func applyDatabaseCommandConfigFallbacks(cmd string) {
 		return
 	}
 
-	if strings.TrimSpace(os.Getenv("POWERX_CUSTOMER_AUTH_MODE")) == "" {
-		_ = os.Setenv("POWERX_CUSTOMER_AUTH_MODE", "local")
-	}
 	if strings.TrimSpace(os.Getenv("POWERX_CUSTOMER_JWT_SECRET")) == "" {
 		_ = os.Setenv("POWERX_CUSTOMER_JWT_SECRET", "migration-bootstrap-secret")
 	}

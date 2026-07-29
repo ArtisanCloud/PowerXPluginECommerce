@@ -1,10 +1,10 @@
 # host-values 生成默认值（供 PowerX install/local 合并）
-# 目标：避免启用阶段因 customer_auth 缺省触发严格校验而在健康检查前退出。
+# 目标：显式声明业务 provider，避免通过 POWERX_PROXY 或模块级 mode 推导。
+
+context:
+  provider_mode: delegated
 
 customer_auth:
-  # 推荐默认 delegated；由宿主统一做 customer 鉴权
-  mode: delegated
   delegate_endpoint: http://127.0.0.1:8077/api/v1/customer/auth/validate
-  # 兼容本地/回退场景；生产请通过环境变量覆盖
+  # local provider 场景需要；生产请通过环境变量覆盖
   jwt_secret: local-miniapp-secret
-

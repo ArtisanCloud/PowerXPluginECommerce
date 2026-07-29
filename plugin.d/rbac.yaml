@@ -286,6 +286,10 @@ permissions:
   - actions:
       - manage
       - read
+    resource: com.powerx.plugins.ecommerce:product.category.sale_spec
+  - actions:
+      - manage
+      - read
     resource: com.powerx.plugins.ecommerce:product.category.template
   - actions:
       - manage
@@ -712,6 +716,10 @@ rbac:
         - manage
         - read
       resource: com.powerx.plugins.ecommerce:product.category.mapping
+    - actions:
+        - manage
+        - read
+      resource: com.powerx.plugins.ecommerce:product.category.sale_spec
     - actions:
         - manage
         - read
@@ -2719,6 +2727,16 @@ routes:
       permission:
         action: manage
         resource: com.powerx.plugins.ecommerce:product.category
+    - method: GET
+      path: /admin/product/categories/:id/sale-specs
+      permission:
+        action: read
+        resource: com.powerx.plugins.ecommerce:product.category.sale_spec
+    - method: PUT
+      path: /admin/product/categories/:id/sale-specs
+      permission:
+        action: manage
+        resource: com.powerx.plugins.ecommerce:product.category.sale_spec
     - method: PATCH
       path: /admin/product/categories/:id/status
       permission:

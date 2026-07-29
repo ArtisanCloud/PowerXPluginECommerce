@@ -12,7 +12,7 @@ export function resolveApiBase(pathname?: string): string {
 
   const p =
     pathname ??
-    (typeof window !== "undefined" ? window.location.pathname : "") ??
+    (typeof window !== "undefined" ? window.location?.pathname : "") ??
     "";
 
   // 识别 PowerX：支持 `/<locale>/_p/<plugin-id>/admin/...`

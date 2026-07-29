@@ -25,12 +25,12 @@ checks:
         - "GetRBACInfo"
         - "loadRBACInfoFromFile"
   - id: rbac-mode-switch
-    desc: 路由注册需支持 Delegated（宿主托管）与 Standalone（本地 IAM）双模式切换，依赖 `POWERX_RBAC_DELEGATE` / `POWERX_PROXY`
+    desc: 路由注册需支持 Delegated（宿主托管）与 Standalone（本地 IAM）双模式切换，依赖 `POWERX_PROVIDER_MODE`；`POWERX_PROXY` 仅表示宿主代理链路
     assert:
       type: grep
       target: backend/internal/router/router.go
       pattern:
-        - "POWERX_RBAC_DELEGATE"
+        - "POWERX_PROVIDER_MODE"
         - "shouldDelegateToPowerX"
         - "DelegateToPowerX"
   - id: rbac-doc-alignment
