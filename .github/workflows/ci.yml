@@ -7,6 +7,20 @@ on:
       - develop
       - "release/**"
   pull_request:
+  workflow_dispatch:
+    inputs:
+      source_sha:
+        description: 本次构建预期使用的完整 Git SHA
+        required: true
+        type: string
+      plugin_version:
+        description: 插件包版本
+        required: true
+        type: string
+      request_id:
+        description: 构建请求标识（可选）
+        required: false
+        type: string
 
 jobs:
   build:
@@ -55,3 +69,15 @@ jobs:
 
       - name: Run CI pipeline
         run: make ci-all
+
+  package:
+    if: github.event_name == 'workflow_dispatch'
+    needs: build
+    permissions:
+      contents: read
+    uses: ArtisanCloud/PowerXPlugin/.github/workflows/reusable-plugin-ci.yml@10f67261d9d3f699a59ed7175ef3a793bdee7a31
+    with:
+      source_sha: ${{ inputs.source_sha }}
+      plugin_version: ${{ inputs.plugin_version }}
+      mode: build
+      request_id: ${{ inputs.request_id || format('github-{0}', github.run_id) }}

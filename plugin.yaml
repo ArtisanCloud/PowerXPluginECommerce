@@ -24,7 +24,6 @@ runtime:
     POWERX_PLUGIN_ID: "com.powerx.plugins.ecommerce"
     POWERX_SECURITY_JWT_ISSUER: "powerx-auth"
     POWERX_SECURITY_JWT_AUDIENCE: "plugin:com.powerx.plugins.ecommerce"
-    POWERX_SECURITY_JWT_SECRET: "${POWERX_AUTH_JWTSECRET}"
   health:
     http: /healthz
     interval: 10s

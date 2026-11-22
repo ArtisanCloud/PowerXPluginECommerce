@@ -67,10 +67,13 @@ build-linux: ## 构建后端（Linux amd64）
 	@mkdir -p $(ABS_BUILD_DIR)
 	@mkdir -p $(GO_BUILD_CACHE)
 	@rm -f $(ABS_BUILD_DIR)/plugin $(ABS_BUILD_DIR)/migrate
-	GOOS=linux GOARCH=$(TARGET_ARCH) GOCACHE=$(GO_BUILD_CACHE) go build -C $(ABS_BACKEND_DIR) -o $(ABS_BUILD_DIR)/plugin ./cmd/plugin
+	CGO_ENABLED=0 GOOS=linux GOARCH=$(TARGET_ARCH) GOCACHE=$(GO_BUILD_CACHE) \
+	  go build -C $(ABS_BACKEND_DIR) -trimpath -ldflags "-X $(GO_MODULE)/internal/shared/app.PluginVersion=$(VERSION)" \
+	  -o $(ABS_BUILD_DIR)/plugin ./cmd/plugin
 	@if [ -d "$(ABS_BACKEND_DIR)/cmd/database" ]; then \
 	  echo "   构建 migrate（Linux/$(TARGET_ARCH)）..."; \
-	  GOOS=linux GOARCH=$(TARGET_ARCH) GOCACHE=$(GO_BUILD_CACHE) go build -C $(ABS_BACKEND_DIR) -o $(ABS_BUILD_DIR)/migrate ./cmd/database; \
+	  CGO_ENABLED=0 GOOS=linux GOARCH=$(TARGET_ARCH) GOCACHE=$(GO_BUILD_CACHE) \
+	    go build -C $(ABS_BACKEND_DIR) -trimpath -o $(ABS_BUILD_DIR)/migrate ./cmd/database; \
 	else \
 	  echo "   跳过 migrate（未找到 cmd/database）"; \
 	fi
@@ -182,6 +185,9 @@ dist: plugin-yaml-check dist-backend frontend-build
 	@mkdir -p $(DIST_BACKEND_BIN) $(DIST_WEBADMIN_OUTPUT)
 	@echo "写入插件清单 -> $(DIST_DIR)/plugin.yaml (version=$(VERSION))"
 	@awk -v ver="$(VERSION)" 'BEGIN{patched=0} /^[[:space:]]*version:[[:space:]]*/ && !patched {print "version: " ver; patched=1; next} {print} END{if(!patched) print "version: " ver}' plugin.yaml > $(DIST_DIR)/plugin.yaml
+	@if [ "$(PLATFORM)" = "linux" ]; then \
+	  printf '\ntarget:\n  os: linux\n  arch: %s\n' "$(TARGET_ARCH)" >> "$(DIST_DIR)/plugin.yaml"; \
+	fi
 	@cp $(BUILD_DIR)/plugin $(DIST_BACKEND_BIN)/
 	@if [ -f "$(BUILD_DIR)/migrate" ]; then cp $(BUILD_DIR)/migrate $(DIST_BACKEND_BIN)/; fi
 	@chmod 0755 $(DIST_BACKEND_BIN)/plugin

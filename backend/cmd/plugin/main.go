@@ -399,7 +399,10 @@ func main() {
 		})
 	}
 	g.Go(func() error {
-		logger.WithField("addr", cfg.Server.BindAddr).Info("Starting HTTP server...")
+		logger.WithFields(logger.Fields{
+			"addr":    cfg.Server.BindAddr,
+			"version": app.PluginVersion,
+		}).Info("Starting HTTP server...")
 		return fwApp.Run()
 	})
 
