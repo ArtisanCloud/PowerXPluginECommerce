@@ -134,7 +134,8 @@ plugin-id-check: ## 检查插件 ID 命名是否符合 com.powerx.plugins.*
 		com.powerx.plugins.*) ;; \
 		*) echo "❌ plugin id 不符合规范: $$PLUGIN_ID_VAL（应以 com.powerx.plugins. 开头）"; exit 1;; \
 	esac
-	@LEGACY_MATCH=$$(rg -n "com\\.powerx\\.plugin\\." web-admin backend make-files plugin.yaml -g '!make-files/manifest.mk' 2>/dev/null || true); \
+	@LEGACY_MATCH=$$(rg -n "com\\.powerx\\.plugin\\." web-admin backend make-files plugin.yaml -g '!make-files/manifest.mk') || [ "$$?" = "1" ] || exit 1; \
+	LEGACY_MATCH=$$(printf '%s\n' "$$LEGACY_MATCH" | awk '!/^backend\/internal\/services\/iam\/local_store\.go:[0-9]+:const localPrincipalUUIDSeed = "com\.powerx\.plugin\.ecommerce"$$/'); \
 	if [ -n "$$LEGACY_MATCH" ]; then \
 		echo "❌ 发现旧命名 com.powerx.plugin.* 残留:"; \
 		echo "$$LEGACY_MATCH"; \

@@ -485,8 +485,11 @@ func tenantIdentifier(tenant *iamm.Tenant) string {
 	return fmt.Sprintf("%d", tenant.ID)
 }
 
+// localPrincipalUUIDSeed is part of the persisted identity derivation.
+const localPrincipalUUIDSeed = "com.powerx.plugin.ecommerce"
+
 func stableLocalPrincipalUUID(tenantUUID, kind string, id uint64) string {
-	parts := []string{"com.powerx.plugin.ecommerce", "local-iam", strings.TrimSpace(kind), strconv.FormatUint(id, 10)}
+	parts := []string{localPrincipalUUIDSeed, "local-iam", strings.TrimSpace(kind), strconv.FormatUint(id, 10)}
 	if strings.TrimSpace(tenantUUID) != "" {
 		parts = append(parts, strings.ToLower(strings.TrimSpace(tenantUUID)))
 	}
